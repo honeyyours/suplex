@@ -28,5 +28,13 @@ module.exports = {
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
   },
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  clientOrigin: parseOrigins(process.env.CLIENT_ORIGIN) || 'http://localhost:5173',
 };
+
+function parseOrigins(value) {
+  if (!value) return null;
+  const list = value.split(',').map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0) return null;
+  if (list.length === 1) return list[0];
+  return list;
+}
