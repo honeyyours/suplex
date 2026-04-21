@@ -1,0 +1,64 @@
+import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const NAV = [
+  { to: '/', label: '대시보드', exact: true },
+  { to: '/projects', label: '프로젝트' },
+  { to: '/expenses', label: '지출관리' },
+  { to: '/ai-bookkeeper', label: 'AI경리' },
+  { to: '/team', label: '팀관리' },
+  { to: '/settings', label: '설정' },
+];
+
+export default function Layout() {
+  const { auth } = useAuth();
+
+  const navClass = ({ isActive }) =>
+    `px-3 py-2 rounded-md text-sm font-medium transition ${
+      isActive ? 'bg-navy-700 text-white' : 'text-navy-100 hover:bg-navy-700/60'
+    }`;
+
+  return (
+    <div className="min-h-full flex flex-col">
+      <header className="bg-navy-800 text-white">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="text-xl font-bold tracking-tight">SPLEX</Link>
+            <nav className="hidden sm:flex gap-1">
+              {NAV.map((n) => (
+                <NavLink key={n.to} to={n.to} end={n.exact} className={navClass}>
+                  {n.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+          <div className="text-sm text-navy-100 flex items-center gap-3">
+            <span className="hidden sm:inline">
+              {auth?.company?.name} · {auth?.user?.name}
+            </span>
+          </div>
+        </div>
+        <nav className="sm:hidden flex gap-1 px-4 pb-2 overflow-x-auto">
+          {NAV.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.exact}
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-md text-xs whitespace-nowrap ${
+                  isActive ? 'bg-navy-700 text-white' : 'text-navy-100 hover:bg-navy-700/60'
+                }`
+              }
+            >
+              {n.label}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+        <Outlet />
+      </main>
+    </div>
+  );
+}

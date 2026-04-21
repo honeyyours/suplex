@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Prisma
+server/prisma/*.db
+server/prisma/migrations/dev.db*
+
+# Misc
+.cache/
+coverage/
+*.tsbuildinfo
+
+# 회사 내부 자료 (절대 commit 금지)
+# 실제 견적서/마감재/회계 데이터 — 코드 저장소에 올리지 말 것
+_temp_*
+backup_*.json
+전체프로젝트백업_*.json
+hello/
+회계서류*.xlsm
