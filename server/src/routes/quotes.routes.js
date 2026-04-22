@@ -212,6 +212,8 @@ const updateSchema = z.object({
   projectName: z.string().min(1).optional(),
   amountInWords: z.string().optional().nullable(),
   validUntil: z.string().optional().nullable(),
+  constructionStartDate: z.string().optional().nullable(),
+  constructionEndDate: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   terms: z.string().optional().nullable(),
   area: z.number().optional().nullable(),
@@ -238,6 +240,8 @@ router.patch('/:id', async (req, res, next) => {
     if (data.projectName !== undefined) updateData.projectName = data.projectName.trim();
     if (data.amountInWords !== undefined) updateData.amountInWords = data.amountInWords?.trim() || null;
     if (data.validUntil !== undefined) updateData.validUntil = data.validUntil ? new Date(data.validUntil) : null;
+    if (data.constructionStartDate !== undefined) updateData.constructionStartDate = data.constructionStartDate ? new Date(data.constructionStartDate) : null;
+    if (data.constructionEndDate !== undefined) updateData.constructionEndDate = data.constructionEndDate ? new Date(data.constructionEndDate) : null;
     if (data.notes !== undefined) updateData.notes = data.notes?.trim() || null;
     if (data.terms !== undefined) updateData.terms = data.terms?.trim() || null;
     if (data.area !== undefined) updateData.area = data.area;

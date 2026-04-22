@@ -51,8 +51,12 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
       setErr('프로젝트명 / 고객명 / 현장 주소는 필수입니다.');
       return;
     }
-    if (form.startDate && form.expectedEndDate && form.startDate > form.expectedEndDate) {
-      setErr('준공 예정일은 착공일보다 늦어야 합니다.');
+    if (!form.startDate || !form.expectedEndDate) {
+      setErr('시작일과 마감일을 모두 입력해주세요. (캘린더 표시 범위로 사용됩니다)');
+      return;
+    }
+    if (form.startDate > form.expectedEndDate) {
+      setErr('마감일은 시작일과 같거나 그 이후여야 합니다.');
       return;
     }
     setBusy(true);
@@ -113,15 +117,16 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
             className="input"
           />
         </Field>
-        <Field label="착공일">
-          <input type="date" value={form.startDate} onChange={update('startDate')} className="input" />
+        <Field label="시작일" required hint="프로젝트 캘린더 시작 날짜 (착공 전 준비 작업도 이 날부터 기록 가능)">
+          <input type="date" value={form.startDate} onChange={update('startDate')} className="input" required />
         </Field>
-        <Field label="준공 예정일">
+        <Field label="마감일" required hint="프로젝트 캘린더 마감 날짜">
           <input
             type="date"
             value={form.expectedEndDate}
             onChange={update('expectedEndDate')}
             className="input"
+            required
           />
         </Field>
         <Field label="계약 금액 (원)">
@@ -211,7 +216,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
   );
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required, hint, children }) {
   return (
     <label className="block">
       <span className="block text-sm font-medium text-gray-700 mb-1">
@@ -219,6 +224,7 @@ function Field({ label, required, children }) {
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </span>
       {children}
+      {hint && <span className="block text-[11px] text-gray-500 mt-1">{hint}</span>}
     </label>
   );
 }

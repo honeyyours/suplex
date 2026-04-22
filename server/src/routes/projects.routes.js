@@ -30,13 +30,17 @@ const createSchema = z.object({
   customerPhone: z.string().optional().nullable(),
   siteAddress: z.string().min(1),
   contractAmount: z.number().optional().nullable(),
-  startDate: z.string().optional().nullable(),
-  expectedEndDate: z.string().optional().nullable(),
+  // 시작일/마감일 — 프로젝트 캘린더의 범위. 필수
+  startDate: z.string().min(1, '시작일은 필수입니다'),
+  expectedEndDate: z.string().min(1, '마감일은 필수입니다'),
   doorPassword: z.string().optional().nullable(),
   siteNotes: z.string().optional().nullable(),
   area: z.number().optional().nullable(),
   memo: z.string().optional().nullable(),
-});
+}).refine(
+  (d) => new Date(d.startDate) <= new Date(d.expectedEndDate),
+  { message: '마감일은 시작일과 같거나 그 이후여야 합니다', path: ['expectedEndDate'] }
+);
 
 router.post('/', async (req, res, next) => {
   try {
@@ -48,8 +52,8 @@ router.post('/', async (req, res, next) => {
         customerPhone: data.customerPhone || null,
         siteAddress: data.siteAddress.trim(),
         contractAmount: data.contractAmount ?? null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        expectedEndDate: data.expectedEndDate ? new Date(data.expectedEndDate) : null,
+        startDate: new Date(data.startDate),
+        expectedEndDate: new Date(data.expectedEndDate),
         doorPassword: data.doorPassword || null,
         siteNotes: data.siteNotes || null,
         area: data.area ?? null,
@@ -85,8 +89,9 @@ const updateSchema = z.object({
   customerPhone: z.string().optional().nullable(),
   siteAddress: z.string().min(1).optional(),
   contractAmount: z.number().optional().nullable(),
-  startDate: z.string().optional().nullable(),
-  expectedEndDate: z.string().optional().nullable(),
+  // 수정 시에도 빈 값 허용 X (요구사항: 시작/마감은 항상 존재)
+  startDate: z.string().min(1).optional(),
+  expectedEndDate: z.string().min(1).optional(),
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED']).optional(),
   doorPassword: z.string().optional().nullable(),
   siteNotes: z.string().optional().nullable(),
@@ -102,6 +107,13 @@ router.patch('/:id', async (req, res, next) => {
     });
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
+    // 업데이트 후 시작/마감 순서 검증
+    const newStart = data.startDate !== undefined ? data.startDate : existing.startDate?.toISOString().slice(0, 10);
+    const newEnd = data.expectedEndDate !== undefined ? data.expectedEndDate : existing.expectedEndDate?.toISOString().slice(0, 10);
+    if (newStart && newEnd && new Date(newStart) > new Date(newEnd)) {
+      return res.status(400).json({ error: '마감일은 시작일과 같거나 그 이후여야 합니다' });
+    }
+
     const updated = await prisma.project.update({
       where: { id: req.params.id },
       data: {
@@ -111,10 +123,10 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.siteAddress !== undefined && { siteAddress: data.siteAddress.trim() }),
         ...(data.contractAmount !== undefined && { contractAmount: data.contractAmount }),
         ...(data.startDate !== undefined && {
-          startDate: data.startDate ? new Date(data.startDate) : null,
+          startDate: new Date(data.startDate),
         }),
         ...(data.expectedEndDate !== undefined && {
-          expectedEndDate: data.expectedEndDate ? new Date(data.expectedEndDate) : null,
+          expectedEndDate: new Date(data.expectedEndDate),
         }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.doorPassword !== undefined && { doorPassword: data.doorPassword || null }),

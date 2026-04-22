@@ -1,35 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { schedulesApi } from '../api/schedules';
-import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel,
-} from '../utils/date';
+import { toDateKey, rangeGrid, formatDateDot } from '../utils/date';
 import ScheduleEntry from './ScheduleEntry';
 import ScheduleAddForm from './ScheduleAddForm';
 
 export default function ScheduleCalendar({ projectId, project }) {
-  const [current, setCurrent] = useState(() => {
-    const start = project?.startDate ? new Date(project.startDate) : new Date();
-    return new Date(start.getFullYear(), start.getMonth(), 1);
-  });
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [addingOn, setAddingOn] = useState(null); // dateKey currently adding
+  const [addingOn, setAddingOn] = useState(null);
   const [err, setErr] = useState('');
 
-  const grid = useMemo(
-    () => calendarGrid(current.getFullYear(), current.getMonth()),
-    [current]
-  );
+  const projStartKey = project?.startDate ? project.startDate.slice(0, 10) : null;
+  const projEndKey = project?.expectedEndDate ? project.expectedEndDate.slice(0, 10) : null;
 
-  const rangeStart = grid[0];
-  const rangeEnd = grid[grid.length - 1];
+  const grid = useMemo(() => {
+    if (!projStartKey || !projEndKey) return [];
+    return rangeGrid(projStartKey, projEndKey);
+  }, [projStartKey, projEndKey]);
 
   async function reload() {
+    if (!grid.length) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { entries } = await schedulesApi.list(projectId, {
-        start: toDateKey(rangeStart),
-        end: toDateKey(rangeEnd),
+        start: toDateKey(grid[0]),
+        end: toDateKey(grid[grid.length - 1]),
       });
       setEntries(entries);
       setErr('');
@@ -40,7 +39,7 @@ export default function ScheduleCalendar({ projectId, project }) {
     }
   }
 
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [projectId, current]);
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [projectId, projStartKey, projEndKey]);
 
   const byDate = useMemo(() => {
     const map = {};
@@ -68,29 +67,36 @@ export default function ScheduleCalendar({ projectId, project }) {
     reload();
   }
 
+  // 시작/마감 미설정 시 안내
+  if (!projStartKey || !projEndKey) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-8 text-center">
+        <div className="text-3xl mb-2">📅</div>
+        <div className="font-semibold text-amber-900 mb-1">프로젝트 기간을 먼저 설정해주세요</div>
+        <div className="text-sm text-amber-700 mb-4">
+          시작일과 마감일을 설정하면 그 범위만큼 캘린더가 표시됩니다.
+        </div>
+        <Link
+          to={`/projects/${projectId}`}
+          className="inline-block text-sm px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded"
+        >
+          프로젝트 정보 수정 →
+        </Link>
+      </div>
+    );
+  }
+
   const todayKey = toDateKey(new Date());
-  const projStart = project?.startDate ? project.startDate.slice(0, 10) : null;
-  const projEnd = project?.expectedEndDate ? project.expectedEndDate.slice(0, 10) : null;
+  const totalDays = Math.round((new Date(projEndKey) - new Date(projStartKey)) / (1000 * 60 * 60 * 24)) + 1;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrent(addMonths(current, -1))}
-            className="px-3 py-1 border rounded hover:bg-gray-50"
-          >‹</button>
-          <div className="font-semibold text-lg text-navy-800 min-w-24 text-center">
-            {formatMonthLabel(current)}
-          </div>
-          <button
-            onClick={() => setCurrent(addMonths(current, 1))}
-            className="px-3 py-1 border rounded hover:bg-gray-50"
-          >›</button>
-          <button
-            onClick={() => setCurrent(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
-            className="ml-2 text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
-          >오늘</button>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="text-sm text-navy-700">
+          <span className="font-semibold">{formatDateDot(projStartKey)}</span>
+          <span className="mx-2 text-gray-400">~</span>
+          <span className="font-semibold">{formatDateDot(projEndKey)}</span>
+          <span className="ml-2 text-xs text-gray-500">(총 {totalDays}일)</span>
         </div>
         {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
       </div>
@@ -98,7 +104,7 @@ export default function ScheduleCalendar({ projectId, project }) {
       {err && <div className="mb-3 text-sm text-red-600">{err}</div>}
 
       <div className="border rounded-lg overflow-hidden bg-white">
-        <div className="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+        <div className="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div
               key={d}
@@ -112,30 +118,31 @@ export default function ScheduleCalendar({ projectId, project }) {
           {grid.map((date) => {
             const key = toDateKey(date);
             const dayEntries = byDate[key] || [];
-            const isCurrentMonth = date.getMonth() === current.getMonth();
+            const inRange = key >= projStartKey && key <= projEndKey;
             const isToday = key === todayKey;
-            const inProjectRange =
-              (!projStart || key >= projStart) && (!projEnd || key <= projEnd);
             const dayOfWeek = date.getDay();
 
             return (
               <div
                 key={key}
                 className={`border-r border-b last:border-r-0 min-h-28 flex flex-col ${
-                  isCurrentMonth ? 'bg-white' : 'bg-gray-50/50'
-                } ${!inProjectRange ? 'opacity-60' : ''}`}
+                  inRange ? 'bg-white' : 'bg-gray-100/70'
+                }`}
               >
                 <div className={`flex items-center justify-between px-1.5 py-1 text-xs ${
+                  !inRange ? 'text-gray-300' :
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
                   <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5' : ''}`}>
                     {date.getDate()}
                   </span>
-                  <button
-                    onClick={() => setAddingOn(addingOn === key ? null : key)}
-                    className="text-gray-400 hover:text-navy-700 text-base leading-none"
-                    title="일정 추가"
-                  >+</button>
+                  {inRange && (
+                    <button
+                      onClick={() => setAddingOn(addingOn === key ? null : key)}
+                      className="text-gray-400 hover:text-navy-700 text-base leading-none"
+                      title="일정 추가"
+                    >+</button>
+                  )}
                 </div>
                 <div className="px-1 pb-1 flex flex-col gap-0.5 flex-1">
                   {dayEntries.map((e) => (

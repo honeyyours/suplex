@@ -698,6 +698,8 @@ model Quote {
   projectName   String                                          // 공사명
   amountInWords String?                                         // 금액 한글 표기 (예: "사천오백칠십만원정")
   validUntil    DateTime?   @db.Date
+  constructionStartDate DateTime? @db.Date                     // 착공 예정일 (견적서 명시용)
+  constructionEndDate   DateTime? @db.Date                     // 준공 예정일 (견적서 명시용)
   notes         String?                                         // 빨간 비고 (예: 붙박이장 가구류 필름 제외)
   terms         String?                                         // 견적조건 (예: 부가가치세 별도 / 견적외 공사 별도)
   area          Decimal?    @db.Decimal(8, 2)                  // 면적 스냅샷 (평) — 평당단가 계산용

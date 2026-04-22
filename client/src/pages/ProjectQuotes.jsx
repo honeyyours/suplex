@@ -6,6 +6,7 @@ import {
 } from '../api/quotes';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
+import { formatDateDot } from '../utils/date';
 
 export default function ProjectQuotes() {
   const { id: projectId } = useParams();
@@ -328,6 +329,8 @@ function QuoteEditor({ projectId, quoteId, company, onChanged, onDuplicate, onDe
             <Field label="고객 연락처" value={quote.customerPhone || ''} onSave={(v) => patchQuote({ customerPhone: v || null })} />
             <Field label="유효기간" type="date" value={quote.validUntil ? quote.validUntil.slice(0, 10) : ''} onSave={(v) => patchQuote({ validUntil: v || null })} />
             <Field label="면적 (평)" type="number" step="0.01" value={quote.area || ''} onSave={(v) => patchQuote({ area: v ? Number(v) : null })} />
+            <Field label="착공 예정일 (견적서)" type="date" value={quote.constructionStartDate ? quote.constructionStartDate.slice(0, 10) : ''} onSave={(v) => patchQuote({ constructionStartDate: v || null })} />
+            <Field label="준공 예정일 (견적서)" type="date" value={quote.constructionEndDate ? quote.constructionEndDate.slice(0, 10) : ''} onSave={(v) => patchQuote({ constructionEndDate: v || null })} />
             <Field label="갑지 비고 (빨간 글씨)" value={quote.notes || ''} full multiline onSave={(v) => patchQuote({ notes: v || null })} />
             <Field label="견적조건 (Terms)" value={quote.terms || ''} full multiline onSave={(v) => patchQuote({ terms: v || null })} />
           </div>
@@ -837,6 +840,16 @@ function PrintCover({ quote, company, today }) {
           <tr><td className="w-32 py-2 text-gray-700">제 출 처 / TO.</td><td className="py-2 font-semibold">{quote.customerName} 고객님</td></tr>
           <tr><td className="py-2 text-gray-700">공 사 명 / PROJECT.</td><td className="py-2 font-semibold">{quote.projectName}</td></tr>
           <tr><td className="py-2 text-gray-700">제출일자 / Date.</td><td className="py-2">{today}</td></tr>
+          {(quote.constructionStartDate || quote.constructionEndDate) && (
+            <tr>
+              <td className="py-2 text-gray-700">공사기간 / Period.</td>
+              <td className="py-2">
+                {quote.constructionStartDate ? formatDateDot(quote.constructionStartDate) : '미정'}
+                <span className="mx-2">~</span>
+                {quote.constructionEndDate ? formatDateDot(quote.constructionEndDate) : '미정'}
+              </td>
+            </tr>
+          )}
           <tr><td className="py-2 text-gray-700">금　　　액 / Amount.</td><td className="py-2 font-bold text-base">一金 : {numberToKorean(quote.totalFinal)} [₩{formatWon(quote.totalFinal)}]</td></tr>
         </tbody>
       </table>

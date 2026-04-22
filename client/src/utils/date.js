@@ -43,6 +43,21 @@ export function calendarGrid(year, month) {
   return days;
 }
 
+// 프로젝트 시작~마감 범위를 모두 포함하는 주(Sun-Sat) 단위 그리드 반환
+export function rangeGrid(startDate, endDate) {
+  const s = new Date(startDate);
+  const e = new Date(endDate);
+  s.setHours(0, 0, 0, 0);
+  e.setHours(0, 0, 0, 0);
+  const gridStart = addDays(s, -s.getDay());        // 시작일이 속한 주의 일요일
+  const gridEnd = addDays(e, 6 - e.getDay());        // 마감일이 속한 주의 토요일
+  const days = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 1)) {
+    days.push(new Date(d));
+  }
+  return days;
+}
+
 export function formatMonthLabel(date) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}`;
 }

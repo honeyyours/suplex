@@ -48,7 +48,7 @@ export default function Projects() {
     else if (sortBy === 'start') list.sort((a, b) => {
       const ad = a.startDate ? new Date(a.startDate).getTime() : 0;
       const bd = b.startDate ? new Date(b.startDate).getTime() : 0;
-      return bd - ad; // 최신 착공일 우선
+      return bd - ad; // 최신 시작일 우선
     });
     else list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return list;
@@ -98,7 +98,7 @@ export default function Projects() {
           >
             <option value="recent">최근 등록순</option>
             <option value="name">이름순</option>
-            <option value="start">착공일순</option>
+            <option value="start">시작일순</option>
           </select>
         </div>
       </div>
