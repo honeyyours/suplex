@@ -86,11 +86,14 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
     );
   }
 
+  const catColor = entry.category ? categoryClass(entry.category) : 'bg-gray-100 text-gray-700';
   return (
     <div
-      className={`group text-[9px] sm:text-xs rounded px-1 sm:px-1.5 py-0 sm:py-1 border-l-2 flex items-start gap-0.5 sm:gap-1 truncate ${
-        entry.confirmed ? 'border-emerald-500 bg-emerald-50' : 'border-navy-400 bg-navy-50/60'
-      }`}
+      className={`
+        group text-[10px] sm:text-xs rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate
+        ${catColor} sm:bg-navy-50/60 sm:text-navy-800
+        sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
+      `}
     >
       <button
         onClick={() => onToggleConfirm(entry.id)}
@@ -104,13 +107,13 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
         {entry.confirmed && <span className="text-[10px] leading-none">✓</span>}
       </button>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
           {entry.category && (
-            <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${categoryClass(entry.category)}`}>
+            <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${catColor}`}>
               {entry.category}
             </span>
           )}
-          <span className={`truncate ${entry.confirmed ? 'text-gray-700' : 'text-navy-800'}`}>
+          <span className="truncate">
             {entry.content}
           </span>
           {entry.vendor && (
@@ -120,9 +123,8 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           )}
         </div>
       </div>
-      {/* 모바일에서 ✓는 우측에 작게 */}
       {entry.confirmed && (
-        <span className="sm:hidden text-emerald-500 text-[9px] flex-shrink-0">✓</span>
+        <span className="sm:hidden text-emerald-600 text-[10px] flex-shrink-0 font-bold">✓</span>
       )}
       <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition gap-0.5">
         <button

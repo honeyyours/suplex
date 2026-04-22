@@ -78,7 +78,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap px-2 sm:px-0">
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => setCurrent(addMonths(current, -1))}
@@ -104,12 +104,12 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
         )}
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white">
-        <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 border-b">
+      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
+        <div className="grid grid-cols-7 text-[11px] sm:text-xs font-semibold bg-gray-50 border-b">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div
               key={d}
-              className={`px-1 sm:px-2 py-1 sm:py-2 text-center ${
+              className={`px-1 sm:px-2 py-1.5 sm:py-2 text-center ${
                 i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'
               }`}
             >{d}</div>
@@ -126,11 +126,11 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden ${
+                className={`border-r border-b last:border-r-0 min-h-[80px] sm:min-h-28 flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50'
                 }`}
               >
-                <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-[10px] sm:text-xs flex-shrink-0 ${
+                <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
                   <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}`}>
@@ -138,38 +138,35 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                   </span>
                 </div>
                 <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
-                  {dayEntries.map((e) => (
-                    <Link
-                      key={e.id}
-                      to={`/projects/${e.project?.id}/schedule`}
-                      className={`text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0 sm:py-0.5 truncate border-l-2 flex items-center gap-0.5 sm:gap-1 ${
-                        e.confirmed ? 'border-emerald-500' : 'border-navy-400'
-                      } hover:brightness-95`}
-                    >
-                      {e.project?.name && (
-                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${
-                          projectColor[e.project.id] || 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {e.project.name}
+                  {dayEntries.map((e) => {
+                    const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
+                    return (
+                      <Link
+                        key={e.id}
+                        to={`/projects/${e.project?.id}/schedule`}
+                        className={`
+                          text-[10px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0.5 truncate flex items-center gap-1
+                          ${projColor} sm:bg-white sm:text-navy-800
+                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
+                          hover:brightness-95
+                        `}
+                        title={`${e.project?.name || ''} · ${e.content}`}
+                      >
+                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${projColor}`}>
+                          {e.project?.name}
                         </span>
-                      )}
-                      {/* 모바일: 프로젝트 색상 점 */}
-                      {e.project?.id && (
-                        <span className={`sm:hidden inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                          (projectColor[e.project.id] || 'bg-gray-300').split(' ')[0]
-                        }`}></span>
-                      )}
-                      {e.category && (
-                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${categoryClass(e.category)}`}>
-                          {e.category}
-                        </span>
-                      )}
-                      <span className="truncate text-navy-800">{e.content}</span>
-                      {e.confirmed && <span className="text-emerald-500 flex-shrink-0 text-[9px] sm:text-xs">✓</span>}
-                    </Link>
-                  ))}
+                        {e.category && (
+                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${categoryClass(e.category)}`}>
+                            {e.category}
+                          </span>
+                        )}
+                        <span className="truncate flex-1">{e.content}</span>
+                        {e.confirmed && <span className="text-emerald-600 flex-shrink-0 text-[10px] sm:text-xs font-bold">✓</span>}
+                      </Link>
+                    );
+                  })}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
+                    <span className="sm:hidden text-[10px] text-gray-400 text-center leading-none">
                       +{dayEntries.length - 3}
                     </span>
                   )}

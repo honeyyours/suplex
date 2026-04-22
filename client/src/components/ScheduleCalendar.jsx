@@ -91,7 +91,7 @@ export default function ScheduleCalendar({ projectId, project }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2 px-2 sm:px-0">
         <div className="text-sm text-navy-700">
           <span className="font-semibold">{formatDateDot(projStartKey)}</span>
           <span className="mx-2 text-gray-400">~</span>
@@ -101,9 +101,9 @@ export default function ScheduleCalendar({ projectId, project }) {
         {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
       </div>
 
-      {err && <div className="mb-3 text-sm text-red-600">{err}</div>}
+      {err && <div className="mb-3 text-sm text-red-600 px-2 sm:px-0">{err}</div>}
 
-      <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
         <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div
