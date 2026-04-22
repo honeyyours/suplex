@@ -6,7 +6,7 @@ import { vendorsApi } from '../api/vendors';
 export default function TeamManagement() {
   const { auth } = useAuth();
   const isOwner = auth?.role === 'OWNER';
-  const [tab, setTab] = useState('members');
+  const [tab, setTab] = useState('vendors');
 
   return (
     <div className="space-y-6">
@@ -15,11 +15,11 @@ export default function TeamManagement() {
       </div>
 
       <div className="border-b flex gap-1">
-        <TabButton active={tab === 'members'} onClick={() => setTab('members')}>
-          👥 팀원
-        </TabButton>
         <TabButton active={tab === 'vendors'} onClick={() => setTab('vendors')}>
           🏢 협력업체
+        </TabButton>
+        <TabButton active={tab === 'members'} onClick={() => setTab('members')}>
+          👥 팀원
         </TabButton>
       </div>
 
