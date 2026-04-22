@@ -4,6 +4,7 @@ import { purchaseOrdersApi, PO_STATUS_META } from '../api/purchaseOrders';
 import { expensesApi, EXPENSE_TYPE_META, EXPENSE_TYPE_KEYS, PAYMENT_METHOD_META, PAYMENT_METHOD_KEYS } from '../api/expenses';
 import { accountCodesApi, accountColor } from '../api/accountCodes';
 import { formatWon } from '../api/quotes';
+import VendorAutocomplete from '../components/VendorAutocomplete';
 
 const STATUS_KEYS = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 const ALL_TAB = 'ALL';
@@ -243,7 +244,7 @@ function QuickExpenseModal({ projectId, accountCodes, onClose, onSaved }) {
   const [form, setForm] = useState({
     type: 'EXPENSE',
     date: new Date().toISOString().slice(0, 10),
-    amount: '', vendor: '', accountCodeId: '', workCategory: '', description: '', paymentMethod: '',
+    amount: '', vendor: '', vendorId: null, accountCodeId: '', workCategory: '', description: '', paymentMethod: '',
   });
   const [busy, setBusy] = useState(false);
   function set(k, v) { setForm((p) => ({ ...p, [k]: v })); }
@@ -258,6 +259,7 @@ function QuickExpenseModal({ projectId, accountCodes, onClose, onSaved }) {
         accountCodeId: form.accountCodeId || null,
         workCategory: form.workCategory.trim() || null,
         vendor: form.vendor.trim() || null,
+        vendorId: form.vendorId || null,
         description: form.description.trim() || null,
         paymentMethod: form.paymentMethod || null,
       });
@@ -303,7 +305,16 @@ function QuickExpenseModal({ projectId, accountCodes, onClose, onSaved }) {
               </select>
             </Field>
           </div>
-          <Field label="거래처"><input value={form.vendor} onChange={(e) => set('vendor', e.target.value)} className="input" /></Field>
+          <Field label="거래처">
+            <VendorAutocomplete
+              value={{ id: form.vendorId, name: form.vendor }}
+              onChange={({ vendorId, vendorName }) => {
+                setForm((p) => ({ ...p, vendorId: vendorId || null, vendor: vendorName || '' }));
+              }}
+              category={form.workCategory || undefined}
+              placeholder="협력업체 선택 또는 직접 입력"
+            />
+          </Field>
           <Field label="내역(적요)"><textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} className="input resize-y" /></Field>
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">
@@ -318,7 +329,9 @@ function QuickExpenseModal({ projectId, accountCodes, onClose, onSaved }) {
 
 function OrderModal({ projectId, order, onClose, onSaved }) {
   const [form, setForm] = useState(() => ({
-    itemName: order?.itemName || '', spec: order?.spec || '', vendor: order?.vendor || '',
+    itemName: order?.itemName || '', spec: order?.spec || '',
+    vendor: order?.vendor || '',
+    vendorId: order?.vendorEntity?.id || order?.vendorId || null,
     quantity: order?.quantity != null ? String(order.quantity) : '',
     unit: order?.unit || '',
     unitPrice: order?.unitPrice != null ? String(order.unitPrice) : '',
@@ -340,7 +353,9 @@ function OrderModal({ projectId, order, onClose, onSaved }) {
     setBusy(true);
     try {
       const payload = {
-        itemName: form.itemName.trim(), spec: form.spec.trim() || null, vendor: form.vendor.trim() || null,
+        itemName: form.itemName.trim(), spec: form.spec.trim() || null,
+        vendor: form.vendor.trim() || null,
+        vendorId: form.vendorId || null,
         quantity: form.quantity ? Number(form.quantity) : null, unit: form.unit.trim() || null,
         unitPrice: form.unitPrice ? Number(form.unitPrice) : null, totalPrice: form.totalPrice ? Number(form.totalPrice) : null,
         expectedDate: form.expectedDate || null, notes: form.notes.trim() || null, status: form.status,
@@ -361,7 +376,15 @@ function OrderModal({ projectId, order, onClose, onSaved }) {
           <Field label="항목명" required><input value={form.itemName} onChange={(e) => setField('itemName', e.target.value)} className="input" /></Field>
           <Field label="규격/제품"><input value={form.spec} onChange={(e) => setField('spec', e.target.value)} className="input" /></Field>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="거래처"><input value={form.vendor} onChange={(e) => setField('vendor', e.target.value)} className="input" /></Field>
+            <Field label="거래처">
+              <VendorAutocomplete
+                value={{ id: form.vendorId, name: form.vendor }}
+                onChange={({ vendorId, vendorName }) => {
+                  setForm((p) => ({ ...p, vendorId: vendorId || null, vendor: vendorName || '' }));
+                }}
+                placeholder="협력업체 선택 또는 직접 입력"
+              />
+            </Field>
             <Field label="발주 예정일"><input type="date" value={form.expectedDate} onChange={(e) => setField('expectedDate', e.target.value)} className="input" /></Field>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">

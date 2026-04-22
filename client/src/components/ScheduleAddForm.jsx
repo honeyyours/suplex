@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { CATEGORIES } from '../utils/date';
+import VendorAutocomplete from './VendorAutocomplete';
 
 export default function ScheduleAddForm({ onSubmit, onCancel }) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
+  const [vendor, setVendor] = useState({ vendorId: null, vendorName: '' });
   const ref = useRef(null);
 
   useEffect(() => { ref.current?.focus(); }, []);
@@ -11,9 +13,14 @@ export default function ScheduleAddForm({ onSubmit, onCancel }) {
   async function submit() {
     const trimmed = content.trim();
     if (!trimmed) return;
-    await onSubmit({ content: trimmed, category: category || null });
+    await onSubmit({
+      content: trimmed,
+      category: category || null,
+      vendorId: vendor.vendorId,
+    });
     setContent('');
     setCategory('');
+    setVendor({ vendorId: null, vendorName: '' });
     ref.current?.focus();
   }
 
@@ -40,6 +47,14 @@ export default function ScheduleAddForm({ onSubmit, onCancel }) {
         placeholder="내용 (Ctrl+Enter 저장)"
         rows={2}
         className="w-full text-xs border rounded px-1 py-0.5 resize-none"
+      />
+      <VendorAutocomplete
+        value={vendor}
+        onChange={setVendor}
+        category={category}
+        placeholder="협력업체 (선택)"
+        className="text-[11px]"
+        allowFreeText={false}
       />
       <div className="flex gap-1">
         <button onClick={submit} className="flex-1 text-[11px] bg-navy-700 text-white rounded py-0.5">추가</button>

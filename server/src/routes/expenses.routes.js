@@ -19,7 +19,7 @@ function num(v) {
 // GET /api/expenses?projectId=&dateFrom=&dateTo=&accountCodeId=&type=&q=
 router.get('/', async (req, res, next) => {
   try {
-    const { projectId, dateFrom, dateTo, accountCodeId, accountGroup, type, vendor, q } = req.query;
+    const { projectId, dateFrom, dateTo, accountCodeId, accountGroup, type, vendor, vendorId, q } = req.query;
     const where = { companyId: req.user.companyId };
 
     if (projectId === 'NONE') where.projectId = null;
@@ -31,6 +31,8 @@ router.get('/', async (req, res, next) => {
     if (accountGroup) where.accountCode = { groupName: accountGroup };
 
     if (type && TYPES.includes(type)) where.type = type;
+    if (vendorId === 'NONE') where.vendorId = null;
+    else if (vendorId) where.vendorId = vendorId;
     if (vendor) where.vendor = { contains: String(vendor), mode: 'insensitive' };
 
     if (dateFrom || dateTo) {
@@ -53,6 +55,7 @@ router.get('/', async (req, res, next) => {
       include: {
         project: { select: { id: true, name: true, siteCode: true } },
         accountCode: { select: { id: true, code: true, groupName: true } },
+        vendorEntity: { select: { id: true, name: true, category: true } },
         createdBy: { select: { id: true, name: true } },
       },
     });
@@ -146,6 +149,7 @@ const createSchema = z.object({
   amount: z.number(),
   type: z.enum(TYPES).optional(),
   vendor: z.string().optional().nullable(),
+  vendorId: z.string().optional().nullable(),
   accountCodeId: z.string().optional().nullable(),
   workCategory: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
@@ -155,6 +159,16 @@ const createSchema = z.object({
   importedFrom: z.string().optional().nullable(),
   rawText: z.string().optional().nullable(),
 });
+
+async function resolveVendor(companyId, vendorId, vendorText) {
+  if (!vendorId) return { vendorId: null, vendor: vendorText?.trim() || null };
+  const v = await prisma.vendor.findFirst({
+    where: { id: vendorId, companyId },
+    select: { id: true, name: true },
+  });
+  if (!v) return { vendorId: null, vendor: vendorText?.trim() || null };
+  return { vendorId: v.id, vendor: vendorText?.trim() || v.name };
+}
 
 async function assertProjectIfGiven(projectId, companyId) {
   if (!projectId) return true;
@@ -188,6 +202,8 @@ router.post('/', async (req, res, next) => {
       }
     }
 
+    const vendorResolved = await resolveVendor(req.user.companyId, data.vendorId, data.vendor);
+
     const expense = await prisma.expense.create({
       data: {
         companyId: req.user.companyId,
@@ -195,7 +211,8 @@ router.post('/', async (req, res, next) => {
         date: new Date(data.date),
         amount: data.amount,
         type: data.type || 'EXPENSE',
-        vendor: data.vendor?.trim() || null,
+        vendor: vendorResolved.vendor,
+        vendorId: vendorResolved.vendorId,
         accountCodeId: accountCodeId || null,
         workCategory: workCategory?.trim() || null,
         description: data.description?.trim() || null,
@@ -240,14 +257,26 @@ router.post('/bulk', async (req, res, next) => {
       validAcctIds = new Set(found.map((a) => a.id));
     }
 
+    const requestedVendorIds = [...new Set(items.map((i) => i.vendorId).filter(Boolean))];
+    let vendorMap = new Map();
+    if (requestedVendorIds.length > 0) {
+      const found = await prisma.vendor.findMany({
+        where: { id: { in: requestedVendorIds }, companyId: req.user.companyId },
+        select: { id: true, name: true },
+      });
+      vendorMap = new Map(found.map((v) => [v.id, v.name]));
+    }
+
     const rows = items.map((it) => ({
       companyId: req.user.companyId,
       projectId: it.projectId && validProjectIds.has(it.projectId) ? it.projectId : null,
       accountCodeId: it.accountCodeId && validAcctIds.has(it.accountCodeId) ? it.accountCodeId : null,
+      vendorId: it.vendorId && vendorMap.has(it.vendorId) ? it.vendorId : null,
       date: it.date ? new Date(it.date) : new Date(),
       amount: Number(it.amount) || 0,
       type: TYPES.includes(it.type) ? it.type : 'EXPENSE',
-      vendor: it.vendor ? String(it.vendor).trim() : null,
+      vendor: (it.vendor ? String(it.vendor).trim() : null)
+        || (it.vendorId && vendorMap.has(it.vendorId) ? vendorMap.get(it.vendorId) : null),
       workCategory: it.workCategory ? String(it.workCategory).trim() : null,
       description: it.description ? String(it.description).trim() : null,
       paymentMethod: PAYMENT_METHODS.includes(it.paymentMethod) ? it.paymentMethod : null,
@@ -278,7 +307,15 @@ router.patch('/:id', async (req, res, next) => {
     if (data.date !== undefined) updateData.date = new Date(data.date);
     if (data.amount !== undefined) updateData.amount = data.amount;
     if (data.type !== undefined) updateData.type = data.type;
-    if (data.vendor !== undefined) updateData.vendor = data.vendor?.trim() || null;
+    if (data.vendorId !== undefined || data.vendor !== undefined) {
+      const r = await resolveVendor(
+        req.user.companyId,
+        data.vendorId !== undefined ? data.vendorId : existing.vendorId,
+        data.vendor !== undefined ? data.vendor : existing.vendor,
+      );
+      updateData.vendorId = r.vendorId;
+      updateData.vendor = r.vendor;
+    }
     if (data.accountCodeId !== undefined) updateData.accountCodeId = data.accountCodeId || null;
     if (data.workCategory !== undefined) updateData.workCategory = data.workCategory?.trim() || null;
     if (data.description !== undefined) updateData.description = data.description?.trim() || null;

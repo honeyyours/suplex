@@ -9,6 +9,7 @@ import { expenseRulesApi } from '../api/expenseRules';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
+import VendorAutocomplete from '../components/VendorAutocomplete';
 
 const VIEW_LIST    = 'list';
 const VIEW_PROJECT = 'project';
@@ -523,6 +524,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     accountCodeId: expense?.accountCodeId || '',
     workCategory: expense?.workCategory || '',
     vendor: expense?.vendor || '',
+    vendorId: expense?.vendorEntity?.id || expense?.vendorId || null,
     description: expense?.description || '',
     paymentMethod: expense?.paymentMethod || '',
   }));
@@ -542,6 +544,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
         accountCodeId: form.accountCodeId || null,
         workCategory: form.workCategory.trim() || null,
         vendor: form.vendor.trim() || null,
+        vendorId: form.vendorId || null,
         description: form.description.trim() || null,
         paymentMethod: form.paymentMethod || null,
       };
@@ -597,7 +600,14 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
             </Field>
           </div>
           <Field label="거래처">
-            <input value={form.vendor} onChange={(e) => set('vendor', e.target.value)} placeholder="OO자재상사" className="input" />
+            <VendorAutocomplete
+              value={{ id: form.vendorId, name: form.vendor }}
+              onChange={({ vendorId, vendorName }) => {
+                setForm((p) => ({ ...p, vendorId: vendorId || null, vendor: vendorName || '' }));
+              }}
+              placeholder="OO자재상사 — 등록된 협력업체 선택 또는 직접 입력"
+              category={form.workCategory || undefined}
+            />
           </Field>
           <Field label="내역(적요)">
             <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} placeholder="장판 자재 입금" className="input resize-y" />

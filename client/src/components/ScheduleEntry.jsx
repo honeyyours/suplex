@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { categoryClass, CATEGORIES } from '../utils/date';
+import VendorAutocomplete from './VendorAutocomplete';
 
 export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm }) {
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(entry.content);
   const [category, setCategory] = useState(entry.category || '');
+  const [vendor, setVendor] = useState({
+    vendorId: entry.vendor?.id || entry.vendorId || null,
+    vendorName: entry.vendor?.name || '',
+  });
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -14,17 +19,31 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   async function save() {
     const trimmed = content.trim();
     if (!trimmed) return;
-    if (trimmed === entry.content && (category || null) === (entry.category || null)) {
+    const newVendorId = vendor.vendorId || null;
+    const oldVendorId = entry.vendor?.id || entry.vendorId || null;
+    if (
+      trimmed === entry.content &&
+      (category || null) === (entry.category || null) &&
+      newVendorId === oldVendorId
+    ) {
       setEditing(false);
       return;
     }
-    await onUpdate(entry.id, { content: trimmed, category: category || null });
+    await onUpdate(entry.id, {
+      content: trimmed,
+      category: category || null,
+      vendorId: newVendorId,
+    });
     setEditing(false);
   }
 
   function cancel() {
     setContent(entry.content);
     setCategory(entry.category || '');
+    setVendor({
+      vendorId: entry.vendor?.id || entry.vendorId || null,
+      vendorName: entry.vendor?.name || '',
+    });
     setEditing(false);
   }
 
@@ -51,6 +70,13 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           }}
           rows={2}
           className="w-full text-xs border rounded px-1 py-0.5 resize-none"
+        />
+        <VendorAutocomplete
+          value={vendor}
+          onChange={setVendor}
+          category={category}
+          placeholder="협력업체 (선택)"
+          allowFreeText={false}
         />
         <div className="flex gap-1">
           <button onClick={save} className="flex-1 text-[11px] bg-navy-700 text-white rounded py-0.5">저장</button>
@@ -87,6 +113,11 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           <span className={`truncate ${entry.confirmed ? 'text-gray-700' : 'text-navy-800'}`}>
             {entry.content}
           </span>
+          {entry.vendor && (
+            <span className="text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+              🏢 {entry.vendor.name}
+            </span>
+          )}
         </div>
       </div>
       <div className="opacity-0 group-hover:opacity-100 transition flex gap-0.5">

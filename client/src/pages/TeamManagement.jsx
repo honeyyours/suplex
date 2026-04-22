@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
 import { vendorsApi } from '../api/vendors';
+import { invalidateVendorCache } from '../components/VendorAutocomplete';
 
 export default function TeamManagement() {
   const { auth } = useAuth();
@@ -467,6 +468,7 @@ function VendorsSection({ isOwner, role }) {
     if (!confirm(`'${v.name}' 협력업체를 삭제할까요?\n관련 일정/지출 기록은 유지됩니다.`)) return;
     try {
       await vendorsApi.remove(v.id);
+      invalidateVendorCache();
       load();
     } catch (e) {
       alert('삭제 실패: ' + (e.response?.data?.error || e.message));
@@ -579,7 +581,7 @@ function VendorsSection({ isOwner, role }) {
         <VendorModal
           existingCategories={categories}
           onClose={() => setShowAdd(false)}
-          onSaved={() => { setShowAdd(false); load(); }}
+          onSaved={() => { setShowAdd(false); invalidateVendorCache(); load(); }}
         />
       )}
       {editing && (
@@ -587,7 +589,7 @@ function VendorsSection({ isOwner, role }) {
           vendor={editing}
           existingCategories={categories}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(); }}
+          onSaved={() => { setEditing(null); invalidateVendorCache(); load(); }}
         />
       )}
     </div>

@@ -35,6 +35,7 @@ router.get('/', async (req, res, next) => {
         material: {
           select: { id: true, spaceGroup: true, itemName: true, kind: true },
         },
+        vendorEntity: { select: { id: true, name: true, category: true } },
       },
     });
     res.json({ orders });
@@ -45,6 +46,7 @@ const createSchema = z.object({
   itemName: z.string().min(1),
   spec: z.string().optional().nullable(),
   vendor: z.string().optional().nullable(),
+  vendorId: z.string().optional().nullable(),
   quantity: z.number().optional().nullable(),
   unit: z.string().optional().nullable(),
   unitPrice: z.number().optional().nullable(),
@@ -54,6 +56,16 @@ const createSchema = z.object({
   expectedDate: z.string().optional().nullable(),
 });
 
+async function resolveVendor(companyId, vendorId, vendorText) {
+  if (!vendorId) return { vendorId: null, vendor: vendorText?.trim() || null };
+  const v = await prisma.vendor.findFirst({
+    where: { id: vendorId, companyId },
+    select: { id: true, name: true },
+  });
+  if (!v) return { vendorId: null, vendor: vendorText?.trim() || null };
+  return { vendorId: v.id, vendor: vendorText?.trim() || v.name };
+}
+
 // POST /api/projects/:projectId/purchase-orders  — 즉흥 발주 (마감재 미연동)
 router.post('/', async (req, res, next) => {
   try {
@@ -62,13 +74,16 @@ router.post('/', async (req, res, next) => {
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
+    const vr = await resolveVendor(req.user.companyId, data.vendorId, data.vendor);
+
     const order = await prisma.purchaseOrder.create({
       data: {
         projectId,
         materialId: null,
         itemName: data.itemName.trim(),
         spec: data.spec?.trim() || null,
-        vendor: data.vendor?.trim() || null,
+        vendor: vr.vendor,
+        vendorId: vr.vendorId,
         quantity: num(data.quantity),
         unit: data.unit?.trim() || null,
         unitPrice: num(data.unitPrice),
@@ -103,7 +118,15 @@ router.patch('/:id', async (req, res, next) => {
     const updateData = {};
     if (data.itemName !== undefined) updateData.itemName = data.itemName.trim();
     if (data.spec !== undefined) updateData.spec = data.spec?.trim() || null;
-    if (data.vendor !== undefined) updateData.vendor = data.vendor?.trim() || null;
+    if (data.vendorId !== undefined || data.vendor !== undefined) {
+      const r = await resolveVendor(
+        req.user.companyId,
+        data.vendorId !== undefined ? data.vendorId : existing.vendorId,
+        data.vendor !== undefined ? data.vendor : existing.vendor,
+      );
+      updateData.vendorId = r.vendorId;
+      updateData.vendor = r.vendor;
+    }
     if (data.quantity !== undefined) updateData.quantity = num(data.quantity);
     if (data.unit !== undefined) updateData.unit = data.unit?.trim() || null;
     if (data.unitPrice !== undefined) updateData.unitPrice = num(data.unitPrice);

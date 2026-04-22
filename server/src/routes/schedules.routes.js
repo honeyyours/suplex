@@ -43,6 +43,7 @@ projectRouter.get('/', async (req, res, next) => {
     const entries = await prisma.dailyScheduleEntry.findMany({
       where,
       orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
+      include: { vendor: { select: { id: true, name: true, category: true } } },
     });
     res.json({ entries });
   } catch (e) {
@@ -98,8 +99,18 @@ const createSchema = z.object({
   date: z.string(),
   content: z.string().min(1),
   category: z.string().optional().nullable(),
+  vendorId: z.string().optional().nullable(),
   orderIndex: z.number().int().optional(),
 });
+
+async function resolveVendorId(companyId, vendorId) {
+  if (!vendorId) return null;
+  const v = await prisma.vendor.findFirst({
+    where: { id: vendorId, companyId },
+    select: { id: true },
+  });
+  return v ? v.id : null;
+}
 
 projectRouter.post('/', async (req, res, next) => {
   try {
@@ -119,12 +130,15 @@ projectRouter.post('/', async (req, res, next) => {
       });
       const nextOrder = data.orderIndex ?? (maxOrder._max.orderIndex ?? -1) + 1;
 
+      const vendorId = await resolveVendorId(req.user.companyId, data.vendorId);
+
       const created = await tx.dailyScheduleEntry.create({
         data: {
           projectId,
           date: dateObj,
           content: data.content.trim(),
           category: data.category?.trim() || null,
+          vendorId,
           orderIndex: nextOrder,
           createdById: req.user.id,
           updatedById: req.user.id,
@@ -160,6 +174,7 @@ projectRouter.post('/', async (req, res, next) => {
 const updateSchema = z.object({
   content: z.string().min(1).optional(),
   category: z.string().optional().nullable(),
+  vendorId: z.string().optional().nullable(),
   orderIndex: z.number().int().optional(),
 });
 
@@ -178,12 +193,17 @@ projectRouter.patch('/:id', async (req, res, next) => {
 
     const userName = await getUserName(req.user.id);
 
+    const vendorIdResolved = data.vendorId !== undefined
+      ? await resolveVendorId(req.user.companyId, data.vendorId)
+      : undefined;
+
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.dailyScheduleEntry.update({
         where: { id },
         data: {
           ...(data.content !== undefined && { content: data.content.trim() }),
           ...(data.category !== undefined && { category: data.category?.trim() || null }),
+          ...(vendorIdResolved !== undefined && { vendorId: vendorIdResolved }),
           ...(data.orderIndex !== undefined && { orderIndex: data.orderIndex }),
           updatedById: req.user.id,
         },

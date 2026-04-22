@@ -141,8 +141,11 @@ model Vendor {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  scheduleTasks ScheduleTask[]
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  scheduleTasks       ScheduleTask[]
+  expenses            Expense[]
+  purchaseOrders      PurchaseOrder[]
+  dailyScheduleEntries DailyScheduleEntry[]
 
   @@index([companyId, category])
   @@map("vendors")
@@ -248,17 +251,20 @@ model DailyScheduleEntry {
   confirmed   Boolean  @default(false)
   confirmedAt DateTime?
   orderIndex  Int      @default(0)
+  vendorId    String?                          // 협력업체 (선택)
   createdById String?
   updatedById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  vendor    Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   createdBy User?   @relation("DailyScheduleCreatedBy", fields: [createdById], references: [id])
   updatedBy User?   @relation("DailyScheduleUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([projectId, date])
   @@index([category])
+  @@index([vendorId])
   @@map("daily_schedule_entries")
 }
 
@@ -808,7 +814,8 @@ model PurchaseOrder {
   // 항목 정보 (마감재에서 스냅샷 또는 사용자 직접 입력)
   itemName      String                                        // 표시명 (예: "거실 · 바닥재")
   spec          String?                                       // 규격/제품명/브랜드 통합
-  vendor        String?                                       // 거래처 (= Material.purchaseSource)
+  vendor        String?                                       // 거래처 텍스트 (= Material.purchaseSource, vendor 미연결시 fallback)
+  vendorId      String?                                       // 협력업체 마스터 연결 (선택)
 
   quantity      Decimal?            @db.Decimal(10, 2)
   unit          String?
@@ -828,12 +835,14 @@ model PurchaseOrder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  material Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
-  expenses Expense[]
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  material      Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  vendorEntity  Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  expenses      Expense[]
 
   @@index([projectId, status])
   @@index([materialId])
+  @@index([vendorId])
   @@map("purchase_orders")
 }
 
@@ -906,7 +915,8 @@ model Expense {
   date            DateTime        @db.Date
   amount          Decimal         @db.Decimal(14, 2)               // 양수만 (type으로 부호 의미 구분)
   type            ExpenseType     @default(EXPENSE)                // 지출/매출/이체
-  vendor          String?                                          // 거래처/받는 사람
+  vendor          String?                                          // 거래처 텍스트 (vendor 미연결 시 fallback, CSV 가져오기 등)
+  vendorId        String?                                          // 협력업체 마스터 연결 (선택)
   accountCodeId   String?                                          // 계정과목 (회사 마스터에서 선택)
   workCategory    String?                                          // 공종 (자유 string, 예: "전기/조명공사")
   description     String?                                          // 내역(적요)
@@ -926,12 +936,14 @@ model Expense {
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
   accountCode   AccountCode?   @relation(fields: [accountCodeId], references: [id], onDelete: SetNull)
+  vendorEntity  Vendor?        @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
   createdBy     User?          @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
 
   @@index([companyId, date])
   @@index([projectId, date])
   @@index([accountCodeId])
+  @@index([vendorId])
   @@index([type])
   @@map("expenses")
 }
