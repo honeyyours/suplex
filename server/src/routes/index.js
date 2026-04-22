@@ -18,6 +18,8 @@ const expenseRoutes = require('./expenses.routes');
 const accountCodeRoutes = require('./accountCodes.routes');
 const expenseRuleRoutes = require('./expenseRules.routes');
 const aiBookkeeperRoutes = require('./aiBookkeeper.routes');
+const teamRoutes = require('./team.routes');
+const vendorRoutes = require('./vendors.routes');
 const backupRoutes = require('./backup.routes');
 
 const router = express.Router();
@@ -52,6 +54,8 @@ router.use('/expenses', expenseRoutes);
 router.use('/account-codes', accountCodeRoutes);
 router.use('/expense-rules', expenseRuleRoutes);
 router.use('/ai-bookkeeper', aiBookkeeperRoutes);
+router.use('/team', teamRoutes);
+router.use('/vendors', vendorRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
