@@ -139,7 +139,7 @@ export default function HomeWeekSchedule() {
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[8px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0 sm:py-0.5 truncate block
+                          relative text-[9px] sm:text-[11px] rounded px-0.5 sm:px-1.5 py-0 sm:py-0.5 truncate block
                           ${projColor} sm:bg-gray-50 sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40' : 'sm:border-navy-400'}
                           hover:brightness-95
@@ -165,7 +165,7 @@ export default function HomeWeekSchedule() {
                   })
                 )}
                 {dayEntries.length > 3 && (
-                  <span className="sm:hidden text-[8px] text-gray-400 text-center leading-none">
+                  <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
                     +{dayEntries.length - 3}
                   </span>
                 )}

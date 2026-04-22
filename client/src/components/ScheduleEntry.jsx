@@ -90,7 +90,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   return (
     <div
       className={`
-        relative group text-[8px] sm:text-xs rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate
+        relative group text-[9px] sm:text-xs rounded px-0.5 sm:px-1.5 py-0 sm:py-1 flex items-center gap-1 truncate
         ${catColor} sm:bg-navy-50/60 sm:text-navy-800
         sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
       `}

@@ -155,7 +155,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                     />
                   ))}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[8px] text-gray-400 text-center leading-none">
+                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
                       +{dayEntries.length - 3}
                     </span>
                   )}
