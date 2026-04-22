@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Schedule from './pages/Schedule';
 import TeamManagement from './pages/TeamManagement';
 import Settings from './pages/Settings';
 
@@ -34,6 +35,7 @@ export default function App() {
         }
       >
         <Route path="/" element={<Dashboard />} />
+        <Route path="/schedule" element={<Schedule />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/ai-bookkeeper" element={<AIBookkeeper />} />
         <Route path="/team" element={<TeamManagement />} />

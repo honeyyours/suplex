@@ -325,14 +325,25 @@ projectRouter.post('/:id/toggle-confirm', async (req, res, next) => {
 });
 
 // ============================================
-// GET /api/schedules?start=YYYY-MM-DD&end=YYYY-MM-DD   (회사 전체)
+// GET /api/schedules?start=YYYY-MM-DD&end=YYYY-MM-DD&status=PLANNED,IN_PROGRESS&projectIds=a,b,c
+// (회사 전체)
 // ============================================
 globalRouter.get('/', async (req, res, next) => {
   try {
-    const { start, end } = req.query;
-    const where = {
-      project: { companyId: req.user.companyId },
-    };
+    const { start, end, status, projectIds } = req.query;
+
+    const projectWhere = { companyId: req.user.companyId };
+    if (status) {
+      const arr = String(status).split(',').map((s) => s.trim()).filter(Boolean);
+      if (arr.length === 1) projectWhere.status = arr[0];
+      else if (arr.length > 1) projectWhere.status = { in: arr };
+    }
+
+    const where = { project: projectWhere };
+    if (projectIds) {
+      const ids = String(projectIds).split(',').map((s) => s.trim()).filter(Boolean);
+      if (ids.length) where.projectId = { in: ids };
+    }
     if (start || end) {
       where.date = {};
       if (start) where.date.gte = new Date(start);
@@ -341,7 +352,8 @@ globalRouter.get('/', async (req, res, next) => {
     const entries = await prisma.dailyScheduleEntry.findMany({
       where,
       include: {
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, status: true } },
+        vendor: { select: { id: true, name: true, category: true } },
       },
       orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
     });

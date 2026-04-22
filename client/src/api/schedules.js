@@ -22,8 +22,12 @@ export const schedulesApi = {
   extractAll: ({ keyword, from } = {}) =>
     api.get('/schedules/extract', { params: { keyword, from } }).then((r) => r.data),
 
-  listAll: ({ start, end } = {}) =>
-    api.get('/schedules', { params: { start, end } }).then((r) => r.data),
+  listAll: ({ start, end, status, projectIds } = {}) => {
+    const params = { start, end };
+    if (status) params.status = Array.isArray(status) ? status.join(',') : status;
+    if (projectIds && projectIds.length) params.projectIds = projectIds.join(',');
+    return api.get('/schedules', { params }).then((r) => r.data);
+  },
 };
 
 export const scheduleChangesApi = {

@@ -2,7 +2,8 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const NAV = [
-  { to: '/', label: '대시보드', exact: true },
+  { to: '/', label: '홈', exact: true },
+  { to: '/schedule', label: '일정' },
   { to: '/projects', label: '프로젝트' },
   { to: '/expenses', label: '지출관리' },
   { to: '/ai-bookkeeper', label: 'AI경리' },

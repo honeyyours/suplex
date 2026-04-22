@@ -16,7 +16,7 @@ const PROJECT_COLORS = [
   'bg-teal-100 text-teal-800',
 ];
 
-export default function AggregateCalendar() {
+export default function AggregateCalendar({ status, projectIds, emptyText } = {}) {
   const [current, setCurrent] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -31,13 +31,26 @@ export default function AggregateCalendar() {
   const rangeStart = grid[0];
   const rangeEnd = grid[grid.length - 1];
 
+  const projectIdsKey = projectIds ? projectIds.join(',') : '';
+
   useEffect(() => {
+    // projectIds가 빈 배열이면 결과는 어차피 0건이므로 호출 스킵
+    if (projectIds && projectIds.length === 0) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     schedulesApi
-      .listAll({ start: toDateKey(rangeStart), end: toDateKey(rangeEnd) })
+      .listAll({
+        start: toDateKey(rangeStart),
+        end: toDateKey(rangeEnd),
+        status,
+        projectIds,
+      })
       .then((r) => setEntries(r.entries || []))
       .finally(() => setLoading(false));
-  }, [current]); // eslint-disable-line
+  }, [current, status, projectIdsKey]); // eslint-disable-line
 
   // 프로젝트별 색상 매핑 (일관된 순서)
   const projectColor = useMemo(() => {
