@@ -16,7 +16,7 @@ const PROJECT_COLORS = [
   'bg-teal-100 text-teal-800',
 ];
 
-export default function AggregateCalendar({ status, projectIds, emptyText } = {}) {
+export default function AggregateCalendar({ status, projectIds, emptyText, headerRight } = {}) {
   const [current, setCurrent] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -78,8 +78,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText } = {}
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => setCurrent(addMonths(current, -1))}
             className="px-3 py-1 border rounded hover:bg-gray-50"
@@ -95,8 +95,13 @@ export default function AggregateCalendar({ status, projectIds, emptyText } = {}
             onClick={() => setCurrent(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
             className="ml-2 text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
           >오늘</button>
+          {loading && <span className="text-xs text-gray-400 ml-2">불러오는 중...</span>}
         </div>
-        {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
+        {headerRight && (
+          <div className="flex items-center gap-1 min-w-0 flex-1 justify-end overflow-x-auto">
+            {headerRight}
+          </div>
+        )}
       </div>
 
       <div className="border rounded-lg overflow-hidden bg-white">
