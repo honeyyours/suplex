@@ -98,7 +98,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
           {loading && <span className="text-xs text-gray-400 ml-2">불러오는 중...</span>}
         </div>
         {headerRight && (
-          <div className="flex items-center gap-1 min-w-0 flex-1 justify-end overflow-x-auto">
+          <div className="hidden sm:flex items-center gap-1 min-w-0 flex-1 justify-end overflow-x-auto">
             {headerRight}
           </div>
         )}
@@ -145,7 +145,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0.5 truncate flex items-center gap-1
+                          relative text-[8px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:bg-white sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95
@@ -168,7 +168,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                     );
                   })}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[10px] text-gray-400 text-center leading-none">
+                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
                       +{dayEntries.length - 3}
                     </span>
                   )}

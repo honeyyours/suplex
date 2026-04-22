@@ -101,7 +101,47 @@ function FilterableProjectCalendar({ status }) {
     </>
   );
 
-  return <AggregateCalendar projectIds={filterIds} headerRight={chips} />;
+  return (
+    <>
+      <div className="sm:hidden border-b mb-2 overflow-x-auto">
+        <div className="flex">
+          <MobileProjectTab
+            active={selectedId === 'all'}
+            onClick={() => setSelectedId('all')}
+          >
+            전체 ({projects.length})
+          </MobileProjectTab>
+          {projects.map((p) => (
+            <MobileProjectTab
+              key={p.id}
+              active={selectedId === p.id}
+              onClick={() => setSelectedId(p.id)}
+              title={p.name}
+            >
+              {p.name}
+            </MobileProjectTab>
+          ))}
+        </div>
+      </div>
+      <AggregateCalendar projectIds={filterIds} headerRight={chips} />
+    </>
+  );
+}
+
+function MobileProjectTab({ active, onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`px-3 py-1.5 text-xs whitespace-nowrap border-b-2 flex-shrink-0 max-w-[160px] truncate ${
+        active
+          ? 'border-navy-700 text-navy-800 font-medium'
+          : 'border-transparent text-gray-500'
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 function ChipButton({ active, onClick, title, children }) {

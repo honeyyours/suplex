@@ -35,13 +35,13 @@ export default function ProjectDetail() {
   const weeks = weeksBetween(project.startDate, project.expectedEndDate);
 
   const tab = ({ isActive }) =>
-    `px-4 py-2 text-sm font-medium border-b-2 ${
+    `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ${
       isActive ? 'border-navy-700 text-navy-800' : 'border-transparent text-gray-500 hover:text-navy-700'
     }`;
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border p-5">
+      <div className="bg-white rounded-xl border p-3 sm:p-5">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -108,7 +108,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
         <div className="flex border-b px-2 overflow-x-auto">
           <NavLink to="quotes" className={tab}>견적</NavLink>
           <NavLink to="schedule" className={tab}>공정 일정</NavLink>
@@ -117,7 +117,7 @@ export default function ProjectDetail() {
           <NavLink to="reports" className={tab}>현장 보고</NavLink>
           <NavLink to="expenses" className={tab}>지출</NavLink>
         </div>
-        <div className="p-5">
+        <div className="p-1 sm:p-5">
           <Outlet context={{ project }} />
         </div>
       </div>
