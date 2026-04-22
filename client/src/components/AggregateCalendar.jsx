@@ -137,7 +137,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                     {date.getDate()}
                   </span>
                 </div>
-                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
+                <div className="px-0 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {
                     const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
                     return (
@@ -145,7 +145,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[11px] rounded px-0.5 sm:px-1.5 py-0 sm:py-0.5 truncate flex items-center gap-1
+                          relative text-[9px] sm:text-[11px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0 sm:py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:bg-white sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95
