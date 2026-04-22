@@ -132,36 +132,37 @@ export default function HomeWeekSchedule() {
                 {dayEntries.length === 0 ? (
                   <div className="text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
-                  dayEntries.map((e) => (
-                    <Link
-                      key={e.id}
-                      to={`/projects/${e.project?.id}/schedule`}
-                      className={`text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0 sm:py-0.5 border-l-2 truncate block ${
-                        e.confirmed ? 'border-emerald-500 bg-emerald-50/40' : 'border-navy-400 bg-gray-50'
-                      } hover:brightness-95`}
-                      title={`${e.project?.name || ''} · ${e.content}`}
-                    >
-                      {e.project?.name && (
-                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${
-                          projectColor[e.project.id] || 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {e.project.name}
-                        </span>
-                      )}
-                      {/* 모바일: 프로젝트 색상 점 */}
-                      {e.project?.id && (
-                        <span className={`sm:hidden inline-block w-1.5 h-1.5 rounded-full mr-0.5 align-middle ${
-                          (projectColor[e.project.id] || 'bg-gray-300').split(' ')[0]
-                        }`}></span>
-                      )}
-                      {e.category && (
-                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
-                          {e.category}
-                        </span>
-                      )}
-                      <span className="text-navy-800">{e.content}</span>
-                    </Link>
-                  ))
+                  dayEntries.map((e) => {
+                    const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
+                    return (
+                      <Link
+                        key={e.id}
+                        to={`/projects/${e.project?.id}/schedule`}
+                        className={`
+                          relative text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0 sm:py-0.5 truncate block
+                          ${projColor} sm:bg-gray-50 sm:text-navy-800
+                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40' : 'sm:border-navy-400'}
+                          hover:brightness-95
+                        `}
+                        title={`${e.project?.name || ''} · ${e.content}`}
+                      >
+                        {e.project?.name && (
+                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${projColor}`}>
+                            {e.project.name}
+                          </span>
+                        )}
+                        {e.category && (
+                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
+                            {e.category}
+                          </span>
+                        )}
+                        <span className="truncate">{e.content}</span>
+                        {e.confirmed && (
+                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                        )}
+                      </Link>
+                    );
+                  })
                 )}
                 {dayEntries.length > 3 && (
                   <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">

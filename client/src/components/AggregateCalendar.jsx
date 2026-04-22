@@ -145,7 +145,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          text-[10px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0.5 truncate flex items-center gap-1
+                          relative text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:bg-white sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95
@@ -161,7 +161,9 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                           </span>
                         )}
                         <span className="truncate flex-1">{e.content}</span>
-                        {e.confirmed && <span className="text-emerald-600 flex-shrink-0 text-[10px] sm:text-xs font-bold">✓</span>}
+                        {e.confirmed && (
+                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                        )}
                       </Link>
                     );
                   })}

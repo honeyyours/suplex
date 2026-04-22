@@ -90,7 +90,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   return (
     <div
       className={`
-        group text-[10px] sm:text-xs rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate
+        relative group text-[9px] sm:text-xs rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate
         ${catColor} sm:bg-navy-50/60 sm:text-navy-800
         sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
       `}
@@ -124,7 +124,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
         </div>
       </div>
       {entry.confirmed && (
-        <span className="sm:hidden text-emerald-600 text-[10px] flex-shrink-0 font-bold">✓</span>
+        <span className="sm:hidden absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
       )}
       <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition gap-0.5">
         <button
