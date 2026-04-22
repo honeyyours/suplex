@@ -104,11 +104,11 @@ export default function ScheduleCalendar({ projectId, project }) {
       {err && <div className="mb-3 text-sm text-red-600">{err}</div>}
 
       <div className="border rounded-lg overflow-hidden bg-white">
-        <div className="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b sticky top-0">
+        <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div
               key={d}
-              className={`px-2 py-2 text-center ${
+              className={`px-1 sm:px-2 py-1 sm:py-2 text-center ${
                 i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'
               }`}
             >{d}</div>
@@ -125,26 +125,26 @@ export default function ScheduleCalendar({ projectId, project }) {
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-28 flex flex-col ${
+                className={`border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden ${
                   inRange ? 'bg-white' : 'bg-gray-100/70'
                 }`}
               >
-                <div className={`flex items-center justify-between px-1.5 py-1 text-xs ${
+                <div className={`flex items-center justify-between px-1 py-0.5 sm:px-1.5 sm:py-1 text-[10px] sm:text-xs flex-shrink-0 ${
                   !inRange ? 'text-gray-300' :
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
-                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5' : ''}`}>
+                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}`}>
                     {date.getDate()}
                   </span>
                   {inRange && (
                     <button
                       onClick={() => setAddingOn(addingOn === key ? null : key)}
-                      className="text-gray-400 hover:text-navy-700 text-base leading-none"
+                      className="hidden sm:inline-block text-gray-400 hover:text-navy-700 text-base leading-none"
                       title="일정 추가"
                     >+</button>
                   )}
                 </div>
-                <div className="px-1 pb-1 flex flex-col gap-0.5 flex-1">
+                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>div:nth-child(n+4)]:hidden sm:[&>div:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => (
                     <ScheduleEntry
                       key={e.id}
@@ -154,6 +154,11 @@ export default function ScheduleCalendar({ projectId, project }) {
                       onToggleConfirm={toggleConfirm}
                     />
                   ))}
+                  {dayEntries.length > 3 && (
+                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
+                      +{dayEntries.length - 3}
+                    </span>
+                  )}
                   {addingOn === key && (
                     <ScheduleAddForm
                       onSubmit={(payload) => addEntry(key, payload)}

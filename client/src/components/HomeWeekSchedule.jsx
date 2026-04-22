@@ -105,7 +105,7 @@ export default function HomeWeekSchedule() {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {days.map((d, i) => {
           const key = toDateKey(d);
           const dayEntries = byDate[key] || [];
@@ -116,40 +116,46 @@ export default function HomeWeekSchedule() {
           return (
             <div
               key={key}
-              className={`border rounded-lg min-h-[120px] flex flex-col ${
+              className={`border rounded-md sm:rounded-lg min-h-[80px] sm:min-h-[120px] flex flex-col overflow-hidden ${
                 isToday ? 'border-navy-500 bg-navy-50/40' : 'border-gray-200 bg-white'
               }`}
             >
-              <div className={`px-2 py-1.5 text-xs font-semibold border-b flex items-center justify-between ${
+              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs font-semibold border-b flex items-center justify-between ${
                 isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
               }`}>
                 <span>{DAY_LABELS[i]}</span>
-                <span className={isToday ? 'bg-navy-700 text-white rounded-full px-1.5' : ''}>
+                <span className={isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}>
                   {d.getDate()}
                 </span>
               </div>
-              <div className="p-1 flex flex-col gap-1 flex-1">
+              <div className="p-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
                 {dayEntries.length === 0 ? (
-                  <div className="text-[10px] text-gray-300 text-center py-2">—</div>
+                  <div className="text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
-                  dayEntries.slice(0, 4).map((e) => (
+                  dayEntries.map((e) => (
                     <Link
                       key={e.id}
                       to={`/projects/${e.project?.id}/schedule`}
-                      className={`text-[11px] rounded px-1.5 py-0.5 border-l-2 truncate block ${
+                      className={`text-[9px] sm:text-[11px] rounded px-1 sm:px-1.5 py-0 sm:py-0.5 border-l-2 truncate block ${
                         e.confirmed ? 'border-emerald-500 bg-emerald-50/40' : 'border-navy-400 bg-gray-50'
                       } hover:brightness-95`}
                       title={`${e.project?.name || ''} · ${e.content}`}
                     >
                       {e.project?.name && (
-                        <span className={`text-[10px] px-1 py-0.5 rounded mr-1 ${
+                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${
                           projectColor[e.project.id] || 'bg-gray-100 text-gray-700'
                         }`}>
                           {e.project.name}
                         </span>
                       )}
+                      {/* 모바일: 프로젝트 색상 점 */}
+                      {e.project?.id && (
+                        <span className={`sm:hidden inline-block w-1.5 h-1.5 rounded-full mr-0.5 align-middle ${
+                          (projectColor[e.project.id] || 'bg-gray-300').split(' ')[0]
+                        }`}></span>
+                      )}
                       {e.category && (
-                        <span className={`text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
+                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
                           {e.category}
                         </span>
                       )}
@@ -157,10 +163,15 @@ export default function HomeWeekSchedule() {
                     </Link>
                   ))
                 )}
+                {dayEntries.length > 3 && (
+                  <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
+                    +{dayEntries.length - 3}
+                  </span>
+                )}
                 {dayEntries.length > 4 && (
                   <Link
                     to="/schedule"
-                    className="text-[10px] text-gray-500 text-center hover:text-navy-700"
+                    className="hidden sm:block text-[10px] text-gray-500 text-center hover:text-navy-700"
                   >
                     +{dayEntries.length - 4}건 더
                   </Link>

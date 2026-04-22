@@ -88,14 +88,14 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
 
   return (
     <div
-      className={`group text-xs rounded px-1.5 py-1 border-l-2 flex items-start gap-1 ${
+      className={`group text-[9px] sm:text-xs rounded px-1 sm:px-1.5 py-0 sm:py-1 border-l-2 flex items-start gap-0.5 sm:gap-1 truncate ${
         entry.confirmed ? 'border-emerald-500 bg-emerald-50' : 'border-navy-400 bg-navy-50/60'
       }`}
     >
       <button
         onClick={() => onToggleConfirm(entry.id)}
         title={entry.confirmed ? '확정 해제' : '확정'}
-        className={`mt-0.5 w-3.5 h-3.5 rounded-sm flex items-center justify-center flex-shrink-0 border ${
+        className={`hidden sm:flex mt-0.5 w-3.5 h-3.5 rounded-sm items-center justify-center flex-shrink-0 border ${
           entry.confirmed
             ? 'bg-emerald-500 border-emerald-500 text-white'
             : 'bg-white border-gray-300 hover:border-emerald-500'
@@ -104,9 +104,9 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
         {entry.confirmed && <span className="text-[10px] leading-none">✓</span>}
       </button>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
           {entry.category && (
-            <span className={`text-[10px] px-1 py-0.5 rounded ${categoryClass(entry.category)}`}>
+            <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${categoryClass(entry.category)}`}>
               {entry.category}
             </span>
           )}
@@ -114,13 +114,17 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
             {entry.content}
           </span>
           {entry.vendor && (
-            <span className="text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+            <span className="hidden sm:inline-block text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
               🏢 {entry.vendor.name}
             </span>
           )}
         </div>
       </div>
-      <div className="opacity-0 group-hover:opacity-100 transition flex gap-0.5">
+      {/* 모바일에서 ✓는 우측에 작게 */}
+      {entry.confirmed && (
+        <span className="sm:hidden text-emerald-500 text-[9px] flex-shrink-0">✓</span>
+      )}
+      <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition gap-0.5">
         <button
           onClick={() => setEditing(true)}
           className="text-[10px] text-gray-500 hover:text-navy-700 px-1"
