@@ -38,7 +38,6 @@ export default function PhotoTimelineTab({ projectId }) {
           {[
             { k: '', l: '전체' },
             { k: 'REPORT', l: '작업 보고' },
-            { k: 'ISSUE', l: '이슈' },
             { k: 'MATERIAL_REQUEST', l: '자재 요청' },
           ].map((t) => (
             <button

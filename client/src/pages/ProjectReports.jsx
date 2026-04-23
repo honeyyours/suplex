@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReportTab from '../components/reports/ReportTab';
-import IssueTab from '../components/reports/IssueTab';
 import MaterialRequestTab from '../components/reports/MaterialRequestTab';
 import PhotoTimelineTab from '../components/reports/PhotoTimelineTab';
 
 const TABS = [
   { key: 'report',   label: '오늘 작업 보고' },
-  { key: 'issue',    label: '이슈' },
   { key: 'request',  label: '자재 발주 요청' },
   { key: 'timeline', label: '사진 타임라인' },
 ];
@@ -35,7 +33,6 @@ export default function ProjectReports() {
       </div>
 
       {tab === 'report'   && <ReportTab projectId={id} />}
-      {tab === 'issue'    && <IssueTab projectId={id} />}
       {tab === 'request'  && <MaterialRequestTab projectId={id} />}
       {tab === 'timeline' && <PhotoTimelineTab projectId={id} />}
     </div>

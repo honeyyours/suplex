@@ -70,7 +70,6 @@ model User {
   materialChanges  MaterialHistory[]
   scheduleTasks    ScheduleTask[]   @relation("TaskAssignee")
   dailyReports     DailyReport[]
-  issues           Issue[]
 
   createdChecklists      ProjectChecklist[]   @relation("ChecklistCreatedBy")
   completedChecklists    ProjectChecklist[]   @relation("ChecklistCompletedBy")
@@ -192,7 +191,6 @@ model Project {
   dailyScheduleEntries DailyScheduleEntry[]
   scheduleChanges      ScheduleChange[]
   dailyReports         DailyReport[]
-  issues               Issue[]
   measurements         Measurement[]
   notifications        Notification[]
   photos               ProjectPhoto[]
@@ -490,47 +488,6 @@ model DailyReport {
   @@map("daily_reports")
 }
 
-enum IssueUrgency {
-  NORMAL    // 일반
-  WARNING   // 주의
-  CRITICAL  // 긴급
-}
-
-enum IssueStatus {
-  OPEN
-  RESOLVED
-}
-
-enum IssueType {
-  MATERIAL_DEFECT    // 자재불량
-  DIMENSION_ERROR    // 치수오류
-  CUSTOMER_CHANGE    // 고객변경
-  STRUCTURAL         // 구조문제
-  WEATHER_DELAY      // 날씨지연
-  OTHER              // 기타
-}
-
-model Issue {
-  id          String       @id @default(cuid())
-  projectId   String
-  authorId    String
-  title       String
-  type        IssueType    @default(OTHER)
-  urgency     IssueUrgency @default(NORMAL)
-  status      IssueStatus  @default(OPEN)
-  memo        String?
-  notifyOwner Boolean      @default(true)    // 대표 알림 플래그 (카카오 연동 시 발송)
-  createdAt   DateTime     @default(now())
-  resolvedAt  DateTime?
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  author  User    @relation(fields: [authorId], references: [id])
-  // photos: ProjectPhoto(source=ISSUE, sourceId=id)
-
-  @@index([projectId, status])
-  @@map("issues")
-}
-
 // ============================================
 // 6-2. 자재 발주 요청
 // ============================================
@@ -572,7 +529,6 @@ model MaterialRequest {
 
 enum PhotoSource {
   REPORT
-  ISSUE
   MATERIAL_REQUEST
 }
 
@@ -580,7 +536,7 @@ model ProjectPhoto {
   id           String      @id @default(cuid())
   projectId    String
   source       PhotoSource
-  sourceId     String                  // DailyReport / Issue / MaterialRequest id
+  sourceId     String                  // DailyReport / MaterialRequest id
   url          String                  // Cloudinary URL (원본)
   thumbnailUrl String?                 // Cloudinary 변환 URL (썸네일)
   caption      String?

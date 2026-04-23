@@ -7,7 +7,6 @@ const checklists = require('./checklists.routes');
 const materialRoutes = require('./materials.routes');
 const materialTemplateRoutes = require('./materialTemplates.routes');
 const reportRoutes = require('./reports.routes');
-const issueRoutes = require('./issues.routes');
 const materialRequestRoutes = require('./materialRequests.routes');
 const photoRoutes = require('./photos.routes');
 const quoteRoutes = require('./quotes.routes');
@@ -38,7 +37,6 @@ router.use('/projects/:projectId/schedule-changes', scheduleChanges.projectRoute
 router.use('/projects/:projectId/checklists', checklists.router);
 router.use('/projects/:projectId/materials', materialRoutes);
 router.use('/projects/:projectId/reports', reportRoutes);
-router.use('/projects/:projectId/issues', issueRoutes);
 router.use('/projects/:projectId/material-requests', materialRequestRoutes);
 router.use('/projects/:projectId/photos', photoRoutes);
 router.use('/projects/:projectId/quotes', quoteRoutes);
