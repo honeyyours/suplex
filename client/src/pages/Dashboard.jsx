@@ -1,6 +1,4 @@
-import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import BackupMenu from '../components/BackupMenu';
 import HomeWeekSchedule from '../components/HomeWeekSchedule';
 import HomeProjectCards from '../components/HomeProjectCards';
 import HomeActivityFeed from '../components/HomeActivityFeed';
@@ -12,23 +10,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-navy-800">
-            {greeting}{userName && `, ${userName}님`} 👋
-          </h1>
-          <div className="text-sm text-gray-500 mt-1">
-            {formatToday()}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <BackupMenu />
-          <Link
-            to="/projects/new"
-            className="bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2 rounded-md"
-          >
-            + 새 프로젝트
-          </Link>
+      <div>
+        <h1 className="text-2xl font-bold text-navy-800">
+          {greeting}{userName && `, ${userName}님`} 👋
+        </h1>
+        <div className="text-sm text-gray-500 mt-1">
+          {formatToday()}
         </div>
       </div>
 
