@@ -3,16 +3,11 @@ import { Link } from 'react-router-dom';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, addDays, categoryClass } from '../utils/date';
 
-const PROJECT_COLORS = [
-  'bg-blue-100 text-blue-800',
-  'bg-pink-100 text-pink-800',
-  'bg-emerald-100 text-emerald-800',
-  'bg-violet-100 text-violet-800',
-  'bg-indigo-100 text-indigo-800',
-  'bg-red-100 text-red-800',
-  'bg-yellow-100 text-yellow-800',
-  'bg-teal-100 text-teal-800',
-];
+const STATUS_COLORS = {
+  IN_PROGRESS: 'bg-sky-100 text-sky-800',
+  PLANNED: 'bg-amber-100 text-amber-800',
+};
+const DEFAULT_COLOR = 'bg-gray-100 text-gray-700';
 
 // 오늘이 포함된 월요일 0시 반환
 function getMonday(date) {
@@ -45,18 +40,6 @@ export default function HomeWeekSchedule() {
       .finally(() => setLoading(false));
   }, [weekStart]); // eslint-disable-line
 
-  const projectColor = useMemo(() => {
-    const map = {};
-    let i = 0;
-    entries.forEach((e) => {
-      if (e.project?.id && !map[e.project.id]) {
-        map[e.project.id] = PROJECT_COLORS[i % PROJECT_COLORS.length];
-        i++;
-      }
-    });
-    return map;
-  }, [entries]);
-
   const byDate = useMemo(() => {
     const map = {};
     entries.forEach((e) => {
@@ -73,8 +56,12 @@ export default function HomeWeekSchedule() {
   return (
     <section className="bg-white border-y sm:border sm:rounded-xl p-2 sm:p-5 -mx-2 sm:mx-0">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold text-navy-800">이번주 일정</h2>
+          <div className="flex items-center gap-2 text-[10px] text-gray-600">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-300"></span>현장</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-300"></span>견적</span>
+          </div>
           {loading && <span className="text-xs text-gray-400">로딩 중...</span>}
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +120,7 @@ export default function HomeWeekSchedule() {
                   <div className="text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
                   dayEntries.map((e) => {
-                    const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
+                    const projColor = STATUS_COLORS[e.project?.status] || DEFAULT_COLOR;
                     return (
                       <Link
                         key={e.id}

@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { checklistsApi, CATEGORY_META, CATEGORY_KEYS } from '../api/checklists';
 import { relativeTime } from '../utils/date';
 
-export default function ProjectChecklist() {
-  const { id } = useParams();
+export default function ProjectChecklist({ projectId } = {}) {
+  const params = useParams();
+  const id = projectId || params.id;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');

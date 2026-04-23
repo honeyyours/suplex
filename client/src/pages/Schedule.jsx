@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectsApi } from '../api/projects';
 import AggregateCalendar from '../components/AggregateCalendar';
+import ProjectChecklist from './ProjectChecklist';
 
 const SUBTABS = [
   { key: 'site',    label: '현장 일정',  status: 'IN_PROGRESS' },
@@ -16,9 +17,6 @@ export default function Schedule() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold text-navy-800">일정</h1>
-        <div className="text-sm text-gray-500">
-          현장팀이 가장 많이 보는 화면입니다
-        </div>
       </div>
 
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
@@ -101,6 +99,8 @@ function FilterableProjectCalendar({ status }) {
     </>
   );
 
+  const selectedProject = selectedId !== 'all' ? projects.find((p) => p.id === selectedId) : null;
+
   return (
     <>
       <div className="sm:hidden border-b mb-2 overflow-x-auto">
@@ -124,6 +124,14 @@ function FilterableProjectCalendar({ status }) {
         </div>
       </div>
       <AggregateCalendar projectIds={filterIds} headerRight={chips} />
+      {selectedProject && (
+        <div className="mt-6 pt-4 border-t">
+          <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
+            ✅ {selectedProject.name} 체크리스트
+          </h3>
+          <ProjectChecklist projectId={selectedProject.id} />
+        </div>
+      )}
     </>
   );
 }
