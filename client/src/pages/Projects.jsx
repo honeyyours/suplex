@@ -122,7 +122,32 @@ export default function Projects() {
         </div>
       )}
 
-      {filtered.length > 0 && (
+      {filtered.length > 0 && statusFilter === 'ALL' && (
+        <div className="space-y-5">
+          {STATUS_ORDER.map((status) => {
+            const group = filtered.filter((p) => p.status === status);
+            if (group.length === 0) return null;
+            const meta = STATUS_META[status];
+            return (
+              <section key={status}>
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className={`text-xs px-2 py-0.5 rounded ${meta.color}`}>
+                    {meta.label}
+                  </span>
+                  <span className="text-sm text-gray-500">({group.length})</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {group.map((p) => (
+                    <ProjectCard key={p.id} project={p} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      {filtered.length > 0 && statusFilter !== 'ALL' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((p) => (
             <ProjectCard key={p.id} project={p} />
