@@ -128,7 +128,7 @@ export default function HomeWeekSchedule() {
                   {d.getDate()}
                 </span>
               </div>
-              <div className="px-0 py-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
+              <div className="px-0.5 py-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
                 {dayEntries.length === 0 ? (
                   <div className="text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
@@ -139,7 +139,7 @@ export default function HomeWeekSchedule() {
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[11px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0 sm:py-0.5 truncate block
+                          relative text-[9px] sm:text-[11px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate block
                           ${projColor} sm:bg-gray-50 sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40' : 'sm:border-navy-400'}
                           hover:brightness-95

@@ -144,7 +144,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                     >+</button>
                   )}
                 </div>
-                <div className="px-0 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>div:nth-child(n+4)]:hidden sm:[&>div:nth-child(n+4)]:flex">
+                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>div:nth-child(n+4)]:hidden sm:[&>div:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => (
                     <ScheduleEntry
                       key={e.id}
