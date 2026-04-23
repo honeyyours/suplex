@@ -5,10 +5,12 @@ import { schedulesApi } from '../api/schedules';
 import { toDateKey, rangeGrid, formatDateDot } from '../utils/date';
 import ScheduleEntry from './ScheduleEntry';
 import InlineScheduleInput from './InlineScheduleInput';
+import MobileScheduleSheet from './MobileScheduleSheet';
 
 export default function ScheduleCalendar({ projectId, project }) {
   const queryClient = useQueryClient();
   const [activeCellKey, setActiveCellKey] = useState(null);
+  const [mobileSheetKey, setMobileSheetKey] = useState(null);
 
   const projStartKey = project?.startDate ? project.startDate.slice(0, 10) : null;
   const projEndKey = project?.expectedEndDate ? project.expectedEndDate.slice(0, 10) : null;
@@ -54,21 +56,32 @@ export default function ScheduleCalendar({ projectId, project }) {
       console.error('quickAdd failed:', e);
     });
   }
-  const goToCell = useCallback((currentKey, direction) => {
+  function findNeighborKey(currentKey, direction) {
     const idx = grid.findIndex((d) => toDateKey(d) === currentKey);
-    if (idx < 0) return;
+    if (idx < 0) return null;
     const step = direction === 'next' ? 1 : -1;
     let target = idx + step;
     while (target >= 0 && target < grid.length) {
       const k = toDateKey(grid[target]);
-      if (k >= projStartKey && k <= projEndKey) {
-        setActiveCellKey(k);
-        return;
-      }
+      if (k >= projStartKey && k <= projEndKey) return k;
       target += step;
     }
-    setActiveCellKey(null);
+    return null;
+  }
+  const goToCell = useCallback((currentKey, direction) => {
+    const k = findNeighborKey(currentKey, direction);
+    setActiveCellKey(k);
   }, [grid, projStartKey, projEndKey]);
+
+  function handleCellClick(e, key, inRange) {
+    if (!inRange) return;
+    if (e.target.closest('button, a, input, select, textarea')) return;
+    if (window.innerWidth < 640) {
+      setMobileSheetKey(key);
+    } else {
+      setActiveCellKey(key);
+    }
+  }
 
   async function updateEntry(id, payload) {
     await schedulesApi.update(projectId, id, payload);
@@ -124,6 +137,23 @@ export default function ScheduleCalendar({ projectId, project }) {
 
       {err && <div className="mb-3 text-sm text-red-600 px-2 sm:px-0">{err}</div>}
 
+      {mobileSheetKey && (
+        <MobileScheduleSheet
+          dateKey={mobileSheetKey}
+          entries={byDate[mobileSheetKey] || []}
+          onClose={() => setMobileSheetKey(null)}
+          onAdd={(payload) => addEntry(mobileSheetKey, payload)}
+          onDelete={(id) => deleteEntry(id)}
+          onToggleConfirm={(id) => toggleConfirm(id)}
+          onNavigate={(direction) => {
+            const k = findNeighborKey(mobileSheetKey, direction);
+            if (k) setMobileSheetKey(k);
+          }}
+          canPrev={!!findNeighborKey(mobileSheetKey, 'prev')}
+          canNext={!!findNeighborKey(mobileSheetKey, 'next')}
+        />
+      )}
+
       <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
         <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
@@ -147,8 +177,9 @@ export default function ScheduleCalendar({ projectId, project }) {
             return (
               <div
                 key={key}
-                className={`group border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden ${
-                  inRange ? 'bg-white' : 'bg-gray-100/70'
+                onClick={(e) => handleCellClick(e, key, inRange)}
+                className={`group border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
+                  inRange ? 'bg-white' : 'bg-gray-100/70 cursor-default'
                 }`}
               >
                 <div className={`flex items-center justify-between px-1 py-0.5 sm:px-1.5 sm:py-1 text-[10px] sm:text-xs flex-shrink-0 ${
