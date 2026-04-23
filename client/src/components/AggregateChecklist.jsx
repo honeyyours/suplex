@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi, CATEGORY_META } from '../api/checklists';
 import { relativeTime } from '../utils/date';
 
-export default function AggregateChecklist() {
+export default function AggregateChecklist({ projectIds }) {
   const queryClient = useQueryClient();
   const [filterProject, setFilterProject] = useState('');
 
@@ -12,7 +12,12 @@ export default function AggregateChecklist() {
     queryKey: ['checklists', 'all'],
     queryFn: () => checklistsApi.listAll(),
   });
-  const items = data?.items || [];
+  const allItems = data?.items || [];
+  const items = useMemo(() => {
+    if (!projectIds) return allItems;
+    const set = new Set(projectIds);
+    return allItems.filter((i) => i.project && set.has(i.project.id));
+  }, [allItems, projectIds]);
   const loading = isLoading;
 
   async function toggle(projectId, itemId) {

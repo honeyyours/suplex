@@ -133,14 +133,23 @@ function FilterableProjectCalendar({ status }) {
         </div>
       </div>
       <AggregateCalendar projectIds={filterIds} headerRight={chips} />
-      {selectedProject && (
-        <div className="mt-6 pt-4 border-t">
-          <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
-            ✅ {selectedProject.name} 체크리스트
-          </h3>
-          <ProjectChecklist projectId={selectedProject.id} />
-        </div>
-      )}
+      <div className="mt-6 pt-4 border-t">
+        {selectedProject ? (
+          <>
+            <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
+              ✅ {selectedProject.name} 체크리스트
+            </h3>
+            <ProjectChecklist projectId={selectedProject.id} />
+          </>
+        ) : (
+          <>
+            <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
+              ✅ 체크리스트
+            </h3>
+            <AggregateChecklist projectIds={allIds} />
+          </>
+        )}
+      </div>
     </>
   );
 }
