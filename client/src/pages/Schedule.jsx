@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import AggregateCalendar from '../components/AggregateCalendar';
 import AggregateChecklist from '../components/AggregateChecklist';
+import ScheduleCalendar from '../components/ScheduleCalendar';
+import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectChecklist from './ProjectChecklist';
 
 const SUBTABS = [
@@ -132,7 +134,17 @@ function FilterableProjectCalendar({ status }) {
           ))}
         </div>
       </div>
-      <AggregateCalendar projectIds={filterIds} headerRight={chips} />
+      {selectedProject ? (
+        <div className="space-y-4">
+          <div className="hidden sm:flex items-center gap-1 overflow-x-auto px-2 sm:px-0">
+            {chips}
+          </div>
+          <ProjectInfoCard project={selectedProject} compact />
+          <ScheduleCalendar projectId={selectedProject.id} project={selectedProject} />
+        </div>
+      ) : (
+        <AggregateCalendar projectIds={filterIds} headerRight={chips} />
+      )}
       <div className="mt-6 pt-4 border-t">
         {selectedProject ? (
           <>
