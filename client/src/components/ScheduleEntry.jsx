@@ -1,87 +1,91 @@
 import { useState, useEffect, useRef } from 'react';
-import { categoryClass, CATEGORIES } from '../utils/date';
+import { categoryClass } from '../utils/date';
 import VendorAutocomplete from './VendorAutocomplete';
 
-export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm }) {
+export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm, showVendorButton = false }) {
   const [editing, setEditing] = useState(false);
+  const [editingVendor, setEditingVendor] = useState(false);
   const [content, setContent] = useState(entry.content);
-  const [category, setCategory] = useState(entry.category || '');
-  const [vendor, setVendor] = useState({
-    vendorId: entry.vendor?.id || entry.vendorId || null,
-    vendorName: entry.vendor?.name || '',
-  });
   const inputRef = useRef(null);
+  const handledRef = useRef(false);
 
   useEffect(() => {
-    if (editing) inputRef.current?.focus();
+    if (editing) {
+      handledRef.current = false;
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
   }, [editing]);
 
+  // 외부에서 entry.content가 바뀌면 동기화 (편집 중이 아닐 때만)
+  useEffect(() => {
+    if (!editing) setContent(entry.content);
+  }, [entry.content, editing]);
+
   async function save() {
+    if (handledRef.current) return;
+    handledRef.current = true;
     const trimmed = content.trim();
-    if (!trimmed) return;
-    const newVendorId = vendor.vendorId || null;
-    const oldVendorId = entry.vendor?.id || entry.vendorId || null;
-    if (
-      trimmed === entry.content &&
-      (category || null) === (entry.category || null) &&
-      newVendorId === oldVendorId
-    ) {
+    if (!trimmed) {
+      setContent(entry.content);
       setEditing(false);
       return;
     }
-    await onUpdate(entry.id, {
-      content: trimmed,
-      category: category || null,
-      vendorId: newVendorId,
-    });
+    if (trimmed !== entry.content) {
+      await onUpdate(entry.id, { content: trimmed });
+    }
     setEditing(false);
   }
 
   function cancel() {
+    handledRef.current = true;
     setContent(entry.content);
-    setCategory(entry.category || '');
-    setVendor({
-      vendorId: entry.vendor?.id || entry.vendorId || null,
-      vendorName: entry.vendor?.name || '',
-    });
     setEditing(false);
   }
 
   if (editing) {
     return (
-      <div className="border-2 border-navy-500 rounded bg-white p-1.5 space-y-1">
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full text-[11px] border rounded px-1 py-0.5 bg-white"
-        >
-          <option value="">(공종 없음)</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <textarea
-          ref={inputRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') cancel();
-            else if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); save(); }
-          }}
-          rows={2}
-          className="w-full text-xs border rounded px-1 py-0.5 resize-none"
-        />
-        <VendorAutocomplete
-          value={vendor}
-          onChange={setVendor}
-          category={category}
-          placeholder="협력업체 (선택)"
-          allowFreeText={false}
-        />
-        <div className="flex gap-1">
-          <button onClick={save} className="flex-1 text-[11px] bg-navy-700 text-white rounded py-0.5">저장</button>
-          <button onClick={cancel} className="text-[11px] bg-gray-200 rounded px-2">취소</button>
+      <input
+        ref={inputRef}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); save(); }
+          else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        }}
+        onBlur={save}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full text-[11px] sm:text-xs border border-navy-500 rounded px-1 py-0.5 outline-none ring-1 ring-navy-500 bg-white"
+      />
+    );
+  }
+
+  if (editingVendor) {
+    return (
+      <div
+        className="relative bg-white border-2 border-violet-500 rounded p-1 flex gap-1 items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex-1 min-w-0">
+          <VendorAutocomplete
+            value={{ vendorId: entry.vendor?.id || null, vendorName: entry.vendor?.name || '' }}
+            onChange={async ({ vendorId }) => {
+              const oldId = entry.vendor?.id || null;
+              if (vendorId !== oldId) {
+                await onUpdate(entry.id, { vendorId });
+              }
+              setEditingVendor(false);
+            }}
+            category={entry.category}
+            placeholder="협력업체 검색"
+            allowFreeText={false}
+          />
         </div>
+        <button
+          onClick={() => setEditingVendor(false)}
+          className="text-xs text-gray-500 hover:text-gray-700 px-1.5 flex-shrink-0"
+          title="닫기"
+        >✕</button>
       </div>
     );
   }
@@ -135,8 +139,18 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
         <span className="sm:hidden absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
       )}
       <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition gap-0.5">
+        {showVendorButton && (
+          <button
+            onClick={() => setEditingVendor(true)}
+            title="협력업체 태그"
+            className="text-[10px] text-gray-500 hover:text-violet-700 px-1"
+          >
+            🏢
+          </button>
+        )}
         <button
           onClick={() => setEditing(true)}
+          title="텍스트 수정"
           className="text-[10px] text-gray-500 hover:text-navy-700 px-1"
         >
           ✎
@@ -145,6 +159,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           onClick={() => {
             if (confirm('이 항목을 삭제할까요?')) onDelete(entry.id);
           }}
+          title="삭제"
           className="text-[10px] text-gray-500 hover:text-red-600 px-1"
         >
           ✕
