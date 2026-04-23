@@ -134,16 +134,16 @@ function FilterableProjectCalendar({ status }) {
           ))}
         </div>
       </div>
+      <div className="hidden sm:flex items-center gap-1 overflow-x-auto px-2 sm:px-0 mb-3">
+        {chips}
+      </div>
       {selectedProject ? (
         <div className="space-y-4">
-          <div className="hidden sm:flex items-center gap-1 overflow-x-auto px-2 sm:px-0">
-            {chips}
-          </div>
           <ProjectInfoCard project={selectedProject} compact />
           <ScheduleCalendar projectId={selectedProject.id} project={selectedProject} />
         </div>
       ) : (
-        <AggregateCalendar projectIds={filterIds} headerRight={chips} />
+        <AggregateCalendar projectIds={filterIds} />
       )}
       <div className="mt-6 pt-4 border-t">
         {selectedProject ? (
