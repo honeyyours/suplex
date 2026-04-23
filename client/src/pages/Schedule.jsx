@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import AggregateCalendar from '../components/AggregateCalendar';
@@ -15,7 +15,15 @@ const SUBTABS = [
 ];
 
 export default function Schedule() {
-  const [tab, setTab] = useState('site');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'site';
+
+  const changeTab = (key) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', key);
+    next.delete('projectId');
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="space-y-4">
@@ -28,7 +36,7 @@ export default function Schedule() {
           {SUBTABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => changeTab(t.key)}
               className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                 tab === t.key
                   ? 'border-navy-700 text-navy-800'
@@ -60,7 +68,15 @@ export default function Schedule() {
 }
 
 function FilterableProjectCalendar({ status }) {
-  const [selectedId, setSelectedId] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get('projectId') || 'all';
+
+  const setSelectedId = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === 'all') next.delete('projectId');
+    else next.set('projectId', id);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['projects', 'list', { status }],
