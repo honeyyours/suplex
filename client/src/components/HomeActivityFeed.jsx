@@ -1,18 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { activityApi, ACTIVITY_META } from '../api/activity';
 import { relativeTime } from '../utils/date';
 
 export default function HomeActivityFeed({ days = 7, limit = 20 }) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    activityApi
-      .list({ days, limit })
-      .then((r) => setItems(r.items || []))
-      .finally(() => setLoading(false));
-  }, [days, limit]);
+  const { data, isLoading } = useQuery({
+    queryKey: ['activity', 'list', { days, limit }],
+    queryFn: () => activityApi.list({ days, limit }),
+  });
+  const items = data?.items || [];
+  const loading = isLoading;
 
   return (
     <section className="bg-white rounded-xl border p-5">

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import { formatDateDot } from '../utils/date';
 
@@ -23,15 +23,12 @@ const VARIANTS = {
 };
 
 export default function HomeProjectCards({ status }) {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    projectsApi
-      .list({ status })
-      .then((r) => setProjects(r.projects || []))
-      .finally(() => setLoading(false));
-  }, [status]);
+  const { data, isLoading } = useQuery({
+    queryKey: ['projects', 'list', { status }],
+    queryFn: () => projectsApi.list({ status }),
+  });
+  const projects = data?.projects || [];
+  const loading = isLoading;
 
   const v = VARIANTS[status];
 
