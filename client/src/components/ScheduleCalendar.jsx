@@ -157,6 +157,7 @@ export default function ScheduleCalendar({ projectId, project }) {
           entries={byDate[mobileSheetKey] || []}
           onClose={() => setMobileSheetKey(null)}
           onAdd={(payload) => addEntry(mobileSheetKey, payload)}
+          onUpdate={(id, payload) => updateEntry(id, payload)}
           onDelete={(id) => deleteEntry(id)}
           onToggleConfirm={(id) => toggleConfirm(id)}
           onNavigate={(direction) => {

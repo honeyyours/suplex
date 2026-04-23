@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import AggregateCalendar from '../components/AggregateCalendar';
+import AggregateChecklist from '../components/AggregateChecklist';
 import ProjectChecklist from './ProjectChecklist';
 
 const SUBTABS = [
@@ -39,7 +40,17 @@ export default function Schedule() {
         <div className="p-1 sm:p-5">
           {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" />}
           {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" />}
-          {tab === 'all' && <AggregateCalendar />}
+          {tab === 'all' && (
+            <>
+              <AggregateCalendar />
+              <div className="mt-6 pt-4 border-t">
+                <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
+                  ✅ 전체 체크리스트
+                </h3>
+                <AggregateChecklist />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

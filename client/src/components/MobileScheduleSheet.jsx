@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, categoryClass, fromDateKey } from '../utils/date';
+import VendorPicker from './VendorPicker';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -15,6 +16,7 @@ export default function MobileScheduleSheet({
   entries,
   onClose,
   onAdd,             // ({content, category}) => void
+  onUpdate,          // (id, payload) => Promise   (vendor 태그용)
   onDelete,          // (id) => void
   onToggleConfirm,   // (id) => void
   onNavigate,        // ('prev'|'next') => void
@@ -22,7 +24,7 @@ export default function MobileScheduleSheet({
   canNext,
 }) {
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
+  const [vendorMenu, setVendorMenu] = useState(null); // { x, y, entry } | null
 
   const date = fromDateKey(dateKey);
   const dateLabel = `${date.getMonth() + 1}/${date.getDate()} (${DAY_LABELS[date.getDay()]})`;
@@ -34,9 +36,13 @@ export default function MobileScheduleSheet({
   function handleAdd() {
     const trimmed = content.trim();
     if (!trimmed) return;
-    onAdd({ content: trimmed, category: category || null });
+    onAdd({ content: trimmed, category: null });
     setContent('');
-    setCategory('');
+  }
+
+  function openVendorMenu(e, entry) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setVendorMenu({ x: rect.left, y: rect.bottom + 4, entry });
   }
 
   return (
@@ -99,10 +105,15 @@ export default function MobileScheduleSheet({
                     <div className="text-[11px] text-violet-700 mt-0.5">🏢 {e.vendor.name}</div>
                   )}
                 </div>
+                {onUpdate && (
+                  <button
+                    onClick={(ev) => openVendorMenu(ev, e)}
+                    className="text-gray-400 hover:text-violet-600 px-2 text-base"
+                    title="협력업체 태그"
+                  >🏢</button>
+                )}
                 <button
-                  onClick={() => {
-                    if (confirm('삭제할까요?')) onDelete(e.id);
-                  }}
+                  onClick={() => onDelete(e.id)}
                   className="text-gray-400 hover:text-red-500 px-2"
                 >✕</button>
               </div>
@@ -128,19 +139,11 @@ export default function MobileScheduleSheet({
 
         {/* 직접 입력 */}
         <div className="px-3 py-3 border-t bg-gray-50 flex gap-2 items-center">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="text-sm border rounded px-2 py-2 bg-white"
-          >
-            <option value="">공종</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
           <input
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-            placeholder="직접 입력"
+            placeholder="직접 입력 (공종 외)"
             className="flex-1 border rounded px-3 py-2 text-sm"
           />
           <button
@@ -157,6 +160,23 @@ export default function MobileScheduleSheet({
           .animate-slide-up { animation: slide-up 0.18s ease-out; }
         `}</style>
       </div>
+
+      {vendorMenu && (
+        <VendorPicker
+          x={vendorMenu.x}
+          y={vendorMenu.y}
+          currentVendorId={vendorMenu.entry.vendor?.id || null}
+          currentVendorName={vendorMenu.entry.vendor?.name || ''}
+          category={vendorMenu.entry.category}
+          onSelect={async (vendorId) => {
+            const oldId = vendorMenu.entry.vendor?.id || null;
+            if (vendorId !== oldId) {
+              await onUpdate(vendorMenu.entry.id, { vendorId });
+            }
+          }}
+          onClose={() => setVendorMenu(null)}
+        />
+      )}
     </div>
   );
 }
