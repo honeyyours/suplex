@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, rangeGrid, formatDateDot } from '../utils/date';
 import ScheduleEntry from './ScheduleEntry';
 import ScheduleAddForm from './ScheduleAddForm';
 
 export default function ScheduleCalendar({ projectId, project }) {
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [addingOn, setAddingOn] = useState(null);
-  const [err, setErr] = useState('');
 
   const projStartKey = project?.startDate ? project.startDate.slice(0, 10) : null;
   const projEndKey = project?.expectedEndDate ? project.expectedEndDate.slice(0, 10) : null;
@@ -19,27 +18,21 @@ export default function ScheduleCalendar({ projectId, project }) {
     return rangeGrid(projStartKey, projEndKey);
   }, [projStartKey, projEndKey]);
 
-  async function reload() {
-    if (!grid.length) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const { entries } = await schedulesApi.list(projectId, {
-        start: toDateKey(grid[0]),
-        end: toDateKey(grid[grid.length - 1]),
-      });
-      setEntries(entries);
-      setErr('');
-    } catch (e) {
-      setErr(e.response?.data?.error || '불러오기 실패');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const startKey = grid.length ? toDateKey(grid[0]) : null;
+  const endKey = grid.length ? toDateKey(grid[grid.length - 1]) : null;
 
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [projectId, projStartKey, projEndKey]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['schedules', 'project', projectId, startKey, endKey],
+    queryFn: () => schedulesApi.list(projectId, { start: startKey, end: endKey }),
+    enabled: grid.length > 0,
+  });
+  const entries = data?.entries || [];
+  const loading = isLoading;
+  const err = error?.response?.data?.error || (error ? '불러오기 실패' : '');
+
+  function invalidate() {
+    return queryClient.invalidateQueries({ queryKey: ['schedules', 'project', projectId] });
+  }
 
   const byDate = useMemo(() => {
     const map = {};
@@ -52,19 +45,19 @@ export default function ScheduleCalendar({ projectId, project }) {
 
   async function addEntry(dateKey, payload) {
     await schedulesApi.create(projectId, { date: dateKey, ...payload });
-    reload();
+    invalidate();
   }
   async function updateEntry(id, payload) {
     await schedulesApi.update(projectId, id, payload);
-    reload();
+    invalidate();
   }
   async function deleteEntry(id) {
     await schedulesApi.remove(projectId, id);
-    reload();
+    invalidate();
   }
   async function toggleConfirm(id) {
     await schedulesApi.toggleConfirm(projectId, id);
-    reload();
+    invalidate();
   }
 
   // 시작/마감 미설정 시 안내

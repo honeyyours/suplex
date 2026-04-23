@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import AggregateCalendar from '../components/AggregateCalendar';
 import ProjectChecklist from './ProjectChecklist';
@@ -46,17 +47,14 @@ export default function Schedule() {
 }
 
 function FilterableProjectCalendar({ status }) {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('all');
 
-  useEffect(() => {
-    setLoading(true);
-    projectsApi
-      .list({ status })
-      .then((r) => setProjects(r.projects || []))
-      .finally(() => setLoading(false));
-  }, [status]);
+  const { data, isLoading } = useQuery({
+    queryKey: ['projects', 'list', { status }],
+    queryFn: () => projectsApi.list({ status }),
+  });
+  const projects = data?.projects || [];
+  const loading = isLoading;
 
   const allIds = useMemo(() => projects.map((p) => p.id), [projects]);
   const filterIds = selectedId === 'all' ? allIds : [selectedId];

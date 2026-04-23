@@ -1,12 +1,15 @@
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import ProjectForm from '../components/ProjectForm';
 import { projectsApi } from '../api/projects';
 
 export default function NewProject() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   async function submit(payload) {
     const { project } = await projectsApi.create(payload);
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
     navigate(`/projects/${project.id}`);
   }
 

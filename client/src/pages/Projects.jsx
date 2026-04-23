@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import { formatDateDot, weeksBetween } from '../utils/date';
 
@@ -14,18 +15,16 @@ const STATUS_META = {
 const STATUS_ORDER = ['IN_PROGRESS', 'PLANNED', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
 
 export default function Projects() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | PLANNED | IN_PROGRESS | ...
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('recent'); // recent | name | start
 
-  useEffect(() => {
-    projectsApi.list()
-      .then((r) => setProjects(r.projects || []))
-      .catch(() => setProjects([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: ['projects', 'list', {}],
+    queryFn: () => projectsApi.list(),
+  });
+  const projects = data?.projects || [];
+  const loading = isLoading;
 
   const counts = useMemo(() => {
     const c = { ALL: projects.length };

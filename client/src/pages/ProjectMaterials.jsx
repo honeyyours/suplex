@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   materialsApi, materialTemplatesApi,
   STATUS_META, KIND_META, formatCurrency,
@@ -8,24 +9,22 @@ import MaterialModal from '../components/MaterialModal';
 
 export default function ProjectMaterials() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const [kind, setKind] = useState('FINISH');
-  const [materials, setMaterials] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(null);
   const [importing, setImporting] = useState(false);
 
-  async function reload() {
-    setLoading(true);
-    try {
-      const { materials } = await materialsApi.list(id);
-      setMaterials(materials);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data, isLoading } = useQuery({
+    queryKey: ['materials', id],
+    queryFn: () => materialsApi.list(id),
+  });
+  const materials = data?.materials || [];
+  const loading = isLoading;
 
-  useEffect(() => { reload(); }, [id]);
+  function reload() {
+    return queryClient.invalidateQueries({ queryKey: ['materials', id] });
+  }
 
   const filtered = useMemo(
     () => materials.filter((m) => m.kind === kind),

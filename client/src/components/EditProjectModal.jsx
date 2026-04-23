@@ -1,9 +1,13 @@
+import { useQueryClient } from '@tanstack/react-query';
 import ProjectForm from './ProjectForm';
 import { projectsApi } from '../api/projects';
 
 export default function EditProjectModal({ project, onClose, onSaved, onDeleted }) {
+  const queryClient = useQueryClient();
+
   async function submit(payload) {
     const { project: updated } = await projectsApi.update(project.id, payload);
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
     onSaved?.(updated);
     onClose();
   }
@@ -11,6 +15,7 @@ export default function EditProjectModal({ project, onClose, onSaved, onDeleted 
   async function remove() {
     if (!confirm(`"${project.name}" 프로젝트를 삭제할까요?\n\n이 프로젝트의 모든 일정·체크리스트·변동로그가 함께 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.`)) return;
     await projectsApi.remove(project.id);
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
     onDeleted?.();
     onClose();
   }
