@@ -7,13 +7,34 @@ import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
 
 export default function Settings() {
-  const { auth, logout } = useAuth();
+  const { auth, logout, updateMe } = useAuth();
   const isOwner = auth?.role === 'OWNER';
   const [company, setCompany] = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     companyApi.get().then((d) => setCompany(d.company)).catch(() => {});
   }, []);
+
+  function startEditName() {
+    setNameDraft(auth?.user?.name || '');
+    setEditingName(true);
+  }
+  async function saveName() {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) return;
+    setSavingName(true);
+    try {
+      await updateMe({ name: trimmed });
+      setEditingName(false);
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -26,7 +47,42 @@ export default function Settings() {
       <QuoteTemplatesSection />
 
       <Section title="내 계정">
-        <Row label="이름" value={auth?.user?.name} />
+        <div className="flex items-center py-2 border-b text-sm">
+          <span className="w-24 text-gray-500">이름</span>
+          {editingName ? (
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveName();
+                  else if (e.key === 'Escape') setEditingName(false);
+                }}
+                autoFocus
+                className="flex-1 max-w-xs text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+              />
+              <button
+                onClick={saveName}
+                disabled={savingName || !nameDraft.trim()}
+                className="text-sm px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+              >저장</button>
+              <button
+                onClick={() => setEditingName(false)}
+                className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50"
+              >취소</button>
+            </div>
+          ) : (
+            <>
+              <span className="text-gray-800 flex-1">
+                {auth?.user?.name || <span className="text-gray-400 italic">—</span>}
+              </span>
+              <button
+                onClick={startEditName}
+                className="text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
+              >✏️ 수정</button>
+            </>
+          )}
+        </div>
         <Row label="이메일" value={auth?.user?.email} />
         <Row label="권한" value={roleLabel(auth?.role)} />
         <div className="pt-3">

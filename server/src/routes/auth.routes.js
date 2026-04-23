@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const env = require('../config/env');
+const { authRequired } = require('../middlewares/auth');
 
 const router = express.Router();
 
@@ -92,6 +93,28 @@ router.post('/login', async (req, res, next) => {
       company: { id: membership.company.id, name: membership.company.name },
       role: membership.role,
     });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
+const updateMeSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  phone: z.string().max(40).nullable().optional(),
+});
+
+router.patch('/me', authRequired, async (req, res, next) => {
+  try {
+    const data = updateMeSchema.parse(req.body);
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data,
+      select: { id: true, email: true, name: true, phone: true },
+    });
+    res.json({ user: updated });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
