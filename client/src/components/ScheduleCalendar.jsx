@@ -143,7 +143,7 @@ export default function ScheduleCalendar({ projectId, project }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-[11px] text-gray-400">
-            💡 셀 클릭=입력 · Enter=같은날 · Tab/→=다음날 · ↓=다음주 · 항목 클릭=수정
+            💡 셀 클릭=입력 · Enter/Tab/방향키=이동 · 항목 클릭=수정 · 우클릭=메뉴
           </span>
           {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
         </div>
