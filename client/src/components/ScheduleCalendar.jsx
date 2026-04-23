@@ -59,7 +59,21 @@ export default function ScheduleCalendar({ projectId, project }) {
   function findNeighborKey(currentKey, direction) {
     const idx = grid.findIndex((d) => toDateKey(d) === currentKey);
     if (idx < 0) return null;
-    const step = direction === 'next' ? 1 : -1;
+    let step;
+    if (direction === 'next') step = 1;
+    else if (direction === 'prev') step = -1;
+    else if (direction === 'down') step = 7;
+    else if (direction === 'up') step = -7;
+    else return null;
+
+    // up/down은 한 번 점프, 범위 밖이면 null
+    if (direction === 'up' || direction === 'down') {
+      const target = idx + step;
+      if (target < 0 || target >= grid.length) return null;
+      const k = toDateKey(grid[target]);
+      return (k >= projStartKey && k <= projEndKey) ? k : null;
+    }
+    // next/prev는 범위 안 셀 만날 때까지 스킵
     let target = idx + step;
     while (target >= 0 && target < grid.length) {
       const k = toDateKey(grid[target]);
@@ -129,7 +143,7 @@ export default function ScheduleCalendar({ projectId, project }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-[11px] text-gray-400">
-            💡 셀 클릭 → 입력 · Enter=같은날 추가 · Tab=다음날
+            💡 셀 클릭=입력 · Enter=같은날 · Tab/→=다음날 · ↓=다음주 · 항목 클릭=수정
           </span>
           {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
         </div>
@@ -216,7 +230,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                     <InlineScheduleInput
                       onSave={(text) => quickAdd(key, text)}
                       onNavigate={(action) => {
-                        if (action === 'next' || action === 'prev') goToCell(key, action);
+                        if (['next', 'prev', 'up', 'down'].includes(action)) goToCell(key, action);
                         else setActiveCellKey(null);
                       }}
                     />

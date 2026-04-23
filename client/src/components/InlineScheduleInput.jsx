@@ -50,6 +50,24 @@ export default function InlineScheduleInput({ onSave, onNavigate }) {
     } else if (e.key === 'Tab') {
       e.preventDefault();
       commit(e.shiftKey ? 'prev' : 'next');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      commit('down');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      commit('up');
+    } else if (e.key === 'ArrowRight') {
+      // 커서가 끝에 있을 때만 셀 이동
+      if (e.target.selectionStart === e.target.value.length) {
+        e.preventDefault();
+        commit('next');
+      }
+    } else if (e.key === 'ArrowLeft') {
+      // 커서가 처음에 있을 때만 셀 이동
+      if (e.target.selectionStart === 0 && e.target.selectionEnd === 0) {
+        e.preventDefault();
+        commit('prev');
+      }
     }
   }
 

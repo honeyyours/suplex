@@ -89,8 +89,16 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   const catColor = entry.category ? categoryClass(entry.category) : 'bg-gray-100 text-gray-700';
   return (
     <div
+      onClick={(e) => {
+        // 모바일에서는 셀 탭 → 바텀시트로 처리하므로 여기서 무시
+        if (window.innerWidth < 640) return;
+        // 내부 버튼 클릭은 자체 핸들러 유지
+        if (e.target.closest('button')) return;
+        e.stopPropagation(); // 셀 클릭으로 인라인 입력 열리지 않도록
+        setEditing(true);
+      }}
       className={`
-        relative group text-[9px] sm:text-xs rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate
+        relative group text-[9px] sm:text-xs rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
         ${catColor} sm:bg-navy-50/60 sm:text-navy-800
         sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
       `}
