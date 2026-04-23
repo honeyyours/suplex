@@ -23,7 +23,7 @@ function isConfigured() {
 }
 
 // Buffer를 Cloudinary에 업로드. folder 지정 가능.
-async function uploadBuffer(buffer, { folder = 'splex', filename } = {}) {
+async function uploadBuffer(buffer, { folder = 'suplex', filename } = {}) {
   if (!ensureConfigured()) {
     const err = new Error('Cloudinary가 설정되지 않았습니다. 서버 .env의 CLOUDINARY_* 키를 설정하세요');
     err.status = 503;

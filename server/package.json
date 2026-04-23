@@ -1,8 +1,8 @@
 {
-  "name": "splex-server",
+  "name": "suplex-server",
   "version": "0.1.0",
   "private": true,
-  "description": "SPLEX backend API",
+  "description": "Suplex backend API",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",

@@ -107,7 +107,7 @@ export default function Expenses() {
       ]);
     }
     const today = new Date().toISOString().slice(0, 10);
-    downloadFile(`splex_expenses_${today}.csv`, toCSV(rows));
+    downloadFile(`suplex_expenses_${today}.csv`, toCSV(rows));
   }
 
   async function handleImportFile(file) {

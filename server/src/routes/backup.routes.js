@@ -23,7 +23,7 @@ router.get('/export', async (req, res, next) => {
       });
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const filename = `splex_${project.name.replace(/[^\w가-힣]+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+      const filename = `suplex_${project.name.replace(/[^\w가-힣]+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.json({
@@ -49,7 +49,7 @@ router.get('/export', async (req, res, next) => {
       },
     });
 
-    const filename = `splex_${company.name.replace(/[^\w가-힣]+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `suplex_${company.name.replace(/[^\w가-힣]+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({

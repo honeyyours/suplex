@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('splex_token');
+  const token = localStorage.getItem('suplex_token') || localStorage.getItem('splex_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -15,6 +15,8 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      localStorage.removeItem('suplex_token');
+      localStorage.removeItem('suplex_user');
       localStorage.removeItem('splex_token');
       localStorage.removeItem('splex_user');
     }

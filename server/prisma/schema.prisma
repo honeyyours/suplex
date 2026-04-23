@@ -1,4 +1,4 @@
-// SPLEX Prisma Schema
+// Suplex Prisma Schema
 // 소규모 인테리어 업체용 SaaS MVP
 
 generator client {

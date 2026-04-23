@@ -1,4 +1,4 @@
-# SPLEX DB 스키마 개요
+# Suplex DB 스키마 개요
 
 Prisma schema: `server/prisma/schema.prisma`
 

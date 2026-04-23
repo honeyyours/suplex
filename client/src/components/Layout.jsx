@@ -24,7 +24,7 @@ export default function Layout() {
       <header className="bg-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/" className="text-xl font-bold tracking-tight">SPLEX</Link>
+            <Link to="/" className="text-xl font-bold tracking-tight">SUPLEX</Link>
             <nav className="hidden sm:flex gap-1">
               {NAV.map((n) => (
                 <NavLink key={n.to} to={n.to} end={n.exact} className={navClass}>

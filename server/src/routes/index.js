@@ -26,7 +26,7 @@ const activityRoutes = require('./activity.routes');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'splex-api' });
+  res.json({ ok: true, service: 'suplex-api' });
 });
 
 router.use('/auth', authRoutes);

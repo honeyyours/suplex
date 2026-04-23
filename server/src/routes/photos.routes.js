@@ -58,7 +58,7 @@ projectRouter.post('/', upload.array('photos', 10), async (req, res, next) => {
       });
     }
 
-    const folder = `splex/${projectId}/${source.toLowerCase()}`;
+    const folder = `suplex/${projectId}/${source.toLowerCase()}`;
     const uploaded = [];
     for (const f of files) {
       const { url, thumbnailUrl } = await uploadBuffer(f.buffer, { folder });

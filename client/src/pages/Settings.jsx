@@ -388,7 +388,7 @@ function QuoteTemplatesSection() {
       ]);
     }
     const today = new Date().toISOString().slice(0, 10);
-    downloadFile(`splex_quote_templates_${today}.csv`, toCSV(rows));
+    downloadFile(`suplex_quote_templates_${today}.csv`, toCSV(rows));
   }
 
   async function handleImportFile(file) {

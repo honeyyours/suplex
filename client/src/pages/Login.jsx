@@ -27,7 +27,7 @@ export default function Login() {
   return (
     <div className="min-h-full flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
-        <h1 className="text-2xl font-bold text-navy-800 mb-1">SPLEX 로그인</h1>
+        <h1 className="text-2xl font-bold text-navy-800 mb-1">Suplex 로그인</h1>
         <p className="text-sm text-gray-500 mb-6">인테리어 프로젝트 운영 시스템</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

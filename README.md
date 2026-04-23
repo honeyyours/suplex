@@ -1,11 +1,11 @@
-# SPLEX (스플렉스)
+# Suplex (슈플렉스)
 
 소규모 인테리어 업체(1~10인)를 위한 프로젝트 운영 SaaS.
 
 ## 구조 (Monorepo)
 
 ```
-splex/
+suplex/
 ├── client/     # React + Vite + Tailwind
 ├── server/     # Node + Express + Prisma + PostgreSQL
 └── docs/       # 문서, DB 스키마 등

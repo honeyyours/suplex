@@ -12,10 +12,10 @@ export default function BackupMenu({ projectId, projectName, onRestored }) {
       const data = projectId
         ? await backupApi.exportProject(projectId)
         : await backupApi.exportCompany();
-      const base = projectId ? projectName : (data.company?.name || 'splex');
-      const safe = (base || 'splex').replace(/[^\w가-힣]+/g, '_');
+      const base = projectId ? projectName : (data.company?.name || 'suplex');
+      const safe = (base || 'suplex').replace(/[^\w가-힣]+/g, '_');
       const date = new Date().toISOString().slice(0, 10);
-      downloadJson(data, `splex_${safe}_${date}.json`);
+      downloadJson(data, `suplex_${safe}_${date}.json`);
     } catch (e) {
       alert('백업 실패: ' + (e.response?.data?.error || e.message));
     } finally {
@@ -43,7 +43,7 @@ export default function BackupMenu({ projectId, projectName, onRestored }) {
     }
 
     if (!parsed.version) {
-      alert('올바른 SPLEX 백업 파일이 아닙니다');
+      alert('올바른 Suplex 백업 파일이 아닙니다');
       return;
     }
 

@@ -3,18 +3,37 @@ import api from '../api/client';
 
 const AuthContext = createContext(null);
 
+const TOKEN_KEY = 'suplex_token';
+const USER_KEY = 'suplex_user';
+const LEGACY_TOKEN_KEY = 'splex_token';
+const LEGACY_USER_KEY = 'splex_user';
+
+function readStored() {
+  let token = localStorage.getItem(TOKEN_KEY);
+  let user = localStorage.getItem(USER_KEY);
+  if (!token || !user) {
+    const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
+    const legacyUser = localStorage.getItem(LEGACY_USER_KEY);
+    if (legacyToken && legacyUser) {
+      localStorage.setItem(TOKEN_KEY, legacyToken);
+      localStorage.setItem(USER_KEY, legacyUser);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
+      localStorage.removeItem(LEGACY_USER_KEY);
+      token = legacyToken;
+      user = legacyUser;
+    }
+  }
+  return token && user ? { token, ...JSON.parse(user) } : null;
+}
+
 export function AuthProvider({ children }) {
-  const [auth, setAuth] = useState(() => {
-    const token = localStorage.getItem('splex_token');
-    const user = localStorage.getItem('splex_user');
-    return token && user ? { token, ...JSON.parse(user) } : null;
-  });
+  const [auth, setAuth] = useState(readStored);
 
   useEffect(() => {
     if (auth) {
-      localStorage.setItem('splex_token', auth.token);
+      localStorage.setItem(TOKEN_KEY, auth.token);
       localStorage.setItem(
-        'splex_user',
+        USER_KEY,
         JSON.stringify({ user: auth.user, company: auth.company, role: auth.role })
       );
     }
@@ -33,8 +52,10 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
-    localStorage.removeItem('splex_token');
-    localStorage.removeItem('splex_user');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
     setAuth(null);
   }
 

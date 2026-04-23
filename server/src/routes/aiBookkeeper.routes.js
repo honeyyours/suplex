@@ -18,7 +18,7 @@ const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 const MAX_ITERATIONS = 8;          // tool-use loop 안전 가드
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "스플렉스(SPLEX)"의 AI 경리 어시스턴트야.
+const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "슈플렉스(Suplex)"의 AI 경리 어시스턴트야.
 사용자(인테리어 업체 대표/직원)의 질문에 답하기 위해 제공된 도구로 회사 데이터를 조회해.
 
 지침:
