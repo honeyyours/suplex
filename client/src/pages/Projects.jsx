@@ -14,7 +14,14 @@ const STATUS_META = {
 
 const STATUS_ORDER = ['IN_PROGRESS', 'PLANNED', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
 
+function projectYear(p) {
+  const d = p.startDate || p.createdAt;
+  return d ? new Date(d).getFullYear() : null;
+}
+
 export default function Projects() {
+  const currentYear = new Date().getFullYear();
+  const [yearFilter, setYearFilter] = useState(currentYear); // 'ALL' | number
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | PLANNED | IN_PROGRESS | ...
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('recent'); // recent | name | start
@@ -26,16 +33,42 @@ export default function Projects() {
   const projects = data?.projects || [];
   const loading = isLoading;
 
-  const counts = useMemo(() => {
+  const years = useMemo(() => {
+    const set = new Set();
+    projects.forEach((p) => {
+      const y = projectYear(p);
+      if (y) set.add(y);
+    });
+    set.add(currentYear); // 올해는 빈 데이터여도 항상 보이게
+    return [...set].sort((a, b) => b - a);
+  }, [projects, currentYear]);
+
+  const yearCounts = useMemo(() => {
     const c = { ALL: projects.length };
-    for (const k of STATUS_ORDER) c[k] = 0;
-    for (const p of projects) c[p.status] = (c[p.status] || 0) + 1;
+    for (const y of years) c[y] = 0;
+    for (const p of projects) {
+      const y = projectYear(p);
+      if (y && c[y] !== undefined) c[y]++;
+    }
     return c;
-  }, [projects]);
+  }, [projects, years]);
+
+  // 연도 필터를 적용한 후 상태별 카운트 계산
+  const yearScoped = useMemo(() => {
+    if (yearFilter === 'ALL') return projects;
+    return projects.filter((p) => projectYear(p) === yearFilter);
+  }, [projects, yearFilter]);
+
+  const counts = useMemo(() => {
+    const c = { ALL: yearScoped.length };
+    for (const k of STATUS_ORDER) c[k] = 0;
+    for (const p of yearScoped) c[p.status] = (c[p.status] || 0) + 1;
+    return c;
+  }, [yearScoped]);
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
-    let list = projects.filter((p) => {
+    let list = yearScoped.filter((p) => {
       if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
       if (qq) {
         const hay = `${p.name} ${p.customerName || ''} ${p.siteAddress || ''}`.toLowerCase();
@@ -51,7 +84,7 @@ export default function Projects() {
     });
     else list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return list;
-  }, [projects, statusFilter, q, sortBy]);
+  }, [yearScoped, statusFilter, q, sortBy]);
 
   return (
     <div className="space-y-5">
@@ -66,7 +99,24 @@ export default function Projects() {
       </div>
 
       <div className="bg-white border rounded-lg p-4 space-y-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-gray-500 mr-1">연도</span>
+          <FilterChip
+            label={`전체 (${yearCounts.ALL})`}
+            active={yearFilter === 'ALL'}
+            onClick={() => setYearFilter('ALL')}
+          />
+          {years.map((y) => (
+            <FilterChip
+              key={y}
+              label={`${y}년 (${yearCounts[y] || 0})`}
+              active={yearFilter === y}
+              onClick={() => setYearFilter(y)}
+            />
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-gray-500 mr-1">상태</span>
           <FilterChip
             label={`전체 (${counts.ALL})`}
             active={statusFilter === 'ALL'}
