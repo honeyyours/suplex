@@ -5,11 +5,18 @@ import ContextMenu from './ContextMenu';
 
 export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm, showVendorButton = false }) {
   const [editing, setEditing] = useState(false);
-  const [editingVendor, setEditingVendor] = useState(false);
+  const [vendorMenu, setVendorMenu] = useState(null); // { x, y } | null
   const [contextMenu, setContextMenu] = useState(null); // { x, y } or null
   const [content, setContent] = useState(entry.content);
   const inputRef = useRef(null);
+  const entryRef = useRef(null);
   const handledRef = useRef(false);
+
+  function openVendorMenu(anchorEl) {
+    const rect = (anchorEl || entryRef.current)?.getBoundingClientRect();
+    if (!rect) return;
+    setVendorMenu({ x: rect.left, y: rect.bottom + 4 });
+  }
 
   useEffect(() => {
     if (editing) {
@@ -62,27 +69,12 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
     );
   }
 
-  if (editingVendor) {
-    return (
-      <VendorPicker
-        currentVendorId={entry.vendor?.id || null}
-        currentVendorName={entry.vendor?.name || ''}
-        category={entry.category}
-        onSelect={async (vendorId) => {
-          const oldId = entry.vendor?.id || null;
-          if (vendorId !== oldId) {
-            await onUpdate(entry.id, { vendorId });
-          }
-        }}
-        onClose={() => setEditingVendor(false)}
-      />
-    );
-  }
 
   const catColor = entry.category ? categoryClass(entry.category) : 'bg-gray-100 text-gray-700';
   return (
     <>
       <div
+        ref={entryRef}
         onClick={(e) => {
           // 모바일에서는 셀 탭 → 바텀시트로 처리하므로 여기서 무시
           if (window.innerWidth < 640) return;
@@ -105,9 +97,6 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1 flex-wrap">
-            {entry.confirmed && (
-              <span className="hidden sm:inline text-emerald-600 text-[11px] font-bold leading-none flex-shrink-0">✓</span>
-            )}
             {entry.category && (
               <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${catColor}`}>
                 {entry.category}
@@ -124,12 +113,12 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           </div>
         </div>
         {entry.confirmed && (
-          <span className="sm:hidden absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] z-10">✓</span>
         )}
-        <div className="hidden sm:flex absolute right-0.5 top-1/2 -translate-y-1/2 gap-0.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
+        <div className="hidden sm:flex absolute right-0.5 top-1/2 -translate-y-1/2 gap-0.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition z-20">
           {showVendorButton && (
             <button
-              onClick={() => setEditingVendor(true)}
+              onClick={(e) => openVendorMenu(e.currentTarget)}
               title="협력업체 태그"
               className="text-[10px] text-gray-500 hover:text-violet-700 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
             >
@@ -145,6 +134,22 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           </button>
         </div>
       </div>
+      {vendorMenu && (
+        <VendorPicker
+          x={vendorMenu.x}
+          y={vendorMenu.y}
+          currentVendorId={entry.vendor?.id || null}
+          currentVendorName={entry.vendor?.name || ''}
+          category={entry.category}
+          onSelect={async (vendorId) => {
+            const oldId = entry.vendor?.id || null;
+            if (vendorId !== oldId) {
+              await onUpdate(entry.id, { vendorId });
+            }
+          }}
+          onClose={() => setVendorMenu(null)}
+        />
+      )}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -157,7 +162,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
             },
             ...(showVendorButton ? [{
               label: '🏢 협력업체 태그',
-              onClick: () => setEditingVendor(true),
+              onClick: () => openVendorMenu(),
             }] : []),
             {
               label: '✕ 삭제',
