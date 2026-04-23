@@ -138,29 +138,22 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
       {entry.confirmed && (
         <span className="sm:hidden absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
       )}
-      <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition gap-0.5">
+      <div className="hidden sm:flex absolute right-0.5 top-1/2 -translate-y-1/2 gap-0.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
         {showVendorButton && (
           <button
             onClick={() => setEditingVendor(true)}
             title="협력업체 태그"
-            className="text-[10px] text-gray-500 hover:text-violet-700 px-1"
+            className="text-[10px] text-gray-500 hover:text-violet-700 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
           >
             🏢
           </button>
         )}
         <button
-          onClick={() => setEditing(true)}
-          title="텍스트 수정"
-          className="text-[10px] text-gray-500 hover:text-navy-700 px-1"
-        >
-          ✎
-        </button>
-        <button
           onClick={() => {
             if (confirm('이 항목을 삭제할까요?')) onDelete(entry.id);
           }}
           title="삭제"
-          className="text-[10px] text-gray-500 hover:text-red-600 px-1"
+          className="text-[10px] text-gray-500 hover:text-red-600 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
         >
           ✕
         </button>
