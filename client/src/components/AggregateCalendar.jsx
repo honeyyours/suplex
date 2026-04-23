@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryClass,
@@ -21,8 +22,6 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const grid = useMemo(
     () => calendarGrid(current.getFullYear(), current.getMonth()),
@@ -30,27 +29,24 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
   );
   const rangeStart = grid[0];
   const rangeEnd = grid[grid.length - 1];
+  const startKey = toDateKey(rangeStart);
+  const endKey = toDateKey(rangeEnd);
 
   const projectIdsKey = projectIds ? projectIds.join(',') : '';
+  const skip = projectIds && projectIds.length === 0;
 
-  useEffect(() => {
-    // projectIds가 빈 배열이면 결과는 어차피 0건이므로 호출 스킵
-    if (projectIds && projectIds.length === 0) {
-      setEntries([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    schedulesApi
-      .listAll({
-        start: toDateKey(rangeStart),
-        end: toDateKey(rangeEnd),
-        status,
-        projectIds,
-      })
-      .then((r) => setEntries(r.entries || []))
-      .finally(() => setLoading(false));
-  }, [current, status, projectIdsKey]); // eslint-disable-line
+  const { data, isLoading } = useQuery({
+    queryKey: ['schedules', 'all', startKey, endKey, status || null, projectIdsKey],
+    queryFn: () => schedulesApi.listAll({
+      start: startKey,
+      end: endKey,
+      status,
+      projectIds,
+    }),
+    enabled: !skip,
+  });
+  const entries = skip ? [] : (data?.entries || []);
+  const loading = !skip && isLoading;
 
   // 프로젝트별 색상 매핑 (일관된 순서)
   const projectColor = useMemo(() => {

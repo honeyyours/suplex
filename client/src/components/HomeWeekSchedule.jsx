@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, addDays, categoryClass } from '../utils/date';
 
@@ -22,8 +23,6 @@ const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export default function HomeWeekSchedule() {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -31,14 +30,15 @@ export default function HomeWeekSchedule() {
   );
   const rangeStart = days[0];
   const rangeEnd = days[6];
+  const startKey = toDateKey(rangeStart);
+  const endKey = toDateKey(rangeEnd);
 
-  useEffect(() => {
-    setLoading(true);
-    schedulesApi
-      .listAll({ start: toDateKey(rangeStart), end: toDateKey(rangeEnd) })
-      .then((r) => setEntries(r.entries || []))
-      .finally(() => setLoading(false));
-  }, [weekStart]); // eslint-disable-line
+  const { data, isLoading } = useQuery({
+    queryKey: ['schedules', 'all', startKey, endKey],
+    queryFn: () => schedulesApi.listAll({ start: startKey, end: endKey }),
+  });
+  const entries = data?.entries || [];
+  const loading = isLoading;
 
   const byDate = useMemo(() => {
     const map = {};

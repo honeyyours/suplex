@@ -31,7 +31,7 @@ export default function ScheduleCalendar({ projectId, project }) {
   const err = error?.response?.data?.error || (error ? '불러오기 실패' : '');
 
   function invalidate() {
-    return queryClient.invalidateQueries({ queryKey: ['schedules', 'project', projectId] });
+    return queryClient.invalidateQueries({ queryKey: ['schedules'] });
   }
 
   const byDate = useMemo(() => {
