@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, rangeGrid, formatDateDot } from '../utils/date';
 import ScheduleEntry from './ScheduleEntry';
-import ScheduleAddForm from './ScheduleAddForm';
+import InlineScheduleInput from './InlineScheduleInput';
 
 export default function ScheduleCalendar({ projectId, project }) {
   const queryClient = useQueryClient();
-  const [addingOn, setAddingOn] = useState(null);
+  const [activeCellKey, setActiveCellKey] = useState(null);
 
   const projStartKey = project?.startDate ? project.startDate.slice(0, 10) : null;
   const projEndKey = project?.expectedEndDate ? project.expectedEndDate.slice(0, 10) : null;
@@ -47,6 +47,29 @@ export default function ScheduleCalendar({ projectId, project }) {
     await schedulesApi.create(projectId, { date: dateKey, ...payload });
     invalidate();
   }
+  function quickAdd(dateKey, content) {
+    // 인라인용 — content만 받음. 카테고리/벤더는 추후 ScheduleEntry 편집으로 추가
+    addEntry(dateKey, { content }).catch((e) => {
+      // 실패해도 silently — 사용자는 이미 다음 셀로 이동
+      console.error('quickAdd failed:', e);
+    });
+  }
+  const goToCell = useCallback((currentKey, direction) => {
+    const idx = grid.findIndex((d) => toDateKey(d) === currentKey);
+    if (idx < 0) return;
+    const step = direction === 'next' ? 1 : -1;
+    let target = idx + step;
+    while (target >= 0 && target < grid.length) {
+      const k = toDateKey(grid[target]);
+      if (k >= projStartKey && k <= projEndKey) {
+        setActiveCellKey(k);
+        return;
+      }
+      target += step;
+    }
+    setActiveCellKey(null);
+  }, [grid, projStartKey, projEndKey]);
+
   async function updateEntry(id, payload) {
     await schedulesApi.update(projectId, id, payload);
     invalidate();
@@ -91,7 +114,12 @@ export default function ScheduleCalendar({ projectId, project }) {
           <span className="font-semibold">{formatDateDot(projEndKey)}</span>
           <span className="ml-2 text-xs text-gray-500">(총 {totalDays}일)</span>
         </div>
-        {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline text-[11px] text-gray-400">
+            💡 셀 클릭 → 입력 · Enter=같은날 추가 · Tab=다음날
+          </span>
+          {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
+        </div>
       </div>
 
       {err && <div className="mb-3 text-sm text-red-600 px-2 sm:px-0">{err}</div>}
@@ -115,10 +143,11 @@ export default function ScheduleCalendar({ projectId, project }) {
             const isToday = key === todayKey;
             const dayOfWeek = date.getDay();
 
+            const isActive = activeCellKey === key;
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden ${
+                className={`group border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden ${
                   inRange ? 'bg-white' : 'bg-gray-100/70'
                 }`}
               >
@@ -131,8 +160,8 @@ export default function ScheduleCalendar({ projectId, project }) {
                   </span>
                   {inRange && (
                     <button
-                      onClick={() => setAddingOn(addingOn === key ? null : key)}
-                      className="hidden sm:inline-block text-gray-400 hover:text-navy-700 text-base leading-none"
+                      onClick={() => setActiveCellKey(isActive ? null : key)}
+                      className="hidden sm:inline-block text-gray-400 hover:text-navy-700 text-base leading-none opacity-0 group-hover:opacity-100 transition"
                       title="일정 추가"
                     >+</button>
                   )}
@@ -152,11 +181,22 @@ export default function ScheduleCalendar({ projectId, project }) {
                       +{dayEntries.length - 3}
                     </span>
                   )}
-                  {addingOn === key && (
-                    <ScheduleAddForm
-                      onSubmit={(payload) => addEntry(key, payload)}
-                      onCancel={() => setAddingOn(null)}
+                  {isActive && inRange && (
+                    <InlineScheduleInput
+                      onSave={(text) => quickAdd(key, text)}
+                      onNavigate={(action) => {
+                        if (action === 'next' || action === 'prev') goToCell(key, action);
+                        else setActiveCellKey(null);
+                      }}
                     />
+                  )}
+                  {!isActive && inRange && (
+                    <button
+                      onClick={() => setActiveCellKey(key)}
+                      className="hidden sm:block text-[10px] text-gray-300 hover:text-navy-600 hover:bg-navy-50 text-left px-1 py-0.5 rounded mt-auto opacity-0 group-hover:opacity-100 transition"
+                    >
+                      + 추가
+                    </button>
                   )}
                 </div>
               </div>
