@@ -1,24 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportsApi, photosApi, CATEGORIES } from '../../api/reports';
 import { relativeTime, toDateKey, formatDateDisplay } from '../../utils/date';
 import PhotoUploader from '../PhotoUploader';
 
 export default function ReportTab({ projectId }) {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
-  async function reload() {
-    setLoading(true);
-    try {
-      const { reports } = await reportsApi.list(projectId);
-      setReports(reports);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data, isLoading } = useQuery({
+    queryKey: ['reports', 'project', projectId],
+    queryFn: () => reportsApi.list(projectId),
+    enabled: !!projectId,
+  });
+  const reports = data?.reports || [];
+  const loading = isLoading;
 
-  useEffect(() => { reload(); }, [projectId]);
+  function reload() {
+    return queryClient.invalidateQueries({ queryKey: ['reports', 'project', projectId] });
+  }
 
   async function remove(id) {
     if (!confirm('이 보고를 삭제할까요?')) return;

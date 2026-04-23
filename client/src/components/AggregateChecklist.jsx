@@ -1,28 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi, CATEGORY_META } from '../api/checklists';
 import { relativeTime } from '../utils/date';
 
 export default function AggregateChecklist() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filterProject, setFilterProject] = useState('');
 
-  async function reload() {
-    setLoading(true);
-    try {
-      const { items } = await checklistsApi.listAll();
-      setItems(items);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { reload(); }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: ['checklists', 'all'],
+    queryFn: () => checklistsApi.listAll(),
+  });
+  const items = data?.items || [];
+  const loading = isLoading;
 
   async function toggle(projectId, itemId) {
     await checklistsApi.toggle(projectId, itemId);
-    reload();
+    queryClient.invalidateQueries({ queryKey: ['checklists'] });
   }
 
   const projects = useMemo(() => {

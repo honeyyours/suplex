@@ -1,23 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { vendorsApi } from '../api/vendors';
-
-// 회사 협력업체 목록 캐시 (5분)
-let cache = null;
-let cacheTime = 0;
-
-async function loadVendors() {
-  const now = Date.now();
-  if (cache && now - cacheTime < 5 * 60 * 1000) return cache;
-  const { vendors } = await vendorsApi.list();
-  cache = vendors;
-  cacheTime = now;
-  return vendors;
-}
-
-export function invalidateVendorCache() {
-  cache = null;
-  cacheTime = 0;
-}
 
 /**
  * 협력업체 선택 콤보박스
@@ -46,14 +29,15 @@ export default function VendorAutocomplete({
 
   const [text, setText] = useState(initialText);
   const [selectedId, setSelectedId] = useState(initialId);
-  const [vendors, setVendors] = useState([]);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const wrapRef = useRef(null);
 
-  useEffect(() => {
-    loadVendors().then(setVendors).catch(() => {});
-  }, []);
+  const { data } = useQuery({
+    queryKey: ['vendors', 'list'],
+    queryFn: () => vendorsApi.list(),
+  });
+  const vendors = data?.vendors || [];
 
   // 외부 value 변경 동기화
   useEffect(() => {

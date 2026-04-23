@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi, PO_STATUS_META } from '../api/purchaseOrders';
 import { expensesApi, EXPENSE_TYPE_META, EXPENSE_TYPE_KEYS, PAYMENT_METHOD_META, PAYMENT_METHOD_KEYS } from '../api/expenses';
 import { accountCodesApi, accountColor } from '../api/accountCodes';
@@ -11,28 +12,35 @@ const ALL_TAB = 'ALL';
 
 export default function ProjectExpenses() {
   const { id: projectId } = useParams();
+  const queryClient = useQueryClient();
   const [orders, setOrders] = useState([]);
-  const [expenses, setExpenses] = useState([]);
   const [accountCodes, setAccountCodes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [tab, setTab] = useState(ALL_TAB);
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(false);
   const [quickAdd, setQuickAdd] = useState(false);
 
-  async function reload() {
-    setLoading(true);
+  const { data: expensesData, isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', 'list', { projectId }],
+    queryFn: () => expensesApi.list({ projectId }),
+  });
+  const expenses = expensesData?.expenses || [];
+  const loading = ordersLoading || expensesLoading;
+
+  async function loadOrders() {
+    setOrdersLoading(true);
     try {
-      const [{ orders }, { expenses }] = await Promise.all([
-        purchaseOrdersApi.list(projectId),
-        expensesApi.list({ projectId }),
-      ]);
+      const { orders } = await purchaseOrdersApi.list(projectId);
       setOrders(orders);
-      setExpenses(expenses);
-    } finally { setLoading(false); }
+    } finally { setOrdersLoading(false); }
+  }
+  function reload() {
+    loadOrders();
+    queryClient.invalidateQueries({ queryKey: ['expenses'] });
   }
   useEffect(() => {
-    reload();
+    loadOrders();
     accountCodesApi.list().then((r) => setAccountCodes(r.codes || []));
     /* eslint-disable-next-line */
   }, [projectId]);

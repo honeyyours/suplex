@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
 import { vendorsApi } from '../api/vendors';
-import { invalidateVendorCache } from '../components/VendorAutocomplete';
 
 export default function TeamManagement() {
   const { auth } = useAuth();
@@ -434,6 +434,7 @@ function ResetPasswordModal({ member, onClose, onSaved }) {
 // 협력업체 섹션
 // ============================================================
 function VendorsSection({ isOwner, role }) {
+  const queryClient = useQueryClient();
   const canEdit = role === 'OWNER' || role === 'DESIGNER';
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -457,6 +458,10 @@ function VendorsSection({ isOwner, role }) {
     }
   }
 
+  function invalidateVendors() {
+    queryClient.invalidateQueries({ queryKey: ['vendors'] });
+  }
+
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [categoryFilter]);
 
   const categories = useMemo(() => {
@@ -468,7 +473,7 @@ function VendorsSection({ isOwner, role }) {
     if (!confirm(`'${v.name}' 협력업체를 삭제할까요?\n관련 일정/지출 기록은 유지됩니다.`)) return;
     try {
       await vendorsApi.remove(v.id);
-      invalidateVendorCache();
+      invalidateVendors();
       load();
     } catch (e) {
       alert('삭제 실패: ' + (e.response?.data?.error || e.message));
@@ -581,7 +586,7 @@ function VendorsSection({ isOwner, role }) {
         <VendorModal
           existingCategories={categories}
           onClose={() => setShowAdd(false)}
-          onSaved={() => { setShowAdd(false); invalidateVendorCache(); load(); }}
+          onSaved={() => { setShowAdd(false); invalidateVendors(); load(); }}
         />
       )}
       {editing && (
@@ -589,7 +594,7 @@ function VendorsSection({ isOwner, role }) {
           vendor={editing}
           existingCategories={categories}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); invalidateVendorCache(); load(); }}
+          onSaved={() => { setEditing(null); invalidateVendors(); load(); }}
         />
       )}
     </div>

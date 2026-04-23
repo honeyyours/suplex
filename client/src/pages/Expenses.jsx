@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   expensesApi, EXPENSE_TYPE_META, EXPENSE_TYPE_KEYS,
   PAYMENT_METHOD_META, PAYMENT_METHOD_KEYS,
@@ -19,12 +20,9 @@ const VIEW_PNL     = 'pnl';
 export default function Expenses() {
   const [searchParams] = useSearchParams();
   const initialProjectId = searchParams.get('projectId') || 'ALL';
+  const queryClient = useQueryClient();
 
-  const [expenses, setExpenses] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [projects, setProjects] = useState([]);
   const [accountCodes, setAccountCodes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState(VIEW_LIST);
   const [filters, setFilters] = useState({
     projectId: initialProjectId,
@@ -40,32 +38,42 @@ export default function Expenses() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
 
-  async function reload() {
-    setLoading(true);
-    try {
-      const params = {};
-      if (filters.projectId !== 'ALL') params.projectId = filters.projectId;
-      if (filters.accountCodeId !== 'ALL') params.accountCodeId = filters.accountCodeId;
-      if (filters.accountGroup !== 'ALL') params.accountGroup = filters.accountGroup;
-      if (filters.type !== 'ALL') params.type = filters.type;
-      if (filters.dateFrom) params.dateFrom = filters.dateFrom;
-      if (filters.dateTo) params.dateTo = filters.dateTo;
-      if (filters.q.trim()) params.q = filters.q.trim();
+  const queryParams = useMemo(() => {
+    const p = {};
+    if (filters.projectId !== 'ALL') p.projectId = filters.projectId;
+    if (filters.accountCodeId !== 'ALL') p.accountCodeId = filters.accountCodeId;
+    if (filters.accountGroup !== 'ALL') p.accountGroup = filters.accountGroup;
+    if (filters.type !== 'ALL') p.type = filters.type;
+    if (filters.dateFrom) p.dateFrom = filters.dateFrom;
+    if (filters.dateTo) p.dateTo = filters.dateTo;
+    if (filters.q.trim()) p.q = filters.q.trim();
+    return p;
+  }, [filters]);
 
-      const [{ expenses }, sum] = await Promise.all([
-        expensesApi.list(params),
-        expensesApi.summary(),
-      ]);
-      setExpenses(expenses);
-      setSummary(sum);
-    } finally { setLoading(false); }
+  const { data: listData, isLoading: listLoading } = useQuery({
+    queryKey: ['expenses', 'list', queryParams],
+    queryFn: () => expensesApi.list(queryParams),
+  });
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['expenses', 'summary'],
+    queryFn: () => expensesApi.summary(),
+  });
+  const expenses = listData?.expenses || [];
+  const loading = listLoading || summaryLoading;
+
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects', 'list', {}],
+    queryFn: () => projectsApi.list(),
+  });
+  const projects = projectsData?.projects || [];
+
+  function reload() {
+    return queryClient.invalidateQueries({ queryKey: ['expenses'] });
   }
 
   useEffect(() => {
-    projectsApi.list().then((r) => setProjects(r.projects || []));
     accountCodesApi.list().then((r) => setAccountCodes(r.codes || []));
   }, []);
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [filters]);
 
   const totalFiltered = useMemo(
     () => expenses.reduce((s, e) => s + Number(e.amount || 0), 0),

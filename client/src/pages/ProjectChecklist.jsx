@@ -1,30 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi, CATEGORY_META, CATEGORY_KEYS } from '../api/checklists';
 import { relativeTime } from '../utils/date';
 
 export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
   const id = projectId || params.id;
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('GENERAL');
   const [err, setErr] = useState('');
 
-  async function reload() {
-    setLoading(true);
-    try {
-      const { items } = await checklistsApi.list(id);
-      setItems(items);
-    } catch (e) {
-      setErr(e.response?.data?.error || '불러오기 실패');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data, isLoading, error: queryError } = useQuery({
+    queryKey: ['checklists', 'project', id],
+    queryFn: () => checklistsApi.list(id),
+    enabled: !!id,
+  });
+  const items = data?.items || [];
+  const loading = isLoading;
+  const displayErr = err || (queryError ? (queryError.response?.data?.error || '불러오기 실패') : '');
 
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [id]);
+  function reload() {
+    return queryClient.invalidateQueries({ queryKey: ['checklists'] });
+  }
 
   const { todo, done } = useMemo(() => {
     const t = items.filter((i) => !i.isDone);
@@ -93,7 +92,7 @@ export default function ProjectChecklist({ projectId } = {}) {
             추가
           </button>
         </div>
-        {err && <div className="mt-2 text-sm text-red-600">{err}</div>}
+        {displayErr && <div className="mt-2 text-sm text-red-600">{displayErr}</div>}
       </div>
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
