@@ -8,6 +8,21 @@ const globalRouter = express.Router();
 router.use(authRequired);
 globalRouter.use(authRequired);
 
+async function attachPhotos(items) {
+  if (items.length === 0) return items;
+  const ids = items.map((i) => i.id);
+  const photos = await prisma.projectPhoto.findMany({
+    where: { source: 'CHECKLIST', sourceId: { in: ids } },
+    select: { id: true, sourceId: true, url: true, thumbnailUrl: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  const grouped = {};
+  for (const p of photos) {
+    (grouped[p.sourceId] ||= []).push(p);
+  }
+  return items.map((i) => ({ ...i, photos: grouped[i.id] || [] }));
+}
+
 // GET /api/checklists    (회사 전체, 프로젝트 이름 포함)
 globalRouter.get('/', async (req, res, next) => {
   try {
@@ -20,7 +35,7 @@ globalRouter.get('/', async (req, res, next) => {
       },
       orderBy: [{ isDone: 'asc' }, { createdAt: 'asc' }],
     });
-    res.json({ items });
+    res.json({ items: await attachPhotos(items) });
   } catch (e) {
     next(e);
   }
@@ -49,7 +64,7 @@ router.get('/', async (req, res, next) => {
       orderBy: [{ isDone: 'asc' }, { orderIndex: 'asc' }, { createdAt: 'asc' }],
       include: includeUsers,
     });
-    res.json({ items });
+    res.json({ items: await attachPhotos(items) });
   } catch (e) {
     next(e);
   }
@@ -60,6 +75,7 @@ const createSchema = z.object({
   category: z.enum(CATEGORIES).optional(),
   phase: z.string().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
+  requiresPhoto: z.boolean().optional(),
 });
 
 // POST /api/projects/:projectId/checklists
@@ -77,11 +93,12 @@ router.post('/', async (req, res, next) => {
         category: data.category || 'GENERAL',
         phase: data.phase || null,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        requiresPhoto: data.requiresPhoto || false,
         createdById: req.user.id,
       },
       include: includeUsers,
     });
-    res.status(201).json({ item });
+    res.status(201).json({ item: { ...item, photos: [] } });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
@@ -95,6 +112,7 @@ const updateSchema = z.object({
   category: z.enum(CATEGORIES).optional(),
   phase: z.string().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
+  requiresPhoto: z.boolean().optional(),
 });
 
 // PATCH /api/projects/:projectId/checklists/:id
@@ -115,6 +133,7 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.category !== undefined && { category: data.category }),
         ...(data.phase !== undefined && { phase: data.phase || null }),
         ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
+        ...(data.requiresPhoto !== undefined && { requiresPhoto: data.requiresPhoto }),
       },
       include: includeUsers,
     });
@@ -137,7 +156,10 @@ router.delete('/:id', async (req, res, next) => {
     const existing = await prisma.projectChecklist.findFirst({ where: { id, projectId } });
     if (!existing) return res.status(404).json({ error: 'Item not found' });
 
-    await prisma.projectChecklist.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.projectPhoto.deleteMany({ where: { source: 'CHECKLIST', sourceId: id } }),
+      prisma.projectChecklist.delete({ where: { id } }),
+    ]);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -155,6 +177,18 @@ router.post('/:id/toggle', async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: 'Item not found' });
 
     const newDone = !existing.isDone;
+
+    if (newDone && existing.requiresPhoto) {
+      const photoCount = await prisma.projectPhoto.count({
+        where: { source: 'CHECKLIST', sourceId: id },
+      });
+      if (photoCount === 0) {
+        return res.status(400).json({
+          error: '사진 첨부가 필요한 항목입니다. 사진을 1장 이상 업로드 후 완료 처리하세요.',
+        });
+      }
+    }
+
     const item = await prisma.projectChecklist.update({
       where: { id },
       data: {
@@ -164,7 +198,8 @@ router.post('/:id/toggle', async (req, res, next) => {
       },
       include: includeUsers,
     });
-    res.json({ item });
+    const enriched = (await attachPhotos([item]))[0];
+    res.json({ item: enriched });
   } catch (e) {
     next(e);
   }

@@ -12,7 +12,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024, files: 10 }, // 10MB x 10
 });
 
-const SOURCES = ['REPORT', 'MATERIAL_REQUEST'];
+const SOURCES = ['REPORT', 'MATERIAL_REQUEST', 'CHECKLIST'];
 
 async function assertProjectAccess(projectId, companyId) {
   return prisma.project.findFirst({ where: { id: projectId, companyId } });
@@ -24,6 +24,9 @@ async function assertSourceExists(source, sourceId, projectId) {
   }
   if (source === 'MATERIAL_REQUEST') {
     return prisma.materialRequest.findFirst({ where: { id: sourceId, projectId } });
+  }
+  if (source === 'CHECKLIST') {
+    return prisma.projectChecklist.findFirst({ where: { id: sourceId, projectId } });
   }
   return null;
 }

@@ -21,8 +21,12 @@ export default function AggregateChecklist({ projectIds }) {
   const loading = isLoading;
 
   async function toggle(projectId, itemId) {
-    await checklistsApi.toggle(projectId, itemId);
-    queryClient.invalidateQueries({ queryKey: ['checklists'] });
+    try {
+      await checklistsApi.toggle(projectId, itemId);
+      queryClient.invalidateQueries({ queryKey: ['checklists'] });
+    } catch (e) {
+      alert(e.response?.data?.error || '처리 실패');
+    }
   }
 
   const projects = useMemo(() => {
@@ -132,6 +136,11 @@ function Item({ item, onToggle }) {
           </div>
           <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
             <span className={`px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span>
+            {item.requiresPhoto && (
+              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                📷 {(item.photos || []).length}장 {item.photos?.length ? '' : '필요'}
+              </span>
+            )}
             {item.project && (
               <Link
                 to={`/projects/${item.project.id}/checklist`}

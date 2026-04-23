@@ -220,6 +220,7 @@ model ProjectChecklist {
   category      ChecklistCategory @default(GENERAL)
   title         String                           // 체크 항목 제목
   isDone        Boolean           @default(false)
+  requiresPhoto Boolean           @default(false) // 사진 첨부 필수 여부 (예: 철거 전/후)
   dueDate       DateTime?
   completedAt   DateTime?
   completedById String?
@@ -530,13 +531,14 @@ model MaterialRequest {
 enum PhotoSource {
   REPORT
   MATERIAL_REQUEST
+  CHECKLIST
 }
 
 model ProjectPhoto {
   id           String      @id @default(cuid())
   projectId    String
   source       PhotoSource
-  sourceId     String                  // DailyReport / MaterialRequest id
+  sourceId     String                  // DailyReport / MaterialRequest / ProjectChecklist id
   url          String                  // Cloudinary URL (원본)
   thumbnailUrl String?                 // Cloudinary 변환 URL (썸네일)
   caption      String?
