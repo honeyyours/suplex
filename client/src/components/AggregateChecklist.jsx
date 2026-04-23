@@ -70,7 +70,7 @@ export default function AggregateChecklist() {
             todo.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
           )}
         </Column>
-        <Column title="완료된 일" count={done.length} icon="✅">
+        <Column title="완료된 일" count={done.length} icon="✅" collapsible defaultOpen={false}>
           {done.length === 0 ? (
             <Empty text="완료된 항목이 없습니다" />
           ) : (
@@ -82,14 +82,31 @@ export default function AggregateChecklist() {
   );
 }
 
-function Column({ title, count, icon, children }) {
+function Column({ title, count, icon, children, collapsible = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const header = (
+    <>
+      <span>{icon}</span>
+      <span>{title} ({count})</span>
+      {collapsible && <span className="ml-auto text-gray-400 text-xs">{open ? '▼' : '▶'}</span>}
+    </>
+  );
   return (
     <div className="bg-gray-50 border rounded-lg p-4">
-      <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <span>{icon}</span>
-        <span>{title} ({count})</span>
-      </div>
-      <div className="space-y-2">{children}</div>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className={`w-full text-sm font-semibold text-gray-700 flex items-center gap-2 ${open ? 'mb-3' : ''}`}
+        >
+          {header}
+        </button>
+      ) : (
+        <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          {header}
+        </div>
+      )}
+      {open && <div className="space-y-2">{children}</div>}
     </div>
   );
 }
