@@ -139,7 +139,26 @@ function FilterableProjectCalendar({ status }) {
       </div>
       {selectedProject ? (
         <div className="space-y-4">
-          <ProjectInfoCard project={selectedProject} compact />
+          <ProjectInfoCard
+            project={selectedProject}
+            compact
+            actions={
+              <>
+                <Link
+                  to={`/projects/${selectedProject.id}/reports`}
+                  className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                >
+                  📋 현장보고
+                </Link>
+                <Link
+                  to={`/projects/${selectedProject.id}`}
+                  className="text-xs px-2.5 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 whitespace-nowrap"
+                >
+                  프로젝트 →
+                </Link>
+              </>
+            }
+          />
           <ScheduleCalendar projectId={selectedProject.id} project={selectedProject} />
         </div>
       ) : (
