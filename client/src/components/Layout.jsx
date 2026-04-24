@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,6 +14,13 @@ const NAV = [
 
 export default function Layout() {
   const { auth } = useAuth();
+
+  // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
+  useEffect(() => {
+    const handler = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handler);
+    return () => document.removeEventListener('contextmenu', handler);
+  }, []);
 
   const navClass = ({ isActive }) =>
     `px-3 py-2 rounded-md text-sm font-medium transition ${
