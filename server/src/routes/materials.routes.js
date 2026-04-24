@@ -37,12 +37,22 @@ function fmtValue(v) {
 }
 
 // === 발주예정 (PurchaseOrder) 연동 헬퍼 ===
+const PO_DONE_STATUSES = ['CONFIRMED', 'CHANGED']; // 발주 대상 status
+
 function buildPOFromMaterial(m) {
   const itemName = `${m.spaceGroup} · ${m.itemName}`;
-  const specParts = [m.brand, m.productName, m.spec].filter(Boolean);
+  const parts = [];
+  if (m.brand) parts.push(m.brand);
+  if (m.productName) parts.push(m.productName);
+  if (m.customSpec && typeof m.customSpec === 'object') {
+    for (const v of Object.values(m.customSpec)) {
+      if (v) parts.push(String(v));
+    }
+  }
+  if (m.spec) parts.push(m.spec);
   return {
     itemName,
-    spec: specParts.length > 0 ? specParts.join(' / ') : null,
+    spec: parts.length > 0 ? parts.join(' / ') : null,
     vendor: m.purchaseSource,
     quantity: m.quantity,
     unit: m.unit,
@@ -51,11 +61,14 @@ function buildPOFromMaterial(m) {
   };
 }
 
-// (DEPRECATED) 마감재 → 발주 자동 트리거. 새 발주 메뉴 생기기 전까지 비활성.
-// 호출부에서 더 이상 부르지 않음. 함수 자체는 보존(역사적 참고).
-// eslint-disable-next-line no-unused-vars
-async function _syncPurchaseOrders_DISABLED(tx, material, oldStatus) {
-  const justConfirmed = oldStatus !== 'CONFIRMED' && material.status === 'CONFIRMED';
+// 마감재 → 발주 자동 트리거.
+// - status가 done 그룹(CONFIRMED/CHANGED)으로 막 전이 → PO PENDING 자동 생성
+// - 기존 연결 PO들: PENDING이면 자동 동기화, 그 외(ORDERED/RECEIVED)는 materialChangedAt 마킹
+// - status가 done에서 빠져도 기존 PO는 손 안 댐 (사용자 수동 처리)
+async function syncPurchaseOrders(tx, material, oldStatus) {
+  const wasDone = PO_DONE_STATUSES.includes(oldStatus);
+  const isDone = PO_DONE_STATUSES.includes(material.status);
+  const justConfirmed = !wasDone && isDone;
 
   // 1) CONFIRMED로 막 전이 + 기존 PO 없음 → 자동 생성
   if (justConfirmed) {
@@ -243,8 +256,8 @@ router.post('/', async (req, res, next) => {
           newValue: `${m.spaceGroup} · ${m.itemName}`,
         },
       });
-      // 처음 만들 때 status가 CONFIRMED면 PO 생성
-      // PO 자동 트리거 비활성 (새 발주 메뉴로 이전 예정)
+      // 처음 만들 때 status가 CONFIRMED/CHANGED면 PO 자동 생성
+      await syncPurchaseOrders(tx, m, null);
       return m;
     });
 
@@ -365,7 +378,8 @@ router.patch('/:id', async (req, res, next) => {
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.material.update({ where: { id }, data: updateData });
       await tx.materialHistory.createMany({ data: historyEntries });
-      // PO 자동 트리거 비활성 (새 발주 메뉴로 이전 예정)
+      // status 전이 또는 표시 필드 변경 → PO 동기화
+      await syncPurchaseOrders(tx, u, existing.status);
       return u;
     });
 

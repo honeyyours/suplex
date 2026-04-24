@@ -14,7 +14,7 @@ const photoRoutes = require('./photos.routes');
 const quoteRoutes = require('./quotes.routes');
 const quoteTemplateRoutes = require('./quoteLineItemTemplates.routes');
 const companyRoutes = require('./company.routes');
-const purchaseOrderRoutes = require('./purchaseOrders.routes');
+const purchaseOrders = require('./purchaseOrders.routes');
 const expenseRoutes = require('./expenses.routes');
 const accountCodeRoutes = require('./accountCodes.routes');
 const expenseRuleRoutes = require('./expenseRules.routes');
@@ -42,7 +42,7 @@ router.use('/projects/:projectId/reports', reportRoutes);
 router.use('/projects/:projectId/material-requests', materialRequestRoutes);
 router.use('/projects/:projectId/photos', photoRoutes);
 router.use('/projects/:projectId/quotes', quoteRoutes);
-router.use('/projects/:projectId/purchase-orders', purchaseOrderRoutes);
+router.use('/projects/:projectId/purchase-orders', purchaseOrders.projectRouter);
 
 // 회사 전체 스코프
 router.use('/company', companyRoutes);
@@ -50,6 +50,7 @@ router.use('/schedules', schedules.globalRouter);
 router.use('/schedule-changes', scheduleChanges.globalRouter);
 router.use('/checklists', checklists.globalRouter);
 router.use('/material-templates', materialTemplateRoutes);
+router.use('/purchase-orders', purchaseOrders.globalRouter);
 router.use('/checklist-templates', checklistTemplateRoutes);
 router.use('/phase-keywords', phaseKeywordRoutes);
 router.use('/quote-templates', quoteTemplateRoutes);

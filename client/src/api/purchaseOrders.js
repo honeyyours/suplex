@@ -13,6 +13,16 @@ export const purchaseOrdersApi = {
     api.delete(`/projects/${projectId}/purchase-orders/${id}`).then((r) => r.data),
 };
 
+// 회사 전체 (글로벌)
+export const ordersGlobalApi = {
+  list: (params = {}) =>
+    api.get('/purchase-orders', { params }).then((r) => r.data),
+  pendingModels: (params = {}) =>
+    api.get('/purchase-orders/pending-models', { params }).then((r) => r.data),
+  summary: (params = {}) =>
+    api.get('/purchase-orders/summary', { params }).then((r) => r.data),
+};
+
 export const PO_STATUS_META = {
   PENDING:   { label: '대기중',   color: 'bg-amber-100 text-amber-800',     icon: '⏳' },
   ORDERED:   { label: '발주완료', color: 'bg-sky-100 text-sky-700',         icon: '📦' },

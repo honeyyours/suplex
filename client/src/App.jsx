@@ -14,6 +14,7 @@ import NewProject from './pages/NewProject';
 import ProjectDetail from './pages/ProjectDetail';
 import ProjectQuotes from './pages/ProjectQuotes';
 import Expenses from './pages/Expenses';
+import Orders from './pages/Orders';
 import AIBookkeeper from './pages/AIBookkeeper';
 import ProjectSchedule from './pages/ProjectSchedule';
 import ProjectMaterials from './pages/ProjectMaterials';
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/expenses" element={<Expenses />} />
+        <Route path="/orders" element={<Orders />} />
         <Route path="/ai-bookkeeper" element={<AIBookkeeper />} />
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/settings" element={<Settings />} />

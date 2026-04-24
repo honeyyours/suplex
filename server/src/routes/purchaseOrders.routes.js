@@ -4,9 +4,83 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 
 const router = express.Router({ mergeParams: true });
+const globalRouter = express.Router();
 router.use(authRequired);
+globalRouter.use(authRequired);
 
 const STATUSES = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
+
+// GET /api/purchase-orders   — 회사 전체 PO + 필터
+globalRouter.get('/', async (req, res, next) => {
+  try {
+    const where = { project: { companyId: req.user.companyId } };
+    if (req.query.projectId) where.projectId = req.query.projectId;
+    if (req.query.status && STATUSES.includes(req.query.status)) where.status = req.query.status;
+    if (req.query.vendorId) where.vendorId = req.query.vendorId;
+    if (req.query.from || req.query.to) {
+      where.createdAt = {};
+      if (req.query.from) where.createdAt.gte = new Date(req.query.from);
+      if (req.query.to) where.createdAt.lte = new Date(req.query.to);
+    }
+
+    const orders = await prisma.purchaseOrder.findMany({
+      where,
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        project: { select: { id: true, name: true } },
+        material: {
+          select: { id: true, spaceGroup: true, itemName: true, kind: true, formKey: true },
+        },
+        vendorEntity: { select: { id: true, name: true, category: true } },
+      },
+    });
+    res.json({ orders });
+  } catch (e) { next(e); }
+});
+
+// GET /api/purchase-orders/pending-models   — 모델 확인 필요 마감재 (PO 생성 전 단계)
+globalRouter.get('/pending-models', async (req, res, next) => {
+  try {
+    const where = {
+      project: { companyId: req.user.companyId },
+      status: { in: ['UNDECIDED', 'REVIEWING'] },
+    };
+    if (req.query.projectId) where.projectId = req.query.projectId;
+    const materials = await prisma.material.findMany({
+      where,
+      orderBy: [{ projectId: 'asc' }, { kind: 'asc' }, { orderIndex: 'asc' }],
+      include: {
+        project: { select: { id: true, name: true } },
+      },
+    });
+    res.json({ materials });
+  } catch (e) { next(e); }
+});
+
+// GET /api/purchase-orders/summary   — 통계 카드용
+globalRouter.get('/summary', async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const projectFilter = req.query.projectId ? { projectId: req.query.projectId } : {};
+    const baseWhere = { project: { companyId }, ...projectFilter };
+
+    const [pending, ordered, received, cancelled, pendingModels] = await Promise.all([
+      prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'PENDING' } }),
+      prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'ORDERED' } }),
+      prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'RECEIVED' } }),
+      prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'CANCELLED' } }),
+      prisma.material.count({
+        where: {
+          project: { companyId },
+          ...(req.query.projectId ? { projectId: req.query.projectId } : {}),
+          status: { in: ['UNDECIDED', 'REVIEWING'] },
+        },
+      }),
+    ]);
+
+    res.json({ pending, ordered, received, cancelled, pendingModels });
+  } catch (e) { next(e); }
+});
 
 async function assertProjectAccess(projectId, companyId) {
   return prisma.project.findFirst({ where: { id: projectId, companyId } });
@@ -192,4 +266,4 @@ router.delete('/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-module.exports = router;
+module.exports = { projectRouter: router, globalRouter };

@@ -7,6 +7,7 @@ const NAV = [
   { to: '/', label: '홈', exact: true },
   { to: '/schedule', label: '일정' },
   { to: '/projects', label: '프로젝트' },
+  { to: '/orders', label: '발주' },
   { to: '/expenses', label: '지출관리' },
   { to: '/ai-bookkeeper', label: 'AI경리' },
   { to: '/team', label: '팀관리' },
