@@ -29,13 +29,10 @@ export default function InlineMaterialRow({
   const showFields = !isNA && !isReused && !isInheriting;
   const muted = isNA;
 
-  // 자재명 영역 (표시용)
+  // 자재명 영역 — schema 기반 라벨+값 칩
   const src = isInheriting ? material.inheritFrom : material;
-  const customSummary = src.customSpec
-    ? Object.values(src.customSpec).filter(Boolean).slice(0, 2).join(' · ')
-    : '';
-  const hasMaterial = src.brand || src.productName ||
-    (src.customSpec && Object.keys(src.customSpec).length > 0);
+  const summaryChips = buildSummaryChips(src, schema);
+  const hasMaterial = summaryChips.length > 0;
 
   return (
     <div
@@ -76,23 +73,24 @@ export default function InlineMaterialRow({
           )}
         </div>
 
-        {/* 자재명 셀 */}
+        {/* 자재명 셀 — 라벨+값 칩 풀 표시 */}
         <div className="hidden sm:block min-w-0">
           {isReused || isNA ? (
             <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
           ) : hasMaterial ? (
-            <div className={`inline-flex items-center gap-1.5 px-2 py-1 border rounded text-xs max-w-full ${
-              isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 text-gray-700'
-            }`}>
+            <div className="flex flex-wrap gap-1 items-center">
               {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
-              {src.brand && (
-                <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
-                  {src.brand}
+              {summaryChips.map((c, i) => (
+                <span
+                  key={i}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] border ${
+                    isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  <span className="text-[9px] uppercase tracking-wider text-gray-500">{c.label}</span>
+                  <span className="font-medium">{c.value}</span>
                 </span>
-              )}
-              <span className="truncate">
-                {src.productName || customSummary || <span className="text-gray-400">미입력</span>}
-              </span>
+              ))}
             </div>
           ) : (
             <span className="text-xs text-gray-400 italic">🔍 자재명 입력... (Enter)</span>
@@ -420,6 +418,22 @@ function CellField({ field, value, onChange, onKeyDown, inputRef }) {
       />
     </label>
   );
+}
+
+// row 표시용 라벨+값 칩 — schema 순서대로 채워진 필드만
+function buildSummaryChips(material, schema) {
+  const cs = material.customSpec || {};
+  const out = [];
+  for (const f of schema.fields) {
+    let value;
+    if (f.target === 'brand') value = material.brand;
+    else if (f.target === 'productName') value = material.productName;
+    else if (f.target === 'spec') value = material.spec;
+    else value = cs[f.key];
+    if (!value) continue;
+    out.push({ label: f.label, value: String(value) });
+  }
+  return out;
 }
 
 // material → form draft (key→value)

@@ -35,6 +35,19 @@ html.dark .bg-sky-50        { background-color: rgb(7 89 133 / 0.25); }
 html.dark .bg-rose-50       { background-color: rgb(159 18 57 / 0.25); }
 html.dark .bg-violet-50     { background-color: rgb(76 29 149 / 0.25); }
 html.dark .bg-yellow-50     { background-color: rgb(113 63 18 / 0.25); }
+html.dark .bg-navy-100      { background-color: rgb(30 58 102 / 0.4); }
+html.dark .bg-emerald-100   { background-color: rgb(6 78 59 / 0.5); }
+html.dark .bg-sky-100       { background-color: rgb(7 89 133 / 0.5); }
+html.dark .bg-amber-100     { background-color: rgb(120 53 15 / 0.5); }
+html.dark .bg-rose-100      { background-color: rgb(159 18 57 / 0.5); }
+html.dark .bg-violet-100    { background-color: rgb(76 29 149 / 0.5); }
+html.dark .bg-gray-200      { background-color: rgb(75 85 99); }
+/* 헤더 nav active 가시성 — bg-navy-700이 헤더 bg-navy-800과 너무 비슷 */
+html.dark .bg-navy-700      { background-color: rgb(59 130 246 / 0.8); }
+html.dark .hover\:bg-navy-700\/60:hover { background-color: rgb(59 130 246 / 0.4); }
+html.dark .hover\:bg-navy-800:hover { background-color: rgb(37 99 235); }
+/* 다크에서 흰 배경 navy-700 텍스트 → 더 밝게 */
+html.dark .text-navy-100    { color: rgb(191 219 254); }
 
 /* 텍스트 */
 html.dark .text-gray-900    { color: rgb(243 244 246); }
