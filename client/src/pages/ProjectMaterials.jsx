@@ -531,13 +531,15 @@ function Row({ material, onClick }) {
   const kind = KIND_META[material.kind] || KIND_META.FINISH;
   const isNA = material.status === 'NOT_APPLICABLE';
   const isReused = material.status === 'REUSED';
+  const isInheriting = !!material.inheritFromMaterialId && !!material.inheritFrom;
   const muted = isNA;
 
-  // 자재명 영역: brand/productName + customSpec 요약
-  const hasMaterial = material.brand || material.productName ||
-                      (material.customSpec && Object.keys(material.customSpec).length > 0);
-  const customSummary = material.customSpec
-    ? Object.values(material.customSpec).filter(Boolean).slice(0, 2).join(' · ')
+  // 자재명 영역: inherit > brand/productName > customSpec
+  const src = isInheriting ? material.inheritFrom : material;
+  const hasMaterial = src.brand || src.productName ||
+                      (src.customSpec && Object.keys(src.customSpec).length > 0);
+  const customSummary = src.customSpec
+    ? Object.values(src.customSpec).filter(Boolean).slice(0, 2).join(' · ')
     : '';
 
   return (
@@ -572,14 +574,17 @@ function Row({ material, onClick }) {
         {isReused || isNA ? (
           <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
         ) : hasMaterial ? (
-          <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border rounded text-xs text-gray-700 max-w-full">
-            {material.brand && (
+          <div className={`inline-flex items-center gap-1.5 px-2 py-1 border rounded text-xs max-w-full ${
+            isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 text-gray-700'
+          }`}>
+            {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
+            {src.brand && (
               <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
-                {material.brand}
+                {src.brand}
               </span>
             )}
             <span className="truncate">
-              {material.productName || customSummary || <span className="text-gray-400">미입력</span>}
+              {src.productName || customSummary || <span className="text-gray-400">미입력</span>}
             </span>
           </div>
         ) : (

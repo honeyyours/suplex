@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   materialsApi, STATUS_META, STATUS_OPTIONS, KIND_META,
   FIELD_LABEL,
 } from '../api/materials';
 import { getFormSchema } from '../utils/materialFormSchemas';
 import { relativeTime } from '../utils/date';
+
+// 공용부 동일 inherit 가능한 itemName (방1/방2/안방의 바닥재·도배 → 거실에서 가져옴)
+const INHERITABLE_FORM_KEYS = new Set(['floor_material', 'wallpaper']);
+const INHERIT_SOURCE_SPACE = '거실';
 
 // formSchema 기반 dynamic 폼.
 // brand/productName/spec는 schema의 target 지정 필드만 컬럼에 저장,
@@ -51,16 +56,34 @@ export default function MaterialModal({
   const [checked, setChecked] = useState(material?.checked || false);
   const [purchaseSource, setPurchaseSource] = useState(material?.purchaseSource || '');
   const [memo, setMemo] = useState(material?.memo || '');
+  const [inheritFromId, setInheritFromId] = useState(material?.inheritFromMaterialId || null);
   const [adhoc, setAdhoc] = useState({
     spaceGroup: meta.spaceGroup,
     itemName: meta.itemName,
   });
 
+  // 공용부 동일 가능 여부: floor_material / wallpaper + 거실이 아닌 다른 공간
+  const canInherit = INHERITABLE_FORM_KEYS.has(meta.formKey) && meta.spaceGroup !== INHERIT_SOURCE_SPACE;
+
+  // 같은 프로젝트의 거실 항목들에서 동일 itemName 찾기
+  const { data: allMaterialsData } = useQuery({
+    queryKey: ['materials', projectId],
+    enabled: canInherit,
+  });
+  const allMaterials = allMaterialsData?.materials || [];
+  const inheritSource = useMemo(() => {
+    if (!canInherit) return null;
+    return allMaterials.find(
+      (m) => m.spaceGroup === INHERIT_SOURCE_SPACE && m.formKey === meta.formKey,
+    ) || null;
+  }, [canInherit, allMaterials, meta.formKey]);
+
   const isCreating = !isEdit;
   const isAdHoc = isCreating && !meta.formKey; // 시드 외 직접 추가 (자유 폼)
   const isNotApplicable = status === 'NOT_APPLICABLE';
   const isReused = status === 'REUSED';
-  const showFields = !isNotApplicable && !isReused;
+  const isInheriting = !!inheritFromId;
+  const showFields = !isNotApplicable && !isReused && !isInheriting;
 
   useEffect(() => {
     if (isEdit && tab === 'history' && !history) {
@@ -101,6 +124,7 @@ export default function MaterialModal({
         checked: !!checked,
         status,
         memo: memo.trim() || null,
+        inheritFromMaterialId: inheritFromId || null,
       };
       const { material: saved } = isEdit
         ? await materialsApi.update(projectId, material.id, payload)
@@ -202,6 +226,40 @@ export default function MaterialModal({
               </div>
             )}
 
+            {/* 공용부와 동일 토글 */}
+            {canInherit && (
+              <div className={`border rounded-md p-3 ${isInheriting ? 'bg-sky-50 border-sky-200' : 'bg-gray-50 border-gray-200'}`}>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isInheriting}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        if (!inheritSource) {
+                          alert('거실에 같은 항목이 없습니다. 먼저 거실 항목을 입력해주세요.');
+                          return;
+                        }
+                        setInheritFromId(inheritSource.id);
+                      } else {
+                        setInheritFromId(null);
+                      }
+                    }}
+                    className="w-4 h-4 accent-sky-600"
+                  />
+                  <span className="text-sm font-medium text-sky-800">🔗 거실(공용부)와 동일</span>
+                  {!inheritSource && (
+                    <span className="text-xs text-gray-400">— 거실 항목이 아직 없음</span>
+                  )}
+                </label>
+                {isInheriting && inheritSource && (
+                  <div className="mt-2 ml-6 text-xs text-gray-600">
+                    {inheritSource.brand && <span className="font-bold">{inheritSource.brand} </span>}
+                    {inheritSource.productName || '(거실 항목에 자재 미입력)'}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 진행 상태 */}
             <Field label="진행 상태">
               <div className="flex flex-wrap gap-1.5">
@@ -236,6 +294,10 @@ export default function MaterialModal({
                     onChange={(v) => setVal(f.key, v)}
                   />
                 ))}
+              </div>
+            ) : isInheriting ? (
+              <div className="text-sm text-sky-700 bg-sky-50 border border-sky-200 rounded-md p-4 text-center">
+                🔗 거실 값을 그대로 사용합니다. 거실 항목이 변경되면 자동 반영됩니다.
               </div>
             ) : (
               <div className="text-sm text-gray-400 bg-gray-50 border rounded-md p-4 text-center">

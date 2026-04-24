@@ -107,6 +107,15 @@ router.get('/', async (req, res, next) => {
     const materials = await prisma.material.findMany({
       where,
       orderBy: [{ kind: 'asc' }, { orderIndex: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        inheritFrom: {
+          select: {
+            id: true, spaceGroup: true, itemName: true,
+            brand: true, productName: true, spec: true, customSpec: true,
+            status: true,
+          },
+        },
+      },
     });
     res.json({ materials });
   } catch (e) {
