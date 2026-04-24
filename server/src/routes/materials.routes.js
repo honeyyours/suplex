@@ -207,6 +207,16 @@ function toCreateData(data) {
   };
 }
 
+// formKey 자동 채우기 — 회사 MaterialTemplate에서 (spaceGroup, itemName) 매칭
+async function resolveFormKey(companyId, spaceGroup, itemName) {
+  if (!spaceGroup || !itemName) return null;
+  const t = await prisma.materialTemplate.findFirst({
+    where: { companyId, spaceGroup, itemName, formKey: { not: null } },
+    select: { formKey: true },
+  });
+  return t?.formKey || null;
+}
+
 // POST /api/projects/:projectId/materials
 router.post('/', async (req, res, next) => {
   try {
@@ -214,6 +224,11 @@ router.post('/', async (req, res, next) => {
     const data = createSchema.parse(req.body);
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    // formKey 미지정 시 templates에서 자동 매칭
+    if (!data.formKey) {
+      data.formKey = await resolveFormKey(req.user.companyId, data.spaceGroup, data.itemName);
+    }
 
     const material = await prisma.$transaction(async (tx) => {
       const m = await tx.material.create({

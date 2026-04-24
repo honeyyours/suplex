@@ -28,6 +28,8 @@ export const materialTemplatesApi = {
     api.patch(`/material-templates/${id}`, payload).then((r) => r.data),
   remove: (id) =>
     api.delete(`/material-templates/${id}`).then((r) => r.data),
+  backfillFormKey: () =>
+    api.post('/material-templates/backfill-formkey').then((r) => r.data),
 };
 
 // 4가지 status (legacy 2개 자동 매핑):

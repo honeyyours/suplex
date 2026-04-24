@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   materialsApi, materialTemplatesApi,
-  STATUS_META, KIND_META,
+  STATUS_META, STATUS_OPTIONS, KIND_META,
 } from '../api/materials';
 import MaterialModal from '../components/MaterialModal';
 
@@ -194,13 +194,16 @@ export default function ProjectMaterials() {
     const ok = confirm(
       '⚠️ 회사 마감재 템플릿을 최신 기본값(약 130개)으로 덮어씁니다.\n\n' +
       '회사 마스터만 갈아엎고 기존 프로젝트들의 마감재 데이터는 영향 X.\n' +
+      '재시드 후 기존 항목들의 폼 매핑(formKey)도 자동으로 새 템플릿 기준 backfill 됩니다.\n\n' +
       '계속할까요?'
     );
     if (!ok) return;
     setImporting(true);
     try {
       const { created } = await materialTemplatesApi.seed(true);
-      alert(`✅ 회사 템플릿 ${created}개로 재시드되었습니다.\n이 프로젝트에 적용하려면 "📋 템플릿"으로 가져오세요.`);
+      const { updated } = await materialTemplatesApi.backfillFormKey();
+      alert(`✅ 회사 템플릿 ${created}개로 재시드, 기존 항목 ${updated}개 폼 매핑 자동 갱신 완료.`);
+      reload();
     } catch (e) {
       alert('재시드 실패: ' + (e.response?.data?.error || e.message));
     } finally {
@@ -397,7 +400,19 @@ export default function ProjectMaterials() {
                         )}
                         <div className="divide-y">
                           {sub.items.map((m) => (
-                            <Row key={m.id} material={m} onClick={() => setEditing(m)} />
+                            <Row
+                              key={m.id}
+                              material={m}
+                              onClick={() => setEditing(m)}
+                              onStatusChange={async (newStatus) => {
+                                try {
+                                  await materialsApi.update(id, m.id, { status: newStatus });
+                                  reload();
+                                } catch (e) {
+                                  alert('상태 변경 실패: ' + (e.response?.data?.error || e.message));
+                                }
+                              }}
+                            />
                           ))}
                         </div>
                       </div>
@@ -526,15 +541,16 @@ function groupBySubgroup(items) {
   return Array.from(m.values()).sort((a, b) => a.firstOrder - b.firstOrder);
 }
 
-function Row({ material, onClick }) {
+function Row({ material, onClick, onStatusChange }) {
   const status = STATUS_META[material.status] || STATUS_META.UNDECIDED;
   const kind = KIND_META[material.kind] || KIND_META.FINISH;
   const isNA = material.status === 'NOT_APPLICABLE';
   const isReused = material.status === 'REUSED';
   const isInheriting = !!material.inheritFromMaterialId && !!material.inheritFrom;
   const muted = isNA;
+  const [picker, setPicker] = useState(null); // {x, y} or null
 
-  // 자재명 영역: inherit > brand/productName > customSpec
+  // 자재명 영역
   const src = isInheriting ? material.inheritFrom : material;
   const hasMaterial = src.brand || src.productName ||
                       (src.customSpec && Object.keys(src.customSpec).length > 0);
@@ -542,60 +558,134 @@ function Row({ material, onClick }) {
     ? Object.values(src.customSpec).filter(Boolean).slice(0, 2).join(' · ')
     : '';
 
+  function openPicker(e) {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPicker({ x: rect.right, y: rect.bottom + 4 });
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-2 py-2.5 hover:bg-gray-50 grid grid-cols-[20px_1fr_auto] sm:grid-cols-[20px_minmax(140px,180px)_1fr_auto] items-center gap-3 text-sm group ${muted ? 'opacity-50' : ''}`}
-    >
-      {/* 체크(V) */}
-      <span className="flex items-center justify-center">
-        {material.checked ? (
-          <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-[10px]">✓</span>
-        ) : (
-          <span className="w-4 h-4 border border-gray-300 rounded-sm" />
-        )}
-      </span>
+    <>
+      <div
+        role="button"
+        onClick={onClick}
+        className={`w-full text-left px-2 py-2.5 hover:bg-gray-50 grid grid-cols-[20px_1fr_auto] sm:grid-cols-[20px_minmax(140px,180px)_1fr_auto] items-center gap-3 text-sm cursor-pointer ${muted ? 'opacity-50' : ''}`}
+      >
+        {/* 체크(V) */}
+        <span className="flex items-center justify-center">
+          {material.checked ? (
+            <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-[10px]">✓</span>
+          ) : (
+            <span className="w-4 h-4 border border-gray-300 rounded-sm" />
+          )}
+        </span>
 
-      {/* 항목명 + kind 태그 + 시공 노트 */}
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
-          <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
-            {kind.label}
-          </span>
-        </div>
-        {material.siteNotes && (
-          <div className="text-[11px] text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
-        )}
-      </div>
-
-      {/* 자재명 셀 — REUSED/NA면 안 보임 */}
-      <div className="hidden sm:block min-w-0">
-        {isReused || isNA ? (
-          <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
-        ) : hasMaterial ? (
-          <div className={`inline-flex items-center gap-1.5 px-2 py-1 border rounded text-xs max-w-full ${
-            isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 text-gray-700'
-          }`}>
-            {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
-            {src.brand && (
-              <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
-                {src.brand}
-              </span>
-            )}
-            <span className="truncate">
-              {src.productName || customSummary || <span className="text-gray-400">미입력</span>}
+        {/* 항목명 + kind 태그 + 시공 노트 */}
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
+            <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
+              {kind.label}
             </span>
           </div>
-        ) : (
-          <span className="text-xs text-gray-400 italic">🔍 자재명 입력...</span>
-        )}
+          {material.siteNotes && (
+            <div className="text-[11px] text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
+          )}
+        </div>
+
+        {/* 자재명 셀 */}
+        <div className="hidden sm:block min-w-0">
+          {isReused || isNA ? (
+            <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
+          ) : hasMaterial ? (
+            <div className={`inline-flex items-center gap-1.5 px-2 py-1 border rounded text-xs max-w-full ${
+              isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 text-gray-700'
+            }`}>
+              {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
+              {src.brand && (
+                <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
+                  {src.brand}
+                </span>
+              )}
+              <span className="truncate">
+                {src.productName || customSummary || <span className="text-gray-400">미입력</span>}
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400 italic">🔍 자재명 입력...</span>
+          )}
+        </div>
+
+        {/* 상태 pill — 클릭 시 빠른 변경 팝오버 (모달 안 열림) */}
+        <button
+          type="button"
+          onClick={openPicker}
+          title="클릭해서 빠른 변경"
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+        >
+          {status.short || status.label}
+        </button>
       </div>
 
-      {/* 상태 pill */}
-      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${status.color}`}>
-        {status.short || status.label}
-      </span>
-    </button>
+      {picker && (
+        <StatusPickerPopover
+          x={picker.x}
+          y={picker.y}
+          current={material.status}
+          onPick={(s) => { setPicker(null); onStatusChange(s); }}
+          onClose={() => setPicker(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function StatusPickerPopover({ x, y, current, onPick, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    function handleEsc(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]);
+
+  // 화면 밖 보정
+  const maxX = typeof window !== 'undefined' ? window.innerWidth - 200 : x;
+  const safeX = Math.min(x - 180, maxX);
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: 'fixed', left: Math.max(8, safeX), top: y, zIndex: 60 }}
+      className="bg-white border rounded-md shadow-lg py-1 min-w-[180px]"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {STATUS_OPTIONS.map((o) => {
+        const isCurrent = o.key === current ||
+          (o.key === 'CONFIRMED' && current === 'CHANGED') ||
+          (o.key === 'UNDECIDED' && current === 'REVIEWING');
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onPick(o.key)}
+            className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${
+              isCurrent ? 'bg-gray-50 font-semibold text-navy-800' : 'text-gray-700'
+            }`}
+          >
+            {o.label}
+            {isCurrent && <span className="float-right text-emerald-600">✓</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }

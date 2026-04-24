@@ -22,6 +22,31 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// POST /api/material-templates/backfill-formkey
+//   회사의 모든 프로젝트 Material을 (spaceGroup, itemName) 기준으로
+//   현재 회사 MaterialTemplate의 formKey로 backfill (덮어쓰기 안함, null만 채움).
+router.post('/backfill-formkey', async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const result = await prisma.$executeRaw`
+      UPDATE "materials" AS m
+      SET "formKey" = t."formKey"
+      FROM "material_templates" AS t,
+           "projects" AS p
+      WHERE m."formKey" IS NULL
+        AND t."formKey" IS NOT NULL
+        AND p."id" = m."projectId"
+        AND p."companyId" = ${companyId}
+        AND t."companyId" = ${companyId}
+        AND t."spaceGroup" = m."spaceGroup"
+        AND t."itemName" = m."itemName"
+    `;
+    res.json({ ok: true, updated: result });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // POST /api/material-templates/seed   — 비어있으면 PDF 기반 기본 템플릿 시드
 router.post('/seed', async (req, res, next) => {
   try {
