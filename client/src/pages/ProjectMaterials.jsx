@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -6,6 +6,7 @@ import {
   STATUS_META, STATUS_OPTIONS, KIND_META,
 } from '../api/materials';
 import MaterialModal from '../components/MaterialModal';
+import InlineMaterialRow from '../components/InlineMaterialRow';
 
 // activeKey 형태: 'ALL' | 'FINISH:전체' | 'APPLIANCE:전체' | 'FINISH:거실' | 'APPLIANCE:주방' ...
 const ALL_KEY = 'ALL';
@@ -37,6 +38,8 @@ export default function ProjectMaterials() {
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['materials', id],
@@ -108,6 +111,134 @@ export default function ProjectMaterials() {
   }, [materials, activeKey]);
 
   const { total, na: naCount, done: confirmed, denom, pct } = countProgress(displayed);
+
+  // 평면 리스트 (displayGroups를 펼쳐서 키보드 네비용)
+  const flatList = useMemo(() => {
+    const arr = [];
+    for (const g of displayGroups || []) {
+      for (const m of g.items) arr.push(m);
+    }
+    return arr;
+  }, [displayed, activeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 화면에서 선택된 항목 ID — 키보드 네비용. flatList 변경 시 유효성 체크
+  useEffect(() => {
+    if (!selectedId) return;
+    if (!flatList.find((m) => m.id === selectedId)) {
+      setSelectedId(flatList[0]?.id || null);
+      setExpandedId(null);
+    }
+  }, [flatList, selectedId]);
+
+  // 단일 항목 PATCH (debounce는 InlineRow에서)
+  const saveMaterial = useCallback(async (materialId, patch) => {
+    try {
+      await materialsApi.update(id, materialId, patch);
+      queryClient.invalidateQueries({ queryKey: ['materials', id] });
+    } catch (e) {
+      console.error('save failed:', e);
+    }
+  }, [id, queryClient]);
+
+  const changeStatus = useCallback(async (materialId, newStatus) => {
+    try {
+      await materialsApi.update(id, materialId, { status: newStatus });
+      queryClient.invalidateQueries({ queryKey: ['materials', id] });
+    } catch (e) {
+      alert('상태 변경 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }, [id, queryClient]);
+
+  const toggleChecked = useCallback(async (m) => {
+    try {
+      await materialsApi.update(id, m.id, { checked: !m.checked });
+      queryClient.invalidateQueries({ queryKey: ['materials', id] });
+    } catch (e) {
+      alert('체크 변경 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }, [id, queryClient]);
+
+  const deleteMaterial = useCallback(async (materialId) => {
+    if (!confirm('이 항목을 삭제할까요?')) return;
+    try {
+      await materialsApi.remove(id, materialId);
+      if (expandedId === materialId) setExpandedId(null);
+      if (selectedId === materialId) setSelectedId(null);
+      queryClient.invalidateQueries({ queryKey: ['materials', id] });
+    } catch (e) {
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }, [id, queryClient, expandedId, selectedId]);
+
+  // 글로벌 키보드 단축키
+  useEffect(() => {
+    function isInputFocused() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+    }
+
+    function handler(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // 펼침 안 input에 focus 중이면 글로벌 단축키 무시 (펼침 안에서 자체 처리)
+      if (expandedId && isInputFocused()) return;
+      // 모달 열려있으면 무시
+      if (editing || adding) return;
+      if (flatList.length === 0) return;
+
+      const idx = selectedId ? flatList.findIndex((m) => m.id === selectedId) : -1;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = flatList[Math.min(flatList.length - 1, Math.max(0, idx + 1))] || flatList[0];
+        setSelectedId(next.id);
+        setExpandedId(null);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const next = flatList[Math.max(0, idx - 1)] || flatList[0];
+        setSelectedId(next.id);
+        setExpandedId(null);
+      } else if ((e.key === 'Enter' || e.key === 'F2') && selectedId) {
+        e.preventDefault();
+        setExpandedId(selectedId);
+      } else if (e.key === 'Escape') {
+        if (expandedId) { e.preventDefault(); setExpandedId(null); }
+      } else if (selectedId && ['1','2','3','4'].includes(e.key)) {
+        e.preventDefault();
+        const opt = STATUS_OPTIONS[Number(e.key) - 1];
+        if (opt) changeStatus(selectedId, opt.key);
+      } else if (selectedId && e.key === ' ') {
+        e.preventDefault();
+        const m = flatList.find((x) => x.id === selectedId);
+        if (m) toggleChecked(m);
+      } else if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        deleteMaterial(selectedId);
+      } else if (selectedId && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        const m = flatList.find((x) => x.id === selectedId);
+        if (m) setEditing(m);
+      }
+    }
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [flatList, selectedId, expandedId, editing, adding, changeStatus, toggleChecked, deleteMaterial]);
+
+  // 펼침 시 그 행이 선택 상태로
+  useEffect(() => { if (expandedId) setSelectedId(expandedId); }, [expandedId]);
+
+  // Tab 흐름: 마지막 필드 → 다음 행 펼침 / Shift+Tab → 이전 행 펼침
+  function gotoNextRow() {
+    const idx = flatList.findIndex((m) => m.id === selectedId);
+    const next = flatList[idx + 1];
+    if (next) { setSelectedId(next.id); setExpandedId(next.id); }
+  }
+  function gotoPrevRow() {
+    const idx = flatList.findIndex((m) => m.id === selectedId);
+    const prev = flatList[idx - 1];
+    if (prev) { setSelectedId(prev.id); setExpandedId(prev.id); }
+  }
 
   const { headerLabel, headerCrumb } = useMemo(() => {
     if (activeKey === ALL_KEY) return { headerLabel: '전체', headerCrumb: '전체 보기' };
@@ -310,6 +441,9 @@ export default function ProjectMaterials() {
                 </div>
                 <span className="tabular-nums">{pct}%</span>
               </div>
+              <div className="hidden md:block text-[10px] text-gray-400 mt-1">
+                ↑↓ 이동 · Enter 펼침 · Tab 다음 칸 · Esc 닫음 · 1/2/3/4 상태 · Space 체크 · H 이력 · Del 삭제
+              </div>
             </div>
             <div className="flex gap-2">
               <button
@@ -399,20 +533,21 @@ export default function ProjectMaterials() {
                             <span className="text-[10px] text-gray-400">· {sub.items.length}</span>
                           </div>
                         )}
-                        <div className="divide-y">
+                        <div>
                           {sub.items.map((m) => (
-                            <Row
+                            <InlineMaterialRow
                               key={m.id}
                               material={m}
-                              onClick={() => setEditing(m)}
-                              onStatusChange={async (newStatus) => {
-                                try {
-                                  await materialsApi.update(id, m.id, { status: newStatus });
-                                  reload();
-                                } catch (e) {
-                                  alert('상태 변경 실패: ' + (e.response?.data?.error || e.message));
-                                }
-                              }}
+                              isSelected={selectedId === m.id}
+                              isExpanded={expandedId === m.id}
+                              onSelect={() => setSelectedId(m.id)}
+                              onToggleExpand={() => setExpandedId((cur) => cur === m.id ? null : m.id)}
+                              onSave={(patch) => saveMaterial(m.id, patch)}
+                              onStatusChange={(s) => changeStatus(m.id, s)}
+                              onTabExitForward={gotoNextRow}
+                              onTabExitBackward={gotoPrevRow}
+                              onDelete={() => deleteMaterial(m.id)}
+                              onShowHistory={() => setEditing(m)}
                             />
                           ))}
                         </div>
