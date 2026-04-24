@@ -12,6 +12,7 @@ export default function InlineMaterialRow({
   material,
   isSelected,
   isExpanded,
+  compact = false,  // true = 컴팩트 보기 모드 (행 작게)
   onSelect,
   onToggleExpand,
   onSave,           // (patch) => Promise
@@ -52,16 +53,18 @@ export default function InlineMaterialRow({
       }`}
     >
       {/* 표시 행 */}
-      <div className="px-3 py-2 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(160px,220px)_1fr_auto] items-center gap-3">
+      <div className={`px-3 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(160px,220px)_1fr_auto] items-center gap-3 ${compact ? 'py-1' : 'py-2'}`}>
         {/* 항목명 + 시공노트 — primary */}
         <div className="min-w-0">
-          <div className="text-[15px] font-semibold text-gray-900 truncate">{material.itemName}</div>
-          {material.siteNotes && (
+          <div className={`font-semibold text-gray-900 truncate ${compact ? 'text-sm' : 'text-[15px]'}`}>
+            {material.itemName}
+          </div>
+          {!compact && material.siteNotes && (
             <div className="text-xs text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
           )}
         </div>
 
-        {/* 자재명 셀 — secondary 위계, 작은 칩 */}
+        {/* 자재명 셀 — secondary 위계 */}
         <div className="hidden sm:block min-w-0">
           {isReused || isNA ? (
             <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
@@ -71,16 +74,18 @@ export default function InlineMaterialRow({
               {summaryChips.map((c, i) => (
                 <span
                   key={i}
-                  className={`inline-flex items-stretch overflow-hidden rounded text-sm border ${
+                  className={`inline-flex items-stretch overflow-hidden rounded border ${
+                    compact ? 'text-xs' : 'text-sm'
+                  } ${
                     isInheriting ? 'border-sky-200' : 'border-gray-200'
                   }`}
                 >
-                  <span className={`px-2 py-0.5 ${
+                  <span className={`${compact ? 'px-1.5 py-px' : 'px-2 py-0.5'} ${
                     isInheriting ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600'
                   }`}>
                     {c.label}
                   </span>
-                  <span className={`px-2 py-0.5 font-semibold ${
+                  <span className={`${compact ? 'px-1.5 py-px' : 'px-2 py-0.5'} font-semibold ${
                     isInheriting ? 'bg-white text-sky-900' : 'bg-white text-gray-800'
                   }`}>
                     {c.value}
@@ -89,11 +94,11 @@ export default function InlineMaterialRow({
               ))}
             </div>
           ) : (
-            <span className="text-xs text-gray-400 italic">🔍 자재명 입력... (Enter)</span>
+            <span className="text-xs text-gray-400 italic">{compact ? '미입력' : '🔍 자재명 입력... (Enter)'}</span>
           )}
         </div>
 
-        {/* 상태 pill — secondary, 색상으로 강조 */}
+        {/* 상태 pill */}
         <button
           type="button"
           data-no-row-click
@@ -103,7 +108,9 @@ export default function InlineMaterialRow({
             setPicker({ x: rect.right, y: rect.bottom + 4 });
           }}
           title="클릭해서 변경 (또는 1/2/3/4 키)"
-          className={`text-sm font-semibold px-3 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+          className={`font-semibold rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color} ${
+            compact ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'
+          }`}
         >
           {status.short || status.label}
         </button>

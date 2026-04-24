@@ -41,6 +41,12 @@ export default function ProjectMaterials() {
   const [importing, setImporting] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [viewMode, setViewMode] = useState(() => {
+    try { return localStorage.getItem('suplex-materials-view') || 'edit'; } catch { return 'edit'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('suplex-materials-view', viewMode); } catch {}
+  }, [viewMode]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['materials', id],
@@ -441,7 +447,26 @@ export default function ProjectMaterials() {
                 ↑↓ 이동 · Enter 펼침 · Tab 다음 칸 · Esc 닫음 · 1/2/3/4 상태 · H 이력 · Del 삭제
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* 보기/편집 모드 토글 */}
+              <div className="inline-flex rounded-md border overflow-hidden text-xs mr-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('compact')}
+                  title="컴팩트 보기 — 빽빽한 조회"
+                  className={`px-2.5 py-1.5 ${viewMode === 'compact' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  📋 보기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('edit')}
+                  title="편집 — 풍부한 폼 + 시공노트 표시"
+                  className={`px-2.5 py-1.5 border-l ${viewMode === 'edit' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  ✏️ 편집
+                </button>
+              </div>
               <button
                 onClick={handleClearAll}
                 disabled={importing || materials.length === 0}
@@ -534,6 +559,7 @@ export default function ProjectMaterials() {
                             <InlineMaterialRow
                               key={m.id}
                               material={m}
+                              compact={viewMode === 'compact'}
                               isSelected={selectedId === m.id}
                               isExpanded={expandedId === m.id}
                               onSelect={() => setSelectedId(m.id)}
