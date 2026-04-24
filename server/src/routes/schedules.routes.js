@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { recordChange } = require('../services/scheduleChangeLogger');
+const { syncChecklistFromPhase } = require('../services/checklistAutoSeed');
 
 const projectRouter = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -156,10 +157,17 @@ projectRouter.post('/', async (req, res, next) => {
         userName,
       });
 
-      return created;
+      const seeded = await syncChecklistFromPhase(tx, {
+        projectId,
+        companyId: req.user.companyId,
+        phase: created.category,
+        userId: req.user.id,
+      });
+
+      return { created, seededChecklists: seeded.created };
     });
 
-    res.status(201).json({ entry });
+    res.status(201).json({ entry: entry.created, seededChecklists: entry.seededChecklists });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
@@ -230,10 +238,21 @@ projectRouter.patch('/:id', async (req, res, next) => {
         });
       }
 
-      return u;
+      let seededChecklists = 0;
+      if (categoryChanged && u.category) {
+        const seeded = await syncChecklistFromPhase(tx, {
+          projectId,
+          companyId: req.user.companyId,
+          phase: u.category,
+          userId: req.user.id,
+        });
+        seededChecklists = seeded.created;
+      }
+
+      return { u, seededChecklists };
     });
 
-    res.json({ entry: updated });
+    res.json({ entry: updated.u, seededChecklists: updated.seededChecklists });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });

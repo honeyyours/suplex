@@ -15,30 +15,30 @@ datasource db {
 // ============================================
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String?
-  address   String?
+  id      String  @id @default(cuid())
+  name    String
+  phone   String?
+  address String?
 
   // 견적 표시용 회사 정보 (갑지 우측 상단)
-  email           String?
-  bizNumber       String?  // 사업자등록번호
-  representative  String?  // 대표자명
-  logoUrl         String?  // 로고 (선택)
+  email          String?
+  bizNumber      String? // 사업자등록번호
+  representative String? // 대표자명
+  logoUrl        String? // 로고 (선택)
 
   // 견적 기본 비율 (% 단위) — 새 견적 작성 시 스냅샷으로 복사됨
-  rateIndirectMaterial Decimal @default(2)    @db.Decimal(5, 2)  // (2) 간접재료비 (1)*X%
-  rateIndirectLabor    Decimal @default(2)    @db.Decimal(5, 2)  // (5) 간접노무비 (4)*X%
-  rateIndustrialAcc    Decimal @default(3.7)  @db.Decimal(5, 2)  // (8) 산재보험료 (6)*X%
-  rateEmployment       Decimal @default(1.39) @db.Decimal(5, 2)  // (9) 고용보험료 (4)*X%
-  rateRetirement       Decimal @default(2.3)  @db.Decimal(5, 2)  // (10) 퇴직공제부금비 (4)*X%
-  rateSafety           Decimal @default(2.93) @db.Decimal(5, 2)  // (11) 안전관리비 [(1)+(4)]*X%
-  rateOtherExpense     Decimal @default(2)    @db.Decimal(5, 2)  // (12) 기타경비 [(1)+(4)]*X%
-  rateMisc             Decimal @default(5)    @db.Decimal(5, 2)  // (15) 공잡비 (14)*X%
-  rateGeneralAdmin     Decimal @default(5)    @db.Decimal(5, 2)  // (16) 일반관리비 (14)*X%
-  rateSupervision      Decimal @default(10)   @db.Decimal(5, 2)  // (17) 감리비 [(14)+(15)+(16)]*X%
-  rateDesign           Decimal @default(2)    @db.Decimal(5, 2)  // (18) 디자인비 (14)*X%
-  rateVat              Decimal @default(10)   @db.Decimal(5, 2)  // 부가가치세
+  rateIndirectMaterial Decimal @default(2) @db.Decimal(5, 2) // (2) 간접재료비 (1)*X%
+  rateIndirectLabor    Decimal @default(2) @db.Decimal(5, 2) // (5) 간접노무비 (4)*X%
+  rateIndustrialAcc    Decimal @default(3.7) @db.Decimal(5, 2) // (8) 산재보험료 (6)*X%
+  rateEmployment       Decimal @default(1.39) @db.Decimal(5, 2) // (9) 고용보험료 (4)*X%
+  rateRetirement       Decimal @default(2.3) @db.Decimal(5, 2) // (10) 퇴직공제부금비 (4)*X%
+  rateSafety           Decimal @default(2.93) @db.Decimal(5, 2) // (11) 안전관리비 [(1)+(4)]*X%
+  rateOtherExpense     Decimal @default(2) @db.Decimal(5, 2) // (12) 기타경비 [(1)+(4)]*X%
+  rateMisc             Decimal @default(5) @db.Decimal(5, 2) // (15) 공잡비 (14)*X%
+  rateGeneralAdmin     Decimal @default(5) @db.Decimal(5, 2) // (16) 일반관리비 (14)*X%
+  rateSupervision      Decimal @default(10) @db.Decimal(5, 2) // (17) 감리비 [(14)+(15)+(16)]*X%
+  rateDesign           Decimal @default(2) @db.Decimal(5, 2) // (18) 디자인비 (14)*X%
+  rateVat              Decimal @default(10) @db.Decimal(5, 2) // 부가가치세
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,6 +48,7 @@ model Company {
   vendors                Vendor[]
   projects               Project[]
   materialTemplates      MaterialTemplate[]
+  checklistTemplates     ChecklistTemplate[]
   quoteLineItemTemplates QuoteLineItemTemplate[]
   expenses               Expense[]
   accountCodes           AccountCode[]
@@ -65,31 +66,31 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships      Membership[]
-  createdProjects  Project[]        @relation("ProjectCreatedBy")
-  materialChanges  MaterialHistory[]
-  scheduleTasks    ScheduleTask[]   @relation("TaskAssignee")
-  dailyReports     DailyReport[]
+  memberships     Membership[]
+  createdProjects Project[]         @relation("ProjectCreatedBy")
+  materialChanges MaterialHistory[]
+  scheduleTasks   ScheduleTask[]    @relation("TaskAssignee")
+  dailyReports    DailyReport[]
 
-  createdChecklists      ProjectChecklist[]   @relation("ChecklistCreatedBy")
-  completedChecklists    ProjectChecklist[]   @relation("ChecklistCompletedBy")
-  createdScheduleEntries DailyScheduleEntry[] @relation("DailyScheduleCreatedBy")
-  updatedScheduleEntries DailyScheduleEntry[] @relation("DailyScheduleUpdatedBy")
+  createdChecklists      ProjectChecklist[]    @relation("ChecklistCreatedBy")
+  completedChecklists    ProjectChecklist[]    @relation("ChecklistCompletedBy")
+  createdScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
+  updatedScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
   scheduleChanges        ScheduleChange[]
   uploadedPhotos         ProjectPhoto[]
   materialRequests       MaterialRequest[]
-  createdQuotes          Quote[]              @relation("QuoteCreatedBy")
-  createdExpenses        Expense[]            @relation("ExpenseCreatedBy")
-  createdAccountCodes    AccountCode[]        @relation("AccountCodeCreatedBy")
+  createdQuotes          Quote[]               @relation("QuoteCreatedBy")
+  createdExpenses        Expense[]             @relation("ExpenseCreatedBy")
+  createdAccountCodes    AccountCode[]         @relation("AccountCodeCreatedBy")
   createdExpenseRules    ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
 
   @@map("users")
 }
 
 enum Role {
-  OWNER      // 대표 - 전체 권한
-  DESIGNER   // 디자인팀 - 마감재/견적
-  FIELD      // 현장팀 - 현장보고/공정
+  OWNER // 대표 - 전체 권한
+  DESIGNER // 디자인팀 - 마감재/견적
+  FIELD // 현장팀 - 현장보고/공정
 }
 
 // 사용자 ↔ 회사 다대다 (+ 역할)
@@ -108,14 +109,14 @@ model Membership {
 }
 
 model Invitation {
-  id        String   @id @default(cuid())
-  companyId String
-  email     String
-  role      Role
-  token     String   @unique
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  companyId  String
+  email      String
+  role       Role
+  token      String    @unique
+  expiresAt  DateTime
   acceptedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -128,22 +129,22 @@ model Invitation {
 // ============================================
 
 model Vendor {
-  id         String   @id @default(cuid())
-  companyId  String
-  name       String              // 업체명
-  category   String              // 공종 (전기, 설비, 타일 등)
-  contact    String?             // 담당자
-  phone      String?
-  unitPrice  Decimal? @db.Decimal(12, 2)
-  unit       String?             // 단위 (m², 개, 일 등)
-  memo       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  companyId String
+  name      String // 업체명
+  category  String // 공종 (전기, 설비, 타일 등)
+  contact   String? // 담당자
+  phone     String?
+  unitPrice Decimal? @db.Decimal(12, 2)
+  unit      String? // 단위 (m², 개, 일 등)
+  memo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  scheduleTasks       ScheduleTask[]
-  expenses            Expense[]
-  purchaseOrders      PurchaseOrder[]
+  company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  scheduleTasks        ScheduleTask[]
+  expenses             Expense[]
+  purchaseOrders       PurchaseOrder[]
   dailyScheduleEntries DailyScheduleEntry[]
 
   @@index([companyId, category])
@@ -155,31 +156,31 @@ model Vendor {
 // ============================================
 
 enum ProjectStatus {
-  PLANNED      // 예정
-  IN_PROGRESS  // 진행중
-  ON_HOLD      // 보류
-  COMPLETED    // 완료
-  CANCELLED    // 취소
+  PLANNED // 예정
+  IN_PROGRESS // 진행중
+  ON_HOLD // 보류
+  COMPLETED // 완료
+  CANCELLED // 취소
 }
 
 model Project {
   id              String        @id @default(cuid())
   companyId       String
   createdById     String
-  name            String                        // 프로젝트명 (예: 삼성동 OO아파트)
-  customerName    String                        // 고객명
+  name            String // 프로젝트명 (예: 삼성동 OO아파트)
+  customerName    String // 고객명
   customerPhone   String?
-  siteAddress     String                        // 현장 주소
+  siteAddress     String // 현장 주소
   contractAmount  Decimal?      @db.Decimal(14, 2) // 계약 금액
-  startDate       DateTime?                     // 착공일
-  expectedEndDate DateTime?                     // 준공 예정일
-  actualEndDate   DateTime?                     // 실제 준공일
+  startDate       DateTime? // 착공일
+  expectedEndDate DateTime? // 준공 예정일
+  actualEndDate   DateTime? // 실제 준공일
   status          ProjectStatus @default(PLANNED)
-  doorPassword    String?                       // 출입번호
-  siteNotes       String?                       // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
-  area            Decimal?     @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
-  siteCode        String?                       // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
-  memo            String?                       // 기타 메모
+  doorPassword    String? // 출입번호
+  siteNotes       String? // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
+  area            Decimal?      @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
+  siteCode        String? // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
+  memo            String? // 기타 메모
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -199,42 +200,65 @@ model Project {
   purchaseOrders       PurchaseOrder[]
   expenses             Expense[]
 
-  @@index([companyId, status])
   @@unique([companyId, siteCode])
+  @@index([companyId, status])
   @@map("projects")
 }
 
 enum ChecklistCategory {
-  GENERAL          // 일반
-  CLIENT_REQUEST   // 고객 요청
-  DESIGN_TO_FIELD  // 디자인팀 → 현장팀 전달
-  TOUCH_UP         // 잔손
-  URGENT           // 긴급
+  GENERAL // 일반
+  CLIENT_REQUEST // 고객 요청
+  DESIGN_TO_FIELD // 디자인팀 → 현장팀 전달
+  TOUCH_UP // 잔손
+  URGENT // 긴급
 }
 
 // 프로젝트별 체크리스트 (사용자 관리 + 향후 phase 자동 생성 공용)
 model ProjectChecklist {
+  id               String            @id @default(cuid())
+  projectId        String
+  phase            String? // 공종 (철거/목공/전기 등) — 일정 카테고리와 매칭
+  category         ChecklistCategory @default(GENERAL)
+  title            String // 체크 항목 제목
+  isDone           Boolean           @default(false)
+  requiresPhoto    Boolean           @default(false) // 사진 첨부 필수 여부 (예: 철거 전/후)
+  sourceTemplateId String? // 자동 생성 출처 템플릿 (중복 방지)
+  dueDate          DateTime?
+  completedAt      DateTime?
+  completedById    String?
+  createdById      String?
+  orderIndex       Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  project        Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy      User?              @relation("ChecklistCreatedBy", fields: [createdById], references: [id])
+  completedBy    User?              @relation("ChecklistCompletedBy", fields: [completedById], references: [id])
+  sourceTemplate ChecklistTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, isDone])
+  @@index([projectId, sourceTemplateId])
+  @@map("project_checklists")
+}
+
+// 회사별 체크리스트 템플릿 — phase(공종) 매칭으로 일정 시작 시 자동 투입 + 수동 가져오기
+model ChecklistTemplate {
   id            String            @id @default(cuid())
-  projectId     String
-  phase         String?                          // 자동 생성용 단계 (선택)
+  companyId     String
+  title         String // 항목 제목 (예: 철거 전 전체 사진)
   category      ChecklistCategory @default(GENERAL)
-  title         String                           // 체크 항목 제목
-  isDone        Boolean           @default(false)
-  requiresPhoto Boolean           @default(false) // 사진 첨부 필수 여부 (예: 철거 전/후)
-  dueDate       DateTime?
-  completedAt   DateTime?
-  completedById String?
-  createdById   String?
+  phase         String? // 공종 (철거/목공/전기 등) — 비어있으면 자동 트리거 X
+  requiresPhoto Boolean           @default(false)
   orderIndex    Int               @default(0)
+  active        Boolean           @default(true)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy   User?   @relation("ChecklistCreatedBy", fields: [createdById], references: [id])
-  completedBy User?   @relation("ChecklistCompletedBy", fields: [completedById], references: [id])
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  generated ProjectChecklist[]
 
-  @@index([projectId, isDone])
-  @@map("project_checklists")
+  @@index([companyId, phase, active])
+  @@map("checklist_templates")
 }
 
 // ============================================
@@ -242,19 +266,19 @@ model ProjectChecklist {
 // ============================================
 
 model DailyScheduleEntry {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   projectId   String
-  date        DateTime @db.Date                // 날짜 (시간 X)
-  category    String?                          // 공종 태그 (목공/전기/타일/도배 등)
-  content     String                           // 내용
-  confirmed   Boolean  @default(false)
+  date        DateTime  @db.Date // 날짜 (시간 X)
+  category    String? // 공종 태그 (목공/전기/타일/도배 등)
+  content     String // 내용
+  confirmed   Boolean   @default(false)
   confirmedAt DateTime?
-  orderIndex  Int      @default(0)
-  vendorId    String?                          // 협력업체 (선택)
+  orderIndex  Int       @default(0)
+  vendorId    String? // 협력업체 (선택)
   createdById String?
   updatedById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   vendor    Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
@@ -279,14 +303,14 @@ model ScheduleChange {
   id            String               @id @default(cuid())
   projectId     String
   date          DateTime             @db.Date
-  entryId       String?                        // 엔트리 삭제 후 null 가능
+  entryId       String? // 엔트리 삭제 후 null 가능
   action        ScheduleChangeAction
   oldContent    String?
   newContent    String?
   oldCategory   String?
   newCategory   String?
   changedById   String
-  changedByName String                         // 비정규화 (사용자 이름 변경 대비)
+  changedByName String // 비정규화 (사용자 이름 변경 대비)
   createdAt     DateTime             @default(now())
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -312,48 +336,48 @@ enum SpaceType {
 }
 
 enum MaterialStatus {
-  UNDECIDED  // 미정
-  REVIEWING  // 확인중
-  CONFIRMED  // 확정
-  CHANGED    // 변경
+  UNDECIDED // 미정
+  REVIEWING // 확인중
+  CONFIRMED // 확정
+  CHANGED // 변경
 }
 
 enum MaterialKind {
-  FINISH     // 마감재 (본표: 공간/공정 × 세부공정)
-  APPLIANCE  // 가전/가구 (별표: 구획 × 품목, 사이즈 포함)
+  FINISH // 마감재 (본표: 공간/공정 × 세부공정)
+  APPLIANCE // 가전/가구 (별표: 구획 × 품목, 사이즈 포함)
 }
 
 model Material {
-  id             String         @id @default(cuid())
-  projectId      String
-  kind           MaterialKind   @default(FINISH)
+  id        String       @id @default(cuid())
+  projectId String
+  kind      MaterialKind @default(FINISH)
 
-  spaceGroup     String                             // 공간/공정 (거실, 조명, 필름, 주방, 욕실(공용) 등)
-  itemName       String                             // 세부 공정 및 항목 (바닥재, 방문, 거실 다운라이트 등)
+  spaceGroup String // 공간/공정 (거실, 조명, 필름, 주방, 욕실(공용) 등)
+  itemName   String // 세부 공정 및 항목 (바닥재, 방문, 거실 다운라이트 등)
 
-  brand          String?                            // 브랜드 / 유무 표기 (예: "영림", "O", "고객구매")
-  productName    String?                            // 자재명 및 품번 (색상)
-  spec           String?                            // 규격 / 마감 (예: "600각 포세린", "85인치 기준 타공")
-  siteNotes      String?                            // 현장 시공 및 목공/전기 특이사항
-  purchaseSource String?                            // 매입처 (발주)
-  checked        Boolean        @default(false)     // 체크(V) — 실물 확정 확인 표시
+  brand          String? // 브랜드 / 유무 표기 (예: "영림", "O", "고객구매")
+  productName    String? // 자재명 및 품번 (색상)
+  spec           String? // 규격 / 마감 (예: "600각 포세린", "85인치 기준 타공")
+  siteNotes      String? // 현장 시공 및 목공/전기 특이사항
+  purchaseSource String? // 매입처 (발주)
+  checked        Boolean @default(false) // 체크(V) — 실물 확정 확인 표시
 
   // APPLIANCE 전용 (가전/가구 별표)
-  installed      Boolean?                           // 설치 유무 O/X
-  size           String?                            // W x D x H (mm)
-  remarks        String?                            // 비고 (특이사항 / 빌트인 여부)
+  installed Boolean? // 설치 유무 O/X
+  size      String? // W x D x H (mm)
+  remarks   String? // 비고 (특이사항 / 빌트인 여부)
 
   // 공통 부가 (견적·수량)
-  status         MaterialStatus @default(UNDECIDED)
-  quantity       Decimal?       @db.Decimal(10, 2)
-  unit           String?
-  unitPrice      Decimal?       @db.Decimal(12, 2)
-  totalPrice     Decimal?       @db.Decimal(14, 2)
-  memo           String?
+  status     MaterialStatus @default(UNDECIDED)
+  quantity   Decimal?       @db.Decimal(10, 2)
+  unit       String?
+  unitPrice  Decimal?       @db.Decimal(12, 2)
+  totalPrice Decimal?       @db.Decimal(14, 2)
+  memo       String?
 
-  orderIndex     Int            @default(0)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   history        MaterialHistory[]
@@ -370,7 +394,7 @@ model MaterialTemplate {
   kind             MaterialKind @default(FINISH)
   spaceGroup       String
   itemName         String
-  defaultSiteNotes String?                  // 시공 특이사항 기본 조언 (회사 표준)
+  defaultSiteNotes String? // 시공 특이사항 기본 조언 (회사 표준)
   orderIndex       Int          @default(0)
   active           Boolean      @default(true)
   createdAt        DateTime     @default(now())
@@ -383,13 +407,13 @@ model MaterialTemplate {
 }
 
 model MaterialHistory {
-  id         String   @id @default(cuid())
-  materialId String
+  id          String   @id @default(cuid())
+  materialId  String
   changedById String
-  field      String              // 바뀐 필드 (status, itemName 등)
-  oldValue   String?
-  newValue   String?
-  createdAt  DateTime @default(now())
+  field       String // 바뀐 필드 (status, itemName 등)
+  oldValue    String?
+  newValue    String?
+  createdAt   DateTime @default(now())
 
   material  Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
   changedBy User     @relation(fields: [changedById], references: [id])
@@ -405,17 +429,17 @@ model MaterialHistory {
 enum TaskStatus {
   NOT_STARTED // 미시작
   IN_PROGRESS // 진행중
-  DONE        // 완료
-  DELAYED     // 지연
+  DONE // 완료
+  DELAYED // 지연
 }
 
 // 공정 (여러 공종을 묶는 단위)
 model Schedule {
-  id        String   @id @default(cuid())
-  projectId String
-  name      String            // 공정명
-  orderIndex Int     @default(0)
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String // 공정명
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
 
   project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tasks   ScheduleTask[]
@@ -426,25 +450,25 @@ model Schedule {
 
 // 공종별 작업 (간트차트의 단위)
 model ScheduleTask {
-  id            String     @id @default(cuid())
-  scheduleId    String
-  assigneeId    String?                 // 담당자 (User)
-  vendorId      String?                 // 협력업체
-  category      String                  // 공종 (철거, 목공, 전기, 설비, 타일, 도배 등)
-  title         String
-  plannedStart  DateTime
-  plannedEnd    DateTime
-  actualStart   DateTime?
-  actualEnd     DateTime?
-  status        TaskStatus @default(NOT_STARTED)
-  progress      Int        @default(0)  // 0~100
-  memo          String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  scheduleId   String
+  assigneeId   String? // 담당자 (User)
+  vendorId     String? // 협력업체
+  category     String // 공종 (철거, 목공, 전기, 설비, 타일, 도배 등)
+  title        String
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  status       TaskStatus @default(NOT_STARTED)
+  progress     Int        @default(0) // 0~100
+  memo         String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  assignee User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  vendor   Vendor?  @relation(fields: [vendorId], references: [id])
+  schedule Schedule    @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  assignee User?       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  vendor   Vendor?     @relation(fields: [vendorId], references: [id])
   photos   TaskPhoto[]
 
   @@index([scheduleId])
@@ -473,11 +497,11 @@ model DailyReport {
   projectId   String
   authorId    String
   reportDate  DateTime @db.Date
-  category    String                 // 공종
-  progress    Int      @default(0)   // 진행률 %
-  workerCount Int?                   // 작업 인원 수
-  memo        String?                // 특이사항
-  nextDayPlan String?                // 내일 예정 작업
+  category    String // 공종
+  progress    Int      @default(0) // 진행률 %
+  workerCount Int? // 작업 인원 수
+  memo        String? // 특이사항
+  nextDayPlan String? // 내일 예정 작업
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -494,20 +518,20 @@ model DailyReport {
 // ============================================
 
 enum MaterialRequestStatus {
-  PENDING     // 요청됨
-  ORDERED     // 발주됨
-  DELIVERED   // 납품됨
-  CANCELLED   // 취소
+  PENDING // 요청됨
+  ORDERED // 발주됨
+  DELIVERED // 납품됨
+  CANCELLED // 취소
 }
 
 model MaterialRequest {
   id            String                @id @default(cuid())
   projectId     String
   requestedById String
-  materialName  String                            // 필요 자재
+  materialName  String // 필요 자재
   quantity      Decimal?              @db.Decimal(10, 2)
   unit          String?
-  neededDate    DateTime?             @db.Date    // 필요 날짜
+  neededDate    DateTime?             @db.Date // 필요 날짜
   status        MaterialRequestStatus @default(PENDING)
   memo          String?
   notifyOwner   Boolean               @default(true)
@@ -538,9 +562,9 @@ model ProjectPhoto {
   id           String      @id @default(cuid())
   projectId    String
   source       PhotoSource
-  sourceId     String                  // DailyReport / MaterialRequest / ProjectChecklist id
-  url          String                  // Cloudinary URL (원본)
-  thumbnailUrl String?                 // Cloudinary 변환 URL (썸네일)
+  sourceId     String // DailyReport / MaterialRequest / ProjectChecklist id
+  url          String // Cloudinary URL (원본)
+  thumbnailUrl String? // Cloudinary 변환 URL (썸네일)
   caption      String?
   uploadedById String
   createdAt    DateTime    @default(now())
@@ -558,11 +582,11 @@ model ProjectPhoto {
 // ============================================
 
 enum NotificationType {
-  SCHEDULE_D7       // 공정 D-7
-  SCHEDULE_D3       // 공정 D-3
-  SCHEDULE_D1       // 공정 D-1
-  MATERIAL_PENDING  // 미확정 마감재
-  CUSTOM            // 커스텀
+  SCHEDULE_D7 // 공정 D-7
+  SCHEDULE_D3 // 공정 D-3
+  SCHEDULE_D1 // 공정 D-1
+  MATERIAL_PENDING // 미확정 마감재
+  CUSTOM // 커스텀
 }
 
 enum NotificationStatus {
@@ -572,17 +596,17 @@ enum NotificationStatus {
 }
 
 model Notification {
-  id         String             @id @default(cuid())
-  projectId  String
-  type       NotificationType
-  recipient  String                    // 수신 전화번호
-  message    String
-  status     NotificationStatus @default(PENDING)
+  id          String             @id @default(cuid())
+  projectId   String
+  type        NotificationType
+  recipient   String // 수신 전화번호
+  message     String
+  status      NotificationStatus @default(PENDING)
   scheduledAt DateTime
-  sentAt     DateTime?
-  errorMsg   String?
+  sentAt      DateTime?
+  errorMsg    String?
   solapiMsgId String?
-  createdAt  DateTime           @default(now())
+  createdAt   DateTime           @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -595,18 +619,18 @@ model Notification {
 // ============================================
 
 model Measurement {
-  id         String   @id @default(cuid())
-  projectId  String
-  space      SpaceType
-  width      Decimal  @db.Decimal(8, 2)  // 가로 (m)
-  length     Decimal  @db.Decimal(8, 2)  // 세로 (m)
-  height     Decimal  @db.Decimal(8, 2)  // 천장고 (m)
-  floorArea  Decimal? @db.Decimal(10, 2) // 바닥 면적
-  wallArea   Decimal? @db.Decimal(10, 2) // 벽면적
-  ceilingArea Decimal? @db.Decimal(10, 2) // 천장면적
-  memo       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String    @id @default(cuid())
+  projectId   String
+  space       SpaceType
+  width       Decimal   @db.Decimal(8, 2) // 가로 (m)
+  length      Decimal   @db.Decimal(8, 2) // 세로 (m)
+  height      Decimal   @db.Decimal(8, 2) // 천장고 (m)
+  floorArea   Decimal?  @db.Decimal(10, 2) // 바닥 면적
+  wallArea    Decimal?  @db.Decimal(10, 2) // 벽면적
+  ceilingArea Decimal?  @db.Decimal(10, 2) // 천장면적
+  memo        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -619,62 +643,62 @@ model Measurement {
 // ============================================
 
 enum QuoteStatus {
-  DRAFT     // 작성중
-  SENT      // 발송 (1차/수정)
-  FINAL     // 최종
+  DRAFT // 작성중
+  SENT // 발송 (1차/수정)
+  FINAL // 최종
 }
 
 // 직접공사비 공종 (15종 고정 순서)
 enum WorkType {
-  START       // 공사시작
-  DEMOLITION  // 철거
-  PLUMBING    // 설비
-  GAS         // 가스
-  ELECTRIC    // 전기
-  FIRE        // 소방
-  CARPENTRY   // 목공
-  TILE        // 타일
-  BATHROOM    // 욕실
-  PAINTING    // 도장
-  FILM        // 필름
-  WALLPAPER   // 도배
-  FURNITURE   // 가구
-  FLOORING    // 마루장판
-  FINISHING   // 공사마무리
+  START // 공사시작
+  DEMOLITION // 철거
+  PLUMBING // 설비
+  GAS // 가스
+  ELECTRIC // 전기
+  FIRE // 소방
+  CARPENTRY // 목공
+  TILE // 타일
+  BATHROOM // 욕실
+  PAINTING // 도장
+  FILM // 필름
+  WALLPAPER // 도배
+  FURNITURE // 가구
+  FLOORING // 마루장판
+  FINISHING // 공사마무리
 }
 
 model Quote {
-  id            String      @id @default(cuid())
-  projectId     String
-  title         String                                          // "1차", "수정 1차", "최종" 등 자유 텍스트
-  status        QuoteStatus @default(DRAFT)
+  id        String      @id @default(cuid())
+  projectId String
+  title     String // "1차", "수정 1차", "최종" 등 자유 텍스트
+  status    QuoteStatus @default(DRAFT)
 
   // ============ 갑지 (스냅샷 — 작성 시 Project/Company에서 복사) ============
-  customerName  String
-  customerPhone String?
-  siteAddress   String
-  projectName   String                                          // 공사명
-  amountInWords String?                                         // 금액 한글 표기 (예: "사천오백칠십만원정")
-  validUntil    DateTime?   @db.Date
-  constructionStartDate DateTime? @db.Date                     // 착공 예정일 (견적서 명시용)
-  constructionEndDate   DateTime? @db.Date                     // 준공 예정일 (견적서 명시용)
-  notes         String?                                         // 빨간 비고 (예: 붙박이장 가구류 필름 제외)
-  terms         String?                                         // 견적조건 (예: 부가가치세 별도 / 견적외 공사 별도)
-  area          Decimal?    @db.Decimal(8, 2)                  // 면적 스냅샷 (평) — 평당단가 계산용
+  customerName          String
+  customerPhone         String?
+  siteAddress           String
+  projectName           String // 공사명
+  amountInWords         String? // 금액 한글 표기 (예: "사천오백칠십만원정")
+  validUntil            DateTime? @db.Date
+  constructionStartDate DateTime? @db.Date // 착공 예정일 (견적서 명시용)
+  constructionEndDate   DateTime? @db.Date // 준공 예정일 (견적서 명시용)
+  notes                 String? // 빨간 비고 (예: 붙박이장 가구류 필름 제외)
+  terms                 String? // 견적조건 (예: 부가가치세 별도 / 견적외 공사 별도)
+  area                  Decimal?  @db.Decimal(8, 2) // 면적 스냅샷 (평) — 평당단가 계산용
 
   // ============ 비율 스냅샷 (% 단위, 작성 시 회사 default 복사 — 견적별 수정 가능) ============
-  rateIndirectMaterial Decimal @default(2)    @db.Decimal(5, 2)  // (2)
-  rateIndirectLabor    Decimal @default(2)    @db.Decimal(5, 2)  // (5)
-  rateIndustrialAcc    Decimal @default(3.7)  @db.Decimal(5, 2)  // (8)
-  rateEmployment       Decimal @default(1.39) @db.Decimal(5, 2)  // (9)
-  rateRetirement       Decimal @default(2.3)  @db.Decimal(5, 2)  // (10)
-  rateSafety           Decimal @default(2.93) @db.Decimal(5, 2)  // (11)
-  rateOtherExpense     Decimal @default(2)    @db.Decimal(5, 2)  // (12)
-  rateMisc             Decimal @default(5)    @db.Decimal(5, 2)  // (15)
-  rateGeneralAdmin     Decimal @default(5)    @db.Decimal(5, 2)  // (16)
-  rateSupervision      Decimal @default(10)   @db.Decimal(5, 2)  // (17)
-  rateDesign           Decimal @default(2)    @db.Decimal(5, 2)  // (18)
-  rateVat              Decimal @default(10)   @db.Decimal(5, 2)
+  rateIndirectMaterial Decimal @default(2) @db.Decimal(5, 2) // (2)
+  rateIndirectLabor    Decimal @default(2) @db.Decimal(5, 2) // (5)
+  rateIndustrialAcc    Decimal @default(3.7) @db.Decimal(5, 2) // (8)
+  rateEmployment       Decimal @default(1.39) @db.Decimal(5, 2) // (9)
+  rateRetirement       Decimal @default(2.3) @db.Decimal(5, 2) // (10)
+  rateSafety           Decimal @default(2.93) @db.Decimal(5, 2) // (11)
+  rateOtherExpense     Decimal @default(2) @db.Decimal(5, 2) // (12)
+  rateMisc             Decimal @default(5) @db.Decimal(5, 2) // (15)
+  rateGeneralAdmin     Decimal @default(5) @db.Decimal(5, 2) // (16)
+  rateSupervision      Decimal @default(10) @db.Decimal(5, 2) // (17)
+  rateDesign           Decimal @default(2) @db.Decimal(5, 2) // (18)
+  rateVat              Decimal @default(10) @db.Decimal(5, 2)
 
   // ============ 자동계산 적용 여부 (체크박스) ============
   applyIndirectMaterial Boolean @default(false)
@@ -690,32 +714,32 @@ model Quote {
   applyDesign           Boolean @default(false)
 
   // ============ 캐시 (저장 시 자동 갱신, 18행 + 공급가액/부가세/합계/절삭) ============
-  totalDirectMaterial   Decimal @default(0) @db.Decimal(14, 2)  // (1)
-  totalIndirectMaterial Decimal @default(0) @db.Decimal(14, 2)  // (2)
-  totalMaterial         Decimal @default(0) @db.Decimal(14, 2)  // (3)
-  totalDirectLabor      Decimal @default(0) @db.Decimal(14, 2)  // (4)
-  totalIndirectLabor    Decimal @default(0) @db.Decimal(14, 2)  // (5)
-  totalLabor            Decimal @default(0) @db.Decimal(14, 2)  // (6)
-  totalDirectExpense    Decimal @default(0) @db.Decimal(14, 2)  // (7) 기계경비 (라인의 경비합)
-  totalIndustrialAcc    Decimal @default(0) @db.Decimal(14, 2)  // (8)
-  totalEmployment       Decimal @default(0) @db.Decimal(14, 2)  // (9)
-  totalRetirement       Decimal @default(0) @db.Decimal(14, 2)  // (10)
-  totalSafety           Decimal @default(0) @db.Decimal(14, 2)  // (11)
-  totalOtherExpense     Decimal @default(0) @db.Decimal(14, 2)  // (12)
-  totalExpense          Decimal @default(0) @db.Decimal(14, 2)  // (13)
-  totalDirect           Decimal @default(0) @db.Decimal(14, 2)  // (14) 직접공사비계
-  totalMisc             Decimal @default(0) @db.Decimal(14, 2)  // (15)
-  totalGeneralAdmin     Decimal @default(0) @db.Decimal(14, 2)  // (16)
-  totalSupervision      Decimal @default(0) @db.Decimal(14, 2)  // (17)
-  totalDesign           Decimal @default(0) @db.Decimal(14, 2)  // (18)
-  totalSupply           Decimal @default(0) @db.Decimal(14, 2)  // 공급가액
-  totalVat              Decimal @default(0) @db.Decimal(14, 2)  // 부가세 (별도 표시)
-  totalFinal            Decimal @default(0) @db.Decimal(14, 2)  // 합계 (절삭 후)
-  totalRoundOff         Decimal @default(0) @db.Decimal(14, 2)  // 절삭 차액 (공급가액 - 합계)
+  totalDirectMaterial   Decimal @default(0) @db.Decimal(14, 2) // (1)
+  totalIndirectMaterial Decimal @default(0) @db.Decimal(14, 2) // (2)
+  totalMaterial         Decimal @default(0) @db.Decimal(14, 2) // (3)
+  totalDirectLabor      Decimal @default(0) @db.Decimal(14, 2) // (4)
+  totalIndirectLabor    Decimal @default(0) @db.Decimal(14, 2) // (5)
+  totalLabor            Decimal @default(0) @db.Decimal(14, 2) // (6)
+  totalDirectExpense    Decimal @default(0) @db.Decimal(14, 2) // (7) 기계경비 (라인의 경비합)
+  totalIndustrialAcc    Decimal @default(0) @db.Decimal(14, 2) // (8)
+  totalEmployment       Decimal @default(0) @db.Decimal(14, 2) // (9)
+  totalRetirement       Decimal @default(0) @db.Decimal(14, 2) // (10)
+  totalSafety           Decimal @default(0) @db.Decimal(14, 2) // (11)
+  totalOtherExpense     Decimal @default(0) @db.Decimal(14, 2) // (12)
+  totalExpense          Decimal @default(0) @db.Decimal(14, 2) // (13)
+  totalDirect           Decimal @default(0) @db.Decimal(14, 2) // (14) 직접공사비계
+  totalMisc             Decimal @default(0) @db.Decimal(14, 2) // (15)
+  totalGeneralAdmin     Decimal @default(0) @db.Decimal(14, 2) // (16)
+  totalSupervision      Decimal @default(0) @db.Decimal(14, 2) // (17)
+  totalDesign           Decimal @default(0) @db.Decimal(14, 2) // (18)
+  totalSupply           Decimal @default(0) @db.Decimal(14, 2) // 공급가액
+  totalVat              Decimal @default(0) @db.Decimal(14, 2) // 부가세 (별도 표시)
+  totalFinal            Decimal @default(0) @db.Decimal(14, 2) // 합계 (절삭 후)
+  totalRoundOff         Decimal @default(0) @db.Decimal(14, 2) // 절삭 차액 (공급가액 - 합계)
 
-  createdById   String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy User?           @relation("QuoteCreatedBy", fields: [createdById], references: [id])
@@ -727,14 +751,14 @@ model Quote {
 
 // 견적 세부 행 — 공종별로 그룹핑되며, 각 행은 수량 × 단가
 model QuoteLineItem {
-  id            String   @id @default(cuid())
-  quoteId       String
-  workType      WorkType                                          // 어느 공종 (15종)
+  id       String   @id @default(cuid())
+  quoteId  String
+  workType WorkType // 어느 공종 (15종)
 
-  itemName      String                                            // 항목명 (예: "주방 상부장", "장판")
-  spec          String?                                           // 규격 (예: "한솔 패트 무광 크림화이트 기준")
-  unit          String?                                           // 단위 (m, m², 식, 개, 구...)
-  quantity      Decimal  @default(1) @db.Decimal(10, 2)          // 수량
+  itemName String // 항목명 (예: "주방 상부장", "장판")
+  spec     String? // 규격 (예: "한솔 패트 무광 크림화이트 기준")
+  unit     String? // 단위 (m, m², 식, 개, 구...)
+  quantity Decimal @default(1) @db.Decimal(10, 2) // 수량
 
   // 단가 (사용자 입력)
   materialUnitPrice Decimal @default(0) @db.Decimal(14, 2)
@@ -742,12 +766,12 @@ model QuoteLineItem {
   expenseUnitPrice  Decimal @default(0) @db.Decimal(14, 2)
 
   // 금액 (수량 × 단가, 캐시)
-  materialCost  Decimal @default(0) @db.Decimal(14, 2)
-  laborCost     Decimal @default(0) @db.Decimal(14, 2)
-  expenseCost   Decimal @default(0) @db.Decimal(14, 2)
+  materialCost Decimal @default(0) @db.Decimal(14, 2)
+  laborCost    Decimal @default(0) @db.Decimal(14, 2)
+  expenseCost  Decimal @default(0) @db.Decimal(14, 2)
 
-  notes         String?
-  orderIndex    Int      @default(0)
+  notes      String?
+  orderIndex Int     @default(0)
 
   quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
@@ -760,34 +784,34 @@ model QuoteLineItem {
 // ============================================
 
 enum PurchaseOrderStatus {
-  PENDING    // 대기중 (발주 예정)
-  ORDERED    // 발주완료
-  RECEIVED   // 수령
-  CANCELLED  // 취소
+  PENDING // 대기중 (발주 예정)
+  ORDERED // 발주완료
+  RECEIVED // 수령
+  CANCELLED // 취소
 }
 
 model PurchaseOrder {
-  id            String              @id @default(cuid())
-  projectId     String
-  materialId    String?                                       // 연결된 마감재 (즉흥 발주는 null)
+  id         String  @id @default(cuid())
+  projectId  String
+  materialId String? // 연결된 마감재 (즉흥 발주는 null)
 
   // 항목 정보 (마감재에서 스냅샷 또는 사용자 직접 입력)
-  itemName      String                                        // 표시명 (예: "거실 · 바닥재")
-  spec          String?                                       // 규격/제품명/브랜드 통합
-  vendor        String?                                       // 거래처 텍스트 (= Material.purchaseSource, vendor 미연결시 fallback)
-  vendorId      String?                                       // 협력업체 마스터 연결 (선택)
+  itemName String // 표시명 (예: "거실 · 바닥재")
+  spec     String? // 규격/제품명/브랜드 통합
+  vendor   String? // 거래처 텍스트 (= Material.purchaseSource, vendor 미연결시 fallback)
+  vendorId String? // 협력업체 마스터 연결 (선택)
 
-  quantity      Decimal?            @db.Decimal(10, 2)
-  unit          String?
-  unitPrice     Decimal?            @db.Decimal(12, 2)
-  totalPrice    Decimal?            @db.Decimal(14, 2)
+  quantity   Decimal? @db.Decimal(10, 2)
+  unit       String?
+  unitPrice  Decimal? @db.Decimal(12, 2)
+  totalPrice Decimal? @db.Decimal(14, 2)
 
-  status        PurchaseOrderStatus @default(PENDING)
-  notes         String?
+  status PurchaseOrderStatus @default(PENDING)
+  notes  String?
 
-  expectedDate  DateTime?           @db.Date                  // 발주 예정일
-  orderedAt     DateTime?
-  receivedAt    DateTime?
+  expectedDate DateTime? @db.Date // 발주 예정일
+  orderedAt    DateTime?
+  receivedAt   DateTime?
 
   // 마감재 변경 감지: PO 생성 후 마감재가 수정되었을 때 ⚠️ 표시 (발주완료/수령 상태 PO만)
   materialChangedAt DateTime?
@@ -795,10 +819,10 @@ model PurchaseOrder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  material      Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
-  vendorEntity  Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  expenses      Expense[]
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  material     Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  vendorEntity Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  expenses     Expense[]
 
   @@index([projectId, status])
   @@index([materialId])
@@ -811,24 +835,24 @@ model PurchaseOrder {
 // ============================================
 
 enum PaymentMethod {
-  CASH           // 현금
-  CARD           // 카드
-  BANK_TRANSFER  // 계좌이체
+  CASH // 현금
+  CARD // 카드
+  BANK_TRANSFER // 계좌이체
   OTHER
 }
 
 enum ExpenseType {
-  EXPENSE   // 지출
-  INCOME    // 매출/입금
-  TRANSFER  // 자금 이체 (집계에서 제외)
+  EXPENSE // 지출
+  INCOME // 매출/입금
+  TRANSFER // 자금 이체 (집계에서 제외)
 }
 
 // 회사별 계정과목 마스터 (회계 분류 체계)
 model AccountCode {
   id          String   @id @default(cuid())
   companyId   String
-  code        String              // 예: "[본사] 복리후생비", "[현장] 자재비"
-  groupName   String?             // 예: "본사" / "현장" / "대표" / "매출" / "자금" / "기타"
+  code        String // 예: "[본사] 복리후생비", "[현장] 자재비"
+  groupName   String? // 예: "본사" / "현장" / "대표" / "매출" / "자금" / "기타"
   active      Boolean  @default(true)
   orderIndex  Int      @default(0)
   createdById String?
@@ -849,10 +873,10 @@ model AccountCode {
 model ExpenseCategoryRule {
   id            String   @id @default(cuid())
   companyId     String
-  keyword       String              // 매칭할 키워드 (대소문자 무관, contains)
-  accountCodeId String?             // 자동 설정할 계정
-  siteCode      String?             // 자동 설정할 현장 (Project.siteCode와 매칭)
-  workCategory  String?             // 자동 설정할 공종 (Expense.workCategory string)
+  keyword       String // 매칭할 키워드 (대소문자 무관, contains)
+  accountCodeId String? // 자동 설정할 계정
+  siteCode      String? // 자동 설정할 현장 (Project.siteCode와 매칭)
+  workCategory  String? // 자동 설정할 공종 (Expense.workCategory string)
   priority      Int      @default(0) // 충돌 시 우선순위 (높을수록 우선)
   active        Boolean  @default(true)
   createdById   String?
@@ -868,30 +892,30 @@ model ExpenseCategoryRule {
 }
 
 model Expense {
-  id              String          @id @default(cuid())
-  companyId       String
-  projectId       String?                                          // null = 본사/대표 운영비 (회사 일반)
+  id        String  @id @default(cuid())
+  companyId String
+  projectId String? // null = 본사/대표 운영비 (회사 일반)
 
-  date            DateTime        @db.Date
-  amount          Decimal         @db.Decimal(14, 2)               // 양수만 (type으로 부호 의미 구분)
-  type            ExpenseType     @default(EXPENSE)                // 지출/매출/이체
-  vendor          String?                                          // 거래처 텍스트 (vendor 미연결 시 fallback, CSV 가져오기 등)
-  vendorId        String?                                          // 협력업체 마스터 연결 (선택)
-  accountCodeId   String?                                          // 계정과목 (회사 마스터에서 선택)
-  workCategory    String?                                          // 공종 (자유 string, 예: "전기/조명공사")
-  description     String?                                          // 내역(적요)
-  paymentMethod   PaymentMethod?
-  receiptUrl      String?                                          // 영수증 사진 URL
+  date          DateTime       @db.Date
+  amount        Decimal        @db.Decimal(14, 2) // 양수만 (type으로 부호 의미 구분)
+  type          ExpenseType    @default(EXPENSE) // 지출/매출/이체
+  vendor        String? // 거래처 텍스트 (vendor 미연결 시 fallback, CSV 가져오기 등)
+  vendorId      String? // 협력업체 마스터 연결 (선택)
+  accountCodeId String? // 계정과목 (회사 마스터에서 선택)
+  workCategory  String? // 공종 (자유 string, 예: "전기/조명공사")
+  description   String? // 내역(적요)
+  paymentMethod PaymentMethod?
+  receiptUrl    String? // 영수증 사진 URL
 
   purchaseOrderId String?
 
   // 가져오기 메타
-  importedFrom    String?                                          // "통장CSV", "엑셀", "수동" 등
-  rawText         String?
+  importedFrom String? // "통장CSV", "엑셀", "수동" 등
+  rawText      String?
 
-  createdById     String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -910,22 +934,22 @@ model Expense {
 
 // 회사 마스터 — 자주 쓰는 자재/단가 저장. 견적 작성 시 가져와서 라인으로 추가.
 model QuoteLineItemTemplate {
-  id            String   @id @default(cuid())
-  companyId     String
-  workType      WorkType
+  id        String   @id @default(cuid())
+  companyId String
+  workType  WorkType
 
-  itemName      String
-  spec          String?
-  unit          String?
+  itemName             String
+  spec                 String?
+  unit                 String?
   defaultQuantity      Decimal @default(1) @db.Decimal(10, 2)
   defaultMaterialPrice Decimal @default(0) @db.Decimal(14, 2)
   defaultLaborPrice    Decimal @default(0) @db.Decimal(14, 2)
   defaultExpensePrice  Decimal @default(0) @db.Decimal(14, 2)
 
-  active        Boolean  @default(true)
-  orderIndex    Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  active     Boolean  @default(true)
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 

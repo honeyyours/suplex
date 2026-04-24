@@ -3,6 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
+import { checklistTemplatesApi } from '../api/checklistTemplates';
+import { CATEGORY_META as CHECKLIST_CATEGORY_META, CATEGORY_KEYS as CHECKLIST_CATEGORY_KEYS } from '../api/checklists';
+import { CATEGORIES as PHASE_CATEGORIES, categoryClass } from '../utils/date';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
 
@@ -45,6 +48,8 @@ export default function Settings() {
       <QuoteRatesSection company={company} onSaved={setCompany} canEdit={isOwner} />
 
       <QuoteTemplatesSection />
+
+      <ChecklistTemplatesSection />
 
       <Section title="내 계정">
         <div className="flex items-center py-2 border-b text-sm">
@@ -580,6 +585,254 @@ function QuoteTemplatesSection() {
         <div className="pt-3">
           <button onClick={startAdd} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">
             + {WORK_TYPE_LABEL[activeType]} 항목 추가
+          </button>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function ChecklistTemplatesSection() {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activePhase, setActivePhase] = useState(PHASE_CATEGORIES[0]);
+  const [editingId, setEditingId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(null);
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const { templates } = await checklistTemplatesApi.list();
+      setTemplates(templates);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  function startAdd() {
+    setForm({
+      title: '',
+      category: 'GENERAL',
+      phase: activePhase,
+      requiresPhoto: true,
+      orderIndex: 0,
+      active: true,
+    });
+    setAdding(true);
+    setEditingId(null);
+  }
+
+  function startEdit(tpl) {
+    setForm({
+      title: tpl.title,
+      category: tpl.category,
+      phase: tpl.phase || '',
+      requiresPhoto: tpl.requiresPhoto,
+      orderIndex: tpl.orderIndex,
+      active: tpl.active,
+    });
+    setEditingId(tpl.id);
+    setAdding(false);
+  }
+
+  async function saveForm() {
+    if (!form.title.trim()) return;
+    try {
+      const payload = {
+        title: form.title.trim(),
+        category: form.category,
+        phase: form.phase?.trim() || null,
+        requiresPhoto: !!form.requiresPhoto,
+        orderIndex: Number(form.orderIndex) || 0,
+        active: form.active !== false,
+      };
+      if (editingId) {
+        await checklistTemplatesApi.update(editingId, payload);
+      } else {
+        await checklistTemplatesApi.create(payload);
+      }
+      setForm(null);
+      setAdding(false);
+      setEditingId(null);
+      reload();
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function remove(id) {
+    if (!confirm('이 템플릿을 삭제할까요?\n(이 템플릿에서 자동 생성된 체크리스트 항목은 그대로 남습니다)')) return;
+    await checklistTemplatesApi.remove(id);
+    reload();
+  }
+
+  async function toggleActive(tpl) {
+    await checklistTemplatesApi.update(tpl.id, { active: !tpl.active });
+    reload();
+  }
+
+  async function handleSeed() {
+    const force = templates.length > 0;
+    const msg = force
+      ? `이미 ${templates.length}개 템플릿이 있습니다.\n\n전부 삭제하고 기본 템플릿으로 다시 시드할까요?`
+      : '공종별 표준 사진 체크리스트 기본 시드(약 25개)를 추가할까요?';
+    if (!confirm(msg)) return;
+    try {
+      const { created } = await checklistTemplatesApi.seed(force);
+      alert(`✅ ${created}개 템플릿이 추가되었습니다`);
+      reload();
+    } catch (e) {
+      alert('시드 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  const filtered = templates.filter((t) => (t.phase || '') === (activePhase || ''));
+  const phaseChips = [...PHASE_CATEGORIES, '(공종 없음)'];
+
+  return (
+    <Section title="체크리스트 템플릿 (회사 마스터)">
+      <p className="text-xs text-gray-500 mb-3">
+        공종별 표준 사진 체크리스트. 일정에 해당 공종이 추가되면 자동으로 프로젝트 체크리스트에 투입됩니다.
+        프로젝트 체크리스트에서 "📋 템플릿에서 가져오기"로 수동 추가도 가능.
+      </p>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          onClick={handleSeed}
+          className="text-sm px-4 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+        >
+          📋 기본 시드 ({templates.length > 0 ? '재시드' : '추가'})
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-1 border-b mb-3 pb-2">
+        {phaseChips.map((p) => {
+          const key = p === '(공종 없음)' ? '' : p;
+          const cnt = templates.filter((t) => (t.phase || '') === key).length;
+          const active = activePhase === key;
+          return (
+            <button
+              key={p}
+              onClick={() => setActivePhase(key)}
+              className={`text-xs px-2.5 py-1 rounded ${
+                active ? 'bg-navy-700 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {p} {cnt > 0 && <span className="opacity-70">({cnt})</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+      {!loading && filtered.length === 0 && !adding && (
+        <div className="text-center py-6 text-sm text-gray-400">
+          {activePhase || '(공종 없음)'} 에 등록된 템플릿이 없습니다.
+        </div>
+      )}
+
+      {filtered.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 text-gray-500">
+              <tr>
+                <th className="text-left px-2 py-1.5">항목명</th>
+                <th className="text-center px-2 py-1.5 w-20">카테고리</th>
+                <th className="text-center px-2 py-1.5 w-16">사진필수</th>
+                <th className="text-center px-2 py-1.5 w-16">활성</th>
+                <th className="px-2 py-1.5 w-20"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((t) => (
+                <tr key={t.id} className={`hover:bg-gray-50 ${t.active ? '' : 'opacity-50'}`}>
+                  <td className="px-2 py-1.5 text-navy-800">{t.title}</td>
+                  <td className="px-2 py-1.5 text-center">
+                    <span className={`px-1.5 py-0.5 rounded ${CHECKLIST_CATEGORY_META[t.category]?.color || ''}`}>
+                      {CHECKLIST_CATEGORY_META[t.category]?.label || t.category}
+                    </span>
+                  </td>
+                  <td className="px-2 py-1.5 text-center">{t.requiresPhoto ? '📷' : '—'}</td>
+                  <td className="px-2 py-1.5 text-center">
+                    <button onClick={() => toggleActive(t)} className="text-gray-500 hover:text-navy-700">
+                      {t.active ? '✓' : '✕'}
+                    </button>
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-xs">
+                    <button onClick={() => startEdit(t)} className="text-navy-700 hover:underline mr-2">편집</button>
+                    <button onClick={() => remove(t.id)} className="text-red-500 hover:underline">삭제</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {(adding || editingId) && form && (
+        <div className="mt-3 p-3 bg-gray-50 border rounded space-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-500 mb-0.5">항목명</label>
+              <input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+                placeholder="예: 철거 전 전체 사진"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-0.5">공종 (phase)</label>
+              <input
+                list="phase-list"
+                value={form.phase}
+                onChange={(e) => setForm({ ...form, phase: e.target.value })}
+                className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+                placeholder="비우면 자동 트리거 X"
+              />
+              <datalist id="phase-list">
+                {PHASE_CATEGORIES.map((c) => <option key={c} value={c} />)}
+              </datalist>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-0.5">카테고리</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full text-sm px-3 py-1.5 border rounded bg-white"
+              >
+                {CHECKLIST_CATEGORY_KEYS.map((k) => (
+                  <option key={k} value={k}>{CHECKLIST_CATEGORY_META[k].label}</option>
+                ))}
+              </select>
+            </div>
+            <FormField
+              label="순서 (orderIndex)"
+              type="number"
+              value={form.orderIndex}
+              onChange={(v) => setForm({ ...form, orderIndex: Number(v) || 0 })}
+            />
+            <label className="flex items-center gap-2 text-sm pt-5">
+              <input
+                type="checkbox"
+                checked={!!form.requiresPhoto}
+                onChange={(e) => setForm({ ...form, requiresPhoto: e.target.checked })}
+                className="w-4 h-4 accent-navy-700"
+              />
+              📷 사진 첨부 필수
+            </label>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => { setAdding(false); setEditingId(null); setForm(null); }} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">취소</button>
+            <button onClick={saveForm} className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800">저장</button>
+          </div>
+        </div>
+      )}
+
+      {!adding && !editingId && (
+        <div className="pt-3">
+          <button onClick={startAdd} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">
+            + {activePhase || '(공종 없음)'} 항목 추가
           </button>
         </div>
       )}
