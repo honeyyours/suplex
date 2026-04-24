@@ -83,12 +83,12 @@ export default function InlineMaterialRow({
               {summaryChips.map((c, i) => (
                 <span
                   key={i}
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] border ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm border ${
                     isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 border-gray-200 text-gray-700'
                   }`}
                 >
-                  <span className="text-[9px] uppercase tracking-wider text-gray-500">{c.label}</span>
-                  <span className="font-medium">{c.value}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{c.label}</span>
+                  <span className="font-semibold">{c.value}</span>
                 </span>
               ))}
             </div>
