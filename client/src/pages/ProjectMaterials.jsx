@@ -151,6 +151,7 @@ export default function ProjectMaterials() {
         spaceGroup: t.spaceGroup,
         subgroup: t.subgroup,
         itemName: t.itemName,
+        formKey: t.formKey,
         essential: t.essential,
         siteNotes: t.defaultSiteNotes,
         orderIndex: i,
