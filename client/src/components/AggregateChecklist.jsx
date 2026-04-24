@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { checklistsApi, CATEGORY_META } from '../api/checklists';
+import { checklistsApi } from '../api/checklists';
+import { splitChecklistItems } from '../pages/ProjectChecklist';
 import { relativeTime } from '../utils/date';
 
 export default function AggregateChecklist({ projectIds }) {
@@ -41,16 +42,13 @@ export default function AggregateChecklist({ projectIds }) {
     ? items.filter((i) => i.project?.id === filterProject)
     : items;
 
-  const todo = filtered.filter((i) => !i.isDone);
-  const done = filtered
-    .filter((i) => i.isDone)
-    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  const { upcoming, later, done } = useMemo(() => splitChecklistItems(filtered), [filtered]);
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          총 {filtered.length}건 · 진행 {todo.length} · 완료 {done.length}
+          총 {filtered.length}건 · 진행 {upcoming.length + later.length} · 완료 {done.length}
         </div>
         <select
           value={filterProject}
@@ -66,12 +64,19 @@ export default function AggregateChecklist({ projectIds }) {
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Column title="해야할 일" count={todo.length} icon="⬜">
-          {todo.length === 0 ? (
-            <Empty text="진행 중인 항목이 없습니다" />
+      <div className="space-y-4">
+        <Column title="해야할 일" count={upcoming.length} icon="⬜">
+          {upcoming.length === 0 ? (
+            <Empty text="해야할 항목이 없습니다" />
           ) : (
-            todo.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
+            upcoming.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
+          )}
+        </Column>
+        <Column title="나중에" count={later.length} icon="📅" collapsible defaultOpen={false}>
+          {later.length === 0 ? (
+            <Empty text="예정된 항목이 없습니다" />
+          ) : (
+            later.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
           )}
         </Column>
         <Column title="완료된 일" count={done.length} icon="✅" collapsible defaultOpen={false}>
@@ -120,7 +125,6 @@ function Empty({ text }) {
 }
 
 function Item({ item, onToggle }) {
-  const cat = CATEGORY_META[item.category] || CATEGORY_META.GENERAL;
   return (
     <div className={`bg-white border rounded-md p-3 ${item.isDone ? 'opacity-75' : ''}`}>
       <div className="flex items-start gap-2">
@@ -135,7 +139,14 @@ function Item({ item, onToggle }) {
             {item.title}
           </div>
           <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
-            <span className={`px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span>
+            {item.phase && (
+              <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
+            )}
+            {item.dueDate && (
+              <span className="px-1.5 py-0.5 rounded bg-navy-50 text-navy-700">
+                📅 {new Date(item.dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+              </span>
+            )}
             {item.requiresPhoto && (
               <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
                 📷 {(item.photos || []).length}장 {item.photos?.length ? '' : '필요'}

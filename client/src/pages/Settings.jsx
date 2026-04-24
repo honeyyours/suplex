@@ -4,8 +4,7 @@ import BackupMenu from '../components/BackupMenu';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { checklistTemplatesApi } from '../api/checklistTemplates';
-import { CATEGORY_META as CHECKLIST_CATEGORY_META, CATEGORY_KEYS as CHECKLIST_CATEGORY_KEYS } from '../api/checklists';
-import { CATEGORIES as PHASE_CATEGORIES, categoryClass } from '../utils/date';
+import { CATEGORIES as PHASE_CATEGORIES } from '../utils/date';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
 
@@ -612,7 +611,6 @@ function ChecklistTemplatesSection() {
   function startAdd() {
     setForm({
       title: '',
-      category: 'GENERAL',
       phase: activePhase,
       requiresPhoto: true,
       orderIndex: 0,
@@ -625,7 +623,6 @@ function ChecklistTemplatesSection() {
   function startEdit(tpl) {
     setForm({
       title: tpl.title,
-      category: tpl.category,
       phase: tpl.phase || '',
       requiresPhoto: tpl.requiresPhoto,
       orderIndex: tpl.orderIndex,
@@ -640,7 +637,6 @@ function ChecklistTemplatesSection() {
     try {
       const payload = {
         title: form.title.trim(),
-        category: form.category,
         phase: form.phase?.trim() || null,
         requiresPhoto: !!form.requiresPhoto,
         orderIndex: Number(form.orderIndex) || 0,
@@ -737,7 +733,6 @@ function ChecklistTemplatesSection() {
             <thead className="bg-gray-50 text-gray-500">
               <tr>
                 <th className="text-left px-2 py-1.5">항목명</th>
-                <th className="text-center px-2 py-1.5 w-20">카테고리</th>
                 <th className="text-center px-2 py-1.5 w-16">사진필수</th>
                 <th className="text-center px-2 py-1.5 w-16">활성</th>
                 <th className="px-2 py-1.5 w-20"></th>
@@ -747,11 +742,6 @@ function ChecklistTemplatesSection() {
               {filtered.map((t) => (
                 <tr key={t.id} className={`hover:bg-gray-50 ${t.active ? '' : 'opacity-50'}`}>
                   <td className="px-2 py-1.5 text-navy-800">{t.title}</td>
-                  <td className="px-2 py-1.5 text-center">
-                    <span className={`px-1.5 py-0.5 rounded ${CHECKLIST_CATEGORY_META[t.category]?.color || ''}`}>
-                      {CHECKLIST_CATEGORY_META[t.category]?.label || t.category}
-                    </span>
-                  </td>
                   <td className="px-2 py-1.5 text-center">{t.requiresPhoto ? '📷' : '—'}</td>
                   <td className="px-2 py-1.5 text-center">
                     <button onClick={() => toggleActive(t)} className="text-gray-500 hover:text-navy-700">
@@ -793,18 +783,6 @@ function ChecklistTemplatesSection() {
               <datalist id="phase-list">
                 {PHASE_CATEGORIES.map((c) => <option key={c} value={c} />)}
               </datalist>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-0.5">카테고리</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full text-sm px-3 py-1.5 border rounded bg-white"
-              >
-                {CHECKLIST_CATEGORY_KEYS.map((k) => (
-                  <option key={k} value={k}>{CHECKLIST_CATEGORY_META[k].label}</option>
-                ))}
-              </select>
             </div>
             <FormField
               label="순서 (orderIndex)"

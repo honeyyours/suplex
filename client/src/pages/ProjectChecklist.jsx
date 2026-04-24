@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { checklistsApi, CATEGORY_META, CATEGORY_KEYS } from '../api/checklists';
+import { checklistsApi } from '../api/checklists';
 import { checklistTemplatesApi, projectChecklistsApi } from '../api/checklistTemplates';
 import { photosApi } from '../api/reports';
 import { relativeTime } from '../utils/date';
@@ -11,8 +11,8 @@ export default function ProjectChecklist({ projectId } = {}) {
   const id = projectId || params.id;
   const queryClient = useQueryClient();
   const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('GENERAL');
   const [newRequiresPhoto, setNewRequiresPhoto] = useState(false);
+  const [newDueDate, setNewDueDate] = useState('');
   const [err, setErr] = useState('');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
@@ -29,24 +29,19 @@ export default function ProjectChecklist({ projectId } = {}) {
     return queryClient.invalidateQueries({ queryKey: ['checklists'] });
   }
 
-  const { todo, done } = useMemo(() => {
-    const t = items.filter((i) => !i.isDone);
-    const d = items.filter((i) => i.isDone)
-      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-    return { todo: t, done: d };
-  }, [items]);
+  const { upcoming, later, done } = useMemo(() => splitChecklistItems(items), [items]);
 
   async function add() {
     if (!newTitle.trim()) return;
     try {
       await checklistsApi.create(id, {
         title: newTitle.trim(),
-        category: newCategory,
         requiresPhoto: newRequiresPhoto,
+        dueDate: newDueDate ? new Date(newDueDate).toISOString() : null,
       });
       setNewTitle('');
-      setNewCategory('GENERAL');
       setNewRequiresPhoto(false);
+      setNewDueDate('');
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -88,21 +83,19 @@ export default function ProjectChecklist({ projectId } = {}) {
           </button>
         </div>
         <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-          <select
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="border rounded-md px-2 py-2 text-sm bg-white"
-          >
-            {CATEGORY_KEYS.map((k) => (
-              <option key={k} value={k}>{CATEGORY_META[k].label}</option>
-            ))}
-          </select>
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
             placeholder="새 항목 (예: 철거 전/후 사진)"
             className="flex-1 min-w-[160px] border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-navy-500 outline-none"
+          />
+          <input
+            type="date"
+            value={newDueDate}
+            onChange={(e) => setNewDueDate(e.target.value)}
+            className="border rounded-md px-2 py-2 text-sm bg-white"
+            title="기한 (선택)"
           />
           <button
             onClick={add}
@@ -125,12 +118,22 @@ export default function ProjectChecklist({ projectId } = {}) {
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Column title="해야할 일" count={todo.length} icon="⬜">
-          {todo.length === 0 ? (
-            <Empty text="모두 처리됐습니다" />
+      <div className="space-y-4">
+        <Column title="해야할 일" count={upcoming.length} icon="⬜">
+          {upcoming.length === 0 ? (
+            <Empty text="해야할 항목이 없습니다" />
           ) : (
-            todo.map((i) => (
+            upcoming.map((i) => (
+              <Item key={i.id} item={i} projectId={id} onToggle={toggle} onDelete={remove} onEdit={edit} onChange={reload} />
+            ))
+          )}
+        </Column>
+
+        <Column title="나중에" count={later.length} icon="📅" collapsible defaultOpen={false}>
+          {later.length === 0 ? (
+            <Empty text="예정된 항목이 없습니다" />
+          ) : (
+            later.map((i) => (
               <Item key={i.id} item={i} projectId={id} onToggle={toggle} onDelete={remove} onEdit={edit} onChange={reload} />
             ))
           )}
@@ -311,7 +314,6 @@ function Empty({ text }) {
 }
 
 function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
-  const cat = CATEGORY_META[item.category] || CATEGORY_META.GENERAL;
   const photos = item.photos || [];
   const showPhotos = item.requiresPhoto || photos.length > 0;
   const [expanded, setExpanded] = useState(item.requiresPhoto && photos.length === 0);
@@ -329,7 +331,6 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             {item.title}
           </div>
           <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
-            <span className={`px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span>
             {item.phase && (
               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
             )}
@@ -452,4 +453,36 @@ function ChecklistPhotos({ projectId, item, onChange }) {
       />
     </div>
   );
+}
+
+// 항목을 3섹션으로 분할: 해야할 일(dueDate 없음 OR 7일 이내) / 나중에(7일 초과) / 완료
+export function splitChecklistItems(items) {
+  const now = new Date();
+  const cutoff = new Date(now);
+  cutoff.setDate(now.getDate() + 7);
+  cutoff.setHours(23, 59, 59, 999);
+
+  const upcoming = [];
+  const later = [];
+  const done = [];
+
+  for (const i of items) {
+    if (i.isDone) { done.push(i); continue; }
+    if (!i.dueDate) { upcoming.push(i); continue; }
+    const d = new Date(i.dueDate);
+    if (d <= cutoff) upcoming.push(i);
+    else later.push(i);
+  }
+
+  // 정렬: upcoming은 dueDate 오름차순(과거 → 가까운 미래), null은 마지막
+  upcoming.sort((a, b) => {
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate) - new Date(b.dueDate);
+  });
+  later.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  done.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+  return { upcoming, later, done };
 }
