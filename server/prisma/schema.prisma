@@ -49,6 +49,7 @@ model Company {
   projects               Project[]
   materialTemplates      MaterialTemplate[]
   checklistTemplates     ChecklistTemplate[]
+  phaseKeywordRules      PhaseKeywordRule[]
   quoteLineItemTemplates QuoteLineItemTemplate[]
   expenses               Expense[]
   accountCodes           AccountCode[]
@@ -239,6 +240,24 @@ model ProjectChecklist {
   @@index([projectId, isDone])
   @@index([projectId, sourceTemplateId])
   @@map("project_checklists")
+}
+
+// 회사별 키워드 → 공종(phase) 매핑.
+// 일정 입력 시 content에서 키워드를 찾아 category 자동 설정 → 체크리스트 자동 트리거.
+model PhaseKeywordRule {
+  id        String   @id @default(cuid())
+  companyId String
+  keyword   String // 매칭할 키워드 (대소문자 무시, 부분 일치)
+  phase     String // 매칭 시 부여할 공종 (철거/목공/...)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, keyword])
+  @@index([companyId, active])
+  @@map("phase_keyword_rules")
 }
 
 // 회사별 체크리스트 템플릿 — phase(공종) 매칭으로 일정 시작 시 자동 투입 + 수동 가져오기

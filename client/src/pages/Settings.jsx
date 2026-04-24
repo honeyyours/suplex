@@ -4,6 +4,7 @@ import BackupMenu from '../components/BackupMenu';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { checklistTemplatesApi } from '../api/checklistTemplates';
+import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { CATEGORIES as PHASE_CATEGORIES } from '../utils/date';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
@@ -47,6 +48,8 @@ export default function Settings() {
       <QuoteRatesSection company={company} onSaved={setCompany} canEdit={isOwner} />
 
       <QuoteTemplatesSection />
+
+      <PhaseKeywordsSection />
 
       <ChecklistTemplatesSection />
 
@@ -587,6 +590,140 @@ function QuoteTemplatesSection() {
           </button>
         </div>
       )}
+    </Section>
+  );
+}
+
+function PhaseKeywordsSection() {
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activePhase, setActivePhase] = useState(PHASE_CATEGORIES[0]);
+  const [newKeyword, setNewKeyword] = useState('');
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const { rules } = await phaseKeywordsApi.list();
+      setRules(rules);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  async function add() {
+    const k = newKeyword.trim();
+    if (!k) return;
+    try {
+      await phaseKeywordsApi.create({ keyword: k, phase: activePhase });
+      setNewKeyword('');
+      reload();
+    } catch (e) {
+      alert('추가 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function remove(id) {
+    await phaseKeywordsApi.remove(id);
+    reload();
+  }
+
+  async function toggleActive(rule) {
+    await phaseKeywordsApi.update(rule.id, { active: !rule.active });
+    reload();
+  }
+
+  async function handleSeed() {
+    const force = rules.length > 0;
+    const msg = force
+      ? `이미 ${rules.length}개 키워드가 있습니다.\n\n전부 삭제하고 기본값으로 다시 시드할까요?`
+      : '공종별 기본 키워드 (약 35개) 를 추가할까요?';
+    if (!confirm(msg)) return;
+    try {
+      const { created } = await phaseKeywordsApi.seed(force);
+      alert(`✅ ${created}개 키워드가 추가되었습니다`);
+      reload();
+    } catch (e) {
+      alert('시드 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  const filtered = rules.filter((r) => r.phase === activePhase);
+
+  return (
+    <Section title="공종 자동 인식 키워드">
+      <p className="text-xs text-gray-500 mb-3">
+        일정 입력 시 내용에 키워드가 포함되면 해당 공종으로 자동 분류 → 체크리스트 자동 생성에 연결됩니다.
+        예: "철거" 키워드가 있으면 일정 "거실 철거"는 철거 공종으로 인식.
+      </p>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button
+          onClick={handleSeed}
+          className="text-sm px-4 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+        >
+          📋 기본 시드 ({rules.length > 0 ? '재시드' : '추가'})
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-1 border-b mb-3 pb-2">
+        {PHASE_CATEGORIES.map((p) => {
+          const cnt = rules.filter((r) => r.phase === p).length;
+          const active = activePhase === p;
+          return (
+            <button
+              key={p}
+              onClick={() => setActivePhase(p)}
+              className={`text-xs px-2.5 py-1 rounded ${
+                active ? 'bg-navy-700 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {p} {cnt > 0 && <span className="opacity-70">({cnt})</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {filtered.map((r) => (
+          <span
+            key={r.id}
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded border ${
+              r.active ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-gray-100 text-gray-400 border-gray-200 line-through'
+            }`}
+          >
+            <button
+              onClick={() => toggleActive(r)}
+              title={r.active ? '비활성화' : '활성화'}
+              className="hover:text-navy-700"
+            >
+              {r.keyword}
+            </button>
+            <button
+              onClick={() => remove(r.id)}
+              title="삭제"
+              className="text-gray-400 hover:text-red-500"
+            >×</button>
+          </span>
+        ))}
+        {!loading && filtered.length === 0 && (
+          <span className="text-xs text-gray-400">등록된 키워드가 없습니다</span>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <input
+          value={newKeyword}
+          onChange={(e) => setNewKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          placeholder={`"${activePhase}" 공종 키워드 추가`}
+          className="flex-1 text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+        <button
+          onClick={add}
+          className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+        >추가</button>
+      </div>
     </Section>
   );
 }

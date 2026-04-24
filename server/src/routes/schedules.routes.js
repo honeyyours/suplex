@@ -4,6 +4,7 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { recordChange } = require('../services/scheduleChangeLogger');
 const { syncChecklistFromPhase } = require('../services/checklistAutoSeed');
+const { detectPhase } = require('../services/phaseDetect');
 
 const projectRouter = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -124,6 +125,12 @@ projectRouter.post('/', async (req, res, next) => {
     const userName = await getUserName(req.user.id);
     const dateObj = new Date(data.date);
 
+    // category 미지정 시 키워드 감지로 자동 추정
+    let resolvedCategory = data.category?.trim() || null;
+    if (!resolvedCategory) {
+      resolvedCategory = await detectPhase(req.user.companyId, data.content);
+    }
+
     const entry = await prisma.$transaction(async (tx) => {
       const maxOrder = await tx.dailyScheduleEntry.aggregate({
         where: { projectId, date: dateObj },
@@ -138,7 +145,7 @@ projectRouter.post('/', async (req, res, next) => {
           projectId,
           date: dateObj,
           content: data.content.trim(),
-          category: data.category?.trim() || null,
+          category: resolvedCategory,
           vendorId,
           orderIndex: nextOrder,
           createdById: req.user.id,
@@ -206,12 +213,23 @@ projectRouter.patch('/:id', async (req, res, next) => {
       ? await resolveVendorId(req.user.companyId, data.vendorId)
       : undefined;
 
+    // category 명시 안 됐고 기존도 null이면 content에서 자동 감지 (key flow)
+    let categoryToWrite;
+    if (data.category !== undefined) {
+      categoryToWrite = data.category?.trim() || null;
+    } else if (!existing.category && data.content !== undefined) {
+      const detected = await detectPhase(req.user.companyId, data.content);
+      categoryToWrite = detected || existing.category;
+    } else {
+      categoryToWrite = existing.category;
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.dailyScheduleEntry.update({
         where: { id },
         data: {
           ...(data.content !== undefined && { content: data.content.trim() }),
-          ...(data.category !== undefined && { category: data.category?.trim() || null }),
+          ...(categoryToWrite !== existing.category && { category: categoryToWrite }),
           ...(vendorIdResolved !== undefined && { vendorId: vendorIdResolved }),
           ...(data.orderIndex !== undefined && { orderIndex: data.orderIndex }),
           updatedById: req.user.id,
@@ -220,9 +238,7 @@ projectRouter.patch('/:id', async (req, res, next) => {
 
       const contentChanged =
         data.content !== undefined && data.content.trim() !== existing.content;
-      const newCategoryVal = data.category !== undefined ? (data.category?.trim() || null) : existing.category;
-      const categoryChanged =
-        data.category !== undefined && newCategoryVal !== existing.category;
+      const categoryChanged = categoryToWrite !== existing.category;
 
       if (contentChanged || categoryChanged) {
         await recordChange(tx, {

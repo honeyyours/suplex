@@ -49,8 +49,8 @@ export default function ScheduleCalendar({ projectId, project }) {
     await schedulesApi.create(projectId, { date: dateKey, ...payload });
     invalidate();
   }
-  function quickAdd(dateKey, content, category = null) {
-    addEntry(dateKey, { content, category }).catch((e) => {
+  function quickAdd(dateKey, content) {
+    addEntry(dateKey, { content }).catch((e) => {
       console.error('quickAdd failed:', e);
     });
   }
@@ -228,7 +228,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                   )}
                   {isActive && inRange && (
                     <InlineScheduleInput
-                      onSave={(text, category) => quickAdd(key, text, category)}
+                      onSave={(text) => quickAdd(key, text)}
                       onNavigate={(action) => {
                         if (['next', 'prev', 'up', 'down'].includes(action)) goToCell(key, action);
                         else setActiveCellKey(null);
