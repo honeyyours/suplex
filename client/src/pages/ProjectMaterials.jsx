@@ -144,15 +144,6 @@ export default function ProjectMaterials() {
     }
   }, [id, queryClient]);
 
-  const toggleChecked = useCallback(async (m) => {
-    try {
-      await materialsApi.update(id, m.id, { checked: !m.checked });
-      queryClient.invalidateQueries({ queryKey: ['materials', id] });
-    } catch (e) {
-      alert('체크 변경 실패: ' + (e.response?.data?.error || e.message));
-    }
-  }, [id, queryClient]);
-
   const deleteMaterial = useCallback(async (materialId) => {
     if (!confirm('이 항목을 삭제할까요?')) return;
     try {
@@ -203,10 +194,6 @@ export default function ProjectMaterials() {
         e.preventDefault();
         const opt = STATUS_OPTIONS[Number(e.key) - 1];
         if (opt) changeStatus(selectedId, opt.key);
-      } else if (selectedId && e.key === ' ') {
-        e.preventDefault();
-        const m = flatList.find((x) => x.id === selectedId);
-        if (m) toggleChecked(m);
       } else if (selectedId && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         deleteMaterial(selectedId);
@@ -218,7 +205,7 @@ export default function ProjectMaterials() {
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [flatList, selectedId, expandedId, editing, adding, changeStatus, toggleChecked, deleteMaterial]);
+  }, [flatList, selectedId, expandedId, editing, adding, changeStatus, deleteMaterial]);
 
   // 펼침 시 그 행이 선택 상태로
   useEffect(() => { if (expandedId) setSelectedId(expandedId); }, [expandedId]);
@@ -451,7 +438,7 @@ export default function ProjectMaterials() {
                 <span className="tabular-nums">{pct}%</span>
               </div>
               <div className="hidden md:block text-[10px] text-gray-400 mt-1">
-                ↑↓ 이동 · Enter 펼침 · Tab 다음 칸 · Esc 닫음 · 1/2/3/4 상태 · Space 체크 · H 이력 · Del 삭제
+                ↑↓ 이동 · Enter 펼침 · Tab 다음 칸 · Esc 닫음 · 1/2/3/4 상태 · H 이력 · Del 삭제
               </div>
             </div>
             <div className="flex gap-2">

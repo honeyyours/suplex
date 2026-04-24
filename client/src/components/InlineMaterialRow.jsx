@@ -52,16 +52,7 @@ export default function InlineMaterialRow({
       }`}
     >
       {/* 표시 행 */}
-      <div className="px-2 py-2 grid grid-cols-[20px_1fr_auto] sm:grid-cols-[20px_minmax(140px,200px)_1fr_auto] items-center gap-3 text-sm">
-        {/* 체크 */}
-        <span className="flex items-center justify-center">
-          {material.checked ? (
-            <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-[10px]">✓</span>
-          ) : (
-            <span className="w-4 h-4 border border-gray-300 rounded-sm" />
-          )}
-        </span>
-
+      <div className="px-3 py-2 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,200px)_1fr_auto] items-center gap-3 text-sm">
         {/* 항목명 + 시공노트 */}
         <div className="min-w-0">
           <div className="font-medium text-gray-800 truncate">{material.itemName}</div>
