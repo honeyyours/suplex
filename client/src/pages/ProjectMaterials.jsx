@@ -7,12 +7,17 @@ import {
 } from '../api/materials';
 import MaterialModal from '../components/MaterialModal';
 
-const ALL_KEY = '__ALL__';
+// activeKey 형태: 'ALL' | 'FINISH:전체' | 'APPLIANCE:전체' | 'FINISH:거실' | 'APPLIANCE:주방' ...
+const ALL_KEY = 'ALL';
+
+function buildKey(kind, group) {
+  return `${kind}:${group}`;
+}
 
 export default function ProjectMaterials() {
   const { id } = useParams();
   const queryClient = useQueryClient();
-  const [activeGroup, setActiveGroup] = useState(ALL_KEY);
+  const [activeKey, setActiveKey] = useState(ALL_KEY);
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -28,54 +33,86 @@ export default function ProjectMaterials() {
     return queryClient.invalidateQueries({ queryKey: ['materials', id] });
   }
 
-  // spaceGroup별 집계 (사이드바용)
-  const groups = useMemo(() => {
-    const m = new Map();
-    materials.forEach((x) => {
-      const key = x.spaceGroup || '기타';
-      if (!m.has(key)) m.set(key, { name: key, items: [], firstOrder: x.orderIndex ?? 0 });
-      m.get(key).items.push(x);
-    });
-    const arr = Array.from(m.values());
-    arr.sort((a, b) => a.firstOrder - b.firstOrder);
-    return arr.map((g) => ({
-      ...g,
-      total: g.items.length,
-      confirmed: g.items.filter((m) => m.status === 'CONFIRMED').length,
-    }));
+  // kind → spaceGroup별 집계
+  const sections = useMemo(() => {
+    const out = { FINISH: [], APPLIANCE: [] };
+    for (const kind of ['FINISH', 'APPLIANCE']) {
+      const m = new Map();
+      materials.filter((x) => x.kind === kind).forEach((x) => {
+        const key = x.spaceGroup || '기타';
+        if (!m.has(key)) m.set(key, { name: key, items: [], firstOrder: x.orderIndex ?? 0 });
+        m.get(key).items.push(x);
+      });
+      out[kind] = Array.from(m.values())
+        .sort((a, b) => a.firstOrder - b.firstOrder)
+        .map((g) => ({
+          ...g,
+          total: g.items.length,
+          confirmed: g.items.filter((m) => m.status === 'CONFIRMED').length,
+        }));
+    }
+    return out;
+  }, [materials]);
+
+  const kindTotals = useMemo(() => {
+    const out = {};
+    for (const kind of ['FINISH', 'APPLIANCE']) {
+      const ks = materials.filter((x) => x.kind === kind);
+      out[kind] = {
+        total: ks.length,
+        confirmed: ks.filter((m) => m.status === 'CONFIRMED').length,
+      };
+    }
+    return out;
   }, [materials]);
 
   // 활성 그룹이 사라지면 전체로 폴백
   useEffect(() => {
-    if (activeGroup !== ALL_KEY && !groups.find((g) => g.name === activeGroup)) {
-      setActiveGroup(ALL_KEY);
+    if (activeKey === ALL_KEY) return;
+    const [kind, group] = activeKey.split(':');
+    if (group === '전체') return; // kind 전체 보기는 항상 유효
+    if (!sections[kind]?.find((g) => g.name === group)) {
+      setActiveKey(ALL_KEY);
     }
-  }, [groups, activeGroup]);
+  }, [sections, activeKey]);
 
   // 메인에 표시할 항목들
   const displayed = useMemo(() => {
-    if (activeGroup === ALL_KEY) return materials;
-    return materials.filter((m) => (m.spaceGroup || '기타') === activeGroup);
-  }, [materials, activeGroup]);
+    if (activeKey === ALL_KEY) return materials;
+    const [kind, group] = activeKey.split(':');
+    if (group === '전체') return materials.filter((m) => m.kind === kind);
+    return materials.filter((m) => m.kind === kind && (m.spaceGroup || '기타') === group);
+  }, [materials, activeKey]);
 
   const total = displayed.length;
   const confirmed = displayed.filter((m) => m.status === 'CONFIRMED').length;
   const pct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
-  const headerLabel = activeGroup === ALL_KEY ? '전체' : activeGroup;
 
-  // 메인에서 spaceGroup별로 다시 그룹핑 (전체 보기 시에만 의미있음)
+  const { headerLabel, headerCrumb } = useMemo(() => {
+    if (activeKey === ALL_KEY) return { headerLabel: '전체', headerCrumb: '전체 보기' };
+    const [kind, group] = activeKey.split(':');
+    const kindLabel = KIND_META[kind].label;
+    if (group === '전체') return { headerLabel: kindLabel, headerCrumb: '구분' };
+    return { headerLabel: group, headerCrumb: kindLabel };
+  }, [activeKey]);
+
+  // 메인에서 spaceGroup별로 그룹핑 (전체/kind전체 보기 시 분리)
   const displayGroups = useMemo(() => {
-    if (activeGroup !== ALL_KEY) {
-      return [{ name: activeGroup, items: displayed }];
+    if (activeKey !== ALL_KEY && !activeKey.endsWith(':전체')) {
+      const [, group] = activeKey.split(':');
+      return [{ name: group, kind: null, items: displayed }];
     }
-    const m = new Map();
-    displayed.forEach((x) => {
-      const key = x.spaceGroup || '기타';
-      if (!m.has(key)) m.set(key, { name: key, items: [], firstOrder: x.orderIndex ?? 0 });
-      m.get(key).items.push(x);
-    });
-    return Array.from(m.values()).sort((a, b) => a.firstOrder - b.firstOrder);
-  }, [displayed, activeGroup]);
+    if (activeKey !== ALL_KEY) {
+      // kind 전체
+      const [kind] = activeKey.split(':');
+      return sections[kind].map((g) => ({ ...g, kind }));
+    }
+    // 전체 보기: FINISH 먼저 그룹핑, 그 다음 APPLIANCE
+    return [
+      ...sections.FINISH.map((g) => ({ ...g, kind: 'FINISH' })),
+      ...sections.APPLIANCE.map((g) => ({ ...g, kind: 'APPLIANCE' })),
+    ];
+  }, [displayed, activeKey, sections]);
 
   async function handleImport() {
     if (!confirm('이 프로젝트에 기본 마감재 템플릿을 일괄 추가할까요?\n(기존 항목은 유지됨, 중복되어도 추가됩니다)')) return;
@@ -113,17 +150,34 @@ export default function ProjectMaterials() {
           label="전체"
           count={materials.length}
           confirmed={materials.filter((m) => m.status === 'CONFIRMED').length}
-          active={activeGroup === ALL_KEY}
-          onClick={() => setActiveGroup(ALL_KEY)}
+          active={activeKey === ALL_KEY}
+          onClick={() => setActiveKey(ALL_KEY)}
         />
-        {groups.map((g) => (
+        {sections.FINISH.length > 0 && (
+          <span className="text-[10px] text-gray-400 self-center px-1">·마감재</span>
+        )}
+        {sections.FINISH.map((g) => (
           <GroupChip
-            key={g.name}
+            key={`F:${g.name}`}
             label={g.name}
             count={g.total}
             confirmed={g.confirmed}
-            active={activeGroup === g.name}
-            onClick={() => setActiveGroup(g.name)}
+            active={activeKey === buildKey('FINISH', g.name)}
+            onClick={() => setActiveKey(buildKey('FINISH', g.name))}
+          />
+        ))}
+        {sections.APPLIANCE.length > 0 && (
+          <span className="text-[10px] text-violet-400 self-center px-1">·가전</span>
+        )}
+        {sections.APPLIANCE.map((g) => (
+          <GroupChip
+            key={`A:${g.name}`}
+            label={g.name}
+            count={g.total}
+            confirmed={g.confirmed}
+            active={activeKey === buildKey('APPLIANCE', g.name)}
+            onClick={() => setActiveKey(buildKey('APPLIANCE', g.name))}
+            tone="violet"
           />
         ))}
       </div>
@@ -135,25 +189,33 @@ export default function ProjectMaterials() {
             name="전체"
             confirmed={materials.filter((m) => m.status === 'CONFIRMED').length}
             total={materials.length}
-            active={activeGroup === ALL_KEY}
-            onClick={() => setActiveGroup(ALL_KEY)}
+            active={activeKey === ALL_KEY}
+            onClick={() => setActiveKey(ALL_KEY)}
           />
-          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 pt-3 pb-1.5">
-            공간/공정
-          </div>
-          {groups.length === 0 && (
-            <div className="px-4 py-2 text-xs text-gray-400">항목이 없습니다</div>
-          )}
-          {groups.map((g) => (
-            <SidebarItem
-              key={g.name}
-              name={g.name}
-              confirmed={g.confirmed}
-              total={g.total}
-              active={activeGroup === g.name}
-              onClick={() => setActiveGroup(g.name)}
-            />
-          ))}
+
+          <SidebarSection
+            label="🛠 마감재"
+            tone="navy"
+            kindAllActive={activeKey === buildKey('FINISH', '전체')}
+            kindAllCount={kindTotals.FINISH}
+            onKindAll={() => setActiveKey(buildKey('FINISH', '전체'))}
+            groups={sections.FINISH}
+            activeKey={activeKey}
+            kind="FINISH"
+            onSelect={(g) => setActiveKey(buildKey('FINISH', g.name))}
+          />
+
+          <SidebarSection
+            label="🪑 가전·가구"
+            tone="violet"
+            kindAllActive={activeKey === buildKey('APPLIANCE', '전체')}
+            kindAllCount={kindTotals.APPLIANCE}
+            onKindAll={() => setActiveKey(buildKey('APPLIANCE', '전체'))}
+            groups={sections.APPLIANCE}
+            activeKey={activeKey}
+            kind="APPLIANCE"
+            onSelect={(g) => setActiveKey(buildKey('APPLIANCE', g.name))}
+          />
         </aside>
 
         {/* 메인 */}
@@ -162,7 +224,7 @@ export default function ProjectMaterials() {
           <div className="flex items-end justify-between gap-3 flex-wrap pb-3 border-b mb-4">
             <div>
               <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-                {activeGroup === ALL_KEY ? '전체 보기' : '공간/공정'}
+                {headerCrumb}
               </div>
               <h3 className="text-lg font-semibold text-navy-800">{headerLabel}</h3>
               <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600">
@@ -182,10 +244,13 @@ export default function ProjectMaterials() {
                 {importing ? '가져오는 중...' : '📋 템플릿'}
               </button>
               <button
-                onClick={() => setAdding({
-                  spaceGroup: activeGroup === ALL_KEY ? '' : activeGroup,
-                  kind: 'FINISH',
-                })}
+                onClick={() => {
+                  const [kind, group] = activeKey === ALL_KEY ? ['FINISH', ''] : activeKey.split(':');
+                  setAdding({
+                    spaceGroup: group === '전체' ? '' : group,
+                    kind,
+                  });
+                }}
                 className="bg-navy-700 hover:bg-navy-800 text-white text-xs px-3 py-1.5 rounded-md"
               >
                 + 항목 추가
@@ -210,24 +275,35 @@ export default function ProjectMaterials() {
           )}
 
           <div className="space-y-5">
-            {displayGroups.map((g) => (
-              <div key={g.name}>
-                {activeGroup === ALL_KEY && (
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 pb-1.5 mb-2 border-b border-dashed">
-                    <span className="w-1 h-1 rounded-full bg-gray-400" />
-                    <span>{g.name}</span>
-                    <span className="ml-auto text-[10px] font-normal normal-case text-gray-400">
-                      {g.items.length}개
-                    </span>
+            {displayGroups.map((g, idx) => {
+              const showHeader = activeKey === ALL_KEY || activeKey.endsWith(':전체');
+              const dotColor = g.kind === 'APPLIANCE' ? 'bg-violet-400' : 'bg-navy-400';
+              return (
+                <div key={`${g.kind || 'sel'}:${g.name}:${idx}`}>
+                  {showHeader && (
+                    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 pb-1.5 mb-2 border-b border-dashed">
+                      <span className={`w-1 h-1 rounded-full ${dotColor}`} />
+                      <span>{g.name}</span>
+                      {g.kind && (
+                        <span className={`text-[9px] font-normal normal-case px-1.5 py-px rounded ${
+                          g.kind === 'APPLIANCE' ? 'bg-violet-100 text-violet-700' : 'bg-navy-100 text-navy-700'
+                        }`}>
+                          {KIND_META[g.kind].label}
+                        </span>
+                      )}
+                      <span className="ml-auto text-[10px] font-normal normal-case text-gray-400">
+                        {g.items.length}개
+                      </span>
+                    </div>
+                  )}
+                  <div className="divide-y">
+                    {g.items.map((m) => (
+                      <Row key={m.id} material={m} onClick={() => setEditing(m)} />
+                    ))}
                   </div>
-                )}
-                <div className="divide-y">
-                  {g.items.map((m) => (
-                    <Row key={m.id} material={m} onClick={() => setEditing(m)} />
-                  ))}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -254,17 +330,21 @@ export default function ProjectMaterials() {
   );
 }
 
-function SidebarItem({ name, confirmed, total, active, onClick }) {
+function SidebarItem({ name, confirmed, total, active, indent = false, tone = 'navy', onClick }) {
+  const barColor = tone === 'violet' ? 'bg-violet-600' : 'bg-navy-700';
+  const activeText = tone === 'violet' ? 'text-violet-800' : 'text-navy-800';
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left flex items-center gap-2 px-4 py-1.5 text-[13px] transition relative ${
+      className={`w-full text-left flex items-center gap-2 py-1.5 text-[13px] transition relative ${
+        indent ? 'pl-7 pr-4' : 'px-4'
+      } ${
         active
-          ? 'bg-white text-navy-800 font-semibold'
+          ? `bg-white ${activeText} font-semibold`
           : 'text-gray-600 hover:bg-white/70'
       }`}
     >
-      {active && <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-navy-700" />}
+      {active && <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${barColor}`} />}
       <span className="flex-1 truncate">{name}</span>
       <span className={`text-[10px] tabular-nums ${active ? 'text-gray-500' : 'text-gray-400'}`}>
         {confirmed}/{total}
@@ -273,12 +353,47 @@ function SidebarItem({ name, confirmed, total, active, onClick }) {
   );
 }
 
-function GroupChip({ label, count, confirmed, active, onClick }) {
+function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, groups, activeKey, kind, onSelect }) {
+  if (groups.length === 0 && kindAllCount.total === 0) return null;
+  return (
+    <>
+      <div className={`text-[10px] font-semibold uppercase tracking-wider px-4 pt-3 pb-1 ${
+        tone === 'violet' ? 'text-violet-500' : 'text-navy-500'
+      }`}>
+        {label}
+      </div>
+      <SidebarItem
+        name="구분 전체"
+        confirmed={kindAllCount.confirmed}
+        total={kindAllCount.total}
+        active={kindAllActive}
+        indent
+        tone={tone}
+        onClick={onKindAll}
+      />
+      {groups.map((g) => (
+        <SidebarItem
+          key={g.name}
+          name={g.name}
+          confirmed={g.confirmed}
+          total={g.total}
+          active={activeKey === buildKey(kind, g.name)}
+          indent
+          tone={tone}
+          onClick={() => onSelect(g)}
+        />
+      ))}
+    </>
+  );
+}
+
+function GroupChip({ label, count, confirmed, active, onClick, tone = 'navy' }) {
+  const activeBg = tone === 'violet' ? 'bg-violet-700 border-violet-700' : 'bg-navy-700 border-navy-700';
   return (
     <button
       onClick={onClick}
       className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${
-        active ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-gray-700 border-gray-200'
+        active ? `${activeBg} text-white` : 'bg-white text-gray-700 border-gray-200'
       }`}
     >
       <span>{label}</span>
