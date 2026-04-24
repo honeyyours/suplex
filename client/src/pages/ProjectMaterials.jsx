@@ -7,6 +7,7 @@ import {
 } from '../api/materials';
 import MaterialModal from '../components/MaterialModal';
 import InlineMaterialRow from '../components/InlineMaterialRow';
+import StatusPickerPopover from '../components/StatusPickerPopover';
 
 // activeKey 형태: 'ALL' | 'FINISH:전체' | 'APPLIANCE:전체' | 'FINISH:거실' | 'APPLIANCE:주방' ...
 const ALL_KEY = 'ALL';
@@ -784,52 +785,3 @@ function Row({ material, onClick, onStatusChange }) {
   );
 }
 
-function StatusPickerPopover({ x, y, current, onPick, onClose }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    function handleOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    }
-    function handleEsc(e) {
-      if (e.key === 'Escape') onClose();
-    }
-    document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleEsc);
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleEsc);
-    };
-  }, [onClose]);
-
-  // 화면 밖 보정
-  const maxX = typeof window !== 'undefined' ? window.innerWidth - 200 : x;
-  const safeX = Math.min(x - 180, maxX);
-
-  return (
-    <div
-      ref={ref}
-      style={{ position: 'fixed', left: Math.max(8, safeX), top: y, zIndex: 60 }}
-      className="bg-white border rounded-md shadow-lg py-1 min-w-[180px]"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {STATUS_OPTIONS.map((o) => {
-        const isCurrent = o.key === current ||
-          (o.key === 'CONFIRMED' && current === 'CHANGED') ||
-          (o.key === 'UNDECIDED' && current === 'REVIEWING');
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onPick(o.key)}
-            className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${
-              isCurrent ? 'bg-gray-50 font-semibold text-navy-800' : 'text-gray-700'
-            }`}
-          >
-            {o.label}
-            {isCurrent && <span className="float-right text-emerald-600">✓</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}

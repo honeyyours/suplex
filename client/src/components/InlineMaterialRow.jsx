@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { STATUS_META, STATUS_OPTIONS, KIND_META } from '../api/materials';
+import { STATUS_META, KIND_META } from '../api/materials';
 import { getFormSchema } from '../utils/materialFormSchemas';
+import StatusPickerPopover from './StatusPickerPopover';
 
 // 인라인 행 — 기본은 표시만, 펼침 시 그 자리에서 가로 grid 폼.
 // 자동 debounce 저장. 키보드 네비.
@@ -28,6 +29,7 @@ export default function InlineMaterialRow({
   const isInheriting = !!material.inheritFromMaterialId && !!material.inheritFrom;
   const showFields = !isNA && !isReused && !isInheriting;
   const muted = isNA;
+  const [picker, setPicker] = useState(null);
 
   // 자재명 영역 — schema 기반 라벨+값 칩
   const src = isInheriting ? material.inheritFrom : material;
@@ -87,12 +89,12 @@ export default function InlineMaterialRow({
                     isInheriting ? 'border-sky-300' : 'border-gray-300'
                   }`}
                 >
-                  <span className={`px-2 py-0.5 font-medium ${
+                  <span className={`px-2.5 py-1 font-medium ${
                     isInheriting ? 'bg-sky-200 text-sky-800' : 'bg-gray-200 text-gray-700'
                   }`}>
                     {c.label}
                   </span>
-                  <span className={`px-2.5 py-0.5 font-semibold ${
+                  <span className={`px-3 py-1 font-semibold ${
                     isInheriting ? 'bg-sky-50 text-sky-900' : 'bg-gray-50 text-gray-900'
                   }`}>
                     {c.value}
@@ -105,23 +107,29 @@ export default function InlineMaterialRow({
           )}
         </div>
 
-        {/* 상태 pill — 빠른 변경 */}
+        {/* 상태 pill — 클릭 시 4-옵션 팝오버 */}
         <button
           type="button"
           data-no-row-click
           onClick={(e) => {
             e.stopPropagation();
-            const idx = STATUS_OPTIONS.findIndex((o) => o.key === material.status ||
-              (o.key === 'CONFIRMED' && material.status === 'CHANGED') ||
-              (o.key === 'UNDECIDED' && material.status === 'REVIEWING'));
-            const nextIdx = (idx + 1) % STATUS_OPTIONS.length;
-            onStatusChange(STATUS_OPTIONS[nextIdx].key);
+            const rect = e.currentTarget.getBoundingClientRect();
+            setPicker({ x: rect.right, y: rect.bottom + 4 });
           }}
-          title="클릭해서 다음 상태로 (또는 1/2/3/4 키)"
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+          title="클릭해서 변경 (또는 1/2/3/4 키)"
+          className={`text-sm font-semibold px-3 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
         >
           {status.short || status.label}
         </button>
+        {picker && (
+          <StatusPickerPopover
+            x={picker.x}
+            y={picker.y}
+            current={material.status}
+            onPick={(s) => { setPicker(null); onStatusChange(s); }}
+            onClose={() => setPicker(null)}
+          />
+        )}
       </div>
 
       {/* 펼침 영역 — 가로 grid */}
