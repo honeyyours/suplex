@@ -55,9 +55,9 @@ export default function InlineMaterialRow({
       <div className="px-3 py-2 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(160px,220px)_1fr_auto] items-center gap-3">
         {/* 항목명 + 시공노트 — primary */}
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-gray-900 truncate">{material.itemName}</div>
+          <div className="text-[15px] font-semibold text-gray-900 truncate">{material.itemName}</div>
           {material.siteNotes && (
-            <div className="text-[11px] text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
+            <div className="text-xs text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
           )}
         </div>
 
@@ -71,11 +71,11 @@ export default function InlineMaterialRow({
               {summaryChips.map((c, i) => (
                 <span
                   key={i}
-                  className={`inline-flex items-stretch overflow-hidden rounded text-xs border ${
+                  className={`inline-flex items-stretch overflow-hidden rounded text-sm border ${
                     isInheriting ? 'border-sky-200' : 'border-gray-200'
                   }`}
                 >
-                  <span className={`px-1.5 py-0.5 ${
+                  <span className={`px-2 py-0.5 ${
                     isInheriting ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600'
                   }`}>
                     {c.label}
@@ -103,7 +103,7 @@ export default function InlineMaterialRow({
             setPicker({ x: rect.right, y: rect.bottom + 4 });
           }}
           title="클릭해서 변경 (또는 1/2/3/4 키)"
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+          className={`text-sm font-semibold px-3 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
         >
           {status.short || status.label}
         </button>

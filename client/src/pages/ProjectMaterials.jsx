@@ -379,7 +379,7 @@ export default function ProjectMaterials() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] min-h-[480px]">
+      <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] min-h-[480px]">
         {/* 사이드바 (sm 이상) */}
         <aside className="hidden sm:block border-r bg-gray-50/60 py-3">
           <SidebarItem
