@@ -112,14 +112,8 @@ export default function ProjectMaterials() {
 
   const { total, na: naCount, done: confirmed, denom, pct } = countProgress(displayed);
 
-  // 평면 리스트 (displayGroups를 펼쳐서 키보드 네비용)
-  const flatList = useMemo(() => {
-    const arr = [];
-    for (const g of displayGroups || []) {
-      for (const m of g.items) arr.push(m);
-    }
-    return arr;
-  }, [displayed, activeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 평면 리스트 (키보드 네비용). displayed가 이미 정렬된 단일 배열.
+  const flatList = useMemo(() => displayed, [displayed]);
 
   // 화면에서 선택된 항목 ID — 키보드 네비용. flatList 변경 시 유효성 체크
   useEffect(() => {
