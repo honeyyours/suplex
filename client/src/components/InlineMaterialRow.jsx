@@ -52,36 +52,36 @@ export default function InlineMaterialRow({
       }`}
     >
       {/* 표시 행 */}
-      <div className="px-3 py-2 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,200px)_1fr_auto] items-center gap-3 text-sm">
-        {/* 항목명 + 시공노트 */}
+      <div className="px-3 py-2 grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(160px,220px)_1fr_auto] items-center gap-3">
+        {/* 항목명 + 시공노트 — primary */}
         <div className="min-w-0">
-          <div className="font-medium text-gray-800 truncate">{material.itemName}</div>
+          <div className="text-sm font-semibold text-gray-900 truncate">{material.itemName}</div>
           {material.siteNotes && (
             <div className="text-[11px] text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
           )}
         </div>
 
-        {/* 자재명 셀 — 라벨+값 칩 풀 표시 */}
+        {/* 자재명 셀 — secondary 위계, 작은 칩 */}
         <div className="hidden sm:block min-w-0">
           {isReused || isNA ? (
             <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
           ) : hasMaterial ? (
             <div className="flex flex-wrap gap-1 items-center">
-              {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
+              {isInheriting && <span className="text-[10px] flex-shrink-0 text-sky-700">🔗</span>}
               {summaryChips.map((c, i) => (
                 <span
                   key={i}
-                  className={`inline-flex items-stretch overflow-hidden rounded-md border text-sm ${
-                    isInheriting ? 'border-sky-300' : 'border-gray-300'
+                  className={`inline-flex items-stretch overflow-hidden rounded text-xs border ${
+                    isInheriting ? 'border-sky-200' : 'border-gray-200'
                   }`}
                 >
-                  <span className={`px-2.5 py-1 font-medium ${
-                    isInheriting ? 'bg-sky-200 text-sky-800' : 'bg-gray-200 text-gray-700'
+                  <span className={`px-1.5 py-0.5 ${
+                    isInheriting ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600'
                   }`}>
                     {c.label}
                   </span>
-                  <span className={`px-3 py-1 font-semibold ${
-                    isInheriting ? 'bg-sky-50 text-sky-900' : 'bg-gray-50 text-gray-900'
+                  <span className={`px-2 py-0.5 font-semibold ${
+                    isInheriting ? 'bg-white text-sky-900' : 'bg-white text-gray-800'
                   }`}>
                     {c.value}
                   </span>
@@ -93,7 +93,7 @@ export default function InlineMaterialRow({
           )}
         </div>
 
-        {/* 상태 pill — 클릭 시 4-옵션 팝오버 */}
+        {/* 상태 pill — secondary, 색상으로 강조 */}
         <button
           type="button"
           data-no-row-click
@@ -103,7 +103,7 @@ export default function InlineMaterialRow({
             setPicker({ x: rect.right, y: rect.bottom + 4 });
           }}
           title="클릭해서 변경 (또는 1/2/3/4 키)"
-          className={`text-sm font-semibold px-3 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
         >
           {status.short || status.label}
         </button>
