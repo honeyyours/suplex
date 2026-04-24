@@ -268,17 +268,30 @@ router.post('/bulk', async (req, res, next) => {
     const items = Array.isArray(req.body?.items) ? req.body.items : [];
     if (items.length === 0) return res.status(400).json({ error: 'items 배열 필요' });
 
-    const rows = items.map((it, i) => ({
-      projectId,
-      kind: KINDS.includes(it.kind) ? it.kind : 'FINISH',
-      spaceGroup: String(it.spaceGroup || '').trim() || '기타',
-      subgroup: it.subgroup ? String(it.subgroup).trim() || null : null,
-      itemName: String(it.itemName || '').trim() || '(이름없음)',
-      essential: !!it.essential,
-      formKey: it.formKey ? String(it.formKey).trim() || null : null,
-      siteNotes: it.siteNotes ? String(it.siteNotes).trim() : null,
-      orderIndex: typeof it.orderIndex === 'number' ? it.orderIndex : i,
-    }));
+    // formKey 누락 항목은 회사 templates에서 (spaceGroup, itemName) 매칭으로 자동 채움
+    const tpls = await prisma.materialTemplate.findMany({
+      where: { companyId: req.user.companyId, formKey: { not: null } },
+      select: { spaceGroup: true, itemName: true, formKey: true },
+    });
+    const tplMap = new Map();
+    for (const t of tpls) tplMap.set(`${t.spaceGroup}::${t.itemName}`, t.formKey);
+
+    const rows = items.map((it, i) => {
+      const sg = String(it.spaceGroup || '').trim() || '기타';
+      const item = String(it.itemName || '').trim() || '(이름없음)';
+      const fk = it.formKey?.trim() || tplMap.get(`${sg}::${item}`) || null;
+      return {
+        projectId,
+        kind: KINDS.includes(it.kind) ? it.kind : 'FINISH',
+        spaceGroup: sg,
+        subgroup: it.subgroup ? String(it.subgroup).trim() || null : null,
+        itemName: item,
+        essential: !!it.essential,
+        formKey: fk,
+        siteNotes: it.siteNotes ? String(it.siteNotes).trim() : null,
+        orderIndex: typeof it.orderIndex === 'number' ? it.orderIndex : i,
+      };
+    });
 
     const result = await prisma.$transaction(async (tx) => {
       const created = await tx.material.createMany({ data: rows });
