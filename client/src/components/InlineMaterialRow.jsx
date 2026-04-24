@@ -62,14 +62,9 @@ export default function InlineMaterialRow({
           )}
         </span>
 
-        {/* 항목명 + kind 태그 + 시공노트 */}
+        {/* 항목명 + 시공노트 */}
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
-            <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
-              {kind.label}
-            </span>
-          </div>
+          <div className="font-medium text-gray-800 truncate">{material.itemName}</div>
           {material.siteNotes && (
             <div className="text-[11px] text-gray-500 truncate mt-0.5">{material.siteNotes}</div>
           )}
