@@ -12,6 +12,7 @@ export default function ProjectChecklist({ projectId } = {}) {
   const queryClient = useQueryClient();
   const [newTitle, setNewTitle] = useState('');
   const [newRequiresPhoto, setNewRequiresPhoto] = useState(false);
+  const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
   const [newDueDate, setNewDueDate] = useState('');
   const [err, setErr] = useState('');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
@@ -33,14 +34,19 @@ export default function ProjectChecklist({ projectId } = {}) {
 
   async function add() {
     if (!newTitle.trim()) return;
+    if (newKind === 'DUE' && !newDueDate) {
+      setErr('기한을 선택하거나 "일반"으로 바꿔주세요');
+      return;
+    }
     try {
       await checklistsApi.create(id, {
         title: newTitle.trim(),
         requiresPhoto: newRequiresPhoto,
-        dueDate: newDueDate ? new Date(newDueDate).toISOString() : null,
+        dueDate: newKind === 'DUE' && newDueDate ? new Date(newDueDate).toISOString() : null,
       });
       setNewTitle('');
       setNewRequiresPhoto(false);
+      setNewKind('GENERAL');
       setNewDueDate('');
       reload();
     } catch (e) {
@@ -90,13 +96,6 @@ export default function ProjectChecklist({ projectId } = {}) {
             placeholder="새 항목 (예: 철거 전/후 사진)"
             className="flex-1 min-w-[160px] border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-navy-500 outline-none"
           />
-          <input
-            type="date"
-            value={newDueDate}
-            onChange={(e) => setNewDueDate(e.target.value)}
-            className="border rounded-md px-2 py-2 text-sm bg-white"
-            title="기한 (선택)"
-          />
           <button
             onClick={add}
             className="px-4 bg-navy-700 text-white rounded-md text-sm hover:bg-navy-800"
@@ -104,15 +103,41 @@ export default function ProjectChecklist({ projectId } = {}) {
             추가
           </button>
         </div>
-        <label className="flex items-center gap-2 mt-2 text-sm text-gray-600 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={newRequiresPhoto}
-            onChange={(e) => setNewRequiresPhoto(e.target.checked)}
-            className="w-4 h-4 accent-navy-700"
-          />
-          📷 사진 첨부 필수 (사진 없으면 완료 체크 불가)
-        </label>
+        <div className="flex items-center gap-3 mt-2 text-sm text-gray-600 flex-wrap">
+          <div className="inline-flex rounded border overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => { setNewKind('GENERAL'); setNewDueDate(''); }}
+              className={`px-3 py-1 ${newKind === 'GENERAL' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              일반
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewKind('DUE')}
+              className={`px-3 py-1 border-l ${newKind === 'DUE' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              📅 기한 지정
+            </button>
+          </div>
+          {newKind === 'DUE' && (
+            <input
+              type="date"
+              value={newDueDate}
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="border rounded-md px-2 py-1 text-sm bg-white"
+            />
+          )}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newRequiresPhoto}
+              onChange={(e) => setNewRequiresPhoto(e.target.checked)}
+              className="w-4 h-4 accent-navy-700"
+            />
+            📷 사진 첨부 필수
+          </label>
+        </div>
         {displayErr && <div className="mt-2 text-sm text-red-600">{displayErr}</div>}
       </div>
 
