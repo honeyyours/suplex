@@ -154,6 +154,31 @@ export default function ProjectMaterials() {
     }
   }
 
+  async function handleClearAll() {
+    if (materials.length === 0) {
+      alert('삭제할 항목이 없습니다');
+      return;
+    }
+    const confirmText = prompt(
+      `⚠️ 이 프로젝트의 마감재 ${materials.length}개를 모두 삭제합니다.\n\n` +
+      `복구 불가. 진행하려면 "삭제" 라고 입력하세요.`
+    );
+    if (confirmText !== '삭제') {
+      if (confirmText !== null) alert('취소되었습니다 ("삭제" 정확히 입력해야 진행)');
+      return;
+    }
+    setImporting(true);
+    try {
+      const { deleted } = await materialsApi.clear(id);
+      alert(`✅ ${deleted}개 항목이 삭제되었습니다`);
+      reload();
+    } catch (e) {
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function handleReseed() {
     const ok = confirm(
       '⚠️ 회사 마감재 템플릿을 최신 기본값(약 130개)으로 덮어씁니다.\n\n' +
@@ -271,6 +296,14 @@ export default function ProjectMaterials() {
               </div>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={handleClearAll}
+                disabled={importing || materials.length === 0}
+                className="text-xs px-3 py-1.5 border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
+                title="이 프로젝트의 마감재 항목 전부 삭제"
+              >
+                🗑 모두 삭제
+              </button>
               <button
                 onClick={handleReseed}
                 disabled={importing}

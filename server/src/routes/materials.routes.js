@@ -330,6 +330,21 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
+// DELETE /api/projects/:projectId/materials   — 프로젝트 마감재 전체 삭제
+// MaterialHistory는 Cascade, PurchaseOrder.materialId는 SetNull (연결된 PO는 유지)
+router.delete('/', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const result = await prisma.material.deleteMany({ where: { projectId } });
+    res.json({ ok: true, deleted: result.count });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // DELETE /api/projects/:projectId/materials/:id
 router.delete('/:id', async (req, res, next) => {
   try {

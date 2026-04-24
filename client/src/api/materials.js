@@ -13,6 +13,8 @@ export const materialsApi = {
     api.get(`/projects/${projectId}/materials/${id}/history`).then((r) => r.data),
   bulkCreate: (projectId, items) =>
     api.post(`/projects/${projectId}/materials/bulk`, { items }).then((r) => r.data),
+  clear: (projectId) =>
+    api.delete(`/projects/${projectId}/materials`).then((r) => r.data),
 };
 
 export const materialTemplatesApi = {
