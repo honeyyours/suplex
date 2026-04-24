@@ -49,10 +49,8 @@ export default function ScheduleCalendar({ projectId, project }) {
     await schedulesApi.create(projectId, { date: dateKey, ...payload });
     invalidate();
   }
-  function quickAdd(dateKey, content) {
-    // 인라인용 — content만 받음. 카테고리/벤더는 추후 ScheduleEntry 편집으로 추가
-    addEntry(dateKey, { content }).catch((e) => {
-      // 실패해도 silently — 사용자는 이미 다음 셀로 이동
+  function quickAdd(dateKey, content, category = null) {
+    addEntry(dateKey, { content, category }).catch((e) => {
       console.error('quickAdd failed:', e);
     });
   }
@@ -230,7 +228,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                   )}
                   {isActive && inRange && (
                     <InlineScheduleInput
-                      onSave={(text) => quickAdd(key, text)}
+                      onSave={(text, category) => quickAdd(key, text, category)}
                       onNavigate={(action) => {
                         if (['next', 'prev', 'up', 'down'].includes(action)) goToCell(key, action);
                         else setActiveCellKey(null);

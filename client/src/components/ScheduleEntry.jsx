@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { categoryClass } from '../utils/date';
+import { CATEGORIES, categoryClass } from '../utils/date';
 import VendorPicker from './VendorPicker';
 import ContextMenu from './ContextMenu';
 
@@ -7,6 +7,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   const [editing, setEditing] = useState(false);
   const [vendorMenu, setVendorMenu] = useState(null); // { x, y } | null
   const [contextMenu, setContextMenu] = useState(null); // { x, y } or null
+  const [categoryPicker, setCategoryPicker] = useState(null); // { x, y } | null
   const [content, setContent] = useState(entry.content);
   const inputRef = useRef(null);
   const entryRef = useRef(null);
@@ -16,6 +17,18 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
     const rect = (anchorEl || entryRef.current)?.getBoundingClientRect();
     if (!rect) return;
     setVendorMenu({ x: rect.left, y: rect.bottom + 4 });
+  }
+
+  function openCategoryPicker() {
+    const rect = entryRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCategoryPicker({ x: rect.left, y: rect.bottom + 4 });
+  }
+
+  async function pickCategory(cat) {
+    setCategoryPicker(null);
+    if (cat === entry.category) return;
+    await onUpdate(entry.id, { category: cat || null });
   }
 
   useEffect(() => {
@@ -160,6 +173,10 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
               label: entry.confirmed ? '✓ 확정 해제' : '✓ 확정',
               onClick: () => onToggleConfirm(entry.id),
             },
+            {
+              label: `🏷 공종 변경${entry.category ? ` (${entry.category})` : ''}`,
+              onClick: () => openCategoryPicker(),
+            },
             ...(showVendorButton ? [{
               label: '🏢 협력업체 태그',
               onClick: () => openVendorMenu(),
@@ -172,6 +189,62 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           ]}
         />
       )}
+      {categoryPicker && (
+        <CategoryPickerPopover
+          x={categoryPicker.x}
+          y={categoryPicker.y}
+          current={entry.category}
+          onPick={pickCategory}
+          onClose={() => setCategoryPicker(null)}
+        />
+      )}
     </>
+  );
+}
+
+function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    function handleEsc(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]);
+
+  const maxX = typeof window !== 'undefined' ? window.innerWidth - 220 : x;
+  const safeX = Math.min(x, maxX);
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: 'fixed', left: safeX, top: y, zIndex: 70 }}
+      className="bg-white border rounded-md shadow-lg p-2 w-[210px]"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="text-[10px] text-gray-500 mb-1.5">공종 선택</div>
+      <div className="grid grid-cols-3 gap-1">
+        <button
+          onClick={() => onPick(null)}
+          className={`text-[11px] py-1 rounded ${!current ? 'ring-2 ring-navy-500' : ''} bg-gray-100 text-gray-700 hover:bg-gray-200`}
+        >
+          (없음)
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            onClick={() => onPick(c)}
+            className={`text-[11px] py-1 rounded ${current === c ? 'ring-2 ring-navy-500' : ''} ${categoryClass(c)} hover:opacity-80`}
+          >{c}</button>
+        ))}
+      </div>
+    </div>
   );
 }

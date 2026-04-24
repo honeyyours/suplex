@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { CATEGORIES, categoryClass } from '../utils/date';
 
 /**
  * 캘린더 셀 안에서 엑셀처럼 빠르게 일정을 추가하는 인풋.
@@ -10,8 +11,10 @@ import { useEffect, useRef, useState } from 'react';
  *  - Esc        → 저장 없이 닫기
  *  - blur       → 텍스트 있으면 자동 저장
  *
+ * 상단에 빠른 공종 칩 — 클릭 시 즉시 (content=공종, category=공종)으로 저장.
+ *
  * Props:
- *  - onSave: (content: string) => void  // 비동기 저장 (await 안 함, 낙관적 동작)
+ *  - onSave: (content: string, category?: string) => void
  *  - onNavigate: (action: 'next'|'prev'|'esc') => void
  */
 export default function InlineScheduleInput({ onSave, onNavigate }) {
@@ -37,6 +40,12 @@ export default function InlineScheduleInput({ onSave, onNavigate }) {
     } else {
       onNavigate(direction);
     }
+  }
+
+  function pickCategory(cat) {
+    handledRef.current = false;
+    onSave(cat, cat);
+    requestAnimationFrame(() => ref.current?.focus());
   }
 
   function handleKey(e) {
@@ -79,14 +88,28 @@ export default function InlineScheduleInput({ onSave, onNavigate }) {
   }
 
   return (
-    <input
-      ref={ref}
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onKeyDown={handleKey}
-      onBlur={handleBlur}
-      placeholder="입력 후 Enter"
-      className="w-full text-[11px] border border-navy-500 rounded px-1 py-0.5 outline-none ring-1 ring-navy-500 bg-white"
-    />
+    <div className="space-y-0.5">
+      <div className="flex flex-wrap gap-0.5">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => pickCategory(c)}
+            title={`${c} 일정 추가`}
+            className={`text-[9px] leading-none px-1 py-0.5 rounded ${categoryClass(c)} hover:opacity-80`}
+          >{c}</button>
+        ))}
+      </div>
+      <input
+        ref={ref}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKey}
+        onBlur={handleBlur}
+        placeholder="입력 후 Enter"
+        className="w-full text-[11px] border border-navy-500 rounded px-1 py-0.5 outline-none ring-1 ring-navy-500 bg-white"
+      />
+    </div>
   );
 }

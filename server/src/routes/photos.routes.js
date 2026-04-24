@@ -107,7 +107,50 @@ projectRouter.get('/', async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
       take: Number(req.query.limit) || 200,
     });
-    res.json({ photos });
+
+    // 출처 레이블 추가 (체크리스트 항목명 / 작업보고 날짜 / 자재요청 항목명)
+    const checklistIds = [...new Set(photos.filter((p) => p.source === 'CHECKLIST').map((p) => p.sourceId))];
+    const reportIds = [...new Set(photos.filter((p) => p.source === 'REPORT').map((p) => p.sourceId))];
+    const requestIds = [...new Set(photos.filter((p) => p.source === 'MATERIAL_REQUEST').map((p) => p.sourceId))];
+
+    const [checks, reports, reqs] = await Promise.all([
+      checklistIds.length
+        ? prisma.projectChecklist.findMany({
+            where: { id: { in: checklistIds } },
+            select: { id: true, title: true, dueDate: true, phase: true },
+          })
+        : [],
+      reportIds.length
+        ? prisma.dailyReport.findMany({
+            where: { id: { in: reportIds } },
+            select: { id: true, date: true },
+          })
+        : [],
+      requestIds.length
+        ? prisma.materialRequest.findMany({
+            where: { id: { in: requestIds } },
+            select: { id: true, itemName: true },
+          })
+        : [],
+    ]);
+    const checkMap = Object.fromEntries(checks.map((c) => [c.id, c]));
+    const reportMap = Object.fromEntries(reports.map((r) => [r.id, r]));
+    const reqMap = Object.fromEntries(reqs.map((r) => [r.id, r]));
+
+    const enriched = photos.map((p) => {
+      let sourceLabel = null;
+      if (p.source === 'CHECKLIST' && checkMap[p.sourceId]) {
+        const c = checkMap[p.sourceId];
+        sourceLabel = c.title;
+      } else if (p.source === 'REPORT' && reportMap[p.sourceId]) {
+        sourceLabel = `${new Date(reportMap[p.sourceId].date).toLocaleDateString('ko-KR')} 작업`;
+      } else if (p.source === 'MATERIAL_REQUEST' && reqMap[p.sourceId]) {
+        sourceLabel = reqMap[p.sourceId].itemName;
+      }
+      return { ...p, sourceLabel };
+    });
+
+    res.json({ photos: enriched });
   } catch (e) {
     next(e);
   }

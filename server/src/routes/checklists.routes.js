@@ -62,7 +62,13 @@ router.get('/', async (req, res, next) => {
 
     const items = await prisma.projectChecklist.findMany({
       where: { projectId },
-      orderBy: [{ isDone: 'asc' }, { orderIndex: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [
+        { isDone: 'asc' },
+        { dueDate: { sort: 'asc', nulls: 'last' } },
+        { phase: 'asc' },
+        { orderIndex: 'asc' },
+        { createdAt: 'asc' },
+      ],
       include: includeUsers,
     });
     res.json({ items: await attachPhotos(items) });

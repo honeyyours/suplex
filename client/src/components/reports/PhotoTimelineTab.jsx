@@ -39,6 +39,7 @@ export default function PhotoTimelineTab({ projectId }) {
             { k: '', l: '전체' },
             { k: 'REPORT', l: '작업 보고' },
             { k: 'MATERIAL_REQUEST', l: '자재 요청' },
+            { k: 'CHECKLIST', l: '체크리스트' },
           ].map((t) => (
             <button
               key={t.k}
@@ -76,10 +77,16 @@ export default function PhotoTimelineTab({ projectId }) {
                     target="_blank"
                     rel="noreferrer"
                     className="relative block aspect-square rounded-lg overflow-hidden border bg-gray-100 group"
+                    title={p.sourceLabel || ''}
                   >
                     <img src={p.thumbnailUrl || p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition" />
-                    <div className="absolute top-1 left-1">
+                    <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start max-w-[90%]">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded ${src.color}`}>{src.label}</span>
+                      {p.sourceLabel && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white truncate max-w-full">
+                          {p.sourceLabel}
+                        </span>
+                      )}
                     </div>
                     <div className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">
                       {p.uploadedBy?.name} · {relativeTime(p.createdAt)}

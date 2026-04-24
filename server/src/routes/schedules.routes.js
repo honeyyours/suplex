@@ -161,6 +161,7 @@ projectRouter.post('/', async (req, res, next) => {
         projectId,
         companyId: req.user.companyId,
         phase: created.category,
+        dueDate: dateObj,
         userId: req.user.id,
       });
 
@@ -244,6 +245,7 @@ projectRouter.patch('/:id', async (req, res, next) => {
           projectId,
           companyId: req.user.companyId,
           phase: u.category,
+          dueDate: existing.date,
           userId: req.user.id,
         });
         seededChecklists = seeded.created;

@@ -1,7 +1,8 @@
 // 일정의 phase(category)가 시작될 때 회사 ChecklistTemplate에서 자동으로
-// ProjectChecklist를 생성. sourceTemplateId로 중복 방지.
+// ProjectChecklist를 생성. (templateId + dueDate) 조합으로 중복 방지 →
+// 같은 공종이 여러 날짜에 진행되면 날짜별로 새 세트가 생성됨.
 
-async function syncChecklistFromPhase(tx, { projectId, companyId, phase, userId }) {
+async function syncChecklistFromPhase(tx, { projectId, companyId, phase, dueDate, userId }) {
   if (!phase) return { created: 0 };
 
   const templates = await tx.checklistTemplate.findMany({
@@ -11,7 +12,11 @@ async function syncChecklistFromPhase(tx, { projectId, companyId, phase, userId 
   if (templates.length === 0) return { created: 0 };
 
   const existing = await tx.projectChecklist.findMany({
-    where: { projectId, sourceTemplateId: { in: templates.map((t) => t.id) } },
+    where: {
+      projectId,
+      sourceTemplateId: { in: templates.map((t) => t.id) },
+      dueDate: dueDate || null,
+    },
     select: { sourceTemplateId: true },
   });
   const usedIds = new Set(existing.map((e) => e.sourceTemplateId));
@@ -32,6 +37,7 @@ async function syncChecklistFromPhase(tx, { projectId, companyId, phase, userId 
       phase: t.phase,
       requiresPhoto: t.requiresPhoto,
       sourceTemplateId: t.id,
+      dueDate: dueDate || null,
       orderIndex: nextOrder++,
       createdById: userId || null,
     })),

@@ -330,6 +330,14 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
           </div>
           <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
             <span className={`px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span>
+            {item.phase && (
+              <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
+            )}
+            {item.dueDate && (
+              <span className="px-1.5 py-0.5 rounded bg-navy-50 text-navy-700">
+                📅 {new Date(item.dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+              </span>
+            )}
             {item.requiresPhoto && (
               <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷 사진 필수</span>
             )}
