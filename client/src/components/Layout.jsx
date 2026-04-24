@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const NAV = [
   { to: '/', label: '홈', exact: true },
@@ -14,6 +15,7 @@ const NAV = [
 
 export default function Layout() {
   const { auth } = useAuth();
+  const { theme, setTheme, isDark } = useTheme();
 
   // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
   useEffect(() => {
@@ -42,6 +44,13 @@ export default function Layout() {
             </nav>
           </div>
           <div className="text-sm text-navy-100 flex items-center gap-3">
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              title={`현재: ${theme === 'system' ? '시스템' : theme === 'dark' ? '다크' : '라이트'} (클릭 토글)`}
+              className="text-navy-100 hover:text-white text-base px-1.5 py-1 rounded hover:bg-navy-700/60 transition leading-none"
+            >
+              {isDark ? '☀️' : '🌙'}
+            </button>
             <span className="hidden sm:inline">
               {auth?.company?.name} · {auth?.user?.name}
             </span>

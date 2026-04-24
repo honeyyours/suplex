@@ -11,6 +11,77 @@ body {
 }
 
 /* ============================================
+   다크 모드 (html.dark) — 핵심 색상 글로벌 override.
+   각 컴포넌트에 dark: variant 일일이 추가하지 않고
+   bg-white/bg-gray-50/text-gray-* 같은 자주 쓰는 클래스를 강제 변환.
+   ============================================ */
+html.dark {
+  color-scheme: dark;
+}
+html.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* 배경 */
+html.dark .bg-white         { background-color: rgb(31 41 55); }     /* gray-800 */
+html.dark .bg-gray-50       { background-color: rgb(17 24 39); }     /* gray-900 */
+html.dark .bg-gray-50\/60   { background-color: rgb(17 24 39 / 0.6); }
+html.dark .bg-gray-100      { background-color: rgb(55 65 81); }     /* gray-700 */
+html.dark .bg-navy-50       { background-color: rgb(30 58 102 / 0.25); }
+html.dark .bg-navy-50\/60   { background-color: rgb(30 58 102 / 0.2); }
+html.dark .bg-amber-50      { background-color: rgb(120 53 15 / 0.25); }
+html.dark .bg-emerald-50    { background-color: rgb(6 78 59 / 0.3); }
+html.dark .bg-sky-50        { background-color: rgb(7 89 133 / 0.25); }
+html.dark .bg-rose-50       { background-color: rgb(159 18 57 / 0.25); }
+html.dark .bg-violet-50     { background-color: rgb(76 29 149 / 0.25); }
+html.dark .bg-yellow-50     { background-color: rgb(113 63 18 / 0.25); }
+
+/* 텍스트 */
+html.dark .text-gray-900    { color: rgb(243 244 246); }
+html.dark .text-gray-800    { color: rgb(229 231 235); }
+html.dark .text-gray-700    { color: rgb(209 213 219); }
+html.dark .text-gray-600    { color: rgb(156 163 175); }
+html.dark .text-gray-500    { color: rgb(156 163 175); }
+html.dark .text-gray-400    { color: rgb(107 114 128); }
+html.dark .text-gray-300    { color: rgb(75 85 99); }
+html.dark .text-navy-900,
+html.dark .text-navy-800,
+html.dark .text-navy-700    { color: rgb(147 197 253); }
+html.dark .text-navy-600    { color: rgb(96 165 250); }
+html.dark .text-navy-500    { color: rgb(59 130 246); }
+
+/* 테두리 */
+html.dark .border-gray-200,
+html.dark .border-gray-300  { border-color: rgb(55 65 81); }
+html.dark .border           { border-color: rgb(55 65 81); }
+html.dark .border-b,
+html.dark .border-t,
+html.dark .border-l,
+html.dark .border-r,
+html.dark .border-y,
+html.dark .border-x         { border-color: rgb(55 65 81); }
+html.dark .divide-y > * + * { border-color: rgb(55 65 81); }
+html.dark .border-dashed    { border-color: rgb(75 85 99); }
+
+/* 인풋/셀렉트/textarea — 자주 쓰는 흰 배경 input들 */
+html.dark input:not([type=checkbox]):not([type=radio]),
+html.dark select,
+html.dark textarea {
+  background-color: rgb(17 24 39);
+  color: rgb(243 244 246);
+  border-color: rgb(55 65 81);
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: rgb(107 114 128);
+}
+
+/* hover bg-gray-50 보강 */
+html.dark .hover\:bg-gray-50:hover { background-color: rgb(55 65 81); }
+html.dark .hover\:bg-gray-100:hover { background-color: rgb(75 85 99); }
+html.dark .hover\:bg-white\/70:hover { background-color: rgb(31 41 55 / 0.7); }
+
+/* ============================================
    인쇄 (견적서 PDF 출력용) — body에 print-quote 클래스가 있을 때
    .quote-printable 영역만 출력
    ============================================ */
