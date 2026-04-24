@@ -17,6 +17,19 @@ function buildKey(kind, group) {
   return `${kind}:${group}`;
 }
 
+// 진행률 = (CONFIRMED + CHANGED + REUSED) / (전체 - NOT_APPLICABLE)
+const DONE_STATUSES = new Set(['CONFIRMED', 'CHANGED', 'REUSED']);
+function isDone(m) { return DONE_STATUSES.has(m.status); }
+function isNA(m) { return m.status === 'NOT_APPLICABLE'; }
+function countProgress(items) {
+  const total = items.length;
+  const na = items.filter(isNA).length;
+  const done = items.filter(isDone).length;
+  const denom = total - na;
+  const pct = denom > 0 ? Math.round((done / denom) * 100) : 0;
+  return { total, na, done, denom, pct };
+}
+
 export default function ProjectMaterials() {
   const { id } = useParams();
   const queryClient = useQueryClient();
@@ -51,7 +64,7 @@ export default function ProjectMaterials() {
         .map((g) => ({
           ...g,
           total: g.items.length,
-          confirmed: g.items.filter((m) => m.status === 'CONFIRMED').length,
+          confirmed: g.items.filter(isDone).length,
         }));
     }
     return out;
@@ -70,7 +83,7 @@ export default function ProjectMaterials() {
       const ks = materials.filter((x) => x.kind === kind);
       out[kind] = {
         total: ks.length,
-        confirmed: ks.filter((m) => m.status === 'CONFIRMED').length,
+        confirmed: ks.filter(isDone).length,
       };
     }
     return out;
@@ -94,9 +107,7 @@ export default function ProjectMaterials() {
     return materials.filter((m) => m.kind === kind && (m.spaceGroup || '기타') === group);
   }, [materials, activeKey]);
 
-  const total = displayed.length;
-  const confirmed = displayed.filter((m) => m.status === 'CONFIRMED').length;
-  const pct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+  const { total, na: naCount, done: confirmed, denom, pct } = countProgress(displayed);
 
   const { headerLabel, headerCrumb } = useMemo(() => {
     if (activeKey === ALL_KEY) return { headerLabel: '전체', headerCrumb: '전체 보기' };
@@ -204,7 +215,7 @@ export default function ProjectMaterials() {
         <GroupChip
           label="전체"
           count={materials.length}
-          confirmed={materials.filter((m) => m.status === 'CONFIRMED').length}
+          confirmed={materials.filter(isDone).length}
           active={activeKey === ALL_KEY}
           onClick={() => setActiveKey(ALL_KEY)}
         />
@@ -242,7 +253,7 @@ export default function ProjectMaterials() {
         <aside className="hidden sm:block border-r bg-gray-50/60 py-3">
           <SidebarItem
             name="전체"
-            confirmed={materials.filter((m) => m.status === 'CONFIRMED').length}
+            confirmed={materials.filter(isDone).length}
             total={materials.length}
             active={activeKey === ALL_KEY}
             onClick={() => setActiveKey(ALL_KEY)}
@@ -288,7 +299,8 @@ export default function ProjectMaterials() {
               </div>
               <h3 className="text-lg font-semibold text-navy-800">{headerLabel}</h3>
               <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600">
-                <span>확정 {confirmed} / {total}</span>
+                <span>확정 {confirmed} / {denom}</span>
+                {naCount > 0 && <span className="text-gray-400">(해당없음 {naCount})</span>}
                 <div className="w-32 h-1 bg-gray-200 rounded overflow-hidden">
                   <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
                 </div>
@@ -517,43 +529,34 @@ function groupBySubgroup(items) {
 function Row({ material, onClick }) {
   const status = STATUS_META[material.status] || STATUS_META.UNDECIDED;
   const kind = KIND_META[material.kind] || KIND_META.FINISH;
-  const isAppliance = material.kind === 'APPLIANCE';
+  const isNA = material.status === 'NOT_APPLICABLE';
+  const isReused = material.status === 'REUSED';
+  const muted = isNA;
 
-  // 자재명 영역 표시
-  const hasMaterial = material.brand || material.productName;
+  // 자재명 영역: brand/productName + customSpec 요약
+  const hasMaterial = material.brand || material.productName ||
+                      (material.customSpec && Object.keys(material.customSpec).length > 0);
+  const customSummary = material.customSpec
+    ? Object.values(material.customSpec).filter(Boolean).slice(0, 2).join(' · ')
+    : '';
 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left px-2 py-2.5 hover:bg-gray-50 grid grid-cols-[20px_1fr_auto] sm:grid-cols-[20px_minmax(140px,180px)_1fr_auto] items-center gap-3 text-sm group"
+      className={`w-full text-left px-2 py-2.5 hover:bg-gray-50 grid grid-cols-[20px_1fr_auto] sm:grid-cols-[20px_minmax(140px,180px)_1fr_auto] items-center gap-3 text-sm group ${muted ? 'opacity-50' : ''}`}
     >
-      {/* 체크 / 설치 표시 */}
+      {/* 체크(V) */}
       <span className="flex items-center justify-center">
-        {isAppliance ? (
-          <span
-            className={`text-xs font-semibold ${
-              material.installed === true ? 'text-emerald-600' :
-              material.installed === false ? 'text-gray-400' : 'text-gray-300'
-            }`}
-          >
-            {material.installed === true ? 'O' : material.installed === false ? 'X' : '—'}
-          </span>
-        ) : material.checked ? (
+        {material.checked ? (
           <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-[10px]">✓</span>
         ) : (
           <span className="w-4 h-4 border border-gray-300 rounded-sm" />
         )}
       </span>
 
-      {/* 항목명 + 태그 + 시공 노트 */}
+      {/* 항목명 + kind 태그 + 시공 노트 */}
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className={`text-[10px] flex-shrink-0 ${material.essential ? 'text-emerald-600' : 'text-gray-300'}`}
-            title={material.essential ? '필수 항목' : '선택 항목'}
-          >
-            {material.essential ? '●' : '○'}
-          </span>
           <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
           <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
             {kind.label}
@@ -564,9 +567,11 @@ function Row({ material, onClick }) {
         )}
       </div>
 
-      {/* 자재명 셀 (sm+에서만 별도 컬럼, mobile은 숨김) */}
+      {/* 자재명 셀 — REUSED/NA면 안 보임 */}
       <div className="hidden sm:block min-w-0">
-        {hasMaterial ? (
+        {isReused || isNA ? (
+          <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
+        ) : hasMaterial ? (
           <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border rounded text-xs text-gray-700 max-w-full">
             {material.brand && (
               <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
@@ -574,22 +579,17 @@ function Row({ material, onClick }) {
               </span>
             )}
             <span className="truncate">
-              {material.productName || <span className="text-gray-400">자재명 없음</span>}
+              {material.productName || customSummary || <span className="text-gray-400">미입력</span>}
             </span>
-            {(material.spec || material.size) && (
-              <span className="text-[10px] bg-gray-100 text-gray-500 px-1 py-px rounded flex-shrink-0">
-                {material.spec || material.size}
-              </span>
-            )}
           </div>
         ) : (
           <span className="text-xs text-gray-400 italic">🔍 자재명 입력...</span>
         )}
       </div>
 
-      {/* 상태 */}
+      {/* 상태 pill */}
       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${status.color}`}>
-        {status.label}
+        {status.short || status.label}
       </span>
     </button>
   );

@@ -30,13 +30,29 @@ export const materialTemplatesApi = {
     api.delete(`/material-templates/${id}`).then((r) => r.data),
 };
 
+// 4가지 status (legacy 2개 자동 매핑):
+//   UNDECIDED/REVIEWING → 모델 확인 필요
+//   CHANGED → 확정
+//   REUSED → 재사용
+//   NOT_APPLICABLE → 해당 없음
+//   CONFIRMED → 확정
 export const STATUS_META = {
-  UNDECIDED: { label: '미정',   color: 'bg-gray-100 text-gray-700' },
-  REVIEWING: { label: '확인중', color: 'bg-amber-100 text-amber-800' },
-  CONFIRMED: { label: '확정',   color: 'bg-emerald-100 text-emerald-700' },
-  CHANGED:   { label: '변경',   color: 'bg-orange-100 text-orange-800' },
+  UNDECIDED:      { label: '🔍 모델 확인 필요', short: '🔍 미정',   color: 'bg-gray-100 text-gray-700',     group: 'pending' },
+  REVIEWING:      { label: '🔍 모델 확인 필요', short: '🔍 미정',   color: 'bg-gray-100 text-gray-700',     group: 'pending' },
+  CONFIRMED:      { label: '✅ 확정',          short: '✅ 확정',    color: 'bg-emerald-100 text-emerald-700', group: 'done' },
+  CHANGED:        { label: '✅ 확정',          short: '✅ 확정',    color: 'bg-emerald-100 text-emerald-700', group: 'done' },
+  REUSED:         { label: '♻️ 재사용',        short: '♻️ 재사용',  color: 'bg-sky-100 text-sky-700',       group: 'done' },
+  NOT_APPLICABLE: { label: '⊘ 해당 없음',      short: '⊘ 해당없음',  color: 'bg-gray-100 text-gray-400',     group: 'na' },
 };
-export const STATUS_KEYS = Object.keys(STATUS_META);
+
+// UI에서 사용자가 선택할 수 있는 4가지 enum (legacy 2개 제외)
+export const STATUS_OPTIONS = [
+  { key: 'UNDECIDED',      label: '🔍 모델 확인 필요' },
+  { key: 'CONFIRMED',      label: '✅ 확정' },
+  { key: 'REUSED',         label: '♻️ 재사용' },
+  { key: 'NOT_APPLICABLE', label: '⊘ 해당 없음' },
+];
+export const STATUS_KEYS = ['UNDECIDED', 'CONFIRMED', 'REUSED', 'NOT_APPLICABLE'];
 
 export const KIND_META = {
   FINISH:    { label: '마감재', color: 'bg-navy-100 text-navy-700' },
