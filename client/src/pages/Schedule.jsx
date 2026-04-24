@@ -161,6 +161,18 @@ function FilterableProjectCalendar({ status }) {
             actions={
               <>
                 <Link
+                  to={`/projects/${selectedProject.id}/materials`}
+                  className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                >
+                  🛠 마감재
+                </Link>
+                <Link
+                  to={`/orders?projectId=${selectedProject.id}`}
+                  className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                >
+                  📦 발주
+                </Link>
+                <Link
                   to={`/projects/${selectedProject.id}/reports`}
                   className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                 >
