@@ -10,6 +10,9 @@ import MaterialModal from '../components/MaterialModal';
 // activeKey 형태: 'ALL' | 'FINISH:전체' | 'APPLIANCE:전체' | 'FINISH:거실' | 'APPLIANCE:주방' ...
 const ALL_KEY = 'ALL';
 
+// FINISH 사이드바에서 "공통·설비" 그룹으로 묶일 spaceGroup들 (시드 기준 하드코딩)
+const COMMON_SPACE_GROUPS = ['전체 공통', '창호', '설비·스마트홈'];
+
 function buildKey(kind, group) {
   return `${kind}:${group}`;
 }
@@ -53,6 +56,13 @@ export default function ProjectMaterials() {
     }
     return out;
   }, [materials]);
+
+  // FINISH를 공통·설비 / 공간별로 분할
+  const finishSplit = useMemo(() => {
+    const common = sections.FINISH.filter((g) => COMMON_SPACE_GROUPS.includes(g.name));
+    const space = sections.FINISH.filter((g) => !COMMON_SPACE_GROUPS.includes(g.name));
+    return { common, space };
+  }, [sections.FINISH]);
 
   const kindTotals = useMemo(() => {
     const out = {};
@@ -128,7 +138,9 @@ export default function ProjectMaterials() {
       const items = templates.map((t, i) => ({
         kind: t.kind,
         spaceGroup: t.spaceGroup,
+        subgroup: t.subgroup,
         itemName: t.itemName,
+        essential: t.essential,
         siteNotes: t.defaultSiteNotes,
         orderIndex: i,
       }));
@@ -199,7 +211,10 @@ export default function ProjectMaterials() {
             kindAllActive={activeKey === buildKey('FINISH', '전체')}
             kindAllCount={kindTotals.FINISH}
             onKindAll={() => setActiveKey(buildKey('FINISH', '전체'))}
-            groups={sections.FINISH}
+            superGroups={[
+              { label: '⚙️ 공통·설비', groups: finishSplit.common },
+              { label: '🏠 공간별',    groups: finishSplit.space },
+            ]}
             activeKey={activeKey}
             kind="FINISH"
             onSelect={(g) => setActiveKey(buildKey('FINISH', g.name))}
@@ -211,7 +226,9 @@ export default function ProjectMaterials() {
             kindAllActive={activeKey === buildKey('APPLIANCE', '전체')}
             kindAllCount={kindTotals.APPLIANCE}
             onKindAll={() => setActiveKey(buildKey('APPLIANCE', '전체'))}
-            groups={sections.APPLIANCE}
+            superGroups={[
+              { label: null, groups: sections.APPLIANCE },
+            ]}
             activeKey={activeKey}
             kind="APPLIANCE"
             onSelect={(g) => setActiveKey(buildKey('APPLIANCE', g.name))}
@@ -276,11 +293,13 @@ export default function ProjectMaterials() {
 
           <div className="space-y-5">
             {displayGroups.map((g, idx) => {
-              const showHeader = activeKey === ALL_KEY || activeKey.endsWith(':전체');
+              const showSpaceHeader = activeKey === ALL_KEY || activeKey.endsWith(':전체');
               const dotColor = g.kind === 'APPLIANCE' ? 'bg-violet-400' : 'bg-navy-400';
+              // subgroup별로 다시 그룹핑
+              const bySubgroup = groupBySubgroup(g.items);
               return (
                 <div key={`${g.kind || 'sel'}:${g.name}:${idx}`}>
-                  {showHeader && (
+                  {showSpaceHeader && (
                     <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 pb-1.5 mb-2 border-b border-dashed">
                       <span className={`w-1 h-1 rounded-full ${dotColor}`} />
                       <span>{g.name}</span>
@@ -296,9 +315,21 @@ export default function ProjectMaterials() {
                       </span>
                     </div>
                   )}
-                  <div className="divide-y">
-                    {g.items.map((m) => (
-                      <Row key={m.id} material={m} onClick={() => setEditing(m)} />
+                  <div className="space-y-3">
+                    {bySubgroup.map((sub) => (
+                      <div key={sub.name || '_'}>
+                        {sub.name && (
+                          <div className="text-[11px] font-medium text-gray-600 mb-1 px-1 flex items-center gap-1.5">
+                            <span>{sub.name}</span>
+                            <span className="text-[10px] text-gray-400">· {sub.items.length}</span>
+                          </div>
+                        )}
+                        <div className="divide-y">
+                          {sub.items.map((m) => (
+                            <Row key={m.id} material={m} onClick={() => setEditing(m)} />
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -353,8 +384,9 @@ function SidebarItem({ name, confirmed, total, active, indent = false, tone = 'n
   );
 }
 
-function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, groups, activeKey, kind, onSelect }) {
-  if (groups.length === 0 && kindAllCount.total === 0) return null;
+function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, superGroups, activeKey, kind, onSelect }) {
+  const totalGroups = superGroups.reduce((sum, sg) => sum + sg.groups.length, 0);
+  if (totalGroups === 0 && kindAllCount.total === 0) return null;
   return (
     <>
       <div className={`text-[10px] font-semibold uppercase tracking-wider px-4 pt-3 pb-1 ${
@@ -371,17 +403,26 @@ function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, g
         tone={tone}
         onClick={onKindAll}
       />
-      {groups.map((g) => (
-        <SidebarItem
-          key={g.name}
-          name={g.name}
-          confirmed={g.confirmed}
-          total={g.total}
-          active={activeKey === buildKey(kind, g.name)}
-          indent
-          tone={tone}
-          onClick={() => onSelect(g)}
-        />
+      {superGroups.map((sg, i) => (
+        <div key={i}>
+          {sg.label && sg.groups.length > 0 && (
+            <div className="text-[10px] text-gray-400 font-semibold px-7 pt-2 pb-0.5">
+              {sg.label}
+            </div>
+          )}
+          {sg.groups.map((g) => (
+            <SidebarItem
+              key={g.name}
+              name={g.name}
+              confirmed={g.confirmed}
+              total={g.total}
+              active={activeKey === buildKey(kind, g.name)}
+              indent
+              tone={tone}
+              onClick={() => onSelect(g)}
+            />
+          ))}
+        </div>
       ))}
     </>
   );
@@ -402,6 +443,16 @@ function GroupChip({ label, count, confirmed, active, onClick, tone = 'navy' }) 
       </span>
     </button>
   );
+}
+
+function groupBySubgroup(items) {
+  const m = new Map();
+  for (const it of items) {
+    const k = it.subgroup || '';
+    if (!m.has(k)) m.set(k, { name: k, items: [], firstOrder: it.orderIndex ?? 0 });
+    m.get(k).items.push(it);
+  }
+  return Array.from(m.values()).sort((a, b) => a.firstOrder - b.firstOrder);
 }
 
 function Row({ material, onClick }) {
@@ -438,6 +489,12 @@ function Row({ material, onClick }) {
       {/* 항목명 + 태그 + 시공 노트 */}
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`text-[10px] flex-shrink-0 ${material.essential ? 'text-emerald-600' : 'text-gray-300'}`}
+            title={material.essential ? '필수 항목' : '선택 항목'}
+          >
+            {material.essential ? '●' : '○'}
+          </span>
           <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
           <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
             {kind.label}

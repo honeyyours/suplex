@@ -49,8 +49,10 @@ router.post('/seed', async (req, res, next) => {
 const upsertSchema = z.object({
   kind: z.enum(['FINISH', 'APPLIANCE']).optional(),
   spaceGroup: z.string().min(1),
+  subgroup: z.string().optional().nullable(),
   itemName: z.string().min(1),
   defaultSiteNotes: z.string().optional().nullable(),
+  essential: z.boolean().optional(),
   orderIndex: z.number().int().optional(),
   active: z.boolean().optional(),
 });
@@ -64,8 +66,10 @@ router.post('/', async (req, res, next) => {
         companyId: req.user.companyId,
         kind: data.kind || 'FINISH',
         spaceGroup: data.spaceGroup.trim(),
+        subgroup: data.subgroup?.trim() || null,
         itemName: data.itemName.trim(),
         defaultSiteNotes: data.defaultSiteNotes?.trim() || null,
+        essential: data.essential ?? false,
         orderIndex: data.orderIndex ?? 0,
         active: data.active ?? true,
       },
@@ -94,8 +98,10 @@ router.patch('/:id', async (req, res, next) => {
       data: {
         ...(data.kind !== undefined && { kind: data.kind }),
         ...(data.spaceGroup !== undefined && { spaceGroup: data.spaceGroup.trim() }),
+        ...(data.subgroup !== undefined && { subgroup: data.subgroup?.trim() || null }),
         ...(data.itemName !== undefined && { itemName: data.itemName.trim() }),
         ...(data.defaultSiteNotes !== undefined && { defaultSiteNotes: data.defaultSiteNotes?.trim() || null }),
+        ...(data.essential !== undefined && { essential: data.essential }),
         ...(data.orderIndex !== undefined && { orderIndex: data.orderIndex }),
         ...(data.active !== undefined && { active: data.active }),
       },

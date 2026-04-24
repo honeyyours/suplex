@@ -372,7 +372,9 @@ model Material {
   kind      MaterialKind @default(FINISH)
 
   spaceGroup String // 공간/공정 (거실, 조명, 필름, 주방, 욕실(공용) 등)
+  subgroup   String? // 세부 그룹 (바닥·벽·천장, 조명·전기 등)
   itemName   String // 세부 공정 및 항목 (바닥재, 방문, 거실 다운라이트 등)
+  essential  Boolean @default(false) // ●필수 vs ○옵션
 
   brand          String? // 브랜드 / 유무 표기 (예: "영림", "O", "고객구매")
   productName    String? // 자재명 및 품번 (색상)
@@ -412,8 +414,10 @@ model MaterialTemplate {
   companyId        String
   kind             MaterialKind @default(FINISH)
   spaceGroup       String
+  subgroup         String? // 세부 그룹 (바닥·벽·천장, 조명·전기 등)
   itemName         String
   defaultSiteNotes String? // 시공 특이사항 기본 조언 (회사 표준)
+  essential        Boolean      @default(false) // ●필수 vs ○옵션
   orderIndex       Int          @default(0)
   active           Boolean      @default(true)
   createdAt        DateTime     @default(now())

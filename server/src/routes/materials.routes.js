@@ -10,7 +10,7 @@ const STATUSES = ['UNDECIDED', 'REVIEWING', 'CONFIRMED', 'CHANGED'];
 const KINDS = ['FINISH', 'APPLIANCE'];
 
 const TRACKED_FIELDS = [
-  'kind', 'spaceGroup', 'itemName',
+  'kind', 'spaceGroup', 'subgroup', 'itemName', 'essential',
   'brand', 'productName', 'spec', 'siteNotes', 'purchaseSource', 'checked',
   'installed', 'size', 'remarks',
   'status', 'quantity', 'unit', 'unitPrice', 'totalPrice', 'memo',
@@ -133,7 +133,9 @@ router.get('/:id/history', async (req, res, next) => {
 const baseSchema = {
   kind: z.enum(KINDS).optional(),
   spaceGroup: z.string().min(1),
+  subgroup: z.string().optional().nullable(),
   itemName: z.string().min(1),
+  essential: z.boolean().optional(),
   brand: z.string().optional().nullable(),
   productName: z.string().optional().nullable(),
   spec: z.string().optional().nullable(),
@@ -163,7 +165,9 @@ function toCreateData(data) {
   return {
     kind: data.kind || 'FINISH',
     spaceGroup: data.spaceGroup.trim(),
+    subgroup: data.subgroup?.trim() || null,
     itemName: data.itemName.trim(),
+    essential: data.essential ?? false,
     brand: data.brand?.trim() || null,
     productName: data.productName?.trim() || null,
     spec: data.spec?.trim() || null,
@@ -233,7 +237,9 @@ router.post('/bulk', async (req, res, next) => {
       projectId,
       kind: KINDS.includes(it.kind) ? it.kind : 'FINISH',
       spaceGroup: String(it.spaceGroup || '').trim() || '기타',
+      subgroup: it.subgroup ? String(it.subgroup).trim() || null : null,
       itemName: String(it.itemName || '').trim() || '(이름없음)',
+      essential: !!it.essential,
       siteNotes: it.siteNotes ? String(it.siteNotes).trim() : null,
       orderIndex: typeof it.orderIndex === 'number' ? it.orderIndex : i,
     }));
