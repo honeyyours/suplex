@@ -6,14 +6,15 @@ const { authRequired } = require('../middlewares/auth');
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
 
-const STATUSES = ['UNDECIDED', 'REVIEWING', 'CONFIRMED', 'CHANGED'];
+const STATUSES = ['UNDECIDED', 'REVIEWING', 'CONFIRMED', 'CHANGED', 'REUSED', 'NOT_APPLICABLE'];
 const KINDS = ['FINISH', 'APPLIANCE'];
 
 const TRACKED_FIELDS = [
-  'kind', 'spaceGroup', 'subgroup', 'itemName', 'essential',
-  'brand', 'productName', 'spec', 'siteNotes', 'purchaseSource', 'checked',
+  'kind', 'spaceGroup', 'subgroup', 'itemName', 'essential', 'formKey',
+  'brand', 'productName', 'spec', 'customSpec', 'siteNotes', 'purchaseSource', 'checked',
   'installed', 'size', 'remarks',
   'status', 'quantity', 'unit', 'unitPrice', 'totalPrice', 'memo',
+  'inheritFromMaterialId',
 ];
 
 async function assertProjectAccess(projectId, companyId) {
@@ -26,8 +27,12 @@ function num(v) {
 
 function fmtValue(v) {
   if (v == null || v === '') return null;
-  if (typeof v === 'object' && v.toString) return v.toString();
   if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'object') {
+    // Decimal, Date 등은 toString이 의미있는 값. 일반 객체(JSON)는 stringify.
+    if (typeof v.toString === 'function' && v.toString !== Object.prototype.toString) return v.toString();
+    try { return JSON.stringify(v); } catch { return String(v); }
+  }
   return String(v);
 }
 
@@ -46,10 +51,10 @@ function buildPOFromMaterial(m) {
   };
 }
 
-// 마감재 status 또는 표시 필드 변경 시 호출.
-// - oldStatus → CONFIRMED 전이: PO가 없으면 생성
-// - 기존 연결된 PO들: PENDING이면 자동 동기화, 그 외(ORDERED/RECEIVED)는 materialChangedAt만 마킹
-async function syncPurchaseOrders(tx, material, oldStatus) {
+// (DEPRECATED) 마감재 → 발주 자동 트리거. 새 발주 메뉴 생기기 전까지 비활성.
+// 호출부에서 더 이상 부르지 않음. 함수 자체는 보존(역사적 참고).
+// eslint-disable-next-line no-unused-vars
+async function _syncPurchaseOrders_DISABLED(tx, material, oldStatus) {
   const justConfirmed = oldStatus !== 'CONFIRMED' && material.status === 'CONFIRMED';
 
   // 1) CONFIRMED로 막 전이 + 기존 PO 없음 → 자동 생성
@@ -136,6 +141,9 @@ const baseSchema = {
   subgroup: z.string().optional().nullable(),
   itemName: z.string().min(1),
   essential: z.boolean().optional(),
+  formKey: z.string().optional().nullable(),
+  customSpec: z.any().optional().nullable(),
+  inheritFromMaterialId: z.string().optional().nullable(),
   brand: z.string().optional().nullable(),
   productName: z.string().optional().nullable(),
   spec: z.string().optional().nullable(),
@@ -168,6 +176,9 @@ function toCreateData(data) {
     subgroup: data.subgroup?.trim() || null,
     itemName: data.itemName.trim(),
     essential: data.essential ?? false,
+    formKey: data.formKey?.trim() || null,
+    customSpec: data.customSpec ?? null,
+    inheritFromMaterialId: data.inheritFromMaterialId || null,
     brand: data.brand?.trim() || null,
     productName: data.productName?.trim() || null,
     spec: data.spec?.trim() || null,
@@ -209,7 +220,7 @@ router.post('/', async (req, res, next) => {
         },
       });
       // 처음 만들 때 status가 CONFIRMED면 PO 생성
-      await syncPurchaseOrders(tx, m, null);
+      // PO 자동 트리거 비활성 (새 발주 메뉴로 이전 예정)
       return m;
     });
 
@@ -240,6 +251,7 @@ router.post('/bulk', async (req, res, next) => {
       subgroup: it.subgroup ? String(it.subgroup).trim() || null : null,
       itemName: String(it.itemName || '').trim() || '(이름없음)',
       essential: !!it.essential,
+      formKey: it.formKey ? String(it.formKey).trim() || null : null,
       siteNotes: it.siteNotes ? String(it.siteNotes).trim() : null,
       orderIndex: typeof it.orderIndex === 'number' ? it.orderIndex : i,
     }));
@@ -316,8 +328,7 @@ router.patch('/:id', async (req, res, next) => {
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.material.update({ where: { id }, data: updateData });
       await tx.materialHistory.createMany({ data: historyEntries });
-      // 발주예정 연동: status 전이 또는 표시 필드 변경 → 동기화/마킹
-      await syncPurchaseOrders(tx, u, existing.status);
+      // PO 자동 트리거 비활성 (새 발주 메뉴로 이전 예정)
       return u;
     });
 
