@@ -24,8 +24,10 @@ export default function ProjectDetail() {
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
 
   const tab = ({ isActive }) =>
-    `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ${
-      isActive ? 'border-navy-700 text-navy-800' : 'border-transparent text-gray-500 hover:text-navy-700'
+    `px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold border-b-2 whitespace-nowrap flex-shrink-0 transition ${
+      isActive
+        ? 'border-navy-700 text-navy-800 bg-navy-50'
+        : 'border-transparent text-gray-600 hover:text-navy-700 hover:bg-gray-50'
     }`;
 
   return (
