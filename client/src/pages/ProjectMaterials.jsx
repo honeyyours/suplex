@@ -222,6 +222,20 @@ export default function ProjectMaterials() {
   // 펼침 시 그 행이 선택 상태로
   useEffect(() => { if (expandedId) setSelectedId(expandedId); }, [expandedId]);
 
+  // 펼침 외부 클릭 시 자동 닫기 (저장은 ExpandedEditor의 unmount cleanup에서 flush)
+  useEffect(() => {
+    if (!expandedId) return;
+    function onMouseDown(e) {
+      // 어떤 행 또는 그 펼침 영역 안의 클릭은 무시
+      if (e.target.closest('[data-material-id]')) return;
+      // 모달 안 클릭 무시
+      if (e.target.closest('[role="dialog"]')) return;
+      setExpandedId(null);
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [expandedId]);
+
   // Tab 흐름: 마지막 필드 → 다음 행 펼침 / Shift+Tab → 이전 행 펼침
   function gotoNextRow() {
     const idx = flatList.findIndex((m) => m.id === selectedId);

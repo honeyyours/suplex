@@ -158,17 +158,26 @@ function ExpandedEditor({
   const [savedFlash, setSavedFlash] = useState(false);
   const timerRef = useRef(null);
   const flashTimerRef = useRef(null);
+  // 외부 unmount 시 pending 저장 flush를 위한 ref들
+  const pendingDraftRef = useRef(null);
+  const onSaveRef = useRef(onSave);
+  const schemaRef = useRef(schema);
+  useEffect(() => { onSaveRef.current = onSave; });
+  useEffect(() => { schemaRef.current = schema; });
 
-  // 펼침 직후 첫 input focus
+  // 펼침 직후 첫 input focus + unmount 시 pending 저장 flush
   useEffect(() => {
     const first = inputRefs.current.find((r) => r);
-    if (first) {
-      // microtask로 살짝 미루기 (React render 완료 후)
-      requestAnimationFrame(() => first.focus());
-    }
+    if (first) requestAnimationFrame(() => first.focus());
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      // 펜딩 변경 있으면 fire-and-forget 저장
+      if (pendingDraftRef.current) {
+        const patch = computePatch(pendingDraftRef.current, schemaRef.current);
+        onSaveRef.current(patch).catch((e) => console.error('flush save failed:', e));
+        pendingDraftRef.current = null;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -176,6 +185,7 @@ function ExpandedEditor({
   function update(key, value) {
     const next = { ...draft, [key]: value };
     setDraft(next);
+    pendingDraftRef.current = next;
     scheduleSave(next);
   }
 
@@ -189,6 +199,7 @@ function ExpandedEditor({
     try {
       const patch = computePatch(next, schema);
       await onSave(patch);
+      pendingDraftRef.current = null;
       setSavedFlash(true);
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       flashTimerRef.current = setTimeout(() => setSavedFlash(false), 1500);
