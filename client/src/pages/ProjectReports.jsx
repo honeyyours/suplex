@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReportTab from '../components/reports/ReportTab';
-import MaterialRequestTab from '../components/reports/MaterialRequestTab';
 import PhotoTimelineTab from '../components/reports/PhotoTimelineTab';
+
+// 자재 발주 탭은 향후 별도 발주 메뉴로 이전 예정 — 현재 숨김.
+// MaterialRequest API/모델은 데이터 보존을 위해 유지.
 
 const TABS = [
   { key: 'report',   label: '오늘 작업 보고' },
-  { key: 'request',  label: '자재 발주 요청' },
   { key: 'timeline', label: '사진 타임라인' },
 ];
 
@@ -33,7 +34,6 @@ export default function ProjectReports() {
       </div>
 
       {tab === 'report'   && <ReportTab projectId={id} />}
-      {tab === 'request'  && <MaterialRequestTab projectId={id} />}
       {tab === 'timeline' && <PhotoTimelineTab projectId={id} />}
     </div>
   );
