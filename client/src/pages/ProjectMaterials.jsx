@@ -130,7 +130,7 @@ export default function ProjectMaterials() {
     try {
       let { templates } = await materialTemplatesApi.list();
       if (templates.length === 0) {
-        const ok = confirm('회사 템플릿이 비어있습니다. 기본 템플릿(PDF 기반 약 90개)을 먼저 시드할까요?');
+        const ok = confirm('회사 템플릿이 비어있습니다. 기본 템플릿(약 130개)을 먼저 시드할까요?');
         if (!ok) return;
         await materialTemplatesApi.seed();
         ({ templates } = await materialTemplatesApi.list());
@@ -149,6 +149,24 @@ export default function ProjectMaterials() {
       reload();
     } catch (e) {
       alert('가져오기 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleReseed() {
+    const ok = confirm(
+      '⚠️ 회사 마감재 템플릿을 최신 기본값(약 130개)으로 덮어씁니다.\n\n' +
+      '회사 마스터만 갈아엎고 기존 프로젝트들의 마감재 데이터는 영향 X.\n' +
+      '계속할까요?'
+    );
+    if (!ok) return;
+    setImporting(true);
+    try {
+      const { created } = await materialTemplatesApi.seed(true);
+      alert(`✅ 회사 템플릿 ${created}개로 재시드되었습니다.\n이 프로젝트에 적용하려면 "📋 템플릿"으로 가져오세요.`);
+    } catch (e) {
+      alert('재시드 실패: ' + (e.response?.data?.error || e.message));
     } finally {
       setImporting(false);
     }
@@ -253,6 +271,14 @@ export default function ProjectMaterials() {
               </div>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={handleReseed}
+                disabled={importing}
+                className="text-xs px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50"
+                title="회사 마감재 템플릿(마스터)을 최신 기본값으로 덮어쓰기"
+              >
+                🔄 마스터 재시드
+              </button>
               <button
                 onClick={handleImport}
                 disabled={importing}
