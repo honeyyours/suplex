@@ -136,9 +136,12 @@ export default function ProjectMaterialsSimple() {
   }
 
   // ========== 키보드 네비게이션 ==========
-  // Enter/↓: 같은 컬럼 다음 행, 마지막이면 같은 그룹에 새 행 자동 추가
-  // ↑: 같은 컬럼 위 행
-  // Tab은 네이티브 (행 내 가로 이동)
+  // Enter: 같은 컬럼 아래 행, 같은 그룹 마지막이면 새 행 자동 추가
+  // ↑/↓: 같은 컬럼 위/아래 행 (마지막에서 ↓는 무시 — 새 행 추가 X)
+  // ←/→: 커서가 input 끝/처음일 때만 같은 행 좌/우 셀로
+  // Tab: 네이티브 (행 내 가로 이동)
+  const MAT_COLS = ['itemName', 'brand', 'quantityText', 'memo'];
+
   function focusCell(itemId, col) {
     const el = document.querySelector(`[data-mat-cell="${itemId}-${col}"]`);
     if (el) {
@@ -147,7 +150,6 @@ export default function ProjectMaterialsSimple() {
     }
   }
   function siblingItemId(currentId, dir) {
-    // 같은 그룹 안에서 위/아래 항목 ID
     const it = items.find((x) => x.id === currentId);
     if (!it) return null;
     const inGroup = items
@@ -159,20 +161,53 @@ export default function ProjectMaterialsSimple() {
     return next?.id || null;
   }
   function handleCellKeyDown(e, itemId, col) {
-    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+    const target = e.target;
+    if (e.key === 'Enter') {
       e.preventDefault();
       const nextId = siblingItemId(itemId, +1);
       if (nextId) {
         focusCell(nextId, col);
       } else {
-        // 같은 그룹 마지막 행 → 새 행 추가
         const it = items.find((x) => x.id === itemId);
         if (it) addItem(it.spaceGroup, col);
       }
-    } else if (e.key === 'ArrowUp') {
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextId = siblingItemId(itemId, +1);
+      if (nextId) focusCell(nextId, col);
+      // 마지막 행이면 무시 (새 행 추가 X — Enter만)
+      return;
+    }
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
       const prevId = siblingItemId(itemId, -1);
       if (prevId) focusCell(prevId, col);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      // 커서가 끝에 있을 때만 다음 셀로
+      if (target.selectionStart === target.value.length && target.selectionEnd === target.value.length) {
+        const idx = MAT_COLS.indexOf(col);
+        const nextCol = MAT_COLS[idx + 1];
+        if (nextCol) {
+          e.preventDefault();
+          focusCell(itemId, nextCol);
+        }
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      if (target.selectionStart === 0 && target.selectionEnd === 0) {
+        const idx = MAT_COLS.indexOf(col);
+        const prevCol = MAT_COLS[idx - 1];
+        if (prevCol) {
+          e.preventDefault();
+          focusCell(itemId, prevCol);
+        }
+      }
+      return;
     }
   }
 

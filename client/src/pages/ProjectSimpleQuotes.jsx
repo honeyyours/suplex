@@ -344,28 +344,73 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   }
 
   // ========== 키보드 네비게이션 ==========
-  // Enter → 같은 컬럼 다음 행, 마지막 행에서는 새 행 자동 추가
-  // Tab은 네이티브 동작 (행 내 가로 이동) 그대로
+  // Enter: 같은 컬럼 아래 행, 마지막이면 새 행 자동 추가
+  // ↑/↓: 같은 컬럼 위/아래 행 (마지막에서 ↓는 무시 — 새 행 추가 X)
+  // ←/→: 커서가 input 끝/처음일 때만 같은 행 좌/우 셀로
+  // Tab: 네이티브 (행 내 가로 이동) — 마지막 행 비고 Tab 시 새 행 추가
+  const QUOTE_COLS = ['itemName', 'spec', 'quantity', 'unit', 'unitPrice', 'notes'];
+
   function focusCell(rowIdx, col) {
-    const el = document.querySelector(`[data-quote-cell="${rowIdx}-${col}"]`);
+    // 그룹 헤더 행 등은 itemName만 있을 수 있음 → fallback
+    let el = document.querySelector(`[data-quote-cell="${rowIdx}-${col}"]`);
+    if (!el && col !== 'itemName') {
+      el = document.querySelector(`[data-quote-cell="${rowIdx}-itemName"]`);
+    }
     if (el) {
       el.focus();
       if (typeof el.select === 'function') el.select();
     }
   }
   function handleCellKeyDown(e, rowIdx, col) {
+    const target = e.target;
     if (e.key === 'Enter') {
       e.preventDefault();
-      const nextRow = rowIdx + 1;
-      const target = document.querySelector(`[data-quote-cell="${nextRow}-${col}"]`);
-      if (target) {
-        target.focus();
-        if (typeof target.select === 'function') target.select();
+      const next = document.querySelector(`[data-quote-cell="${rowIdx + 1}-${col}"]`);
+      if (next) {
+        next.focus();
+        if (typeof next.select === 'function') next.select();
+      } else if (rowIdx + 1 < lines.length) {
+        // 다음 행이 있긴 한데 같은 col 셀이 없음 (그룹 헤더) → 그 행의 itemName으로
+        focusCell(rowIdx + 1, 'itemName');
       } else {
-        // 마지막 행에서 Enter → 새 행 추가
         addLine(col);
       }
-    } else if (e.key === 'Tab' && !e.shiftKey && col === 'notes' && rowIdx === lines.length - 1) {
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (rowIdx + 1 < lines.length) focusCell(rowIdx + 1, col);
+      // 마지막 행이면 무시 (새 행 추가 X — Enter만)
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (rowIdx > 0) focusCell(rowIdx - 1, col);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      if (target.selectionStart === target.value.length && target.selectionEnd === target.value.length) {
+        const idx = QUOTE_COLS.indexOf(col);
+        const nextCol = QUOTE_COLS[idx + 1];
+        if (nextCol) {
+          e.preventDefault();
+          focusCell(rowIdx, nextCol);
+        }
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      if (target.selectionStart === 0 && target.selectionEnd === 0) {
+        const idx = QUOTE_COLS.indexOf(col);
+        const prevCol = QUOTE_COLS[idx - 1];
+        if (prevCol) {
+          e.preventDefault();
+          focusCell(rowIdx, prevCol);
+        }
+      }
+      return;
+    }
+    if (e.key === 'Tab' && !e.shiftKey && col === 'notes' && rowIdx === lines.length - 1) {
       // 마지막 행 비고에서 Tab → 새 행 추가 + 첫 셀로 포커스
       e.preventDefault();
       addLine('itemName');
