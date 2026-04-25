@@ -376,7 +376,6 @@ function Section({ title, count, defaultOpen = true, children, extraAction = nul
 }
 
 function OrderRow({ order, onChange, selected, onToggleSelect }) {
-  const meta = PO_STATUS_META[order.status];
   const [draft, setDraft] = useState({
     unit: order.unit ?? '',
     vendor: order.vendor ?? '',
@@ -456,9 +455,6 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           placeholder="매입처"
           className="w-28 text-sm px-2 py-1 border rounded"
         />
-        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${meta.color}`} title="상태 변경은 위 액션바에서 일괄로">
-          {meta.icon} {meta.label}
-        </span>
         <button
           onClick={remove}
           disabled={busy}
