@@ -331,16 +331,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     }
   }
 
-  if (loading || !quote) {
-    return <div className="text-sm text-gray-400">불러오는 중...</div>;
-  }
-
-  // 클라이언트 합계 미리보기 (서버 캐시는 저장 후 갱신, 그룹 헤더는 제외)
-  const liveSubtotal = lines.reduce((s, l) => {
-    if (l.isGroup) return s;
-    return s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
-  }, 0);
-
+  // ⚠ 모든 hook은 early return 위에서 호출되어야 함 (React Hooks 순서 규칙)
   // 각 라인이 어느 그룹 안에 있는지 계산 — 위에서부터 순회하며 inGroup 상태 추적
   const linesWithMeta = useMemo(() => {
     let inGroup = false;
@@ -358,6 +349,16 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       return { ...l, _inGroup: inGroup };
     });
   }, [lines]);
+
+  if (loading || !quote) {
+    return <div className="text-sm text-gray-400">불러오는 중...</div>;
+  }
+
+  // 클라이언트 합계 미리보기 (서버 캐시는 저장 후 갱신, 그룹 헤더는 제외)
+  const liveSubtotal = lines.reduce((s, l) => {
+    if (l.isGroup) return s;
+    return s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
+  }, 0);
   const liveDesignFee = Math.round(liveSubtotal * (Number(quote.designFeeRate) / 100));
   const liveSubAfterDesign = liveSubtotal + liveDesignFee + (Number(quote.roundAdjustment) || 0);
   const liveVat = Math.round(liveSubAfterDesign * (Number(quote.vatRate) / 100));
