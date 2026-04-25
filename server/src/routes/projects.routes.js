@@ -4,6 +4,8 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
+const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
+const { invalidateCache: invalidatePhaseCache } = require('../services/phaseDetect');
 
 const router = express.Router();
 
@@ -86,7 +88,14 @@ router.post('/_seed-sample', async (req, res, next) => {
     const isoTag = today.toISOString().slice(5, 16).replace(/[-:T]/g, '');
 
     const project = await prisma.$transaction(async (tx) => {
-      // 0) 표준 어드바이스 시드 — 회사에 없으면 추가 (이미 있으면 그대로)
+      // 0-a) 공종 자동 인식 키워드 시드 — 회사에 0개일 때만 (덮어쓰기 X)
+      const kwCount = await tx.phaseKeywordRule.count({ where: { companyId: req.user.companyId } });
+      if (kwCount === 0) {
+        const rows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: req.user.companyId }));
+        await tx.phaseKeywordRule.createMany({ data: rows, skipDuplicates: true });
+      }
+
+      // 0-b) 표준 어드바이스 시드 — 회사에 없으면 추가 (이미 있으면 그대로)
       for (const a of STANDARD_ADVICES) {
         const existing = await tx.phaseAdvice.findFirst({
           where: { companyId: req.user.companyId, phase: a.phase, daysBefore: a.daysBefore, title: a.title },
@@ -322,6 +331,9 @@ router.post('/_seed-sample', async (req, res, next) => {
 
       return p;
     }, { timeout: 30000 });
+
+    // 트랜잭션 후 키워드 캐시 무효화 (다음 일정 추가 시 새 룰 적용)
+    invalidatePhaseCache(req.user.companyId);
 
     res.status(201).json({ project });
   } catch (e) {
