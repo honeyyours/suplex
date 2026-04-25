@@ -86,6 +86,41 @@ router.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// 회사 내 다른 견적 검색 (불러오기 모달용) — :id 보다 먼저 매칭되어야 함
+router.get('/_sources', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const q = (req.query.q || '').toString().trim();
+    const where = {
+      project: { companyId: req.user.companyId },
+      ...(q
+        ? {
+            OR: [
+              { project: { name: { contains: q, mode: 'insensitive' } } },
+              { project: { customerName: { contains: q, mode: 'insensitive' } } },
+              { title: { contains: q, mode: 'insensitive' } },
+              { projectName: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const quotes = await prisma.simpleQuote.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        project: { select: { id: true, name: true, customerName: true } },
+        _count: { select: { lines: true } },
+      },
+    });
+    res.json({ quotes });
+  } catch (e) { next(e); }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const { projectId, id } = req.params;
@@ -243,6 +278,72 @@ const lineSchema = z.object({
 });
 const linesSchema = z.object({
   lines: z.array(lineSchema).max(200),
+});
+
+// ============================================
+// 다른 견적의 라인을 현재 견적에 복사 (append/replace)
+//   POST /:id/import-lines  { sourceId, mode: 'append' | 'replace' }
+// ============================================
+const importSchema = z.object({
+  sourceId: z.string().min(1),
+  mode: z.enum(['append', 'replace']).default('append'),
+});
+
+router.post('/:id/import-lines', async (req, res, next) => {
+  try {
+    const { projectId, id } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const target = await prisma.simpleQuote.findFirst({ where: { id, projectId } });
+    if (!target) return res.status(404).json({ error: 'Quote not found' });
+
+    const parsed = importSchema.safeParse(req.body || {});
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid input', details: parsed.error.format() });
+    const { sourceId, mode } = parsed.data;
+
+    // 회사 내 견적인지 확인
+    const source = await prisma.simpleQuote.findFirst({
+      where: { id: sourceId, project: { companyId: req.user.companyId } },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+    });
+    if (!source) return res.status(404).json({ error: 'Source quote not found' });
+
+    await prisma.$transaction(async (tx) => {
+      let baseIndex = 0;
+      if (mode === 'replace') {
+        await tx.simpleQuoteLine.deleteMany({ where: { quoteId: id } });
+      } else {
+        const last = await tx.simpleQuoteLine.findFirst({
+          where: { quoteId: id },
+          orderBy: { orderIndex: 'desc' },
+        });
+        baseIndex = last ? last.orderIndex + 1 : 0;
+      }
+      if (source.lines.length > 0) {
+        await tx.simpleQuoteLine.createMany({
+          data: source.lines.map((l, i) => ({
+            quoteId: id,
+            orderIndex: baseIndex + i,
+            itemName: l.itemName,
+            spec: l.spec,
+            quantity: l.quantity,
+            unit: l.unit,
+            unitPrice: l.unitPrice,
+            amount: l.amount,
+            notes: l.notes,
+          })),
+        });
+      }
+      await recomputeQuote(tx, id);
+    });
+
+    const full = await prisma.simpleQuote.findUnique({
+      where: { id },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+    });
+    res.json({ quote: full, importedCount: source.lines.length });
+  } catch (e) { next(e); }
 });
 
 router.put('/:id/lines', async (req, res, next) => {

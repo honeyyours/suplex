@@ -13,6 +13,12 @@ export const simpleQuotesApi = {
     api.delete(`/projects/${projectId}/simple-quotes/${id}`).then((r) => r.data),
   putLines: (projectId, id, lines) =>
     api.put(`/projects/${projectId}/simple-quotes/${id}/lines`, { lines }).then((r) => r.data),
+
+  // 회사 내 다른 견적 검색 (불러오기 모달용)
+  sources: (projectId, q = '') =>
+    api.get(`/projects/${projectId}/simple-quotes/_sources`, { params: { q } }).then((r) => r.data),
+  importLines: (projectId, id, sourceId, mode = 'append') =>
+    api.post(`/projects/${projectId}/simple-quotes/${id}/import-lines`, { sourceId, mode }).then((r) => r.data),
 };
 
 export const SIMPLE_QUOTE_STATUS_META = {

@@ -142,6 +142,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
   const [savingLines, setSavingLines] = useState(false);
   const [savingHeader, setSavingHeader] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -250,8 +251,10 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     });
   }
 
-  function addLine() {
+  function addLine(focusCol = 'itemName') {
+    let newIdx = 0;
     setLines((prev) => {
+      newIdx = prev.length;
       const next = [
         ...prev,
         { _key: `tmp-${Date.now()}-${Math.random()}`, itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '' },
@@ -259,6 +262,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       scheduleLineSave(next);
       return next;
     });
+    setTimeout(() => focusCell(newIdx, focusCol), 30);
   }
 
   function removeLine(idx) {
@@ -267,6 +271,35 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       scheduleLineSave(next);
       return next;
     });
+  }
+
+  // ========== 키보드 네비게이션 ==========
+  // Enter → 같은 컬럼 다음 행, 마지막 행에서는 새 행 자동 추가
+  // Tab은 네이티브 동작 (행 내 가로 이동) 그대로
+  function focusCell(rowIdx, col) {
+    const el = document.querySelector(`[data-quote-cell="${rowIdx}-${col}"]`);
+    if (el) {
+      el.focus();
+      if (typeof el.select === 'function') el.select();
+    }
+  }
+  function handleCellKeyDown(e, rowIdx, col) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const nextRow = rowIdx + 1;
+      const target = document.querySelector(`[data-quote-cell="${nextRow}-${col}"]`);
+      if (target) {
+        target.focus();
+        if (typeof target.select === 'function') target.select();
+      } else {
+        // 마지막 행에서 Enter → 새 행 추가
+        addLine(col);
+      }
+    } else if (e.key === 'Tab' && !e.shiftKey && col === 'notes' && rowIdx === lines.length - 1) {
+      // 마지막 행 비고에서 Tab → 새 행 추가 + 첫 셀로 포커스
+      e.preventDefault();
+      addLine('itemName');
+    }
   }
 
   if (loading || !quote) {
@@ -304,6 +337,12 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="text-sm px-3 py-1.5 border border-navy-300 text-navy-700 rounded hover:bg-navy-50"
+          >
+            📋 다른 견적에서 가져오기
+          </button>
           <button
             onClick={() => setShowPrint(true)}
             className="text-sm px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
@@ -349,17 +388,27 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       {/* 라인 테이블 */}
       <div className="bg-white border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '140px' }} />
+              <col style={{ width: '70px' }} />
+              <col style={{ width: '52px' }} />
+              <col style={{ width: '44px' }} />
+              <col style={{ width: '90px' }} />
+              <col style={{ width: '90px' }} />
+              <col />
+              <col style={{ width: '28px' }} />
+            </colgroup>
             <thead className="bg-gray-50 text-xs text-gray-500">
               <tr>
-                <th className="text-left px-3 py-2 w-[30%]">품명 (공정)</th>
-                <th className="text-left px-3 py-2 w-[12%]">규격</th>
-                <th className="text-right px-3 py-2 w-16">수량</th>
-                <th className="text-center px-3 py-2 w-14">단위</th>
-                <th className="text-right px-3 py-2 w-28">단가</th>
-                <th className="text-right px-3 py-2 w-28">금액</th>
-                <th className="text-left px-3 py-2">비고</th>
-                <th className="w-8"></th>
+                <th className="text-left px-2 py-2">품명 (공정)</th>
+                <th className="text-left px-2 py-2">규격</th>
+                <th className="text-right px-2 py-2">수량</th>
+                <th className="text-center px-2 py-2">단위</th>
+                <th className="text-right px-2 py-2">단가</th>
+                <th className="text-right px-2 py-2">금액</th>
+                <th className="text-left px-2 py-2">비고</th>
+                <th></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -367,8 +416,10 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
                 <LineRow
                   key={l._key}
                   line={l}
+                  rowIdx={idx}
                   onChange={(patch) => patchLine(idx, patch)}
                   onRemove={() => removeLine(idx)}
+                  onCellKeyDown={handleCellKeyDown}
                 />
               ))}
               {lines.length === 0 && (
@@ -459,6 +510,21 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
         />
       </div>
 
+      {/* 다른 견적에서 가져오기 모달 */}
+      {showImport && (
+        <ImportLinesModal
+          projectId={projectId}
+          quoteId={quoteId}
+          currentQuoteId={quoteId}
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            setShowImport(false);
+            await load();
+            onChange?.();
+          }}
+        />
+      )}
+
       {/* PDF 미리보기 모달 */}
       {showPrint && (
         <PrintModal
@@ -480,63 +546,85 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
 // ============================================
 // 라인 행
 // ============================================
-function LineRow({ line, onChange, onRemove }) {
+function LineRow({ line, rowIdx, onChange, onRemove, onCellKeyDown }) {
   const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
+
+  // 0일 때 빈칸으로 보이게 — type="number" value={0} 일 때 사용자가 새 값을 치면 leading 0 문제 발생
+  const displayNum = (v) => (v == null || Number(v) === 0 ? '' : v);
+  const onNum = (key) => (e) => {
+    const v = e.target.value;
+    onChange({ [key]: v === '' ? 0 : (Number(v) || 0) });
+  };
+  const kd = (col) => (e) => onCellKeyDown(e, rowIdx, col);
+  const cellAttrs = (col) => ({ 'data-quote-cell': `${rowIdx}-${col}`, onKeyDown: kd(col) });
+
+  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
+
   return (
     <tr className="hover:bg-gray-50">
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('itemName')}
           value={line.itemName}
           onChange={(e) => onChange({ itemName: e.target.value })}
-          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          className={inputCls}
           placeholder="예: 목공"
         />
       </td>
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('spec')}
           value={line.spec}
           onChange={(e) => onChange({ spec: e.target.value })}
-          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          className={inputCls}
         />
       </td>
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('quantity')}
           type="number"
-          step="0.01"
-          value={line.quantity}
-          onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
-          className="w-full px-1 py-1 text-right tabular-nums border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          step="any"
+          value={displayNum(line.quantity)}
+          onChange={onNum('quantity')}
+          className={inputCls + ' text-right tabular-nums'}
+          placeholder="1"
         />
       </td>
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('unit')}
           value={line.unit}
           onChange={(e) => onChange({ unit: e.target.value })}
-          className="w-full px-1 py-1 text-center border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          className={inputCls + ' text-center'}
         />
       </td>
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('unitPrice')}
           type="number"
-          value={line.unitPrice}
-          onChange={(e) => onChange({ unitPrice: Number(e.target.value) || 0 })}
-          className="w-full px-1 py-1 text-right tabular-nums border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          step="any"
+          value={displayNum(line.unitPrice)}
+          onChange={onNum('unitPrice')}
+          className={inputCls + ' text-right tabular-nums'}
+          placeholder="0"
         />
       </td>
-      <td className="px-3 py-1.5 text-right tabular-nums text-navy-800 font-medium">
+      <td className="px-2 py-1.5 text-right tabular-nums text-navy-800 font-medium">
         {formatWon(amount)}
       </td>
-      <td className="px-3 py-1.5">
+      <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('notes')}
           value={line.notes}
           onChange={(e) => onChange({ notes: e.target.value })}
-          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          className={inputCls}
           placeholder="설명/규격/색상 등"
         />
       </td>
-      <td className="px-2">
+      <td className="px-1">
         <button
           onClick={onRemove}
+          tabIndex={-1}
           className="text-gray-300 hover:text-red-500 text-sm"
           title="삭제"
         >
@@ -743,6 +831,133 @@ function Row({ k, v }) {
     <div className="flex py-0.5 border-b last:border-b-0">
       <span className="w-16 text-gray-500">{k}</span>
       <span className="text-gray-800">{v || '—'}</span>
+    </div>
+  );
+}
+
+// ============================================
+// 다른 견적에서 라인 가져오기 모달
+// ============================================
+function ImportLinesModal({ projectId, quoteId, currentQuoteId, onClose, onImported }) {
+  const [q, setQ] = useState('');
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [mode, setMode] = useState('append');
+  const [busy, setBusy] = useState(false);
+
+  async function search(qStr) {
+    setLoading(true);
+    try {
+      const { quotes } = await simpleQuotesApi.sources(projectId, qStr);
+      // 현재 견적은 목록에서 제외
+      setList(quotes.filter((x) => x.id !== currentQuoteId));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 디바운스 검색
+  useEffect(() => {
+    const t = setTimeout(() => search(q), 250);
+    return () => clearTimeout(t);
+    /* eslint-disable-next-line */
+  }, [q]);
+
+  async function handleImport() {
+    if (!selected) return;
+    if (mode === 'replace' && !confirm('현재 견적의 모든 라인을 삭제하고 가져온 라인으로 교체합니다. 계속할까요?')) return;
+    setBusy(true);
+    try {
+      const { importedCount } = await simpleQuotesApi.importLines(projectId, quoteId, selected.id, mode);
+      alert(`✅ ${importedCount}개 라인을 가져왔습니다`);
+      onImported?.();
+    } catch (e) {
+      alert('가져오기 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="border-b px-4 py-3 flex items-center justify-between">
+          <div className="font-bold text-navy-800">📋 다른 견적에서 라인 가져오기</div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+
+        <div className="px-4 py-3 border-b">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="프로젝트명 / 고객명 / 견적 차수 검색"
+            className="w-full px-3 py-2 border rounded outline-none focus:border-navy-400 text-sm"
+            autoFocus
+          />
+        </div>
+
+        <div className="flex-1 overflow-auto px-2 py-2 space-y-1 min-h-[200px]">
+          {loading && <div className="text-sm text-gray-400 px-3 py-4">검색 중...</div>}
+          {!loading && list.length === 0 && (
+            <div className="text-sm text-gray-400 px-3 py-8 text-center">
+              {q ? '일치하는 견적이 없습니다' : '회사 내 다른 견적이 없습니다'}
+            </div>
+          )}
+          {list.map((qu) => {
+            const meta = SIMPLE_QUOTE_STATUS_META[qu.status] || SIMPLE_QUOTE_STATUS_META.DRAFT;
+            const active = selected?.id === qu.id;
+            return (
+              <button
+                key={qu.id}
+                onClick={() => setSelected(qu)}
+                className={`w-full text-left px-3 py-2 rounded border text-sm ${
+                  active ? 'border-navy-700 bg-navy-50' : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-medium text-navy-800 truncate">
+                    {qu.project?.name || '—'}
+                    <span className="ml-2 text-xs text-gray-500">{qu.title}</span>
+                  </div>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded flex-shrink-0 ${meta.color}`}>{meta.label}</span>
+                </div>
+                <div className="flex items-center justify-between mt-0.5 text-xs text-gray-500">
+                  <span className="truncate">
+                    {qu.project?.customerName || ''} · {qu._count?.lines || 0}개 항목
+                  </span>
+                  <span className="tabular-nums flex-shrink-0">{formatWon(qu.total)} 원</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="border-t px-4 py-3 flex items-center justify-between gap-3">
+          <div className="text-xs flex items-center gap-3">
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} className="accent-navy-700" />
+              현재 라인 뒤에 추가
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} className="accent-navy-700" />
+              모두 교체
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">취소</button>
+            <button
+              onClick={handleImport}
+              disabled={!selected || busy}
+              className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-40"
+            >
+              {busy ? '가져오는 중...' : '가져오기'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
