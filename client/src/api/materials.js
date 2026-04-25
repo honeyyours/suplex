@@ -15,6 +15,12 @@ export const materialsApi = {
     api.post(`/projects/${projectId}/materials/bulk`, { items }).then((r) => r.data),
   clear: (projectId) =>
     api.delete(`/projects/${projectId}/materials`).then((r) => r.data),
+
+  // 그룹 단위 (spaceGroup)
+  renameGroup: (projectId, from, to) =>
+    api.post(`/projects/${projectId}/materials/groups/rename`, { from, to }).then((r) => r.data),
+  removeGroup: (projectId, name) =>
+    api.delete(`/projects/${projectId}/materials/groups/${encodeURIComponent(name)}`).then((r) => r.data),
 };
 
 export const materialTemplatesApi = {

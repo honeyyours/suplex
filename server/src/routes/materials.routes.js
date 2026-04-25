@@ -136,6 +136,42 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// ============================================
+// 그룹(spaceGroup) 일괄 이름 변경 / 통째 삭제
+// /:id 라우트들보다 먼저 정의되어야 매칭됨
+// ============================================
+router.post('/groups/rename', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const from = String(req.body?.from || '').trim();
+    const to = String(req.body?.to || '').trim();
+    if (!from || !to) return res.status(400).json({ error: 'from / to 필수' });
+    if (from === to) return res.json({ updated: 0 });
+
+    const result = await prisma.material.updateMany({
+      where: { projectId, spaceGroup: from },
+      data: { spaceGroup: to },
+    });
+    res.json({ updated: result.count, from, to });
+  } catch (e) { next(e); }
+});
+
+router.delete('/groups/:name', async (req, res, next) => {
+  try {
+    const { projectId, name } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const result = await prisma.material.deleteMany({
+      where: { projectId, spaceGroup: decodeURIComponent(name) },
+    });
+    res.json({ deleted: result.count });
+  } catch (e) { next(e); }
+});
+
 // GET /api/projects/:projectId/materials/:id/history
 router.get('/:id/history', async (req, res, next) => {
   try {
