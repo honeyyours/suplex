@@ -1024,7 +1024,7 @@ model SimpleQuote {
 
   // 합계 조정
   designFeeRate   Decimal @default(10) @db.Decimal(5, 2) // 디자인 및 감리비 % (0이면 미적용)
-  vatRate         Decimal @default(10) @db.Decimal(5, 2) // 부가세 %
+  vatRate         Decimal @default(0) @db.Decimal(5, 2) // 부가세 % — 기본 0 (별도 안내문이 표준), 필요 시 사용자가 입력
   roundAdjustment Decimal @default(0) @db.Decimal(14, 2) // 단수조정 (음수 가능)
 
   // 양식

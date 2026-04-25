@@ -162,7 +162,7 @@ router.post('/', async (req, res, next) => {
     const input = parsed.data;
 
     const snapshot = await snapshotCompany(req.user.companyId);
-    const { vatRate: companyVat, ...supplierFields } = snapshot;
+    const { vatRate: _ignoreCompanyVat, ...supplierFields } = snapshot;
 
     // 같은 프로젝트의 기존 견적 개수 → 자동 title 제안
     const existingCount = await prisma.simpleQuote.count({ where: { projectId } });
@@ -176,7 +176,7 @@ router.post('/', async (req, res, next) => {
         clientName: input.clientName ?? project.customerName ?? '',
         projectName: input.projectName ?? project.name ?? '',
         designFeeRate: input.designFeeRate ?? 10,
-        vatRate: input.vatRate ?? companyVat ?? 10,
+        vatRate: input.vatRate ?? 0, // 기본 0 — 부가세 별도 안내문이 표준
         templateKey: input.templateKey || 'classic',
         footerNotes: input.footerNotes ?? defaultFooter(),
         ...supplierFields,

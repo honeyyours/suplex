@@ -441,14 +441,14 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
             <colgroup>
-              <col style={{ width: '140px' }} />
-              <col style={{ width: '70px' }} />
-              <col style={{ width: '52px' }} />
-              <col style={{ width: '44px' }} />
-              <col style={{ width: '90px' }} />
-              <col style={{ width: '90px' }} />
-              <col />
-              <col style={{ width: '28px' }} />
+              <col style={{ width: '110px' }} />{/* 품명 */}
+              <col style={{ width: '50px' }} />{/* 규격 */}
+              <col style={{ width: '44px' }} />{/* 수량 */}
+              <col style={{ width: '36px' }} />{/* 단위 */}
+              <col style={{ width: '78px' }} />{/* 단가 */}
+              <col style={{ width: '78px' }} />{/* 금액 */}
+              <col />{/* 비고 — 나머지 (약 60%) */}
+              <col style={{ width: '24px' }} />{/* X */}
             </colgroup>
             <thead className="bg-gray-50 text-xs text-gray-500">
               <tr>
@@ -550,7 +550,21 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
                   type="number"
                   step="0.01"
                   value={quote.vatRate}
-                  onChange={(e) => scheduleHeaderSave({ vatRate: Number(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const newRate = Number(e.target.value) || 0;
+                    const wasZero = Number(quote.vatRate) === 0;
+                    const patch = { vatRate: newRate };
+                    // 0 → 양수 전환 시: 푸터에서 "부가세" 단어가 포함된 줄 자동 제거
+                    if (wasZero && newRate > 0 && quote.footerNotes) {
+                      const cleaned = quote.footerNotes
+                        .split('\n')
+                        .filter((line) => !/부가세/.test(line))
+                        .join('\n')
+                        .trim();
+                      if (cleaned !== quote.footerNotes) patch.footerNotes = cleaned;
+                    }
+                    scheduleHeaderSave(patch);
+                  }}
                   className="w-14 px-1 py-0.5 border rounded text-right text-xs"
                 />
                 <span className="text-xs text-gray-400">%</span>
@@ -861,16 +875,25 @@ function SimpleQuotePrintView({ quote, lines, totals }) {
         </tbody>
       </table>
 
-      {/* 라인 테이블 */}
-      <table className="w-full border-collapse text-xs">
+      {/* 라인 테이블 — 비고를 메인 폭(약 60%)으로 */}
+      <table className="w-full border-collapse text-xs" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '14%' }} />{/* 품명 */}
+          <col style={{ width: '7%' }} />{/* 규격 */}
+          <col style={{ width: '5%' }} />{/* 수량 */}
+          <col style={{ width: '5%' }} />{/* 단위 */}
+          <col style={{ width: '10%' }} />{/* 단가 */}
+          <col style={{ width: '10%' }} />{/* 금액 */}
+          <col />{/* 비고 — 약 49% */}
+        </colgroup>
         <thead className="bg-emerald-700 text-white">
           <tr>
             <th className="border px-2 py-2 text-left">품 명</th>
-            <th className="border px-2 py-2 w-20">규 격</th>
-            <th className="border px-2 py-2 w-12">수량</th>
-            <th className="border px-2 py-2 w-12">단위</th>
-            <th className="border px-2 py-2 w-24">단 가</th>
-            <th className="border px-2 py-2 w-28">금 액</th>
+            <th className="border px-2 py-2">규 격</th>
+            <th className="border px-2 py-2">수량</th>
+            <th className="border px-2 py-2">단위</th>
+            <th className="border px-2 py-2">단 가</th>
+            <th className="border px-2 py-2">금 액</th>
             <th className="border px-2 py-2 text-left">비 고</th>
           </tr>
         </thead>
