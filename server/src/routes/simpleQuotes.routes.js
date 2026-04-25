@@ -188,6 +188,20 @@ router.post('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// AI 응답에서 마크다운 잔재를 제거 (** 굵게 / * 기울임 / ## 헤더 / `코드` / [] / > 인용 등)
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '· ')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^[─━=]{3,}$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function defaultFooter() {
   return [
     '1. 위 견적은 가견적서이므로 실제 디자인 계약 내용에 따라 금액이 달라질 수 있습니다.',
@@ -409,22 +423,34 @@ router.post('/:id/compare', async (req, res, next) => {
         })
         .join('\n');
 
-    const userMsg = `다음은 같은 프로젝트의 두 인테리어 견적 비교야. 변경 사항을 한국어로 짧게 요약해줘 (5~10줄 이내).
+    const diffYen = Number(current.total) - Number(previous.total);
+    const diffSign = diffYen > 0 ? '+' : (diffYen < 0 ? '-' : '');
+    const diffAbs = Math.abs(diffYen).toLocaleString('ko-KR');
+    const prevTotalStr = Number(previous.total).toLocaleString('ko-KR');
+    const currTotalStr = Number(current.total).toLocaleString('ko-KR');
 
-[이전 견적: "${previous.title}" — 합계 ${Number(previous.total).toLocaleString('ko-KR')}원]
+    const userMsg = `너는 인테리어 견적서 변경사항 요약 전문가야. 아래 두 견적을 비교해서 정해진 형식으로만 출력해.
+
+【이전 견적】 "${previous.title}" / 합계 ${prevTotalStr}원
 ${formatLines(previous)}
 
-[새 견적: "${current.title}" — 합계 ${Number(current.total).toLocaleString('ko-KR')}원]
+【새 견적】 "${current.title}" / 합계 ${currTotalStr}원
 ${formatLines(current)}
 
-요약 형식:
-- 추가된 항목: (있다면 항목명과 금액)
-- 삭제된 항목: (있다면)
-- 단가/수량 변경: (변경된 항목과 변경 전후)
-- 그룹 구조 변경: (있다면)
-- **총 차이: ±N원**
+[필수 출력 형식 — 아래 템플릿 그대로, 줄 순서 유지]
+※ 직전 차수 변경 요약 (${previous.title} → ${current.title})
+· 추가: {추가된 항목들을 "항목명 +금액원" 형식으로 콤마 구분, 없으면 "없음"}
+· 삭제: {삭제된 항목들을 "항목명 -금액원" 형식, 없으면 "없음"}
+· 단가/수량 변경: {변경된 항목 "항목명 변경전→변경후" 형식, 없으면 "없음"}
+· 그룹 구조 변경: {추가/삭제된 그룹명, 없으면 "없음"}
+· 총 차이: ${diffSign}${diffAbs}원 (${prevTotalStr} → ${currTotalStr})
 
-불필요한 인사말이나 도입부 없이 바로 요약만.`;
+[엄격 규칙 — 반드시 지킬 것]
+1. 마크다운 기호(**, ##, ---, \`, [], > 등) 절대 사용 금지. 일반 텍스트만.
+2. 위 템플릿의 줄 5개를 정확히 출력. 추가 인사말/도입부/마무리 절대 없음.
+3. 각 항목 내용이 길어도 한 줄로. 콤마(,)로 구분.
+4. 금액은 천 단위 콤마, 마지막에 "원" 붙임.
+5. 그룹 헤더(▸)는 "구조 변경" 줄에서만 다룸. "추가/삭제/변경"에는 일반 라인만.`;
 
     const env = require('../config/env');
     if (!env.anthropic?.apiKey) {
@@ -440,11 +466,14 @@ ${formatLines(current)}
       max_tokens: 1024,
       messages: [{ role: 'user', content: userMsg }],
     });
-    const summary = response.content
+    const raw = response.content
       ?.filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('\n')
       .trim();
+
+    // 마크다운 잔재 제거 (** ## --- ` [] > 등)
+    const summary = stripMarkdown(raw || '');
 
     res.json({
       summary: summary || '(요약을 생성하지 못했습니다)',

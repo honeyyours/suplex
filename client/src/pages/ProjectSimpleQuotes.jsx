@@ -181,7 +181,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [savingHeader, setSavingHeader] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [showCompare, setShowCompare] = useState(false);
+  const [comparing, setComparing] = useState(false);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -429,11 +429,26 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
         <div className="flex items-center gap-2 flex-wrap">
           {previousQuoteId && (
             <button
-              onClick={() => setShowCompare(true)}
-              className="text-sm px-3 py-1.5 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
-              title="AI가 직전 차수와 변경사항을 요약해줍니다"
+              onClick={async () => {
+                if (comparing) return;
+                setComparing(true);
+                try {
+                  const res = await simpleQuotesApi.compare(projectId, quoteId, previousQuoteId);
+                  // 푸터의 비교 요약 마커 영역만 교체 (없으면 끝에 추가)
+                  const next = injectCompareSummary(quote.footerNotes || '', res.summary);
+                  scheduleHeaderSave({ footerNotes: next });
+                  alert(`✅ 비교 요약을 하단 안내문에 추가했습니다.\n총 차이: ${res.diff > 0 ? '+' : ''}${formatWon(res.diff)}원`);
+                } catch (e) {
+                  alert('비교 실패: ' + (e.response?.data?.error || e.message));
+                } finally {
+                  setComparing(false);
+                }
+              }}
+              disabled={comparing}
+              className="text-sm px-3 py-1.5 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50 disabled:opacity-60"
+              title="AI가 직전 차수와 변경사항을 요약해 하단 안내문에 추가합니다"
             >
-              📊 직전 차수와 비교
+              {comparing ? '🤖 분석 중…' : '📊 직전 차수와 비교'}
             </button>
           )}
           <button
@@ -648,16 +663,6 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 resize-none"
         />
       </div>
-
-      {/* AI 비교 모달 */}
-      {showCompare && previousQuoteId && (
-        <CompareModal
-          projectId={projectId}
-          quoteId={quoteId}
-          previousQuoteId={previousQuoteId}
-          onClose={() => setShowCompare(false)}
-        />
-      )}
 
       {/* 다른 견적에서 가져오기 모달 */}
       {showImport && (
@@ -1073,75 +1078,26 @@ function Row({ k, v }) {
   );
 }
 
-// ============================================
-// AI 차이 비교 모달
-// ============================================
-function CompareModal({ projectId, quoteId, previousQuoteId, onClose }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
+// AI 비교 요약을 footerNotes의 전용 마커 블록에 삽입.
+// 기존 마커 블록이 있으면 교체, 없으면 끝에 추가.
+const COMPARE_MARK_START = '※ 직전 차수 변경 요약';
+function injectCompareSummary(footer, summary) {
+  const cleanSummary = String(summary || '').trim();
+  if (!cleanSummary) return footer;
 
-  useEffect(() => {
-    let cancelled = false;
-    simpleQuotesApi
-      .compare(projectId, quoteId, previousQuoteId)
-      .then((res) => { if (!cancelled) setData(res); })
-      .catch((e) => { if (!cancelled) setErr(e.response?.data?.error || e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [projectId, quoteId, previousQuoteId]);
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
-        <div className="border-b px-4 py-3 flex items-center justify-between">
-          <div className="font-bold text-navy-800">📊 직전 차수와 비교 — AI 요약</div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
-        </div>
-        <div className="flex-1 overflow-auto p-5">
-          {loading && (
-            <div className="text-sm text-gray-500 py-8 text-center">
-              <div className="mb-2">🤖 AI가 변경사항을 분석하고 있습니다...</div>
-              <div className="text-xs text-gray-400">5~10초 정도 걸립니다</div>
-            </div>
-          )}
-          {err && (
-            <div className="text-sm text-red-600 py-8 text-center">
-              요약 실패: {err}
-            </div>
-          )}
-          {data && (
-            <>
-              <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-                <div className="bg-gray-50 rounded p-3">
-                  <div className="text-[11px] text-gray-500">이전 ({data.previousTitle})</div>
-                  <div className="text-base font-bold text-gray-700 tabular-nums">{formatWon(data.previousTotal)} 원</div>
-                </div>
-                <div className="bg-navy-50 rounded p-3">
-                  <div className="text-[11px] text-navy-600">현재 ({data.currentTitle})</div>
-                  <div className="text-base font-bold text-navy-800 tabular-nums">{formatWon(data.currentTotal)} 원</div>
-                </div>
-                <div className={`rounded p-3 ${data.diff > 0 ? 'bg-red-50' : data.diff < 0 ? 'bg-emerald-50' : 'bg-gray-50'}`}>
-                  <div className="text-[11px] text-gray-500">차이</div>
-                  <div className={`text-base font-bold tabular-nums ${data.diff > 0 ? 'text-red-700' : data.diff < 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
-                    {data.diff > 0 ? '+' : ''}{formatWon(data.diff)} 원
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                {data.summary}
-              </div>
-            </>
-          )}
-        </div>
-        <div className="border-t px-4 py-3 flex justify-end">
-          <button onClick={onClose} className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800">
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const startIdx = footer.indexOf(COMPARE_MARK_START);
+  if (startIdx >= 0) {
+    // 기존 블록을 찾아서 교체 — 다음 빈 줄이나 다른 안내문 시작까지를 블록으로 간주
+    // 단순화: 시작 마커부터 다음 두 줄 공백 또는 끝까지를 교체
+    const after = footer.slice(startIdx);
+    const blockEndRel = after.indexOf('\n\n');
+    const blockEnd = blockEndRel >= 0 ? startIdx + blockEndRel : footer.length;
+    const before = footer.slice(0, startIdx).trimEnd();
+    const tail = footer.slice(blockEnd).trimStart();
+    return [before, cleanSummary, tail].filter(Boolean).join('\n\n').trim();
+  }
+  // 끝에 추가
+  return (footer.trim() ? `${footer.trim()}\n\n${cleanSummary}` : cleanSummary).trim();
 }
 
 // ============================================
