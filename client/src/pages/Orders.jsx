@@ -11,6 +11,19 @@ export default function Orders({ lockedProjectId = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // 프로젝트 detail 안에서는 lockedProjectId가 강제됨 (셀렉트 숨김)
   const projectIdFilter = lockedProjectId || searchParams.get('projectId') || '';
+  // 선택 복사 — Set으로 ID 관리
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function selectAll(orders) {
+    setSelectedIds(new Set(orders.map((o) => o.id)));
+  }
+  function clearSelection() { setSelectedIds(new Set()); }
 
   function setProjectFilter(pid) {
     const next = new URLSearchParams(searchParams);
@@ -76,6 +89,38 @@ export default function Orders({ lockedProjectId = null }) {
         )}
       </div>
 
+      {/* 선택 복사 액션바 (1개 이상 선택 시 노출) */}
+      {selectedIds.size > 0 && (
+        <div className="bg-navy-50 border border-navy-200 rounded-md px-3 py-2 flex items-center justify-between text-sm">
+          <span className="text-navy-800">
+            ✓ <span className="font-bold">{selectedIds.size}</span>개 선택됨
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                const selected = orders.filter((o) => selectedIds.has(o.id));
+                const text = formatOrdersForCopy(selected);
+                try {
+                  await navigator.clipboard.writeText(text);
+                  alert(`📋 ${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
+                } catch (e) {
+                  alert('클립보드 복사 실패: ' + e.message);
+                }
+              }}
+              className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+            >
+              📋 선택 복사
+            </button>
+            <button
+              onClick={clearSelection}
+              className="text-xs px-2 py-1.5 text-navy-700 hover:bg-navy-100 rounded"
+            >
+              해제
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <SummaryCard label="⚠️ 모델 확인 필요" count={summary.pendingModels} tone="amber" highlight />
@@ -114,19 +159,49 @@ export default function Orders({ lockedProjectId = null }) {
         const list = groups[s] || [];
         if (list.length === 0 && s === 'CANCELLED') return null;
         const meta = PO_STATUS_META[s];
+        const allSelected = list.length > 0 && list.every((o) => selectedIds.has(o.id));
         return (
           <Section
             key={s}
             title={`${meta.icon} ${meta.label}`}
             count={list.length}
             defaultOpen={s === 'PENDING'}
+            extraAction={list.length > 0 ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (allSelected) {
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      list.forEach((o) => next.delete(o.id));
+                      return next;
+                    });
+                  } else {
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      list.forEach((o) => next.add(o.id));
+                      return next;
+                    });
+                  }
+                }}
+                className="text-[11px] text-navy-700 hover:underline ml-2"
+              >
+                {allSelected ? '전체 해제' : '전체 선택'}
+              </button>
+            ) : null}
           >
             {list.length === 0 ? (
               <div className="text-center py-6 text-xs text-gray-400">{meta.label} 항목이 없습니다</div>
             ) : (
               <div className="divide-y">
                 {list.map((o) => (
-                  <OrderRow key={o.id} order={o} onChange={reload} />
+                  <OrderRow
+                    key={o.id}
+                    order={o}
+                    onChange={reload}
+                    selected={selectedIds.has(o.id)}
+                    onToggleSelect={() => toggleSelect(o.id)}
+                  />
                 ))}
               </div>
             )}
@@ -135,6 +210,28 @@ export default function Orders({ lockedProjectId = null }) {
       })}
     </div>
   );
+}
+
+// 선택된 PO들 → 카톡/메모 친화적 텍스트로 정리
+// 매입처별로 묶음(매입처 없으면 "기타")
+function formatOrdersForCopy(orders) {
+  const byVendor = new Map();
+  for (const o of orders) {
+    const v = (o.vendor || '').trim() || '(매입처 미정)';
+    if (!byVendor.has(v)) byVendor.set(v, []);
+    byVendor.get(v).push(o);
+  }
+  const lines = [];
+  for (const [vendor, list] of byVendor) {
+    lines.push(`■ ${vendor}`);
+    for (const o of list) {
+      const qty = (o.unit || '').trim() || '수량 미정';
+      lines.push(`- ${o.itemName} : ${qty}`);
+      if (o.spec) lines.push(`    (${o.spec})`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trim();
 }
 
 function SummaryCard({ label, count, tone, highlight }) {
@@ -152,28 +249,26 @@ function SummaryCard({ label, count, tone, highlight }) {
   );
 }
 
-function Section({ title, count, defaultOpen = true, children }) {
+function Section({ title, count, defaultOpen = true, children, extraAction = null }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="bg-white border rounded-lg overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-navy-800 hover:bg-gray-50"
-      >
-        <span>{title} <span className="text-xs font-normal text-gray-400 ml-1">({count})</span></span>
-        <span className="text-gray-400 text-xs">{open ? '▼' : '▶'}</span>
-      </button>
+      <div className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-navy-800 hover:bg-gray-50">
+        <button onClick={() => setOpen(!open)} className="flex-1 text-left flex items-center">
+          <span>{title} <span className="text-xs font-normal text-gray-400 ml-1">({count})</span></span>
+          {extraAction}
+        </button>
+        <button onClick={() => setOpen(!open)} className="text-gray-400 text-xs ml-2">{open ? '▼' : '▶'}</button>
+      </div>
       {open && <div className="p-3 border-t">{children}</div>}
     </div>
   );
 }
 
-function OrderRow({ order, onChange }) {
+function OrderRow({ order, onChange, selected, onToggleSelect }) {
   const meta = PO_STATUS_META[order.status];
   const [draft, setDraft] = useState({
-    quantity: order.quantity ?? '',
     unit: order.unit ?? '',
-    unitPrice: order.unitPrice ?? '',
     vendor: order.vendor ?? '',
   });
   const [busy, setBusy] = useState(false);
@@ -183,14 +278,8 @@ function OrderRow({ order, onChange }) {
   async function save() {
     setBusy(true);
     try {
-      const qty = draft.quantity === '' ? null : Number(draft.quantity);
-      const price = draft.unitPrice === '' ? null : Number(draft.unitPrice);
-      const total = qty != null && price != null ? qty * price : null;
       await purchaseOrdersApi.update(order.projectId, order.id, {
-        quantity: qty,
         unit: draft.unit?.trim() || null,
-        unitPrice: price,
-        totalPrice: total,
         vendor: draft.vendor?.trim() || null,
       });
       onChange();
@@ -214,11 +303,17 @@ function OrderRow({ order, onChange }) {
     } finally { setBusy(false); }
   }
 
-  const total = (Number(draft.quantity) || 0) * (Number(draft.unitPrice) || 0);
   const hasMaterialChanged = order.materialChangedAt && order.status !== 'PENDING';
 
   return (
-    <div className="py-2 px-2 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-2 text-sm hover:bg-gray-50 group">
+    <div className="py-2 px-2 grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-2 text-sm hover:bg-gray-50 group items-center">
+      <input
+        type="checkbox"
+        checked={!!selected}
+        onChange={onToggleSelect}
+        className="w-4 h-4 accent-navy-700 cursor-pointer"
+        title="선택 복사 대상"
+      />
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           {hasMaterialChanged && (
@@ -246,32 +341,12 @@ function OrderRow({ order, onChange }) {
 
       <div className="flex items-center gap-1.5 flex-wrap">
         <input
-          type="number"
-          value={draft.quantity}
-          onChange={(e) => setField('quantity', e.target.value)}
-          onBlur={save}
-          placeholder="수량"
-          className="w-16 text-sm px-2 py-1 border rounded"
-        />
-        <input
           value={draft.unit}
           onChange={(e) => setField('unit', e.target.value)}
           onBlur={save}
-          placeholder="단위"
-          className="w-14 text-sm px-2 py-1 border rounded"
+          placeholder="수량 (예: 12개)"
+          className="w-28 text-sm px-2 py-1 border rounded"
         />
-        <span className="text-gray-300">×</span>
-        <input
-          type="number"
-          value={draft.unitPrice}
-          onChange={(e) => setField('unitPrice', e.target.value)}
-          onBlur={save}
-          placeholder="단가"
-          className="w-24 text-sm px-2 py-1 border rounded"
-        />
-        <span className="text-xs text-gray-500 w-24 text-right tabular-nums">
-          = {total > 0 ? `${total.toLocaleString()}원` : '—'}
-        </span>
         <input
           value={draft.vendor}
           onChange={(e) => setField('vendor', e.target.value)}
