@@ -201,6 +201,7 @@ model Project {
   simpleQuotes         SimpleQuote[]
   purchaseOrders       PurchaseOrder[]
   expenses             Expense[]
+  projectMemos         ProjectMemo[]
 
   @@unique([companyId, siteCode])
   @@index([companyId, status])
@@ -1069,4 +1070,24 @@ model SimpleQuoteLine {
 
   @@index([quoteId, orderIndex])
   @@map("simple_quote_lines")
+}
+
+// ============================================
+// 프로젝트 메모 — Google Keep 같은 다중 메모 카드
+// 자유 텍스트(줄바꿈은 사용자가 직접 입력)
+// ============================================
+model ProjectMemo {
+  id         String   @id @default(cuid())
+  projectId  String
+  title      String?
+  content    String   // 메모 본문 (자유 형식, 줄바꿈은 사용자 입력 그대로)
+  pinned     Boolean  @default(false)
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, orderIndex])
+  @@map("project_memos")
 }
