@@ -131,6 +131,25 @@ function FilterableProjectCalendar({ status }) {
     setSearchParams(next, { replace: true });
   };
 
+  // 전체(현재 status 필터 통과한 모든 프로젝트) 일정 추출
+  const [extractScopedOpen, setExtractScopedOpen] = useState(false);
+  async function runExtractScoped({ keyword, start, end }) {
+    try {
+      const { entries } = await schedulesApi.listAll({ start, end, projectIds: allIds });
+      const filtered = filterByKeyword(entries, keyword);
+      if (filtered.length === 0) {
+        alert('해당 조건에 맞는 일정이 없습니다.');
+        return;
+      }
+      const text = formatAllSchedulesForCopy(filtered, { company, user: auth?.user });
+      await navigator.clipboard.writeText(text);
+      alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
+      setExtractScopedOpen(false);
+    } catch (e) {
+      alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   // 한 프로젝트 일정 추출 — 모달에서 키워드/기간 선택
   const [extractProjectModal, setExtractProjectModal] = useState(null); // {project, defaultStart, defaultEnd}
   function openProjectExtract(project) {
@@ -259,7 +278,18 @@ function FilterableProjectCalendar({ status }) {
           <ScheduleCalendar projectId={selectedProject.id} project={selectedProject} />
         </div>
       ) : (
-        <AggregateCalendar projectIds={filterIds} />
+        <>
+          <div className="flex justify-end mb-2 px-2 sm:px-0">
+            <button
+              onClick={() => setExtractScopedOpen(true)}
+              className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
+              title={`현재 ${status === 'IN_PROGRESS' ? '진행중' : '예정'} 프로젝트 ${projects.length}개의 일정 추출`}
+            >
+              일정 추출
+            </button>
+          </div>
+          <AggregateCalendar projectIds={filterIds} />
+        </>
       )}
       <div className="mt-6 pt-4 border-t">
         {selectedProject ? (
@@ -287,6 +317,16 @@ function FilterableProjectCalendar({ status }) {
           defaultEnd={extractProjectModal.defaultEnd}
           onClose={() => setExtractProjectModal(null)}
           onExtract={runExtractProject}
+        />
+      )}
+
+      {extractScopedOpen && (
+        <ExtractScheduleModal
+          scope="all"
+          defaultStart={isoDate(monthStart(new Date()))}
+          defaultEnd={isoDate(monthEnd(new Date()))}
+          onClose={() => setExtractScopedOpen(false)}
+          onExtract={runExtractScoped}
         />
       )}
     </>
