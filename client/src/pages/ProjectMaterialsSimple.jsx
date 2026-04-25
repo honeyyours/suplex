@@ -40,6 +40,9 @@ export default function ProjectMaterialsSimple() {
           // 발주 잠금 — 활성 PO(취소되지 않은 것) 있으면 행 편집 불가
           locked: !!m.hasActiveOrder,
           activeOrderStatus: m.activeOrderStatus || null,
+          // 데드라인 — 같은 spaceGroup 일정 시작일 - D-N
+          deadline: m.deadline || null,
+          daysToDeadline: m.daysToDeadline,
         })),
       );
     } finally {
@@ -367,7 +370,13 @@ export default function ProjectMaterialsSimple() {
       const arr = map.get(g).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
       // 그룹 kind = 첫 항목의 kind (정상적으로는 그룹 안 모두 동일)
       const kind = arr[0]?.kind || 'FINISH';
-      return { name: g, kind, items: arr };
+      // 미정 + 데드라인 임박 — 그룹의 deadline은 첫 항목 기준 (모두 같은 spaceGroup이라 동일)
+      const undecidedItems = arr.filter((it) => !it.locked && (it.status === 'UNDECIDED' || it.status === 'REVIEWING'));
+      const minDays = undecidedItems
+        .map((it) => it.daysToDeadline)
+        .filter((d) => d != null)
+        .reduce((min, d) => (min == null || d < min ? d : min), null);
+      return { name: g, kind, items: arr, undecidedCount: undecidedItems.length, minDaysToDeadline: minDays };
     });
   }, [items]);
   const groupNames = grouped.map((g) => g.name);
@@ -472,6 +481,9 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
           <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
             {confirmedCount}/{total} 확정
           </span>
+          {group.undecidedCount > 0 && group.minDaysToDeadline != null && group.minDaysToDeadline <= 7 && (
+            <DeadlineWarning days={group.minDaysToDeadline} count={group.undecidedCount} />
+          )}
         </div>
         <div className="flex items-center gap-1">
           {pendingActionable > 0 && (
@@ -803,5 +815,25 @@ function StatusChip({ status, onChange }) {
         <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
       ))}
     </select>
+  );
+}
+
+// ============================================
+// 데드라인 임박 경고 칩 — 그룹 헤더용
+// ============================================
+function DeadlineWarning({ days, count }) {
+  let cls = 'bg-amber-100 text-amber-800';
+  let prefix = '⏰ ';
+  if (days < 0) { cls = 'bg-red-100 text-red-800 font-semibold'; prefix = '⚠ '; }
+  else if (days <= 3) { cls = 'bg-red-100 text-red-700'; prefix = '🔥 '; }
+  const label = days < 0
+    ? `${prefix}데드라인 ${Math.abs(days)}일 지남 — 미정 ${count}개`
+    : days === 0
+    ? `${prefix}오늘까지 — 미정 ${count}개`
+    : `${prefix}D-${days} — 미정 ${count}개`;
+  return (
+    <span className={`text-[11px] px-2 py-0.5 rounded ${cls}`} title="발주 데드라인이 임박했지만 아직 미정인 항목">
+      {label}
+    </span>
   );
 }

@@ -2,7 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
-const { getDeadlineDays } = require('../services/phaseDeadlines');
+const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline } = require('../services/phaseDeadlines');
 
 const router = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -43,56 +43,19 @@ globalRouter.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// 데드라인 계산 — N+1 방지 위해 프로젝트별 일정 한 번에 fetch
+// 데드라인 계산 — services/phaseDeadlines 헬퍼 사용 (N+1 방지)
 async function annotateOrdersWithDeadline(orders) {
   const projectIds = [...new Set(orders.map((o) => o.projectId).filter(Boolean))];
   if (projectIds.length === 0) return orders.map((o) => ({ ...o, deadline: null, daysToDeadline: null }));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  // 각 프로젝트의 카테고리별 가장 빠른 (오늘 이후) 시작일
-  const entries = await prisma.dailyScheduleEntry.findMany({
-    where: { projectId: { in: projectIds }, date: { gte: today } },
-    orderBy: { date: 'asc' },
-    select: { projectId: true, date: true, category: true },
-  });
-  // map[projectId][categoryKey] = earliestDate
-  const earliestMap = new Map();
-  for (const e of entries) {
-    if (!e.category) continue;
-    const cat = String(e.category).trim();
-    if (!cat) continue;
-    if (!earliestMap.has(e.projectId)) earliestMap.set(e.projectId, new Map());
-    const inner = earliestMap.get(e.projectId);
-    if (!inner.has(cat)) inner.set(cat, e.date);
-  }
-
-  // 부분 매칭(spaceGroup → category) 헬퍼
-  function findEarliestForGroup(projectId, group) {
-    const inner = earliestMap.get(projectId);
-    if (!inner) return null;
-    const g = String(group || '').trim();
-    if (!g) return null;
-    if (inner.has(g)) return inner.get(g);
-    // 부분 포함 매칭
-    for (const [cat, date] of inner) {
-      if (cat.includes(g) || g.includes(cat)) return date;
-    }
-    return null;
-  }
+  const earliestMap = await fetchEarliestByCategory(prisma, projectIds);
 
   return orders.map((o) => {
     const group = o.material?.spaceGroup;
-    const earliest = findEarliestForGroup(o.projectId, group);
-    if (!earliest) return { ...o, deadline: null, daysToDeadline: null };
-    const dn = getDeadlineDays(group);
-    const deadline = new Date(earliest);
-    deadline.setDate(deadline.getDate() - dn);
-    deadline.setHours(0, 0, 0, 0);
-    const diffMs = deadline.getTime() - today.getTime();
-    const daysToDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return { ...o, deadline: deadline.toISOString(), daysToDeadline };
+    const earliest = findEarliestForGroup(earliestMap, o.projectId, group);
+    return { ...o, ...buildDeadline(earliest, group, today) };
   });
 }
 

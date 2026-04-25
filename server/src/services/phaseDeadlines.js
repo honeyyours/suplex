@@ -47,4 +47,63 @@ function getDeadlineDays(phaseName) {
   return DEFAULT_DEADLINE_DAYS;
 }
 
-module.exports = { PHASE_DEADLINE_DAYS, DEFAULT_DEADLINE_DAYS, getDeadlineDays };
+// ============================================
+// 데드라인 계산 헬퍼 — PO와 Material 양쪽에서 재사용
+// ============================================
+
+// 프로젝트 IDs를 받아 각 프로젝트의 카테고리별 가장 빠른 (오늘 이후) 일정 시작일 매핑
+async function fetchEarliestByCategory(prisma, projectIds) {
+  if (!projectIds || projectIds.length === 0) return new Map();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const entries = await prisma.dailyScheduleEntry.findMany({
+    where: { projectId: { in: projectIds }, date: { gte: today } },
+    orderBy: { date: 'asc' },
+    select: { projectId: true, date: true, category: true },
+  });
+  const map = new Map(); // projectId → Map(category → earliestDate)
+  for (const e of entries) {
+    if (!e.category) continue;
+    const cat = String(e.category).trim();
+    if (!cat) continue;
+    if (!map.has(e.projectId)) map.set(e.projectId, new Map());
+    const inner = map.get(e.projectId);
+    if (!inner.has(cat)) inner.set(cat, e.date);
+  }
+  return map;
+}
+
+// spaceGroup → 매칭되는 가장 빠른 일정 시작일 (정확 일치 → 부분 포함 폴백)
+function findEarliestForGroup(map, projectId, group) {
+  const inner = map.get(projectId);
+  if (!inner) return null;
+  const g = String(group || '').trim();
+  if (!g) return null;
+  if (inner.has(g)) return inner.get(g);
+  for (const [cat, date] of inner) {
+    if (cat.includes(g) || g.includes(cat)) return date;
+  }
+  return null;
+}
+
+// 시작일 + group → { deadline, daysToDeadline }
+function buildDeadline(earliest, group, today) {
+  if (!earliest) return { deadline: null, daysToDeadline: null };
+  const t = today || (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
+  const dn = getDeadlineDays(group);
+  const deadline = new Date(earliest);
+  deadline.setDate(deadline.getDate() - dn);
+  deadline.setHours(0, 0, 0, 0);
+  const diffMs = deadline.getTime() - t.getTime();
+  const daysToDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return { deadline: deadline.toISOString(), daysToDeadline };
+}
+
+module.exports = {
+  PHASE_DEADLINE_DAYS,
+  DEFAULT_DEADLINE_DAYS,
+  getDeadlineDays,
+  fetchEarliestByCategory,
+  findEarliestForGroup,
+  buildDeadline,
+};
