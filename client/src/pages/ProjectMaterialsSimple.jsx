@@ -24,14 +24,17 @@ export default function ProjectMaterialsSimple() {
       setItems(
         materials.map((m) => ({
           id: m.id,
+          kind: m.kind || 'FINISH',
           spaceGroup: m.spaceGroup || '기타',
           itemName: m.itemName === '(미정)' || m.itemName === '(이름없음)' ? '' : (m.itemName || ''),
           brand: m.brand || '',
-          // 수량 표시: brand는 "품명/브랜드"로 사용. 수량은 unit 컬럼에 자유 텍스트 통째 저장.
-          // 기존 데이터(quantity+unit 분리)는 합쳐서 표시
+          // 수량 표시: brand는 "브랜드 규격 등"으로 사용. 수량은 unit 컬럼에 자유 텍스트 통째 저장.
           quantityText: m.unit && m.quantity != null && Number(m.quantity) > 0
             ? `${Number(m.quantity)}${m.unit}`
             : (m.unit || (m.quantity != null && Number(m.quantity) > 0 ? String(m.quantity) : '')),
+          // 가전 전용
+          size: m.size || '',
+          installed: m.installed,
           memo: m.memo || '',
           orderIndex: m.orderIndex ?? 0,
           createdAt: m.createdAt,
@@ -89,23 +92,29 @@ export default function ProjectMaterialsSimple() {
   // 로컬 상태 + 서버 patch
   function patchItem(id, patch) {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-    // brand/itemName/memo는 그대로. quantityText는 서버에서 unit 컬럼에 저장.
     const serverPatch = {};
     if ('itemName' in patch) serverPatch.itemName = patch.itemName || '';
     if ('brand' in patch) serverPatch.brand = patch.brand || null;
     if ('memo' in patch) serverPatch.memo = patch.memo || null;
     if ('quantityText' in patch) {
       serverPatch.unit = patch.quantityText || null;
-      serverPatch.quantity = null; // 새 UI는 unit에 통째로
+      serverPatch.quantity = null;
     }
+    // 가전 전용
+    if ('size' in patch) serverPatch.size = patch.size || null;
+    if ('installed' in patch) serverPatch.installed = patch.installed; // boolean | null
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
   }
 
   // ========== 항목 추가/삭제 ==========
-  async function addItem(spaceGroup, focusCol = 'itemName') {
+  async function addItem(spaceGroup, focusCol = 'itemName', kindHint = null) {
+    // 그룹 안 첫 항목의 kind를 따라감 (없으면 kindHint, 그것도 없으면 FINISH)
+    const groupKind = kindHint
+      || items.find((x) => x.spaceGroup === spaceGroup)?.kind
+      || 'FINISH';
     try {
       const { material } = await materialsApi.create(projectId, {
-        kind: 'FINISH',
+        kind: groupKind,
         spaceGroup,
         itemName: '',
         brand: null,
@@ -117,16 +126,18 @@ export default function ProjectMaterialsSimple() {
         ...prev,
         {
           id: material.id,
+          kind: material.kind || groupKind,
           spaceGroup: material.spaceGroup,
           itemName: '',
           brand: '',
           quantityText: '',
+          size: '',
+          installed: null,
           memo: '',
           orderIndex: material.orderIndex ?? 0,
           createdAt: material.createdAt,
         },
       ]);
-      // 다음 tick에 새 행의 셀로 포커스
       setTimeout(() => focusCell(material.id, focusCol), 30);
       return material.id;
     } catch (e) {
@@ -140,7 +151,12 @@ export default function ProjectMaterialsSimple() {
   // ↑/↓: 같은 컬럼 위/아래 행 (마지막에서 ↓는 무시 — 새 행 추가 X)
   // ←/→: 커서가 input 끝/처음일 때만 같은 행 좌/우 셀로
   // Tab: 네이티브 (행 내 가로 이동)
-  const MAT_COLS = ['itemName', 'brand', 'quantityText', 'memo'];
+  const FINISH_COLS = ['itemName', 'brand', 'quantityText', 'memo'];
+  const APPLIANCE_COLS = ['itemName', 'brand', 'size', 'installed', 'memo'];
+  function colsFor(itemId) {
+    const it = items.find((x) => x.id === itemId);
+    return it?.kind === 'APPLIANCE' ? APPLIANCE_COLS : FINISH_COLS;
+  }
 
   function focusCell(itemId, col) {
     const el = document.querySelector(`[data-mat-cell="${itemId}-${col}"]`);
@@ -186,11 +202,14 @@ export default function ProjectMaterialsSimple() {
       if (prevId) focusCell(prevId, col);
       return;
     }
+    const cols = colsFor(itemId);
     if (e.key === 'ArrowRight') {
-      // 커서가 끝에 있을 때만 다음 셀로
-      if (target.selectionStart === target.value.length && target.selectionEnd === target.value.length) {
-        const idx = MAT_COLS.indexOf(col);
-        const nextCol = MAT_COLS[idx + 1];
+      // input이 아닐 수 있음 (가전 설치 select 등) — value 없으면 항상 이동
+      const atEnd = target.value == null
+        || (target.selectionStart === target.value.length && target.selectionEnd === target.value.length);
+      if (atEnd) {
+        const idx = cols.indexOf(col);
+        const nextCol = cols[idx + 1];
         if (nextCol) {
           e.preventDefault();
           focusCell(itemId, nextCol);
@@ -199,9 +218,11 @@ export default function ProjectMaterialsSimple() {
       return;
     }
     if (e.key === 'ArrowLeft') {
-      if (target.selectionStart === 0 && target.selectionEnd === 0) {
-        const idx = MAT_COLS.indexOf(col);
-        const prevCol = MAT_COLS[idx - 1];
+      const atStart = target.value == null
+        || (target.selectionStart === 0 && target.selectionEnd === 0);
+      if (atStart) {
+        const idx = cols.indexOf(col);
+        const prevCol = cols[idx - 1];
         if (prevCol) {
           e.preventDefault();
           focusCell(itemId, prevCol);
@@ -229,8 +250,11 @@ export default function ProjectMaterialsSimple() {
   }
 
   // ========== 그룹 추가/이름 변경/삭제 ==========
-  async function addGroup() {
-    const name = prompt('새 그룹 이름을 입력하세요 (예: 목공, 도배, 화장실)');
+  async function addGroup(kind = 'FINISH') {
+    const placeholder = kind === 'APPLIANCE'
+      ? '예: 주방, 거실, 욕실, 다용도실'
+      : '예: 목공, 도배, 화장실';
+    const name = prompt(`새 ${kind === 'APPLIANCE' ? '가전·가구' : '마감재'} 그룹 이름을 입력하세요 (${placeholder})`);
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -238,7 +262,7 @@ export default function ProjectMaterialsSimple() {
       alert('이미 같은 이름의 그룹이 있습니다.');
       return;
     }
-    await addItem(trimmed);
+    await addItem(trimmed, 'itemName', kind);
   }
 
   async function renameGroup(from) {
@@ -280,7 +304,12 @@ export default function ProjectMaterialsSimple() {
       }
       map.get(g).push(it);
     }
-    return order.map((g) => ({ name: g, items: map.get(g).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)) }));
+    return order.map((g) => {
+      const arr = map.get(g).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+      // 그룹 kind = 첫 항목의 kind (정상적으로는 그룹 안 모두 동일)
+      const kind = arr[0]?.kind || 'FINISH';
+      return { name: g, kind, items: arr };
+    });
   }, [items]);
   const groupNames = grouped.map((g) => g.name);
 
@@ -296,12 +325,20 @@ export default function ProjectMaterialsSimple() {
             ? '아직 등록된 마감재가 없습니다. [+ 새 그룹 추가]로 시작하거나, 견적 탭에서 [📦 마감재로 보내기]를 사용하세요.'
             : `총 ${grouped.length}개 그룹 / ${items.length}개 항목`}
         </div>
-        <button
-          onClick={addGroup}
-          className="text-sm px-4 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
-        >
-          + 새 그룹 추가
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => addGroup('FINISH')}
+            className="text-sm px-3 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
+          >
+            + 마감재 그룹
+          </button>
+          <button
+            onClick={() => addGroup('APPLIANCE')}
+            className="text-sm px-3 py-2 bg-violet-700 text-white rounded hover:bg-violet-800"
+          >
+            + 가전·가구 그룹
+          </button>
+        </div>
       </div>
 
       {grouped.map((g) => (
@@ -321,9 +358,12 @@ export default function ProjectMaterialsSimple() {
       {grouped.length === 0 && (
         <div className="bg-white rounded-xl border p-10 text-center text-sm text-gray-400">
           아직 등록된 마감재가 없습니다.
-          <div className="mt-3">
-            <button onClick={addGroup} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">
-              + 첫 그룹 만들기
+          <div className="mt-3 flex justify-center gap-2">
+            <button onClick={() => addGroup('FINISH')} className="text-sm px-4 py-2 border border-navy-300 text-navy-700 rounded hover:bg-navy-50">
+              + 마감재 그룹
+            </button>
+            <button onClick={() => addGroup('APPLIANCE')} className="text-sm px-4 py-2 border border-violet-300 text-violet-700 rounded hover:bg-violet-50">
+              + 가전·가구 그룹
             </button>
           </div>
         </div>
@@ -336,18 +376,29 @@ export default function ProjectMaterialsSimple() {
 // 그룹 카드
 // ============================================
 function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onCellKeyDown }) {
+  const isAppliance = group.kind === 'APPLIANCE';
+  const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
+  const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
+  const titleText = isAppliance ? 'text-violet-800' : 'text-navy-800';
+  const badge = isAppliance
+    ? 'bg-violet-100 text-violet-700'
+    : 'bg-navy-100 text-navy-700';
+
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b bg-navy-50/40">
+      <div className={`flex items-center justify-between gap-3 px-4 py-2.5 border-b ${headerBg}`}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-navy-600 font-bold flex-shrink-0">▸</span>
+          <span className={`${accentText} font-bold flex-shrink-0`}>▸</span>
           <button
             onClick={onRenameGroup}
-            className="text-base font-bold text-navy-800 hover:underline truncate text-left"
+            className={`text-base font-bold ${titleText} hover:underline truncate text-left`}
             title="그룹 이름 변경"
           >
             {group.name}
           </button>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
+            {isAppliance ? '가전·가구' : '마감재'}
+          </span>
           <span className="text-xs text-gray-400 flex-shrink-0">{group.items.length}개</span>
         </div>
         <div className="flex items-center gap-1">
@@ -368,45 +419,183 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: '20%' }} />{/* 항목 */}
-            <col style={{ width: '22%' }} />{/* 품명/브랜드 */}
-            <col style={{ width: '90px' }} />{/* 수량 */}
-            <col />{/* 비고 — 나머지 */}
-            <col style={{ width: '24px' }} />{/* X */}
-          </colgroup>
-          <thead className="bg-gray-50 text-xs text-gray-500">
-            <tr>
-              <th className="text-left px-2 py-1.5">항목</th>
-              <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
-              <th className="text-left px-2 py-1.5">수량</th>
-              <th className="text-left px-2 py-1.5">비고</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {group.items.map((it) => (
-              <ItemRow
-                key={it.id}
-                item={it}
-                saving={!!savingMap[it.id]}
-                onChange={(patch) => onItemPatch(it.id, patch)}
-                onRemove={() => onItemRemove(it.id)}
-                onCellKeyDown={onCellKeyDown}
-              />
-            ))}
-            {group.items.length === 0 && (
-              <tr>
-                <td colSpan={5} className="text-center py-3 text-xs text-gray-400">
-                  아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {isAppliance ? (
+          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
+        ) : (
+          <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
+        )}
       </div>
     </div>
+  );
+}
+
+// ============================================
+// 마감재 테이블 (4컬럼)
+// ============================================
+function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown }) {
+  return (
+    <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+      <colgroup>
+        <col style={{ width: '20%' }} />
+        <col style={{ width: '22%' }} />
+        <col style={{ width: '90px' }} />
+        <col />
+        <col style={{ width: '24px' }} />
+      </colgroup>
+      <thead className="bg-gray-50 text-xs text-gray-500">
+        <tr>
+          <th className="text-left px-2 py-1.5">항목</th>
+          <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
+          <th className="text-left px-2 py-1.5">수량</th>
+          <th className="text-left px-2 py-1.5">비고</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody className="divide-y">
+        {group.items.map((it) => (
+          <ItemRow
+            key={it.id}
+            item={it}
+            saving={!!savingMap[it.id]}
+            onChange={(patch) => onItemPatch(it.id, patch)}
+            onRemove={() => onItemRemove(it.id)}
+            onCellKeyDown={onCellKeyDown}
+          />
+        ))}
+        {group.items.length === 0 && (
+          <tr>
+            <td colSpan={5} className="text-center py-3 text-xs text-gray-400">
+              아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+// ============================================
+// 가전·가구 테이블 (5컬럼: 품목 / 모델명 / 사이즈 / 설치 / 비고)
+// ============================================
+function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown }) {
+  return (
+    <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+      <colgroup>
+        <col style={{ width: '15%' }} />{/* 품목 */}
+        <col style={{ width: '24%' }} />{/* 모델명 */}
+        <col style={{ width: '130px' }} />{/* 사이즈 */}
+        <col style={{ width: '70px' }} />{/* 설치 */}
+        <col />{/* 비고 */}
+        <col style={{ width: '24px' }} />
+      </colgroup>
+      <thead className="bg-gray-50 text-xs text-gray-500">
+        <tr>
+          <th className="text-left px-2 py-1.5">품목</th>
+          <th className="text-left px-2 py-1.5">모델명 / 품번</th>
+          <th className="text-left px-2 py-1.5">사이즈 (W×D×H)</th>
+          <th className="text-center px-2 py-1.5">설치</th>
+          <th className="text-left px-2 py-1.5">비고 (빌트인/도어방향)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody className="divide-y">
+        {group.items.map((it) => (
+          <ApplianceRow
+            key={it.id}
+            item={it}
+            saving={!!savingMap[it.id]}
+            onChange={(patch) => onItemPatch(it.id, patch)}
+            onRemove={() => onItemRemove(it.id)}
+            onCellKeyDown={onCellKeyDown}
+          />
+        ))}
+        {group.items.length === 0 && (
+          <tr>
+            <td colSpan={6} className="text-center py-3 text-xs text-gray-400">
+              아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+// ============================================
+// 가전·가구 행 (5컬럼)
+// ============================================
+function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
+  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200';
+  const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
+  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col) });
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-2 py-1.5">
+        <input
+          {...cellAttrs('itemName')}
+          value={item.itemName}
+          onChange={(e) => onChange({ itemName: e.target.value })}
+          className={inputCls}
+          placeholder="예: 냉장고 / 세탁기"
+        />
+      </td>
+      <td className="px-2 py-1.5">
+        <input
+          {...cellAttrs('brand')}
+          value={item.brand}
+          onChange={(e) => onChange({ brand: e.target.value })}
+          className={inputCls}
+          placeholder="예: BESPOKE 4도어 871L / RF85R9013S8"
+        />
+      </td>
+      <td className="px-2 py-1.5">
+        <input
+          {...cellAttrs('size')}
+          value={item.size}
+          onChange={(e) => onChange({ size: e.target.value })}
+          className={inputCls + ' tabular-nums'}
+          placeholder="예: 908 × 930 × 1853"
+        />
+      </td>
+      <td className="px-2 py-1.5 text-center">
+        <select
+          {...cellAttrs('installed')}
+          value={item.installed === true ? 'Y' : item.installed === false ? 'N' : ''}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange({ installed: v === 'Y' ? true : v === 'N' ? false : null });
+          }}
+          className="text-xs px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 bg-transparent"
+        >
+          <option value="">—</option>
+          <option value="Y">✓ 유</option>
+          <option value="N">✕ 무</option>
+        </select>
+      </td>
+      <td className="px-2 py-1.5">
+        <input
+          {...cellAttrs('memo')}
+          value={item.memo}
+          onChange={(e) => onChange({ memo: e.target.value })}
+          className={inputCls}
+          placeholder="빌트인 여부, 도어 개폐 방향, 콘센트 위치 등"
+        />
+      </td>
+      <td className="px-1 text-right">
+        {saving ? (
+          <span className="text-[10px] text-gray-400" title="저장 중">…</span>
+        ) : (
+          <button
+            onClick={onRemove}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-red-500 text-sm"
+            title="삭제"
+          >
+            ✕
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 
