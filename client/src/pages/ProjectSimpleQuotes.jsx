@@ -552,16 +552,28 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
                   value={quote.vatRate}
                   onChange={(e) => {
                     const newRate = Number(e.target.value) || 0;
-                    const wasZero = Number(quote.vatRate) === 0;
+                    const oldRate = Number(quote.vatRate) || 0;
                     const patch = { vatRate: newRate };
-                    // 0 → 양수 전환 시: 푸터에서 "부가세" 단어가 포함된 줄 자동 제거
-                    if (wasZero && newRate > 0 && quote.footerNotes) {
-                      const cleaned = quote.footerNotes
+                    const VAT_NOTE = '※ 현금영수증 및 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.';
+                    const footer = quote.footerNotes || '';
+
+                    // 0 → 양수: 푸터에서 "부가세" 단어가 포함된 줄 자동 제거
+                    if (oldRate === 0 && newRate > 0) {
+                      const cleaned = footer
                         .split('\n')
                         .filter((line) => !/부가세/.test(line))
                         .join('\n')
                         .trim();
-                      if (cleaned !== quote.footerNotes) patch.footerNotes = cleaned;
+                      if (cleaned !== footer) patch.footerNotes = cleaned;
+                    }
+                    // 양수 → 0: 푸터에 "부가세" 줄이 없으면 표준 안내문 자동 추가 (복원)
+                    if (oldRate > 0 && newRate === 0) {
+                      const hasVatNote = footer.split('\n').some((line) => /부가세/.test(line));
+                      if (!hasVatNote) {
+                        patch.footerNotes = footer.trim()
+                          ? `${footer.trim()}\n${VAT_NOTE}`
+                          : VAT_NOTE;
+                      }
                     }
                     scheduleHeaderSave(patch);
                   }}
