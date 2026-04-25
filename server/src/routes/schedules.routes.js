@@ -3,7 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { recordChange } = require('../services/scheduleChangeLogger');
-const { syncChecklistFromPhase } = require('../services/checklistAutoSeed');
+const { syncChecklistFromPhase, syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
 const { detectPhase } = require('../services/phaseDetect');
 
 const projectRouter = express.Router({ mergeParams: true });
@@ -171,8 +171,16 @@ projectRouter.post('/', async (req, res, next) => {
         dueDate: dateObj,
         userId: req.user.id,
       });
+      // 공정 어드바이스 — 시작일에서 daysBefore 차감한 날짜에 체크리스트 추가
+      const advised = await syncAdvicesFromPhase(tx, {
+        projectId,
+        companyId: req.user.companyId,
+        phase: created.category,
+        scheduleDate: dateObj,
+        userId: req.user.id,
+      });
 
-      return { created, seededChecklists: seeded.created };
+      return { created, seededChecklists: seeded.created + advised.created };
     });
 
     res.status(201).json({ entry: entry.created, seededChecklists: entry.seededChecklists });
@@ -264,7 +272,14 @@ projectRouter.patch('/:id', async (req, res, next) => {
           dueDate: existing.date,
           userId: req.user.id,
         });
-        seededChecklists = seeded.created;
+        const advised = await syncAdvicesFromPhase(tx, {
+          projectId,
+          companyId: req.user.companyId,
+          phase: u.category,
+          scheduleDate: existing.date,
+          userId: req.user.id,
+        });
+        seededChecklists = seeded.created + advised.created;
       }
 
       return { u, seededChecklists };

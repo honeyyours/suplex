@@ -2,7 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
-const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline } = require('../services/phaseDeadlines');
+const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline, fetchCompanyDeadlineRules } = require('../services/phaseDeadlines');
 
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
@@ -136,16 +136,19 @@ router.get('/', async (req, res, next) => {
         },
       },
     });
-    // 데드라인 계산 — 같은 프로젝트의 일정 entry 1번만 fetch
+    // 데드라인 계산 — 같은 프로젝트의 일정 entry + 회사 룰 1번만 fetch
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const earliestMap = await fetchEarliestByCategory(prisma, [projectId]);
+    const [earliestMap, companyRules] = await Promise.all([
+      fetchEarliestByCategory(prisma, [projectId]),
+      fetchCompanyDeadlineRules(prisma, req.user.companyId),
+    ]);
 
     // 클라이언트가 쉽게 쓸 수 있게 hasActiveOrder/activeOrderStatus + deadline 부가
     const enriched = materials.map((m) => {
       const active = m.purchaseOrders?.[0];
       const earliest = findEarliestForGroup(earliestMap, projectId, m.spaceGroup);
-      const dl = buildDeadline(earliest, m.spaceGroup, today);
+      const dl = buildDeadline(earliest, m.spaceGroup, today, companyRules);
       return {
         ...m,
         hasActiveOrder: !!active,

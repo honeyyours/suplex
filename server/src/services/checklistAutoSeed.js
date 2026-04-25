@@ -84,4 +84,50 @@ async function addChecklistFromTemplateIds(tx, { projectId, companyId, templateI
   return { created: toCreate.length, skipped: templates.length - toCreate.length };
 }
 
-module.exports = { syncChecklistFromPhase, addChecklistFromTemplateIds };
+// ============================================
+// 공정 어드바이스 → 체크리스트 자동 생성
+// 일정 entry 시작일에서 advice.daysBefore 차감한 날짜에 체크리스트 항목으로 추가.
+// 중복 방지: (projectId + title + dueDate) 조합 기준
+// ============================================
+async function syncAdvicesFromPhase(tx, { projectId, companyId, phase, scheduleDate, userId }) {
+  if (!phase || !scheduleDate) return { created: 0 };
+
+  const advices = await tx.phaseAdvice.findMany({
+    where: { companyId, phase, active: true },
+  });
+  if (advices.length === 0) return { created: 0 };
+
+  let nextOrder = ((await tx.projectChecklist.aggregate({
+    where: { projectId },
+    _max: { orderIndex: true },
+  }))._max.orderIndex ?? -1) + 1;
+
+  let created = 0;
+  for (const a of advices) {
+    const due = new Date(scheduleDate);
+    due.setDate(due.getDate() - a.daysBefore);
+    due.setHours(0, 0, 0, 0);
+
+    const existing = await tx.projectChecklist.findFirst({
+      where: { projectId, title: a.title, dueDate: due },
+    });
+    if (existing) continue;
+
+    await tx.projectChecklist.create({
+      data: {
+        projectId,
+        title: a.title,
+        category: 'GENERAL',
+        phase: a.phase,
+        requiresPhoto: false,
+        dueDate: due,
+        orderIndex: nextOrder++,
+        createdById: userId || null,
+      },
+    });
+    created++;
+  }
+  return { created };
+}
+
+module.exports = { syncChecklistFromPhase, addChecklistFromTemplateIds, syncAdvicesFromPhase };

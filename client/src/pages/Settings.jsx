@@ -5,6 +5,7 @@ import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { checklistTemplatesApi } from '../api/checklistTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
+import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
 import { CATEGORIES as PHASE_CATEGORIES } from '../utils/date';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
@@ -50,6 +51,10 @@ export default function Settings() {
       <QuoteTemplatesSection />
 
       <PhaseKeywordsSection />
+
+      <PhaseDeadlineRulesSection />
+
+      <PhaseAdvicesSection />
 
       <ChecklistTemplatesSection />
 
@@ -951,6 +956,280 @@ function ChecklistTemplatesSection() {
           </button>
         </div>
       )}
+    </Section>
+  );
+}
+
+// ============================================
+// 공정별 발주 데드라인 룰 (D-N)
+// ============================================
+function PhaseDeadlineRulesSection() {
+  const [rules, setRules] = useState([]);
+  const [defaults, setDefaults] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState({ phase: '', daysBefore: 3 });
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const { rules, defaults } = await phaseDeadlinesApi.list();
+      setRules(rules);
+      setDefaults(defaults || {});
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  async function add() {
+    if (!draft.phase.trim()) return;
+    try {
+      await phaseDeadlinesApi.upsert({ phase: draft.phase.trim(), daysBefore: Number(draft.daysBefore) });
+      setDraft({ phase: '', daysBefore: 3 });
+      reload();
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+  async function update(rule, patch) {
+    try {
+      await phaseDeadlinesApi.update(rule.id, patch);
+      reload();
+    } catch (e) { alert('변경 실패: ' + (e.response?.data?.error || e.message)); }
+  }
+  async function remove(id) {
+    if (!confirm('이 룰을 삭제할까요? 표준 기본값으로 돌아갑니다.')) return;
+    await phaseDeadlinesApi.remove(id);
+    reload();
+  }
+  async function seedAll() {
+    if (!confirm('표준 D-N 룰 전체를 회사 룰로 가져옵니다 (기존 룰은 그대로 유지/덮어쓰기). 계속할까요?')) return;
+    await phaseDeadlinesApi.seedDefaults();
+    reload();
+  }
+
+  const ruleMap = new Map(rules.map((r) => [r.phase, r]));
+
+  return (
+    <Section title="공정별 발주 데드라인 (D-N 룰)">
+      <p className="text-xs text-gray-500 mb-3">
+        자재가 공정 시작 며칠 전까지 도착해야 하는지. 회사 룰이 우선, 없으면 표준 기본값 적용.
+      </p>
+      <div className="mb-3">
+        <button
+          onClick={seedAll}
+          className="text-sm px-4 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+        >
+          📋 표준 룰 일괄 적용
+        </button>
+      </div>
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50 text-gray-500">
+            <tr>
+              <th className="text-left px-2 py-1.5 w-1/3">공정명</th>
+              <th className="text-right px-2 py-1.5 w-24">D-N (일)</th>
+              <th className="text-center px-2 py-1.5 w-20">상태</th>
+              <th className="text-left px-2 py-1.5">기본값</th>
+              <th className="px-2 py-1.5 w-16"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {rules.map((r) => (
+              <tr key={r.id} className="hover:bg-gray-50">
+                <td className="px-2 py-1.5 text-navy-800 font-medium">{r.phase}</td>
+                <td className="px-2 py-1.5 text-right">
+                  <input
+                    type="number"
+                    defaultValue={r.daysBefore}
+                    onBlur={(e) => {
+                      const v = Number(e.target.value);
+                      if (Number.isFinite(v) && v !== r.daysBefore) update(r, { daysBefore: v });
+                    }}
+                    className="w-16 text-right px-2 py-0.5 border rounded"
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  <button
+                    onClick={() => update(r, { active: !r.active })}
+                    className={`text-[10px] px-2 py-0.5 rounded ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                  >
+                    {r.active ? '활성' : '비활성'}
+                  </button>
+                </td>
+                <td className="px-2 py-1.5 text-gray-400">
+                  {defaults[r.phase] != null ? `D-${defaults[r.phase]}` : '—'}
+                </td>
+                <td className="px-2 py-1.5 text-right">
+                  <button onClick={() => remove(r.id)} className="text-red-500 hover:underline">삭제</button>
+                </td>
+              </tr>
+            ))}
+            {/* 표준값 중 회사 룰에 없는 것 — 흐리게 표시 */}
+            {Object.entries(defaults).filter(([phase]) => !ruleMap.has(phase)).map(([phase, days]) => (
+              <tr key={phase} className="opacity-50 hover:opacity-100">
+                <td className="px-2 py-1.5 text-gray-600">{phase}</td>
+                <td className="px-2 py-1.5 text-right text-gray-400">D-{days}</td>
+                <td className="px-2 py-1.5 text-center text-gray-400 text-[10px]">표준값</td>
+                <td className="px-2 py-1.5 text-gray-400">D-{days}</td>
+                <td className="px-2 py-1.5 text-right">
+                  <button
+                    onClick={() => phaseDeadlinesApi.upsert({ phase, daysBefore: days }).then(reload)}
+                    className="text-xs text-navy-700 hover:underline"
+                  >커스텀</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 새 룰 추가 */}
+      <div className="mt-3 flex gap-2 items-end border-t pt-3">
+        <FormField
+          label="공정명 (예: 설비)"
+          value={draft.phase}
+          onChange={(v) => setDraft({ ...draft, phase: v })}
+        />
+        <FormField
+          label="D-N"
+          type="number"
+          value={draft.daysBefore}
+          onChange={(v) => setDraft({ ...draft, daysBefore: v })}
+        />
+        <button
+          onClick={add}
+          className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+        >+ 추가</button>
+      </div>
+    </Section>
+  );
+}
+
+// ============================================
+// 공정 어드바이스 (체크리스트 자동 생성)
+// ============================================
+function PhaseAdvicesSection() {
+  const [advices, setAdvices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState({ phase: '', daysBefore: 1, title: '', category: '' });
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const { advices } = await phaseAdvicesApi.list();
+      setAdvices(advices);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  async function add() {
+    if (!draft.phase.trim() || !draft.title.trim()) return;
+    try {
+      await phaseAdvicesApi.create({
+        phase: draft.phase.trim(),
+        daysBefore: Number(draft.daysBefore),
+        title: draft.title.trim(),
+        category: draft.category.trim() || null,
+      });
+      setDraft({ phase: '', daysBefore: 1, title: '', category: '' });
+      reload();
+    } catch (e) { alert('저장 실패: ' + (e.response?.data?.error || e.message)); }
+  }
+  async function toggleActive(a) {
+    await phaseAdvicesApi.update(a.id, { active: !a.active });
+    reload();
+  }
+  async function remove(id) {
+    if (!confirm('이 어드바이스를 삭제할까요?')) return;
+    await phaseAdvicesApi.remove(id);
+    reload();
+  }
+  async function seed() {
+    if (!confirm('인테리어 표준 어드바이스 16개를 회사 룰로 추가합니다 (중복 스킵). 계속할까요?')) return;
+    const r = await phaseAdvicesApi.seedStandard();
+    alert(`✅ ${r.created}개 추가, ${r.skipped}개 스킵`);
+    reload();
+  }
+
+  return (
+    <Section title="공정 어드바이스 (체크리스트 자동 생성)">
+      <p className="text-xs text-gray-500 mb-3">
+        일정에 해당 공정이 추가되면 (시작일 - D-N) 날짜에 체크리스트로 자동 등록.
+        예: "철거 D-3 → 보양 관련 관리실 문의" → 철거 일정 시작 3일 전에 체크리스트 알림.
+      </p>
+      <div className="mb-3">
+        <button
+          onClick={seed}
+          className="text-sm px-4 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+        >
+          📋 표준 어드바이스 16개 시드 추가
+        </button>
+      </div>
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50 text-gray-500">
+            <tr>
+              <th className="text-left px-2 py-1.5 w-20">공정</th>
+              <th className="text-right px-2 py-1.5 w-12">D-N</th>
+              <th className="text-left px-2 py-1.5">제목</th>
+              <th className="text-left px-2 py-1.5 w-28">카테고리</th>
+              <th className="text-center px-2 py-1.5 w-16">활성</th>
+              <th className="px-2 py-1.5 w-12"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {advices.map((a) => (
+              <tr key={a.id} className={`hover:bg-gray-50 ${a.active ? '' : 'opacity-50'}`}>
+                <td className="px-2 py-1.5 font-medium text-navy-800">{a.phase}</td>
+                <td className="px-2 py-1.5 text-right">D-{a.daysBefore}</td>
+                <td className="px-2 py-1.5">{a.title}</td>
+                <td className="px-2 py-1.5 text-gray-500">{a.category || '—'}</td>
+                <td className="px-2 py-1.5 text-center">
+                  <button onClick={() => toggleActive(a)} className="text-gray-500 hover:text-navy-700">
+                    {a.active ? '✓' : '✕'}
+                  </button>
+                </td>
+                <td className="px-2 py-1.5 text-right">
+                  <button onClick={() => remove(a.id)} className="text-red-500 hover:underline">삭제</button>
+                </td>
+              </tr>
+            ))}
+            {advices.length === 0 && !loading && (
+              <tr><td colSpan={6} className="text-center py-4 text-gray-400">등록된 어드바이스가 없습니다.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end border-t pt-3">
+        <FormField
+          label="공정 (예: 철거)"
+          value={draft.phase}
+          onChange={(v) => setDraft({ ...draft, phase: v })}
+        />
+        <FormField
+          label="D-N (일)"
+          type="number"
+          value={draft.daysBefore}
+          onChange={(v) => setDraft({ ...draft, daysBefore: v })}
+        />
+        <div className="md:col-span-2 flex gap-2 items-end">
+          <FormField
+            label="제목 (예: 보양 관련 관리실 문의)"
+            value={draft.title}
+            onChange={(v) => setDraft({ ...draft, title: v })}
+          />
+          <button
+            onClick={add}
+            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 whitespace-nowrap"
+          >+ 추가</button>
+        </div>
+      </div>
     </Section>
   );
 }

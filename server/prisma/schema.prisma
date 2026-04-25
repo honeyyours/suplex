@@ -54,6 +54,8 @@ model Company {
   expenses               Expense[]
   accountCodes           AccountCode[]
   expenseCategoryRules   ExpenseCategoryRule[]
+  phaseDeadlineRules     PhaseDeadlineRule[]
+  phaseAdvices           PhaseAdvice[]
 
   @@map("companies")
 }
@@ -1090,4 +1092,46 @@ model ProjectMemo {
 
   @@index([projectId, orderIndex])
   @@map("project_memos")
+}
+
+// ============================================
+// 공정별 발주 데드라인 룰 (회사 단위 커스텀)
+// 자재가 공정 시작 며칠 전까지 도착해야 하는지
+// 회사 룰이 없으면 services/phaseDeadlines.js의 표준 상수 fallback
+// ============================================
+model PhaseDeadlineRule {
+  id         String   @id @default(cuid())
+  companyId  String
+  phase      String   // 공정명 (정확 일치 + 부분 매칭 폴백)
+  daysBefore Int      // 발주 데드라인 = 일정 시작일 - daysBefore
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, phase])
+  @@map("phase_deadline_rules")
+}
+
+// ============================================
+// 공정별 사전 어드바이스 (회사 단위)
+// 일정 entry 생성/수정 시 (entry.date - daysBefore) 날짜에 체크리스트 자동 추가
+// ============================================
+model PhaseAdvice {
+  id          String   @id @default(cuid())
+  companyId   String
+  phase       String   // 공정명 (entry.category 와 매칭)
+  daysBefore  Int      // 일정 시작 며칠 전 (음수면 시작 후)
+  title       String   // 체크리스트 제목 (예: "보양 관련 관리실 문의")
+  description String?  // 상세 설명
+  category    String?  // 안전 / 자재 / 관리실 협의 / 사전 준비 등
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, phase])
+  @@map("phase_advices")
 }

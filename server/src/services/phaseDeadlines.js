@@ -36,15 +36,37 @@ const PHASE_DEADLINE_DAYS = {
 const DEFAULT_DEADLINE_DAYS = 3;
 
 // spaceGroup/category 텍스트로 D-N 일수 조회. 정확 일치 우선, 부분 포함도 허용.
-function getDeadlineDays(phaseName) {
+// companyRules가 주어지면 회사 룰 우선 (있는 phase만), 없으면 코드 상수 fallback.
+//   companyRules: Map<phase, daysBefore> — DB에서 fetch 후 전달
+function getDeadlineDays(phaseName, companyRules = null) {
   if (!phaseName) return DEFAULT_DEADLINE_DAYS;
   const key = String(phaseName).trim();
+
+  // 1) 회사 룰 우선 (정확 일치 → 부분 매칭)
+  if (companyRules && companyRules.size > 0) {
+    if (companyRules.has(key)) return companyRules.get(key);
+    for (const [k, v] of companyRules) {
+      if (key.includes(k) || k.includes(key)) return v;
+    }
+  }
+  // 2) 코드 상수 (정확 일치 → 부분 매칭)
   if (PHASE_DEADLINE_DAYS[key] != null) return PHASE_DEADLINE_DAYS[key];
-  // 부분 매칭 — "목공 공사" 같이 변형되어도 잡음
   for (const k of Object.keys(PHASE_DEADLINE_DAYS)) {
     if (key.includes(k) || k.includes(key)) return PHASE_DEADLINE_DAYS[k];
   }
   return DEFAULT_DEADLINE_DAYS;
+}
+
+// 회사 룰을 DB에서 fetch (active=true만) → Map 반환
+async function fetchCompanyDeadlineRules(prisma, companyId) {
+  if (!companyId) return new Map();
+  const rules = await prisma.phaseDeadlineRule.findMany({
+    where: { companyId, active: true },
+    select: { phase: true, daysBefore: true },
+  });
+  const map = new Map();
+  for (const r of rules) map.set(r.phase, r.daysBefore);
+  return map;
 }
 
 // ============================================
@@ -86,11 +108,11 @@ function findEarliestForGroup(map, projectId, group) {
   return null;
 }
 
-// 시작일 + group → { deadline, daysToDeadline }
-function buildDeadline(earliest, group, today) {
+// 시작일 + group → { deadline, daysToDeadline }. companyRules는 fetchCompanyDeadlineRules 결과
+function buildDeadline(earliest, group, today, companyRules = null) {
   if (!earliest) return { deadline: null, daysToDeadline: null };
   const t = today || (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
-  const dn = getDeadlineDays(group);
+  const dn = getDeadlineDays(group, companyRules);
   const deadline = new Date(earliest);
   deadline.setDate(deadline.getDate() - dn);
   deadline.setHours(0, 0, 0, 0);
@@ -106,4 +128,5 @@ module.exports = {
   fetchEarliestByCategory,
   findEarliestForGroup,
   buildDeadline,
+  fetchCompanyDeadlineRules,
 };

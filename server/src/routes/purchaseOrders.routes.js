@@ -2,7 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
-const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline } = require('../services/phaseDeadlines');
+const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline, fetchCompanyDeadlineRules } = require('../services/phaseDeadlines');
 
 const router = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -38,24 +38,28 @@ globalRouter.get('/', async (req, res, next) => {
     });
 
     // 각 PO에 데드라인 자동 계산 — 같은 프로젝트 일정 entry 중 같은 카테고리(=spaceGroup)의 가장 빠른 시작일 - D-N
-    const enriched = await annotateOrdersWithDeadline(orders);
+    const enriched = await annotateOrdersWithDeadline(orders, req.user.companyId);
     res.json({ orders: enriched });
   } catch (e) { next(e); }
 });
 
 // 데드라인 계산 — services/phaseDeadlines 헬퍼 사용 (N+1 방지)
-async function annotateOrdersWithDeadline(orders) {
+// companyId가 주어지면 회사 룰 우선 적용
+async function annotateOrdersWithDeadline(orders, companyId = null) {
   const projectIds = [...new Set(orders.map((o) => o.projectId).filter(Boolean))];
   if (projectIds.length === 0) return orders.map((o) => ({ ...o, deadline: null, daysToDeadline: null }));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const earliestMap = await fetchEarliestByCategory(prisma, projectIds);
+  const [earliestMap, companyRules] = await Promise.all([
+    fetchEarliestByCategory(prisma, projectIds),
+    fetchCompanyDeadlineRules(prisma, companyId),
+  ]);
 
   return orders.map((o) => {
     const group = o.material?.spaceGroup;
     const earliest = findEarliestForGroup(earliestMap, o.projectId, group);
-    return { ...o, ...buildDeadline(earliest, group, today) };
+    return { ...o, ...buildDeadline(earliest, group, today, companyRules) };
   });
 }
 
@@ -107,7 +111,7 @@ globalRouter.get('/summary', async (req, res, next) => {
     ]);
 
     // 데드라인 임박(D-7 이내) 카운트 — PENDING 중에서만
-    const enriched = await annotateOrdersWithDeadline(pendingOrders);
+    const enriched = await annotateOrdersWithDeadline(pendingOrders, req.user.companyId);
     const urgent = enriched.filter((o) => o.daysToDeadline != null && o.daysToDeadline <= 7).length;
 
     res.json({ pending, ordered, received, cancelled, pendingModels, urgent });
