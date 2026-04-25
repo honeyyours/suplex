@@ -6,10 +6,11 @@ import { projectsApi } from '../api/projects';
 
 const STATUS_KEYS = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 
-export default function Orders() {
+export default function Orders({ lockedProjectId = null }) {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectIdFilter = searchParams.get('projectId') || '';
+  // 프로젝트 detail 안에서는 lockedProjectId가 강제됨 (셀렉트 숨김)
+  const projectIdFilter = lockedProjectId || searchParams.get('projectId') || '';
 
   function setProjectFilter(pid) {
     const next = new URLSearchParams(searchParams);
@@ -54,23 +55,25 @@ export default function Orders() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-navy-800">발주</h1>
+          {!lockedProjectId && <h1 className="text-xl font-bold text-navy-800">발주</h1>}
           <p className="text-xs text-gray-500 mt-0.5">
             마감재 확정 시 자동 등록 · 수량/단가 입력 → 발주 처리 → 수령
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={projectIdFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
-            className="text-sm border rounded px-2 py-1.5 bg-white"
-          >
-            <option value="">모든 프로젝트</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+        {!lockedProjectId && (
+          <div className="flex items-center gap-2">
+            <select
+              value={projectIdFilter}
+              onChange={(e) => setProjectFilter(e.target.value)}
+              className="text-sm border rounded px-2 py-1.5 bg-white"
+            >
+              <option value="">모든 프로젝트</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* 통계 카드 */}

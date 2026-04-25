@@ -75,6 +75,7 @@ export default function ProjectDetail() {
           <NavLink to="quotes" className={tab}>견적</NavLink>
           <NavLink to="schedule" className={tab}>공정 일정</NavLink>
           <NavLink to="materials" className={tab}>마감재</NavLink>
+          <NavLink to="orders" className={tab}>발주</NavLink>
           <NavLink to="checklist" className={tab}>체크리스트</NavLink>
           <NavLink to="reports" className={tab}>현장 보고</NavLink>
           <NavLink to="expenses" className={tab}>지출</NavLink>

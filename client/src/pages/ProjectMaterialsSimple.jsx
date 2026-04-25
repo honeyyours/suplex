@@ -115,8 +115,8 @@ export default function ProjectMaterialsSimple() {
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
   }
 
-  // 체크박스 토글 — 미체크→체크 = CONFIRMED (PO PENDING 자동 생성), 체크→미체크 = UNDECIDED (PO 자동 처리는 syncPurchaseOrders가 done 그룹 전이 기준)
-  // 잠긴 항목(이미 발주됨)은 체크 해제 불가 — 발주 탭에서 취소해야
+  // 체크박스 토글 — 미체크→체크 = CONFIRMED (PO PENDING 자동 생성, 행 즉시 잠금 낙관적 반영)
+  // 잠긴 항목은 체크 해제 불가 — 발주 탭에서 취소해야
   function toggleConfirmed(id) {
     const it = items.find((x) => x.id === id);
     if (!it) return;
@@ -126,11 +126,12 @@ export default function ProjectMaterialsSimple() {
     }
     const isCurrentlyConfirmed = ['CONFIRMED', 'CHANGED', 'REUSED'].includes(it.status);
     const next = isCurrentlyConfirmed ? 'UNDECIDED' : 'CONFIRMED';
-    patchItem(id, { status: next });
-    // 확정으로 가면 PO 자동 생성 → 잠금 표시는 reload 필요. 즉시 표시 위해 낙관적으로 locked 설정.
-    if (next === 'CONFIRMED') {
-      setTimeout(() => reload(), 1200);
-    }
+    // 낙관적 업데이트 — reload 없이 즉시 잠금/해제 반영
+    setItems((prev) => prev.map((x) => (
+      x.id === id ? { ...x, status: next, locked: next === 'CONFIRMED' } : x
+    )));
+    // 서버 PATCH는 status만 (낙관 반영은 위에서 끝)
+    scheduleSave(id, { status: next });
   }
 
   // 그룹 일괄 확정 — 미정 + 잠금 안 된 항목만 CONFIRMED로
@@ -145,13 +146,11 @@ export default function ProjectMaterialsSimple() {
     }
     if (!confirm(`"${name}" 그룹의 미정 항목 ${targets.length}개를 모두 확정합니다.\n자동으로 발주 대기에 들어가고 행이 잠깁니다.\n\n계속할까요?`)) return;
     try {
+      // 낙관적 업데이트 — locked까지 즉시 반영, reload 없음
       setItems((prev) => prev.map((it) => (
-        targets.find((t) => t.id === it.id) ? { ...it, status: 'CONFIRMED' } : it
+        targets.find((t) => t.id === it.id) ? { ...it, status: 'CONFIRMED', locked: true } : it
       )));
       await Promise.all(targets.map((t) => materialsApi.update(projectId, t.id, { status: 'CONFIRMED' })));
-      // 잠금 상태 반영 위해 reload
-      await reload();
-      alert(`✅ ${targets.length}개 항목 확정 완료. 발주 탭에서 확인하세요.`);
     } catch (e) {
       alert('일괄 확정 실패: ' + (e.response?.data?.error || e.message));
       reload();
@@ -617,21 +616,16 @@ function isConfirmed(item) {
 }
 function ConfirmCheckbox({ item, onToggle }) {
   const checked = isConfirmed(item);
-  if (item.locked) {
-    return (
-      <span title="발주 진행 중 — 발주 탭에서 [발주 취소]하면 잠금 해제됩니다" className="text-base">
-        🔒
-      </span>
-    );
-  }
+  const locked = !!item.locked;
   return (
     <input
       type="checkbox"
       checked={checked}
       onChange={onToggle}
+      disabled={locked}
       tabIndex={-1}
-      className="w-4 h-4 cursor-pointer accent-emerald-600"
-      title={checked ? '확정 해제' : '확정 → 발주 대기로 전환'}
+      className={`w-4 h-4 accent-emerald-600 ${locked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      title={locked ? '발주 진행 중 — 발주 탭에서 [발주 취소]하면 해제' : (checked ? '확정 해제' : '확정 → 발주 대기로 전환')}
     />
   );
 }
