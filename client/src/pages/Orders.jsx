@@ -110,7 +110,7 @@ export default function Orders({ lockedProjectId = null }) {
                 const text = formatOrdersForCopy(selected, { company, user: auth?.user });
                 try {
                   await navigator.clipboard.writeText(text);
-                  alert(`📋 ${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
+                  alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
                 } catch (e) {
                   alert('클립보드 복사 실패: ' + e.message);
                 }
@@ -254,24 +254,24 @@ function formatOrdersForCopy(orders, { company, user } = {}) {
   const projectIds = new Set(orders.map((o) => o.project?.id).filter(Boolean));
   if (projectIds.size === 1) {
     const p = orders[0].project || {};
-    lines.push(`📍 현장: ${p.name || ''}`);
-    if (p.siteAddress) lines.push(`   주소: ${p.siteAddress}`);
+    lines.push(`현장: ${p.name || ''}`);
+    if (p.siteAddress) lines.push(`주소: ${p.siteAddress}`);
     if (userName || userPhone) {
-      lines.push(`👤 현장 담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
+      lines.push(`현장 담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
     }
-    lines.push('📅 도착 희망일: ____________');
+    lines.push('도착 희망일: ____________');
     if (p.siteNotes && p.siteNotes.trim()) {
-      lines.push('⚠️ 현장 특이사항');
+      lines.push('현장 특이사항');
       for (const ln of p.siteNotes.split('\n')) {
         const s = ln.trim();
-        if (s) lines.push(`   · ${s}`);
+        if (s) lines.push(`  - ${s}`);
       }
     }
     lines.push('');
   }
 
   // 발주 항목
-  lines.push('────── 발주 항목 ──────');
+  lines.push('[발주 항목]');
   const byVendor = new Map();
   for (const o of orders) {
     const v = (o.vendor || '').trim();
@@ -279,14 +279,14 @@ function formatOrdersForCopy(orders, { company, user } = {}) {
     byVendor.get(v).push(o);
   }
   const vendors = [...byVendor.keys()];
-  // 매입처가 한 종류면 헤더 없이 평면, 둘 이상이면 ■ 헤더로 묶음
+  // 매입처가 한 종류면 헤더 없이 평면, 둘 이상이면 [매입처명] 헤더로 묶음
   if (vendors.length === 1) {
     for (const o of byVendor.get(vendors[0])) {
       lines.push(formatItemLine(o));
     }
   } else {
     for (const v of vendors) {
-      if (v) lines.push(`■ ${v}`);
+      if (v) lines.push(`[${v}]`);
       for (const o of byVendor.get(v)) {
         lines.push(formatItemLine(o));
       }
