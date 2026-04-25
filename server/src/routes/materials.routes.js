@@ -197,7 +197,7 @@ const baseSchema = {
   kind: z.enum(KINDS).optional(),
   spaceGroup: z.string().min(1),
   subgroup: z.string().optional().nullable(),
-  itemName: z.string().min(1),
+  itemName: z.string().default(''), // 빈 문자열 허용 — 인라인 편집 모드에서 placeholder 행 생성용
   essential: z.boolean().optional(),
   formKey: z.string().optional().nullable(),
   customSpec: z.any().optional().nullable(),
@@ -232,7 +232,7 @@ function toCreateData(data) {
     kind: data.kind || 'FINISH',
     spaceGroup: data.spaceGroup.trim(),
     subgroup: data.subgroup?.trim() || null,
-    itemName: data.itemName.trim(),
+    itemName: (data.itemName || '').trim(),
     essential: data.essential ?? false,
     formKey: data.formKey?.trim() || null,
     customSpec: data.customSpec ?? null,

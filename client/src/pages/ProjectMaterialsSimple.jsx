@@ -102,7 +102,7 @@ export default function ProjectMaterialsSimple() {
   }
 
   // ========== 항목 추가/삭제 ==========
-  async function addItem(spaceGroup) {
+  async function addItem(spaceGroup, focusCol = 'itemName') {
     try {
       const { material } = await materialsApi.create(projectId, {
         kind: 'FINISH',
@@ -126,8 +126,53 @@ export default function ProjectMaterialsSimple() {
           createdAt: material.createdAt,
         },
       ]);
+      // 다음 tick에 새 행의 셀로 포커스
+      setTimeout(() => focusCell(material.id, focusCol), 30);
+      return material.id;
     } catch (e) {
       alert('항목 추가 실패: ' + (e.response?.data?.error || e.message));
+      return null;
+    }
+  }
+
+  // ========== 키보드 네비게이션 ==========
+  // Enter/↓: 같은 컬럼 다음 행, 마지막이면 같은 그룹에 새 행 자동 추가
+  // ↑: 같은 컬럼 위 행
+  // Tab은 네이티브 (행 내 가로 이동)
+  function focusCell(itemId, col) {
+    const el = document.querySelector(`[data-mat-cell="${itemId}-${col}"]`);
+    if (el) {
+      el.focus();
+      if (typeof el.select === 'function') el.select();
+    }
+  }
+  function siblingItemId(currentId, dir) {
+    // 같은 그룹 안에서 위/아래 항목 ID
+    const it = items.find((x) => x.id === currentId);
+    if (!it) return null;
+    const inGroup = items
+      .filter((x) => x.spaceGroup === it.spaceGroup)
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+    const idx = inGroup.findIndex((x) => x.id === currentId);
+    if (idx < 0) return null;
+    const next = inGroup[idx + dir];
+    return next?.id || null;
+  }
+  function handleCellKeyDown(e, itemId, col) {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextId = siblingItemId(itemId, +1);
+      if (nextId) {
+        focusCell(nextId, col);
+      } else {
+        // 같은 그룹 마지막 행 → 새 행 추가
+        const it = items.find((x) => x.id === itemId);
+        if (it) addItem(it.spaceGroup, col);
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevId = siblingItemId(itemId, -1);
+      if (prevId) focusCell(prevId, col);
     }
   }
 
@@ -234,6 +279,7 @@ export default function ProjectMaterialsSimple() {
           onAddItem={() => addItem(g.name)}
           onRenameGroup={() => renameGroup(g.name)}
           onRemoveGroup={() => removeGroup(g.name)}
+          onCellKeyDown={handleCellKeyDown}
         />
       ))}
 
@@ -254,7 +300,7 @@ export default function ProjectMaterialsSimple() {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onCellKeyDown }) {
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b bg-navy-50/40">
@@ -298,7 +344,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
           <thead className="bg-gray-50 text-xs text-gray-500">
             <tr>
               <th className="text-left px-2 py-1.5">항목</th>
-              <th className="text-left px-2 py-1.5">품명·브랜드</th>
+              <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
               <th className="text-left px-2 py-1.5">수량</th>
               <th className="text-left px-2 py-1.5">비고</th>
               <th></th>
@@ -312,6 +358,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
                 saving={!!savingMap[it.id]}
                 onChange={(patch) => onItemPatch(it.id, patch)}
                 onRemove={() => onItemRemove(it.id)}
+                onCellKeyDown={onCellKeyDown}
               />
             ))}
             {group.items.length === 0 && (
@@ -328,12 +375,15 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
   );
 }
 
-function ItemRow({ item, saving, onChange, onRemove }) {
+function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
   const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
+  const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
+  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col) });
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('itemName')}
           value={item.itemName}
           onChange={(e) => onChange({ itemName: e.target.value })}
           className={inputCls}
@@ -342,14 +392,16 @@ function ItemRow({ item, saving, onChange, onRemove }) {
       </td>
       <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('brand')}
           value={item.brand}
           onChange={(e) => onChange({ brand: e.target.value })}
           className={inputCls}
-          placeholder="예: 르그랑"
+          placeholder="예: 르그랑 / 무광 블랙 / 9미리"
         />
       </td>
       <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('quantityText')}
           value={item.quantityText}
           onChange={(e) => onChange({ quantityText: e.target.value })}
           className={inputCls}
@@ -358,6 +410,7 @@ function ItemRow({ item, saving, onChange, onRemove }) {
       </td>
       <td className="px-2 py-1.5">
         <input
+          {...cellAttrs('memo')}
           value={item.memo}
           onChange={(e) => onChange({ memo: e.target.value })}
           className={inputCls}
