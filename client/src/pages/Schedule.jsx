@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
@@ -34,21 +34,20 @@ export default function Schedule() {
     setSearchParams(next, { replace: true });
   };
 
-  // 전체 탭 일정 추출 — 회사 모든 프로젝트의 향후 60일 일정
-  async function extractAllSchedules() {
-    const today = new Date();
-    const start = isoDate(today);
-    const endDate = new Date(today); endDate.setDate(endDate.getDate() + 60);
-    const end = isoDate(endDate);
+  // 전체 탭 일정 추출 — 모달에서 키워드/기간 선택 후 fetch + 클립보드 복사
+  const [extractAllOpen, setExtractAllOpen] = useState(false);
+  async function runExtractAll({ keyword, start, end }) {
     try {
       const { entries } = await schedulesApi.listAll({ start, end });
-      if (!entries || entries.length === 0) {
-        alert('추출할 일정이 없습니다 (오늘부터 60일 기준).');
+      const filtered = filterByKeyword(entries, keyword);
+      if (filtered.length === 0) {
+        alert('해당 조건에 맞는 일정이 없습니다.');
         return;
       }
-      const text = formatAllSchedulesForCopy(entries, { company, user: auth?.user });
+      const text = formatAllSchedulesForCopy(filtered, { company, user: auth?.user, range: { start, end, keyword } });
       await navigator.clipboard.writeText(text);
-      alert(`${entries.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
+      alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
+      setExtractAllOpen(false);
     } catch (e) {
       alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
     }
@@ -83,9 +82,9 @@ export default function Schedule() {
             <>
               <div className="flex justify-end mb-2 px-2 sm:px-0">
                 <button
-                  onClick={extractAllSchedules}
+                  onClick={() => setExtractAllOpen(true)}
                   className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
-                  title="향후 60일 전체 일정 카톡 형식으로 클립보드 복사"
+                  title="키워드/기간 선택 후 카톡 형식으로 클립보드 복사"
                 >
                   일정 추출
                 </button>
@@ -101,6 +100,16 @@ export default function Schedule() {
           )}
         </div>
       </div>
+
+      {extractAllOpen && (
+        <ExtractScheduleModal
+          scope="all"
+          defaultStart={isoDate(monthStart(new Date()))}
+          defaultEnd={isoDate(monthEnd(new Date()))}
+          onClose={() => setExtractAllOpen(false)}
+          onExtract={runExtractAll}
+        />
+      )}
     </div>
   );
 }
@@ -122,21 +131,28 @@ function FilterableProjectCalendar({ status }) {
     setSearchParams(next, { replace: true });
   };
 
-  // 한 프로젝트 일정 추출 — 향후 60일
-  async function extractProjectSchedule(project) {
-    const today = new Date();
-    const start = isoDate(today);
-    const endDate = new Date(today); endDate.setDate(endDate.getDate() + 60);
-    const end = isoDate(endDate);
+  // 한 프로젝트 일정 추출 — 모달에서 키워드/기간 선택
+  const [extractProjectModal, setExtractProjectModal] = useState(null); // {project, defaultStart, defaultEnd}
+  function openProjectExtract(project) {
+    const start = project.startDate ? isoDate(project.startDate) : isoDate(new Date());
+    const end60 = new Date(); end60.setDate(end60.getDate() + 60);
+    const endDate = project.expectedEndDate ? isoDate(project.expectedEndDate) : isoDate(end60);
+    setExtractProjectModal({ project, defaultStart: start, defaultEnd: endDate });
+  }
+  async function runExtractProject({ keyword, start, end }) {
+    if (!extractProjectModal) return;
+    const { project } = extractProjectModal;
     try {
       const { entries } = await schedulesApi.list(project.id, { start, end });
-      if (!entries || entries.length === 0) {
-        alert('추출할 일정이 없습니다 (오늘부터 60일 기준).');
+      const filtered = filterByKeyword(entries, keyword);
+      if (filtered.length === 0) {
+        alert('해당 조건에 맞는 일정이 없습니다.');
         return;
       }
-      const text = formatProjectScheduleForCopy(project, entries, { company, user: auth?.user });
+      const text = formatProjectScheduleForCopy(project, filtered, { company, user: auth?.user, range: { start, end, keyword } });
       await navigator.clipboard.writeText(text);
-      alert(`${entries.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
+      alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
+      setExtractProjectModal(null);
     } catch (e) {
       alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
     }
@@ -225,9 +241,9 @@ function FilterableProjectCalendar({ status }) {
             actions={
               <>
                 <button
-                  onClick={() => extractProjectSchedule(selectedProject)}
+                  onClick={() => openProjectExtract(selectedProject)}
                   className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
-                  title="향후 60일 일정 카톡 형식으로 클립보드 복사"
+                  title="키워드/기간 선택 후 카톡 형식으로 클립보드 복사"
                 >
                   일정 추출
                 </button>
@@ -262,6 +278,17 @@ function FilterableProjectCalendar({ status }) {
           </>
         )}
       </div>
+
+      {extractProjectModal && (
+        <ExtractScheduleModal
+          scope="project"
+          projectName={extractProjectModal.project.name}
+          defaultStart={extractProjectModal.defaultStart}
+          defaultEnd={extractProjectModal.defaultEnd}
+          onClose={() => setExtractProjectModal(null)}
+          onExtract={runExtractProject}
+        />
+      )}
     </>
   );
 }
@@ -301,6 +328,176 @@ function ChipButton({ active, onClick, title, children }) {
 // ============================================
 // 일정 추출 — 카톡 친화 형식 (자재 발주와 동일 패턴)
 // ============================================
+function monthStart(d) {
+  const t = d instanceof Date ? d : new Date(d);
+  return new Date(t.getFullYear(), t.getMonth(), 1);
+}
+function monthEnd(d) {
+  const t = d instanceof Date ? d : new Date(d);
+  return new Date(t.getFullYear(), t.getMonth() + 1, 0);
+}
+function filterByKeyword(entries, keyword) {
+  const k = (keyword || '').trim();
+  if (!k) return entries;
+  const lc = k.toLowerCase();
+  return entries.filter((e) =>
+    (e.content || '').toLowerCase().includes(lc) ||
+    (e.category || '').toLowerCase().includes(lc),
+  );
+}
+
+// 추출 옵션 모달 — 키워드 / 기간 / "오늘부터" 체크
+function ExtractScheduleModal({ scope, projectName, defaultStart, defaultEnd, onClose, onExtract }) {
+  const [keyword, setKeyword] = useState('');
+  const [fromToday, setFromToday] = useState(false);
+  const [start, setStart] = useState(defaultStart);
+  const [end, setEnd] = useState(defaultEnd);
+  const [busy, setBusy] = useState(false);
+
+  // "오늘부터" 체크 시 시작일을 오늘로 강제
+  useEffect(() => {
+    if (fromToday) setStart(isoDate(new Date()));
+    else setStart(defaultStart);
+  }, [fromToday, defaultStart]);
+
+  function applyPreset(kind) {
+    const today = new Date();
+    if (kind === 'thisWeek') {
+      // 오늘부터 7일
+      const e = new Date(today); e.setDate(e.getDate() + 6);
+      setStart(isoDate(today));
+      setEnd(isoDate(e));
+      setFromToday(true);
+    } else if (kind === 'thisMonth') {
+      setStart(isoDate(monthStart(today)));
+      setEnd(isoDate(monthEnd(today)));
+      setFromToday(false);
+    } else if (kind === 'next30') {
+      const e = new Date(today); e.setDate(e.getDate() + 30);
+      setStart(isoDate(today));
+      setEnd(isoDate(e));
+      setFromToday(true);
+    } else if (kind === 'projectRange') {
+      setStart(defaultStart);
+      setEnd(defaultEnd);
+      setFromToday(false);
+    }
+  }
+
+  async function handleExtract() {
+    if (!start || !end) {
+      alert('시작일과 종료일을 입력해주세요.');
+      return;
+    }
+    if (start > end) {
+      alert('시작일이 종료일보다 늦습니다.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await onExtract({ keyword: keyword.trim(), start, end });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-md w-full">
+        <div className="border-b px-4 py-3 flex items-center justify-between">
+          <div className="font-bold text-navy-800">
+            일정 추출
+            {scope === 'project' && projectName && (
+              <span className="text-xs font-normal text-gray-500 ml-2">— {projectName}</span>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          {/* 키워드 */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">공정/내용 검색 (선택)</label>
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="예: 목공, 도배, 타일 (비우면 모두)"
+              className="w-full text-sm px-3 py-2 border rounded outline-none focus:border-navy-400"
+              autoFocus
+            />
+          </div>
+
+          {/* 프리셋 */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1.5">빠른 선택</label>
+            <div className="flex flex-wrap gap-1.5">
+              {scope === 'project' && (
+                <button onClick={() => applyPreset('projectRange')} className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50">
+                  프로젝트 전체 기간
+                </button>
+              )}
+              <button onClick={() => applyPreset('thisWeek')} className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50">
+                이번 주
+              </button>
+              <button onClick={() => applyPreset('thisMonth')} className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50">
+                이번 달
+              </button>
+              <button onClick={() => applyPreset('next30')} className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50">
+                30일
+              </button>
+            </div>
+          </div>
+
+          {/* 오늘부터 + 기간 */}
+          <div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer mb-2">
+              <input
+                type="checkbox"
+                checked={fromToday}
+                onChange={(e) => setFromToday(e.target.checked)}
+                className="w-4 h-4 accent-navy-700"
+              />
+              오늘부터 (시작일 자동)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-500 mb-0.5">시작일</label>
+                <input
+                  type="date"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                  disabled={fromToday}
+                  className={`w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 ${fromToday ? 'bg-gray-100 text-gray-500' : ''}`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-0.5">종료일</label>
+                <input
+                  type="date"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                  className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="border-t px-4 py-3 flex justify-end gap-2">
+          <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">
+            취소
+          </button>
+          <button
+            onClick={handleExtract}
+            disabled={busy}
+            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-60"
+          >
+            {busy ? '추출 중…' : '추출 + 복사'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function isoDate(d) {
   const t = d instanceof Date ? d : new Date(d);
   const y = t.getFullYear();
@@ -321,7 +518,7 @@ function formatEntryLine(e) {
 }
 
 // 한 프로젝트 일정 → 텍스트
-function formatProjectScheduleForCopy(project, entries, { company, user } = {}) {
+function formatProjectScheduleForCopy(project, entries, { company, user, range } = {}) {
   const lines = [];
   const companyName = company?.name || '';
   const userName = user?.name || '';
@@ -343,7 +540,12 @@ function formatProjectScheduleForCopy(project, entries, { company, user } = {}) 
     }
   }
   lines.push('');
-  lines.push('[공사 일정]');
+  let header = '[공사 일정]';
+  if (range?.start && range?.end) {
+    header += ` ${formatKoreanDate(range.start)} ~ ${formatKoreanDate(range.end)}`;
+  }
+  if (range?.keyword) header += ` / "${range.keyword}" 검색`;
+  lines.push(header);
   for (const e of entries) lines.push(formatEntryLine(e));
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
@@ -352,7 +554,7 @@ function formatProjectScheduleForCopy(project, entries, { company, user } = {}) 
 }
 
 // 회사 전체 일정 → 프로젝트별 묶음 텍스트
-function formatAllSchedulesForCopy(entries, { company, user } = {}) {
+function formatAllSchedulesForCopy(entries, { company, user, range } = {}) {
   const lines = [];
   const companyName = company?.name || '';
   const userName = user?.name || '';
@@ -363,6 +565,9 @@ function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   if (userName || userPhone) {
     lines.push('');
     lines.push(`담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
+  }
+  if (range?.start && range?.end) {
+    lines.push(`기간: ${formatKoreanDate(range.start)} ~ ${formatKoreanDate(range.end)}${range.keyword ? ` / "${range.keyword}" 검색` : ''}`);
   }
   lines.push('');
 
