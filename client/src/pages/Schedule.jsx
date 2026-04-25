@@ -598,7 +598,7 @@ function formatProjectScheduleForCopy(project, entries, { company, user } = {}) 
   return lines.join('\n').trim();
 }
 
-// 회사 전체 일정 → 프로젝트별 묶음 텍스트 (각 프로젝트 = 일정 + 현장 정보)
+// 회사 전체 일정 → 두 블록으로 분리 (① 일정 묶음 → 구분선 → ② 현장 정보 묶음)
 function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   const lines = [];
   const companyName = company?.name || '';
@@ -612,7 +612,7 @@ function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   }
   lines.push('');
 
-  // 프로젝트별 묶음 — 각 묶음 안에 일정 + 현장 정보
+  // 프로젝트별 묶기 (입력 순서 유지)
   const byProject = new Map();
   for (const e of entries) {
     const key = e.project?.id || 'unknown';
@@ -621,18 +621,25 @@ function formatAllSchedulesForCopy(entries, { company, user } = {}) {
     }
     byProject.get(key).list.push(e);
   }
-  const projectKeys = [...byProject.keys()];
-  projectKeys.forEach((key, idx) => {
-    const { project, list } = byProject.get(key);
-    if (idx > 0) lines.push('────────────────────');
+  const groups = [...byProject.values()];
+
+  // ① 일정 블록 — 모든 프로젝트의 [이름] + 일정 라인
+  for (const { project, list } of groups) {
     lines.push(`[${project.name || '(프로젝트 미정)'}]`);
     for (const e of list) lines.push(formatEntryLine(e));
-    lines.push('');
+  }
+
+  // ② 구분선 → 현장 정보 블록 (각 프로젝트의 현장/주소/특이사항)
+  lines.push('');
+  lines.push('────────────────────');
+  lines.push('');
+  groups.forEach(({ project }, idx) => {
+    if (idx > 0) lines.push('');
     for (const ln of buildProjectInfoLines(project, { showHandler: false })) {
       lines.push(ln);
     }
-    lines.push('');
   });
+  lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
   return lines.join('\n').trim();
 }
