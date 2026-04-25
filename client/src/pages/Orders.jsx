@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ordersGlobalApi, purchaseOrdersApi, PO_STATUS_META } from '../api/purchaseOrders';
 import { projectsApi } from '../api/projects';
+import { companyApi } from '../api/company';
+import { useAuth } from '../contexts/AuthContext';
 
 const STATUS_KEYS = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 
@@ -47,6 +49,12 @@ export default function Orders({ lockedProjectId = null }) {
     queryKey: ['projects'],
     queryFn: () => projectsApi.list(),
   });
+  const { data: companyData } = useQuery({
+    queryKey: ['company'],
+    queryFn: () => companyApi.get(),
+  });
+  const { auth } = useAuth();
+  const company = companyData?.company;
 
   const orders = ordersData?.orders || [];
   const pendingModels = pendingModelsData?.materials || [];
@@ -99,7 +107,7 @@ export default function Orders({ lockedProjectId = null }) {
             <button
               onClick={async () => {
                 const selected = orders.filter((o) => selectedIds.has(o.id));
-                const text = formatOrdersForCopy(selected);
+                const text = formatOrdersForCopy(selected, { company, user: auth?.user });
                 try {
                   await navigator.clipboard.writeText(text);
                   alert(`📋 ${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
@@ -212,26 +220,90 @@ export default function Orders({ lockedProjectId = null }) {
   );
 }
 
-// 선택된 PO들 → 카톡/메모 친화적 텍스트로 정리
-// 매입처별로 묶음(매입처 없으면 "기타")
-function formatOrdersForCopy(orders) {
-  const byVendor = new Map();
-  for (const o of orders) {
-    const v = (o.vendor || '').trim() || '(매입처 미정)';
-    if (!byVendor.has(v)) byVendor.set(v, []);
-    byVendor.get(v).push(o);
-  }
+// 선택된 PO들 → 카톡 친화적 텍스트로 정리 (샘플 A 형식)
+//
+// 안녕하세요, {회사명}입니다.
+// 아래 자재 발주 부탁드립니다.
+//
+// 📍 현장: {프로젝트명}
+//    주소: {주소}
+// 👤 현장 담당자: {사용자명} {연락처}
+// 📅 도착 희망일: ____________
+// ⚠️ 현장 특이사항
+//    · {줄별 siteNotes}
+//
+// ────── 발주 항목 ──────
+// (한 매입처) 평면 list
+// (여러 매입처) ■ 매입처별 묶음
+//
+// 확인 후 가능 여부 회신 부탁드립니다.
+// 감사합니다.
+function formatOrdersForCopy(orders, { company, user } = {}) {
+  if (orders.length === 0) return '';
   const lines = [];
-  for (const [vendor, list] of byVendor) {
-    lines.push(`■ ${vendor}`);
-    for (const o of list) {
-      const qty = (o.unit || '').trim() || '수량 미정';
-      lines.push(`- ${o.itemName} : ${qty}`);
-      if (o.spec) lines.push(`    (${o.spec})`);
+  const companyName = company?.name || '';
+  const userName = user?.name || '';
+  const userPhone = user?.phone || company?.phone || '';
+
+  // 인사말
+  lines.push(`안녕하세요, ${companyName ? companyName : '저희'}입니다.`);
+  lines.push('아래 자재 발주 부탁드립니다.');
+  lines.push('');
+
+  // 현장 정보 — 선택된 PO들이 모두 같은 프로젝트일 때만 표시
+  const projectIds = new Set(orders.map((o) => o.project?.id).filter(Boolean));
+  if (projectIds.size === 1) {
+    const p = orders[0].project || {};
+    lines.push(`📍 현장: ${p.name || ''}`);
+    if (p.siteAddress) lines.push(`   주소: ${p.siteAddress}`);
+    if (userName || userPhone) {
+      lines.push(`👤 현장 담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
+    }
+    lines.push('📅 도착 희망일: ____________');
+    if (p.siteNotes && p.siteNotes.trim()) {
+      lines.push('⚠️ 현장 특이사항');
+      for (const ln of p.siteNotes.split('\n')) {
+        const s = ln.trim();
+        if (s) lines.push(`   · ${s}`);
+      }
     }
     lines.push('');
   }
+
+  // 발주 항목
+  lines.push('────── 발주 항목 ──────');
+  const byVendor = new Map();
+  for (const o of orders) {
+    const v = (o.vendor || '').trim();
+    if (!byVendor.has(v)) byVendor.set(v, []);
+    byVendor.get(v).push(o);
+  }
+  const vendors = [...byVendor.keys()];
+  // 매입처가 한 종류면 헤더 없이 평면, 둘 이상이면 ■ 헤더로 묶음
+  if (vendors.length === 1) {
+    for (const o of byVendor.get(vendors[0])) {
+      lines.push(formatItemLine(o));
+    }
+  } else {
+    for (const v of vendors) {
+      if (v) lines.push(`■ ${v}`);
+      for (const o of byVendor.get(v)) {
+        lines.push(formatItemLine(o));
+      }
+      lines.push('');
+    }
+  }
+  lines.push('');
+  lines.push('확인 후 가능 여부 회신 부탁드립니다.');
+  lines.push('감사합니다.');
+
   return lines.join('\n').trim();
+}
+
+function formatItemLine(o) {
+  const qty = (o.unit || '').trim();
+  const main = qty ? `- ${o.itemName} : ${qty}` : `- ${o.itemName}`;
+  return o.spec ? `${main} (${o.spec})` : main;
 }
 
 function SummaryCard({ label, count, tone, highlight }) {

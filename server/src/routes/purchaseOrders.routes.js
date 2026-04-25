@@ -27,7 +27,8 @@ globalRouter.get('/', async (req, res, next) => {
       where,
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
       include: {
-        project: { select: { id: true, name: true } },
+        // 발주 복사 메시지에 현장 정보 포함시키기 위해 프로젝트 상세 일부도 함께
+        project: { select: { id: true, name: true, siteAddress: true, siteNotes: true, customerPhone: true } },
         material: {
           select: { id: true, spaceGroup: true, itemName: true, kind: true, formKey: true },
         },
