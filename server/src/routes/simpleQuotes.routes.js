@@ -271,6 +271,7 @@ router.delete('/:id', async (req, res, next) => {
 // ============================================
 const lineSchema = z.object({
   isGroup: z.boolean().optional().default(false),
+  isGroupEnd: z.boolean().optional().default(false),
   itemName: z.string().trim().max(200).default(''),
   spec: z.string().max(200).optional().nullable(),
   quantity: z.number().min(0).default(1),
@@ -328,6 +329,7 @@ router.post('/:id/import-lines', async (req, res, next) => {
             quoteId: id,
             orderIndex: baseIndex + i,
             isGroup: l.isGroup,
+            isGroupEnd: l.isGroupEnd,
             itemName: l.itemName,
             spec: l.spec,
             quantity: l.quantity,
@@ -363,9 +365,11 @@ router.put('/:id/lines', async (req, res, next) => {
 
     const lines = parsed.data.lines.map((l, idx) => {
       const isGroup = !!l.isGroup;
+      const isGroupEnd = isGroup && !!l.isGroupEnd;
       return {
         isGroup,
-        itemName: l.itemName || '',
+        isGroupEnd,
+        itemName: isGroupEnd ? '' : (l.itemName || ''),
         spec: isGroup ? null : (l.spec || null),
         quantity: isGroup ? 0 : l.quantity,
         unit: isGroup ? null : (l.unit || null),

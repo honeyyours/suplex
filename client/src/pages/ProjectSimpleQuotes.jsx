@@ -159,6 +159,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
         (quote.lines || []).map((l) => ({
           _key: l.id,
           isGroup: !!l.isGroup,
+          isGroupEnd: !!l.isGroupEnd,
           itemName: l.itemName || '',
           spec: l.spec || '',
           quantity: Number(l.quantity) || 0,
@@ -192,6 +193,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     try {
       const payload = pending.map((l) => ({
         isGroup: !!l.isGroup,
+        isGroupEnd: !!l.isGroupEnd,
         itemName: l.itemName || '',
         spec: l.spec || null,
         quantity: Number(l.quantity) || 0,
@@ -273,12 +275,23 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       newIdx = prev.length;
       const next = [
         ...prev,
-        { _key: `tmp-${Date.now()}-${Math.random()}`, isGroup: true, itemName: '', spec: '', quantity: 0, unit: '', unitPrice: 0, notes: '' },
+        { _key: `tmp-${Date.now()}-${Math.random()}`, isGroup: true, isGroupEnd: false, itemName: '', spec: '', quantity: 0, unit: '', unitPrice: 0, notes: '' },
       ];
       scheduleLineSave(next);
       return next;
     });
     setTimeout(() => focusCell(newIdx, 'itemName'), 30);
+  }
+
+  function addGroupEnd() {
+    setLines((prev) => {
+      const next = [
+        ...prev,
+        { _key: `tmp-${Date.now()}-${Math.random()}`, isGroup: true, isGroupEnd: true, itemName: '', spec: '', quantity: 0, unit: '', unitPrice: 0, notes: '' },
+      ];
+      scheduleLineSave(next);
+      return next;
+    });
   }
 
   function removeLine(idx) {
@@ -327,6 +340,24 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     if (l.isGroup) return s;
     return s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
   }, 0);
+
+  // 각 라인이 어느 그룹 안에 있는지 계산 — 위에서부터 순회하며 inGroup 상태 추적
+  const linesWithMeta = useMemo(() => {
+    let inGroup = false;
+    return lines.map((l) => {
+      if (l.isGroup && l.isGroupEnd) {
+        const meta = { ...l, _inGroup: false };
+        inGroup = false;
+        return meta;
+      }
+      if (l.isGroup) {
+        const meta = { ...l, _inGroup: false }; // 그룹 헤더 자체는 들여쓰지 않음
+        inGroup = true;
+        return meta;
+      }
+      return { ...l, _inGroup: inGroup };
+    });
+  }, [lines]);
   const liveDesignFee = Math.round(liveSubtotal * (Number(quote.designFeeRate) / 100));
   const liveSubAfterDesign = liveSubtotal + liveDesignFee + (Number(quote.roundAdjustment) || 0);
   const liveVat = Math.round(liveSubAfterDesign * (Number(quote.vatRate) / 100));
@@ -431,11 +462,12 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {lines.map((l, idx) => (
+              {linesWithMeta.map((l, idx) => (
                 <LineRow
                   key={l._key}
                   line={l}
                   rowIdx={idx}
+                  inGroup={l._inGroup}
                   onChange={(patch) => patchLine(idx, patch)}
                   onRemove={() => removeLine(idx)}
                   onCellKeyDown={handleCellKeyDown}
@@ -451,7 +483,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
             </tbody>
           </table>
         </div>
-        <div className="border-t p-2 flex gap-2">
+        <div className="border-t p-2 flex gap-2 flex-wrap">
           <button
             onClick={() => addLine()}
             className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-600 hover:bg-gray-50 hover:border-navy-400"
@@ -463,6 +495,13 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
             className="text-sm px-3 py-1.5 border border-dashed border-navy-300 rounded text-navy-700 hover:bg-navy-50"
           >
             ＋ 그룹 추가 (예: 화장실)
+          </button>
+          <button
+            onClick={addGroupEnd}
+            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50"
+            title="현재 그룹을 종료합니다 (다음 항목부터는 그룹 밖)"
+          >
+            ↩ 그룹 빠져나오기
           </button>
         </div>
       </div>
@@ -571,7 +610,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
 // ============================================
 // 라인 행
 // ============================================
-function LineRow({ line, rowIdx, onChange, onRemove, onCellKeyDown }) {
+function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
   const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
 
   // 0일 때 빈칸으로 보이게 — type="number" value={0} 일 때 사용자가 새 값을 치면 leading 0 문제 발생
@@ -585,18 +624,46 @@ function LineRow({ line, rowIdx, onChange, onRemove, onCellKeyDown }) {
 
   const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
 
-  // ===== 그룹 헤더 행 =====
+  // ===== 그룹 종료 마커 (가는 구분선) =====
+  if (line.isGroup && line.isGroupEnd) {
+    return (
+      <tr className="bg-gray-50">
+        <td colSpan={7} className="px-2 py-1">
+          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+            <span className="flex-1 border-t border-dashed border-gray-300"></span>
+            <span>↩ 그룹 종료</span>
+            <span className="flex-1 border-t border-dashed border-gray-300"></span>
+          </div>
+        </td>
+        <td className="px-1">
+          <button
+            onClick={onRemove}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-red-500 text-xs"
+            title="이 종료 마커 삭제"
+          >
+            ✕
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  // ===== 그룹 시작 헤더 =====
   if (line.isGroup) {
     return (
       <tr className="bg-navy-50/40">
         <td colSpan={7} className="px-2 py-1.5">
-          <input
-            {...cellAttrs('itemName')}
-            value={line.itemName}
-            onChange={(e) => onChange({ itemName: e.target.value })}
-            className="w-full px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 font-bold text-navy-800"
-            placeholder="▸ 그룹 이름 (예: 화장실 / 안방 / 가구)"
-          />
+          <div className="flex items-center gap-1">
+            <span className="text-navy-600 font-bold text-base flex-shrink-0">▸</span>
+            <input
+              {...cellAttrs('itemName')}
+              value={line.itemName}
+              onChange={(e) => onChange({ itemName: e.target.value })}
+              className="flex-1 px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 font-bold text-navy-800"
+              placeholder="그룹 이름 (예: 화장실 / 안방 / 가구)"
+            />
+          </div>
         </td>
         <td className="px-1">
           <button
@@ -614,15 +681,17 @@ function LineRow({ line, rowIdx, onChange, onRemove, onCellKeyDown }) {
 
   // ===== 일반 라인 행 =====
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className={`hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''}`}>
       <td className="px-2 py-1.5">
-        <input
-          {...cellAttrs('itemName')}
-          value={line.itemName}
-          onChange={(e) => onChange({ itemName: e.target.value })}
-          className={inputCls}
-          placeholder="예: 목공"
-        />
+        <div className={`flex items-center gap-1.5 ${inGroup ? 'pl-3 border-l-2 border-navy-300' : ''}`}>
+          <input
+            {...cellAttrs('itemName')}
+            value={line.itemName}
+            onChange={(e) => onChange({ itemName: e.target.value })}
+            className={inputCls}
+            placeholder={inGroup ? '항목명' : '예: 목공'}
+          />
+        </div>
       </td>
       <td className="px-2 py-1.5">
         <input
@@ -805,29 +874,42 @@ function SimpleQuotePrintView({ quote, lines, totals }) {
           </tr>
         </thead>
         <tbody>
-          {lines.map((l, i) => {
-            if (l.isGroup) {
+          {(() => {
+            // 인쇄용도 inGroup 상태 추적해서 들여쓰기 표시
+            let inGroup = false;
+            return lines.map((l, i) => {
+              if (l.isGroup && l.isGroupEnd) {
+                inGroup = false;
+                // 인쇄에서는 종료 마커 자체를 라인으로 표시하지 않고 그냥 흐름만 종료
+                return null;
+              }
+              if (l.isGroup) {
+                inGroup = true;
+                return (
+                  <tr key={l._key || i} className="bg-emerald-50">
+                    <td colSpan={7} className="border px-2 py-1.5 font-bold text-emerald-900">
+                      ▸ {l.itemName}
+                    </td>
+                  </tr>
+                );
+              }
+              const amt = (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
               return (
-                <tr key={l._key || i} className="bg-emerald-50">
-                  <td colSpan={7} className="border px-2 py-1.5 font-bold text-emerald-900">
-                    ▸ {l.itemName}
+                <tr key={l._key || i}>
+                  <td className="border px-2 py-1.5">
+                    {inGroup ? <span className="text-gray-400 mr-1">·</span> : null}
+                    <span className={inGroup ? 'pl-2' : ''}>{l.itemName}</span>
                   </td>
+                  <td className="border px-2 py-1.5 text-center">{l.spec}</td>
+                  <td className="border px-2 py-1.5 text-center tabular-nums">{Number(l.quantity) || 0}</td>
+                  <td className="border px-2 py-1.5 text-center">{l.unit}</td>
+                  <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(l.unitPrice)}</td>
+                  <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(amt)}</td>
+                  <td className="border px-2 py-1.5">{l.notes}</td>
                 </tr>
               );
-            }
-            const amt = (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
-            return (
-              <tr key={l._key || i}>
-                <td className="border px-2 py-1.5">{l.itemName}</td>
-                <td className="border px-2 py-1.5 text-center">{l.spec}</td>
-                <td className="border px-2 py-1.5 text-center tabular-nums">{Number(l.quantity) || 0}</td>
-                <td className="border px-2 py-1.5 text-center">{l.unit}</td>
-                <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(l.unitPrice)}</td>
-                <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(amt)}</td>
-                <td className="border px-2 py-1.5">{l.notes}</td>
-              </tr>
-            );
-          })}
+            });
+          })()}
           {/* 빈 행 채우기 (시각적 안정감) */}
           {Array.from({ length: Math.max(0, 8 - lines.length) }).map((_, i) => (
             <tr key={`empty-${i}`}>
