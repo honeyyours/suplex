@@ -117,52 +117,49 @@ export default function Orders({ lockedProjectId = null }) {
         )}
       </div>
 
-      {/* 선택 복사 + 일괄 상태 변경 액션바 */}
+      {/* 선택 시 화면 하단 floating 액션바 — 콘텐츠는 안 밀림 */}
       {selectedIds.size > 0 && (
-        <div className="bg-navy-50 border border-navy-200 rounded-md px-3 py-2 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-navy-800">
-              ✓ <span className="font-bold">{selectedIds.size}</span>개 선택됨
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap text-sm">
+            <span className="text-navy-800 font-medium">
+              ✓ {selectedIds.size}개
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  const selected = orders.filter((o) => selectedIds.has(o.id));
-                  const text = formatOrdersForCopy(selected, { company, user: auth?.user });
-                  try {
-                    await navigator.clipboard.writeText(text);
-                    alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
-                  } catch (e) {
-                    alert('클립보드 복사 실패: ' + e.message);
-                  }
-                }}
-                className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
-              >
-                선택 복사
-              </button>
-              <button
-                onClick={clearSelection}
-                className="text-xs px-2 py-1.5 text-navy-700 hover:bg-navy-100 rounded"
-              >
-                해제
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs flex-wrap">
-            <span className="text-navy-600">상태 일괄 변경:</span>
+            <button
+              onClick={async () => {
+                const selected = orders.filter((o) => selectedIds.has(o.id));
+                const text = formatOrdersForCopy(selected, { company, user: auth?.user });
+                try {
+                  await navigator.clipboard.writeText(text);
+                  alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
+                } catch (e) {
+                  alert('클립보드 복사 실패: ' + e.message);
+                }
+              }}
+              className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+            >
+              선택 복사
+            </button>
+            <span className="text-gray-300">|</span>
+            <span className="text-xs text-gray-500">변경:</span>
             {STATUS_KEYS.map((s) => {
               const m = PO_STATUS_META[s];
               return (
                 <button
                   key={s}
                   onClick={() => bulkChangeStatus(s)}
-                  className={`px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
+                  className={`text-xs px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
                   title={`선택된 ${selectedIds.size}개를 ${m.label}로 변경`}
                 >
                   {m.icon} {m.label}
                 </button>
               );
             })}
+            <button
+              onClick={clearSelection}
+              className="ml-auto text-xs px-2 py-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
+            >
+              ✕ 해제
+            </button>
           </div>
         </div>
       )}
