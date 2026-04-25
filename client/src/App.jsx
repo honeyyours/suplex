@@ -24,6 +24,7 @@ import ProjectOrders from './pages/ProjectOrders';
 import ProjectChecklist from './pages/ProjectChecklist';
 import ProjectReports from './pages/ProjectReports';
 import ProjectExpenses from './pages/ProjectExpenses';
+import ProjectMemo from './pages/ProjectMemo';
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="materials" element={<ProjectMaterialsSimple />} />
           <Route path="materials-advanced" element={<ProjectMaterials />} />
           <Route path="orders" element={<ProjectOrders />} />
+          <Route path="memo" element={<ProjectMemo />} />
           <Route path="checklist" element={<ProjectChecklist />} />
           <Route path="reports" element={<ProjectReports />} />
           <Route path="expenses" element={<ProjectExpenses />} />

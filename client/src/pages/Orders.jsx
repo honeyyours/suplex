@@ -350,9 +350,9 @@ function SummaryCard({ label, count, tone, highlight }) {
     gray: 'bg-gray-50 text-gray-700',
   }[tone] || 'bg-gray-50 text-gray-700';
   return (
-    <div className={`border rounded-md p-3 ${toneClass} ${highlight && count > 0 ? 'ring-2 ring-amber-400' : ''}`}>
-      <div className="text-[11px] font-medium">{label}</div>
-      <div className="text-2xl font-bold mt-1 tabular-nums">{count}</div>
+    <div className={`border rounded-md px-2.5 py-1.5 flex items-center justify-between ${toneClass} ${highlight && count > 0 ? 'ring-1 ring-amber-400' : ''}`}>
+      <span className="text-[11px] font-medium truncate">{label}</span>
+      <span className="text-sm font-bold tabular-nums ml-2">{count}</span>
     </div>
   );
 }
