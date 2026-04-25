@@ -557,19 +557,13 @@ function formatEntryLine(e) {
   return `- ${formatKoreanDate(e.date)} ${cat}${e.content || ''}`.trim();
 }
 
-// 한 프로젝트 일정 → 텍스트
-function formatProjectScheduleForCopy(project, entries, { company, user, range } = {}) {
+// 한 프로젝트의 "현장 정보" 블록 (인사 다음 또는 일정 뒤에 붙임)
+// userInfo는 단일 프로젝트(인사 붙는 본문)에서만 표시 — 전체 묶음에선 인사 영역에 한 번만 표시
+function buildProjectInfoLines(project, { showHandler = false, userName = '', userPhone = '' } = {}) {
   const lines = [];
-  const companyName = company?.name || '';
-  const userName = user?.name || '';
-  const userPhone = user?.phone || company?.phone || '';
-
-  lines.push(`안녕하세요, ${companyName ? companyName : '저희'}입니다.`);
-  lines.push('아래 공사 일정 공유드립니다.');
-  lines.push('');
   lines.push(`현장: ${project.name || ''}`);
   if (project.siteAddress) lines.push(`주소: ${project.siteAddress}`);
-  if (userName || userPhone) {
+  if (showHandler && (userName || userPhone)) {
     lines.push(`현장 담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
   }
   if (project.siteNotes && project.siteNotes.trim()) {
@@ -579,17 +573,33 @@ function formatProjectScheduleForCopy(project, entries, { company, user, range }
       if (s) lines.push(`  - ${s}`);
     }
   }
+  return lines;
+}
+
+// 한 프로젝트 일정 → 텍스트 (순서: 인사 → 일정 → 현장 정보)
+function formatProjectScheduleForCopy(project, entries, { company, user } = {}) {
+  const lines = [];
+  const companyName = company?.name || '';
+  const userName = user?.name || '';
+  const userPhone = user?.phone || company?.phone || '';
+
+  lines.push(`안녕하세요, ${companyName ? companyName : '저희'}입니다.`);
+  lines.push('아래 공사 일정 공유드립니다.');
   lines.push('');
   lines.push('[공사 일정]');
   for (const e of entries) lines.push(formatEntryLine(e));
+  lines.push('');
+  for (const ln of buildProjectInfoLines(project, { showHandler: true, userName, userPhone })) {
+    lines.push(ln);
+  }
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
 
   return lines.join('\n').trim();
 }
 
-// 회사 전체 일정 → 프로젝트별 묶음 텍스트
-function formatAllSchedulesForCopy(entries, { company, user, range } = {}) {
+// 회사 전체 일정 → 프로젝트별 묶음 텍스트 (각 프로젝트 = 일정 + 현장 정보)
+function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   const lines = [];
   const companyName = company?.name || '';
   const userName = user?.name || '';
@@ -598,23 +608,31 @@ function formatAllSchedulesForCopy(entries, { company, user, range } = {}) {
   lines.push(`안녕하세요, ${companyName ? companyName : '저희'}입니다.`);
   lines.push('아래 공사 일정 공유드립니다.');
   if (userName || userPhone) {
-    lines.push('');
     lines.push(`담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
   }
   lines.push('');
 
-  // 프로젝트별 묶음
+  // 프로젝트별 묶음 — 각 묶음 안에 일정 + 현장 정보
   const byProject = new Map();
   for (const e of entries) {
     const key = e.project?.id || 'unknown';
-    if (!byProject.has(key)) byProject.set(key, { name: e.project?.name || '(프로젝트 미정)', list: [] });
+    if (!byProject.has(key)) {
+      byProject.set(key, { project: e.project || { name: '(프로젝트 미정)' }, list: [] });
+    }
     byProject.get(key).list.push(e);
   }
-  for (const { name, list } of byProject.values()) {
-    lines.push(`[${name}]`);
+  const projectKeys = [...byProject.keys()];
+  projectKeys.forEach((key, idx) => {
+    const { project, list } = byProject.get(key);
+    if (idx > 0) lines.push('────────────────────');
+    lines.push(`[${project.name || '(프로젝트 미정)'}]`);
     for (const e of list) lines.push(formatEntryLine(e));
     lines.push('');
-  }
+    for (const ln of buildProjectInfoLines(project, { showHandler: false })) {
+      lines.push(ln);
+    }
+    lines.push('');
+  });
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
   return lines.join('\n').trim();
 }

@@ -389,7 +389,8 @@ globalRouter.get('/', async (req, res, next) => {
     const entries = await prisma.dailyScheduleEntry.findMany({
       where,
       include: {
-        project: { select: { id: true, name: true, status: true } },
+        // 일정 추출 복사 메시지에 현장 정보(주소/특이사항/연락처) 포함시키기 위해 상세 일부 함께 반환
+        project: { select: { id: true, name: true, status: true, siteAddress: true, siteNotes: true, customerPhone: true } },
         vendor: { select: { id: true, name: true, category: true } },
       },
       orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
