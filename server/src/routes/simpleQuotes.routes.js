@@ -25,6 +25,7 @@ function num(v, d = 0) {
 function computeTotals(lines, q) {
   let subtotal = 0;
   for (const l of lines) {
+    if (l.isGroup) continue; // 그룹 헤더는 합계 제외
     const amt = Number(l.amount ?? Number(l.quantity) * Number(l.unitPrice));
     subtotal += Number.isFinite(amt) ? amt : 0;
   }
@@ -269,6 +270,7 @@ router.delete('/:id', async (req, res, next) => {
 // 라인 일괄 교체 (인라인 편집 → debounce 저장)
 // ============================================
 const lineSchema = z.object({
+  isGroup: z.boolean().optional().default(false),
   itemName: z.string().trim().max(200).default(''),
   spec: z.string().max(200).optional().nullable(),
   quantity: z.number().min(0).default(1),
@@ -325,6 +327,7 @@ router.post('/:id/import-lines', async (req, res, next) => {
           data: source.lines.map((l, i) => ({
             quoteId: id,
             orderIndex: baseIndex + i,
+            isGroup: l.isGroup,
             itemName: l.itemName,
             spec: l.spec,
             quantity: l.quantity,
@@ -358,16 +361,20 @@ router.put('/:id/lines', async (req, res, next) => {
     const parsed = linesSchema.safeParse(req.body || {});
     if (!parsed.success) return res.status(400).json({ error: 'Invalid input', details: parsed.error.format() });
 
-    const lines = parsed.data.lines.map((l, idx) => ({
-      itemName: l.itemName || '',
-      spec: l.spec || null,
-      quantity: l.quantity,
-      unit: l.unit || null,
-      unitPrice: l.unitPrice,
-      amount: Math.round(l.quantity * l.unitPrice),
-      notes: l.notes || null,
-      orderIndex: idx,
-    }));
+    const lines = parsed.data.lines.map((l, idx) => {
+      const isGroup = !!l.isGroup;
+      return {
+        isGroup,
+        itemName: l.itemName || '',
+        spec: isGroup ? null : (l.spec || null),
+        quantity: isGroup ? 0 : l.quantity,
+        unit: isGroup ? null : (l.unit || null),
+        unitPrice: isGroup ? 0 : l.unitPrice,
+        amount: isGroup ? 0 : Math.round(l.quantity * l.unitPrice),
+        notes: isGroup ? null : (l.notes || null),
+        orderIndex: idx,
+      };
+    });
 
     await prisma.$transaction(async (tx) => {
       await tx.simpleQuoteLine.deleteMany({ where: { quoteId: id } });

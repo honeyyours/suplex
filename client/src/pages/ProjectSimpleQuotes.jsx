@@ -158,6 +158,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       setLines(
         (quote.lines || []).map((l) => ({
           _key: l.id,
+          isGroup: !!l.isGroup,
           itemName: l.itemName || '',
           spec: l.spec || '',
           quantity: Number(l.quantity) || 0,
@@ -190,6 +191,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     setSavingLines(true);
     try {
       const payload = pending.map((l) => ({
+        isGroup: !!l.isGroup,
         itemName: l.itemName || '',
         spec: l.spec || null,
         quantity: Number(l.quantity) || 0,
@@ -257,12 +259,26 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
       newIdx = prev.length;
       const next = [
         ...prev,
-        { _key: `tmp-${Date.now()}-${Math.random()}`, itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '' },
+        { _key: `tmp-${Date.now()}-${Math.random()}`, isGroup: false, itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '' },
       ];
       scheduleLineSave(next);
       return next;
     });
     setTimeout(() => focusCell(newIdx, focusCol), 30);
+  }
+
+  function addGroup() {
+    let newIdx = 0;
+    setLines((prev) => {
+      newIdx = prev.length;
+      const next = [
+        ...prev,
+        { _key: `tmp-${Date.now()}-${Math.random()}`, isGroup: true, itemName: '', spec: '', quantity: 0, unit: '', unitPrice: 0, notes: '' },
+      ];
+      scheduleLineSave(next);
+      return next;
+    });
+    setTimeout(() => focusCell(newIdx, 'itemName'), 30);
   }
 
   function removeLine(idx) {
@@ -306,8 +322,11 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
   }
 
-  // 클라이언트 합계 미리보기 (서버 캐시는 저장 후 갱신)
-  const liveSubtotal = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0), 0);
+  // 클라이언트 합계 미리보기 (서버 캐시는 저장 후 갱신, 그룹 헤더는 제외)
+  const liveSubtotal = lines.reduce((s, l) => {
+    if (l.isGroup) return s;
+    return s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
+  }, 0);
   const liveDesignFee = Math.round(liveSubtotal * (Number(quote.designFeeRate) / 100));
   const liveSubAfterDesign = liveSubtotal + liveDesignFee + (Number(quote.roundAdjustment) || 0);
   const liveVat = Math.round(liveSubAfterDesign * (Number(quote.vatRate) / 100));
@@ -432,12 +451,18 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
             </tbody>
           </table>
         </div>
-        <div className="border-t p-2">
+        <div className="border-t p-2 flex gap-2">
           <button
-            onClick={addLine}
+            onClick={() => addLine()}
             className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-600 hover:bg-gray-50 hover:border-navy-400"
           >
             + 항목 추가
+          </button>
+          <button
+            onClick={addGroup}
+            className="text-sm px-3 py-1.5 border border-dashed border-navy-300 rounded text-navy-700 hover:bg-navy-50"
+          >
+            ＋ 그룹 추가 (예: 화장실)
           </button>
         </div>
       </div>
@@ -560,6 +585,34 @@ function LineRow({ line, rowIdx, onChange, onRemove, onCellKeyDown }) {
 
   const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
 
+  // ===== 그룹 헤더 행 =====
+  if (line.isGroup) {
+    return (
+      <tr className="bg-navy-50/40">
+        <td colSpan={7} className="px-2 py-1.5">
+          <input
+            {...cellAttrs('itemName')}
+            value={line.itemName}
+            onChange={(e) => onChange({ itemName: e.target.value })}
+            className="w-full px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 font-bold text-navy-800"
+            placeholder="▸ 그룹 이름 (예: 화장실 / 안방 / 가구)"
+          />
+        </td>
+        <td className="px-1">
+          <button
+            onClick={onRemove}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-red-500 text-sm"
+            title="그룹 삭제"
+          >
+            ✕
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  // ===== 일반 라인 행 =====
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-2 py-1.5">
@@ -753,6 +806,15 @@ function SimpleQuotePrintView({ quote, lines, totals }) {
         </thead>
         <tbody>
           {lines.map((l, i) => {
+            if (l.isGroup) {
+              return (
+                <tr key={l._key || i} className="bg-emerald-50">
+                  <td colSpan={7} className="border px-2 py-1.5 font-bold text-emerald-900">
+                    ▸ {l.itemName}
+                  </td>
+                </tr>
+              );
+            }
             const amt = (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
             return (
               <tr key={l._key || i}>
