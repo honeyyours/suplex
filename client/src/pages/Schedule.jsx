@@ -540,12 +540,7 @@ function formatProjectScheduleForCopy(project, entries, { company, user, range }
     }
   }
   lines.push('');
-  let header = '[공사 일정]';
-  if (range?.start && range?.end) {
-    header += ` ${formatKoreanDate(range.start)} ~ ${formatKoreanDate(range.end)}`;
-  }
-  if (range?.keyword) header += ` / "${range.keyword}" 검색`;
-  lines.push(header);
+  lines.push('[공사 일정]');
   for (const e of entries) lines.push(formatEntryLine(e));
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
@@ -565,9 +560,6 @@ function formatAllSchedulesForCopy(entries, { company, user, range } = {}) {
   if (userName || userPhone) {
     lines.push('');
     lines.push(`담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
-  }
-  if (range?.start && range?.end) {
-    lines.push(`기간: ${formatKoreanDate(range.start)} ~ ${formatKoreanDate(range.end)}${range.keyword ? ` / "${range.keyword}" 검색` : ''}`);
   }
   lines.push('');
 
