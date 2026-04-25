@@ -224,6 +224,25 @@ router.patch('/:id', async (req, res, next) => {
     }
 
     const updated = await prisma.purchaseOrder.update({ where: { id }, data: updateData });
+
+    // PO가 활성 → CANCELLED로 전환된 경우, 연결된 마감재가 다른 활성 PO 없으면 status를 UNDECIDED로 되돌림
+    // 이래야 마감재 탭에서 자동으로 잠금 해제 + 체크 풀림 → 디자이너가 다시 편집 가능
+    if (updated.status === 'CANCELLED' && existing.status !== 'CANCELLED' && updated.materialId) {
+      const otherActive = await prisma.purchaseOrder.count({
+        where: {
+          materialId: updated.materialId,
+          id: { not: updated.id },
+          status: { in: ['PENDING', 'ORDERED', 'RECEIVED'] },
+        },
+      });
+      if (otherActive === 0) {
+        await prisma.material.update({
+          where: { id: updated.materialId },
+          data: { status: 'UNDECIDED' },
+        });
+      }
+    }
+
     res.json({ order: updated });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -262,6 +281,23 @@ router.delete('/:id', async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: 'Order not found' });
 
     await prisma.purchaseOrder.delete({ where: { id } });
+
+    // 삭제된 PO가 활성 상태였고 연결된 마감재가 다른 활성 PO 없으면 → 마감재 미정으로 되돌림
+    if (existing.materialId && ['PENDING', 'ORDERED', 'RECEIVED'].includes(existing.status)) {
+      const otherActive = await prisma.purchaseOrder.count({
+        where: {
+          materialId: existing.materialId,
+          status: { in: ['PENDING', 'ORDERED', 'RECEIVED'] },
+        },
+      });
+      if (otherActive === 0) {
+        await prisma.material.update({
+          where: { id: existing.materialId },
+          data: { status: 'UNDECIDED' },
+        });
+      }
+    }
+
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

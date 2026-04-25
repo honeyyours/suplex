@@ -29,16 +29,17 @@ export default function ProjectMaterialsSimple() {
           spaceGroup: m.spaceGroup || '기타',
           itemName: m.itemName === '(미정)' || m.itemName === '(이름없음)' ? '' : (m.itemName || ''),
           brand: m.brand || '',
-          // 수량 표시: brand는 "브랜드 규격 등"으로 사용. 수량은 unit 컬럼에 자유 텍스트 통째 저장.
           quantityText: m.unit && m.quantity != null && Number(m.quantity) > 0
             ? `${Number(m.quantity)}${m.unit}`
             : (m.unit || (m.quantity != null && Number(m.quantity) > 0 ? String(m.quantity) : '')),
-          // 가전 전용
           size: m.size || '',
           installed: m.installed,
           memo: m.memo || '',
           orderIndex: m.orderIndex ?? 0,
           createdAt: m.createdAt,
+          // 발주 잠금 — 활성 PO(취소되지 않은 것) 있으면 행 편집 불가
+          locked: !!m.hasActiveOrder,
+          activeOrderStatus: m.activeOrderStatus || null,
         })),
       );
     } finally {
@@ -90,9 +91,15 @@ export default function ProjectMaterialsSimple() {
     }
   }
 
-  // 로컬 상태 + 서버 patch
+  // 로컬 상태 + 서버 patch (잠긴 행은 status 외 변경 차단)
   function patchItem(id, patch) {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    const it = items.find((x) => x.id === id);
+    // 잠금 + status 외 변경 시도면 차단 (status 변경은 발주 취소 흐름이라 별도)
+    if (it?.locked && !('status' in patch)) {
+      alert('이 항목은 발주에 묶여 있어 수정할 수 없습니다.\n발주 탭에서 [발주 취소]하면 잠금이 해제됩니다.');
+      return;
+    }
+    setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     const serverPatch = {};
     if ('itemName' in patch) serverPatch.itemName = patch.itemName || '';
     if ('brand' in patch) serverPatch.brand = patch.brand || null;
@@ -101,33 +108,52 @@ export default function ProjectMaterialsSimple() {
       serverPatch.unit = patch.quantityText || null;
       serverPatch.quantity = null;
     }
-    // 가전 전용
     if ('size' in patch) serverPatch.size = patch.size || null;
-    if ('installed' in patch) serverPatch.installed = patch.installed; // boolean | null
+    if ('installed' in patch) serverPatch.installed = patch.installed;
     // 상태 (status 변경 시 백엔드의 syncPurchaseOrders가 자동으로 PO 생성/동기화)
     if ('status' in patch) serverPatch.status = patch.status;
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
   }
 
-  // 그룹 일괄 확정 — 미정인 항목들만 CONFIRMED로 (이미 확정/재사용/해당없음은 그대로)
-  async function confirmGroup(name) {
-    const targets = items.filter((it) => it.spaceGroup === name && it.status === 'UNDECIDED');
-    if (targets.length === 0) {
-      alert('이 그룹에는 미정 항목이 없습니다.');
+  // 체크박스 토글 — 미체크→체크 = CONFIRMED (PO PENDING 자동 생성), 체크→미체크 = UNDECIDED (PO 자동 처리는 syncPurchaseOrders가 done 그룹 전이 기준)
+  // 잠긴 항목(이미 발주됨)은 체크 해제 불가 — 발주 탭에서 취소해야
+  function toggleConfirmed(id) {
+    const it = items.find((x) => x.id === id);
+    if (!it) return;
+    if (it.locked) {
+      alert('이미 발주에 들어간 항목입니다.\n해제하려면 발주 탭에서 [발주 취소]하세요.');
       return;
     }
-    if (!confirm(`"${name}" 그룹의 미정 항목 ${targets.length}개를 모두 확정으로 변경합니다. 자동으로 발주 대기 항목이 생성됩니다.\n\n계속할까요?`)) return;
+    const isCurrentlyConfirmed = ['CONFIRMED', 'CHANGED', 'REUSED'].includes(it.status);
+    const next = isCurrentlyConfirmed ? 'UNDECIDED' : 'CONFIRMED';
+    patchItem(id, { status: next });
+    // 확정으로 가면 PO 자동 생성 → 잠금 표시는 reload 필요. 즉시 표시 위해 낙관적으로 locked 설정.
+    if (next === 'CONFIRMED') {
+      setTimeout(() => reload(), 1200);
+    }
+  }
+
+  // 그룹 일괄 확정 — 미정 + 잠금 안 된 항목만 CONFIRMED로
+  // 이미 발주된 항목은 자동 제외
+  async function confirmGroup(name) {
+    const targets = items.filter((it) =>
+      it.spaceGroup === name && !it.locked && (it.status === 'UNDECIDED' || it.status === 'REVIEWING')
+    );
+    if (targets.length === 0) {
+      alert('이 그룹에는 새로 확정할 미정 항목이 없습니다.');
+      return;
+    }
+    if (!confirm(`"${name}" 그룹의 미정 항목 ${targets.length}개를 모두 확정합니다.\n자동으로 발주 대기에 들어가고 행이 잠깁니다.\n\n계속할까요?`)) return;
     try {
-      // 직렬 N개 patch — syncPurchaseOrders가 트랜잭션 안에서 호출되므로 안전
-      // 화면도 즉시 반영
       setItems((prev) => prev.map((it) => (
-        it.spaceGroup === name && it.status === 'UNDECIDED' ? { ...it, status: 'CONFIRMED' } : it
+        targets.find((t) => t.id === it.id) ? { ...it, status: 'CONFIRMED' } : it
       )));
       await Promise.all(targets.map((t) => materialsApi.update(projectId, t.id, { status: 'CONFIRMED' })));
+      // 잠금 상태 반영 위해 reload
+      await reload();
       alert(`✅ ${targets.length}개 항목 확정 완료. 발주 탭에서 확인하세요.`);
     } catch (e) {
       alert('일괄 확정 실패: ' + (e.response?.data?.error || e.message));
-      // 롤백 위해 reload
       reload();
     }
   }
@@ -153,6 +179,7 @@ export default function ProjectMaterialsSimple() {
         {
           id: material.id,
           kind: material.kind || groupKind,
+          status: material.status || 'UNDECIDED',
           spaceGroup: material.spaceGroup,
           itemName: '',
           brand: '',
@@ -162,6 +189,8 @@ export default function ProjectMaterialsSimple() {
           memo: '',
           orderIndex: material.orderIndex ?? 0,
           createdAt: material.createdAt,
+          locked: false,
+          activeOrderStatus: null,
         },
       ]);
       setTimeout(() => focusCell(material.id, focusCol), 30);
@@ -266,10 +295,15 @@ export default function ProjectMaterialsSimple() {
   }
 
   async function removeItem(id) {
+    const it = items.find((x) => x.id === id);
+    if (it?.locked) {
+      alert('이미 발주에 들어간 항목이라 삭제할 수 없습니다.\n발주 탭에서 [발주 취소]하면 잠금이 해제됩니다.');
+      return;
+    }
     if (!confirm('이 항목을 삭제할까요?')) return;
     try {
       await materialsApi.remove(projectId, id);
-      setItems((prev) => prev.filter((it) => it.id !== id));
+      setItems((prev) => prev.filter((x) => x.id !== id));
     } catch (e) {
       alert('삭제 실패: ' + (e.response?.data?.error || e.message));
     }
@@ -378,6 +412,7 @@ export default function ProjectMaterialsSimple() {
           onRenameGroup={() => renameGroup(g.name)}
           onRemoveGroup={() => removeGroup(g.name)}
           onConfirmGroup={() => confirmGroup(g.name)}
+          onToggleConfirmed={toggleConfirmed}
           onCellKeyDown={handleCellKeyDown}
         />
       ))}
@@ -402,7 +437,7 @@ export default function ProjectMaterialsSimple() {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onConfirmGroup, onCellKeyDown }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown }) {
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -411,10 +446,14 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
     ? 'bg-violet-100 text-violet-700'
     : 'bg-navy-100 text-navy-700';
 
-  // 진행률 — UNDECIDED는 미확정, 그 외(CONFIRMED/CHANGED/REUSED/NOT_APPLICABLE)는 처리됨으로 간주
+  // 진행률 — 확정(체크된 것) / 전체. 잠긴 것도 확정으로 카운트
   const total = group.items.length;
-  const undecidedCount = group.items.filter((it) => (it.status || 'UNDECIDED') === 'UNDECIDED').length;
-  const decidedCount = total - undecidedCount;
+  const confirmedCount = group.items.filter((it) =>
+    ['CONFIRMED', 'CHANGED', 'REUSED'].includes(it.status) || it.locked
+  ).length;
+  const pendingActionable = group.items.filter((it) =>
+    !it.locked && (it.status === 'UNDECIDED' || it.status === 'REVIEWING')
+  ).length;
 
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
@@ -432,17 +471,17 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
             {isAppliance ? '가전·가구' : '마감재'}
           </span>
           <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
-            {decidedCount}/{total} 처리
+            {confirmedCount}/{total} 확정
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {undecidedCount > 0 && (
+          {pendingActionable > 0 && (
             <button
               onClick={onConfirmGroup}
               className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
-              title={`미정 ${undecidedCount}개를 모두 확정 → 발주 자동 생성`}
+              title={`미정·잠금해제 ${pendingActionable}개를 모두 확정 → 발주 자동 생성 (이미 발주된 건 제외)`}
             >
-              ✅ 모두 확정 → 발주 ({undecidedCount})
+              ✅ 모두 확정 → 발주 ({pendingActionable})
             </button>
           )}
           <button
@@ -463,9 +502,9 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
 
       <div className="overflow-x-auto">
         {isAppliance ? (
-          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
+          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
         ) : (
-          <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
+          <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
         )}
       </div>
     </div>
@@ -475,24 +514,24 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
 // ============================================
 // 마감재 테이블 (4컬럼)
 // ============================================
-function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown }) {
+function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
+        <col style={{ width: '32px' }} />{/* 체크박스 */}
         <col style={{ width: '18%' }} />
         <col style={{ width: '22%' }} />
         <col style={{ width: '80px' }} />
         <col />
-        <col style={{ width: '60px' }} />{/* status */}
         <col style={{ width: '24px' }} />
       </colgroup>
       <thead className="bg-gray-50 text-xs text-gray-500">
         <tr>
+          <th className="text-center"></th>
           <th className="text-left px-2 py-1.5">항목</th>
           <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
           <th className="text-left px-2 py-1.5">수량</th>
           <th className="text-left px-2 py-1.5">비고</th>
-          <th className="text-center px-2 py-1.5">상태</th>
           <th></th>
         </tr>
       </thead>
@@ -505,6 +544,7 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
             onChange={(patch) => onItemPatch(it.id, patch)}
             onRemove={() => onItemRemove(it.id)}
             onCellKeyDown={onCellKeyDown}
+            onToggle={() => onToggleConfirmed(it.id)}
           />
         ))}
         {group.items.length === 0 && (
@@ -520,28 +560,28 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
 }
 
 // ============================================
-// 가전·가구 테이블 (5컬럼: 품목 / 모델명 / 사이즈 / 설치 / 비고)
+// 가전·가구 테이블 (체크박스 + 품목 / 모델명 / 사이즈 / 설치 / 비고)
 // ============================================
-function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown }) {
+function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
-        <col style={{ width: '14%' }} />{/* 품목 */}
+        <col style={{ width: '32px' }} />{/* 체크박스 */}
+        <col style={{ width: '13%' }} />{/* 품목 */}
         <col style={{ width: '22%' }} />{/* 모델명 */}
         <col style={{ width: '125px' }} />{/* 사이즈 */}
         <col style={{ width: '70px' }} />{/* 설치 */}
         <col />{/* 비고 */}
-        <col style={{ width: '60px' }} />{/* status */}
         <col style={{ width: '24px' }} />
       </colgroup>
       <thead className="bg-gray-50 text-xs text-gray-500">
         <tr>
+          <th className="text-center"></th>
           <th className="text-left px-2 py-1.5">품목</th>
           <th className="text-left px-2 py-1.5">모델명 / 품번</th>
           <th className="text-left px-2 py-1.5">사이즈 (W×D×H)</th>
           <th className="text-center px-2 py-1.5">설치</th>
           <th className="text-left px-2 py-1.5">비고 (빌트인/도어방향)</th>
-          <th className="text-center px-2 py-1.5">상태</th>
           <th></th>
         </tr>
       </thead>
@@ -554,6 +594,7 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
             onChange={(patch) => onItemPatch(it.id, patch)}
             onRemove={() => onItemRemove(it.id)}
             onCellKeyDown={onCellKeyDown}
+            onToggle={() => onToggleConfirmed(it.id)}
           />
         ))}
         {group.items.length === 0 && (
@@ -569,14 +610,45 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
 }
 
 // ============================================
-// 가전·가구 행 (5컬럼)
+// 행 잠금/체크 헬퍼
 // ============================================
-function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
-  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200';
-  const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
-  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col) });
+function isConfirmed(item) {
+  return ['CONFIRMED', 'CHANGED', 'REUSED'].includes(item.status) || item.locked;
+}
+function ConfirmCheckbox({ item, onToggle }) {
+  const checked = isConfirmed(item);
+  if (item.locked) {
+    return (
+      <span title="발주 진행 중 — 발주 탭에서 [발주 취소]하면 잠금 해제됩니다" className="text-base">
+        🔒
+      </span>
+    );
+  }
   return (
-    <tr className="hover:bg-gray-50">
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onToggle}
+      tabIndex={-1}
+      className="w-4 h-4 cursor-pointer accent-emerald-600"
+      title={checked ? '확정 해제' : '확정 → 발주 대기로 전환'}
+    />
+  );
+}
+
+// ============================================
+// 가전·가구 행
+// ============================================
+function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) {
+  const locked = !!item.locked;
+  const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 ${locked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`;
+  const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
+  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col), disabled: locked });
+  return (
+    <tr className={locked ? 'bg-gray-50/50' : 'hover:bg-gray-50'}>
+      <td className="px-2 py-1.5 text-center">
+        <ConfirmCheckbox item={item} onToggle={onToggle} />
+      </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('itemName')}
@@ -612,7 +684,7 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
             const v = e.target.value;
             onChange({ installed: v === 'Y' ? true : v === 'N' ? false : null });
           }}
-          className="text-xs px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 bg-transparent"
+          className={`text-xs px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 bg-transparent ${locked ? 'cursor-not-allowed' : ''}`}
         >
           <option value="">—</option>
           <option value="Y">✓ 유</option>
@@ -628,13 +700,10 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
           placeholder="빌트인 여부, 도어 개폐 방향, 콘센트 위치 등"
         />
       </td>
-      <td className="px-1 py-1.5 text-center">
-        <StatusChip status={item.status} onChange={(s) => onChange({ status: s })} />
-      </td>
       <td className="px-1 text-right">
         {saving ? (
           <span className="text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : (
+        ) : locked ? null : (
           <button
             onClick={onRemove}
             tabIndex={-1}
@@ -649,12 +718,16 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
   );
 }
 
-function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
-  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
+function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) {
+  const locked = !!item.locked;
+  const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 ${locked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`;
   const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
-  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col) });
+  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col), disabled: locked });
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className={locked ? 'bg-gray-50/50' : 'hover:bg-gray-50'}>
+      <td className="px-2 py-1.5 text-center">
+        <ConfirmCheckbox item={item} onToggle={onToggle} />
+      </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('itemName')}
@@ -691,13 +764,10 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
           placeholder="설명/색상/위치 등"
         />
       </td>
-      <td className="px-1 py-1.5 text-center">
-        <StatusChip status={item.status} onChange={(s) => onChange({ status: s })} />
-      </td>
       <td className="px-1 text-right">
         {saving ? (
           <span className="text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : (
+        ) : locked ? null : (
           <button
             onClick={onRemove}
             tabIndex={-1}

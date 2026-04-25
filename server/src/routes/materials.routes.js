@@ -128,9 +128,23 @@ router.get('/', async (req, res, next) => {
             status: true,
           },
         },
+        // 활성 PO(취소되지 않은 것)가 하나라도 있으면 잠금 — 마감재 행 편집 막기
+        purchaseOrders: {
+          where: { status: { in: ['PENDING', 'ORDERED', 'RECEIVED'] } },
+          select: { id: true, status: true },
+        },
       },
     });
-    res.json({ materials });
+    // 클라이언트가 쉽게 쓸 수 있게 hasActiveOrder/activeOrderStatus 부가
+    const enriched = materials.map((m) => {
+      const active = m.purchaseOrders?.[0];
+      return {
+        ...m,
+        hasActiveOrder: !!active,
+        activeOrderStatus: active?.status || null,
+      };
+    });
+    res.json({ materials: enriched });
   } catch (e) {
     next(e);
   }
