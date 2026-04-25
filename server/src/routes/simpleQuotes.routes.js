@@ -298,6 +298,101 @@ const linesSchema = z.object({
 });
 
 // ============================================
+// 견적의 공정(라인) → 마감재 탭의 그룹(spaceGroup)으로 자동 변환
+//   POST /:id/send-to-materials
+// 동작:
+//  - 견적의 isGroup=false 라인의 itemName을 spaceGroup 후보로 모음 (중복 제거, 공백 제외)
+//  - 같은 프로젝트 마감재의 기존 spaceGroup과 비교 → 새 그룹만 추가
+//  - 각 새 그룹마다 placeholder Material 1개 생성 (itemName="(미정)")
+//    → 그래야 마감재 탭 사이드바에 그룹이 노출됨
+// ============================================
+router.post('/:id/send-to-materials', async (req, res, next) => {
+  try {
+    const { projectId, id } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const quote = await prisma.simpleQuote.findFirst({
+      where: { id, projectId },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+    });
+    if (!quote) return res.status(404).json({ error: 'Quote not found' });
+
+    // 견적 공정 후보 (isGroup=false, itemName 비어있지 않음, 중복 제거, 입력 순서 유지)
+    const seen = new Set();
+    const candidates = [];
+    for (const l of quote.lines) {
+      if (l.isGroup) continue;
+      const name = String(l.itemName || '').trim();
+      if (!name) continue;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      candidates.push(name);
+    }
+    if (candidates.length === 0) {
+      return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });
+    }
+
+    // 기존 spaceGroup 목록
+    const existing = await prisma.material.findMany({
+      where: { projectId },
+      select: { spaceGroup: true },
+      distinct: ['spaceGroup'],
+    });
+    const existingSet = new Set(existing.map((m) => m.spaceGroup));
+
+    const toAdd = candidates.filter((g) => !existingSet.has(g));
+    if (toAdd.length === 0) {
+      return res.json({ added: 0, skipped: candidates.length, total: candidates.length });
+    }
+
+    // placeholder Material 1개씩 (디자이너가 클릭해서 채움)
+    const created = await prisma.$transaction(async (tx) => {
+      let baseOrder = 0;
+      const lastOrder = await tx.material.findFirst({
+        where: { projectId },
+        orderBy: { orderIndex: 'desc' },
+        select: { orderIndex: true },
+      });
+      baseOrder = lastOrder ? lastOrder.orderIndex + 1 : 0;
+
+      const rows = toAdd.map((g, i) => ({
+        projectId,
+        kind: 'FINISH',
+        spaceGroup: g,
+        itemName: '(미정)',
+        orderIndex: baseOrder + i,
+      }));
+      const c = await tx.material.createMany({ data: rows });
+
+      // 이력 — 어떤 견적에서 왔는지 기록
+      const inserted = await tx.material.findMany({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+        take: rows.length,
+      });
+      await tx.materialHistory.createMany({
+        data: inserted.map((m) => ({
+          materialId: m.id,
+          changedById: req.user.id,
+          field: '__created__',
+          oldValue: null,
+          newValue: `(견적→마감재) "${quote.title}" / 공정 "${m.spaceGroup}"`,
+        })),
+      });
+      return c.count;
+    });
+
+    res.json({
+      added: created,
+      skipped: candidates.length - toAdd.length,
+      total: candidates.length,
+      addedNames: toAdd,
+    });
+  } catch (e) { next(e); }
+});
+
+// ============================================
 // 같은 프로젝트 내 견적 복제 — 헤더 + 라인까지 모두 복사 후 새 차수 생성
 //   POST /:id/duplicate
 // ============================================

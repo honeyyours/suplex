@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useOutletContext } from 'react-router-dom';
+import { Link, useParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
 import { formatDateDot } from '../utils/date';
 
@@ -174,6 +174,7 @@ function getPreviousQuoteId(quotes, currentId) {
 // QuoteEditor
 // ============================================
 function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }) {
+  const navigate = useNavigate();
   const [quote, setQuote] = useState(null);
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,6 +183,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [showPrint, setShowPrint] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [comparing, setComparing] = useState(false);
+  const [sending, setSending] = useState(false);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -456,6 +458,31 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             className="text-sm px-3 py-1.5 border border-navy-300 text-navy-700 rounded hover:bg-navy-50"
           >
             📋 다른 견적에서 가져오기
+          </button>
+          <button
+            onClick={async () => {
+              if (sending) return;
+              if (!confirm('이 견적의 공정들을 마감재 탭의 그룹으로 추가합니다. 계속할까요?\n(이미 같은 이름의 그룹이 있으면 자동 스킵됩니다)')) return;
+              setSending(true);
+              try {
+                const res = await simpleQuotesApi.sendToMaterials(projectId, quoteId);
+                const msg = res.added > 0
+                  ? `✅ ${res.added}개 그룹 추가 / ${res.skipped}개 중복 스킵 (총 ${res.total}개 공정).\n\n각 그룹에 (미정) 항목이 자동 생성되었습니다. 마감재 탭에서 채워나가세요.`
+                  : `이미 모든 공정(${res.total}개)이 마감재 그룹으로 등록되어 있습니다.`;
+                if (confirm(`${msg}\n\n지금 마감재 탭으로 이동할까요?`)) {
+                  navigate(`/projects/${projectId}/materials`);
+                }
+              } catch (e) {
+                alert('마감재 추가 실패: ' + (e.response?.data?.error || e.message));
+              } finally {
+                setSending(false);
+              }
+            }}
+            disabled={sending}
+            className="text-sm px-3 py-1.5 border border-amber-300 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-60"
+            title="이 견적의 공정 라인들을 마감재 탭의 빈 그룹으로 자동 추가합니다"
+          >
+            {sending ? '추가 중…' : '📦 마감재로 보내기'}
           </button>
           <button
             onClick={() => setShowPrint(true)}
