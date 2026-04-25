@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useOutletContext } from 'react-router-dom';
 import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
 import { formatDateDot } from '../utils/date';
 
@@ -7,6 +7,8 @@ const SAVE_DELAY = 1000;
 
 export default function ProjectSimpleQuotes() {
   const { id: projectId } = useParams();
+  const ctx = useOutletContext() || {};
+  const reloadActiveQuote = ctx.reloadActiveQuote;
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState(null);
@@ -21,6 +23,8 @@ export default function ProjectSimpleQuotes() {
       else if (activeId && !quotes.find((q) => q.id === activeId)) {
         setActiveId(quotes[0]?.id || null);
       }
+      // 부모(ProjectDetail) 헤더의 활성 견적 요약도 새로고침
+      reloadActiveQuote?.();
     } finally {
       setLoading(false);
     }
@@ -47,6 +51,15 @@ export default function ProjectSimpleQuotes() {
       await reload();
     } catch (e) {
       alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function handleDuplicate(id) {
+    try {
+      const { quote } = await simpleQuotesApi.duplicate(projectId, id);
+      await reload(quote.id);
+    } catch (e) {
+      alert('복제 실패: ' + (e.response?.data?.error || e.message));
     }
   }
 
@@ -90,24 +103,37 @@ export default function ProjectSimpleQuotes() {
             const meta = SIMPLE_QUOTE_STATUS_META[q.status] || SIMPLE_QUOTE_STATUS_META.DRAFT;
             const active = q.id === activeId;
             return (
-              <button
+              <div
                 key={q.id}
-                onClick={() => setActiveId(q.id)}
-                className={`w-full text-left px-3 py-2 rounded border text-sm ${
+                className={`group rounded border text-sm ${
                   active ? 'border-navy-700 bg-navy-50 text-navy-800' : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <div className="font-medium truncate">{q.title}</div>
-                <div className="flex items-center justify-between mt-1 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded ${meta.color}`}>{meta.label}</span>
-                  <span className="text-gray-400 tabular-nums">
-                    {formatWon(q.total)}
-                  </span>
+                <button
+                  onClick={() => setActiveId(q.id)}
+                  className="w-full text-left px-3 pt-2 pb-1"
+                >
+                  <div className="font-medium truncate">{q.title}</div>
+                  <div className="flex items-center justify-between mt-1 text-xs">
+                    <span className={`px-1.5 py-0.5 rounded ${meta.color}`}>{meta.label}</span>
+                    <span className="text-gray-400 tabular-nums">
+                      {formatWon(q.total)}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">
+                    {formatDateDot(q.quoteDate)} · {q._count?.lines || 0}개 항목
+                  </div>
+                </button>
+                <div className="px-2 pb-1.5 flex justify-end">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDuplicate(q.id); }}
+                    className="text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded opacity-0 group-hover:opacity-100 transition"
+                    title="이 견적을 복제해 다음 차수 만들기"
+                  >
+                    📑 복제
+                  </button>
                 </div>
-                <div className="text-[11px] text-gray-400 mt-0.5">
-                  {formatDateDot(q.quoteDate)} · {q._count?.lines || 0}개 항목
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -123,6 +149,7 @@ export default function ProjectSimpleQuotes() {
           <QuoteEditor
             projectId={projectId}
             quoteId={activeId}
+            previousQuoteId={getPreviousQuoteId(quotes, activeId)}
             onChange={() => reload(activeId)}
             onDelete={() => handleDelete(activeId)}
           />
@@ -132,10 +159,21 @@ export default function ProjectSimpleQuotes() {
   );
 }
 
+// 직전 견적(현재보다 createdAt이 오래된 가장 최근) ID
+function getPreviousQuoteId(quotes, currentId) {
+  if (!currentId || quotes.length < 2) return null;
+  const current = quotes.find((q) => q.id === currentId);
+  if (!current) return null;
+  const prev = quotes
+    .filter((q) => q.id !== currentId && new Date(q.createdAt) < new Date(current.createdAt))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+  return prev?.id || null;
+}
+
 // ============================================
 // QuoteEditor
 // ============================================
-function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
+function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }) {
   const [quote, setQuote] = useState(null);
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +181,7 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
   const [savingHeader, setSavingHeader] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -387,7 +426,16 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
             {savingLines || savingHeader ? '저장 중...' : '저장됨'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {previousQuoteId && (
+            <button
+              onClick={() => setShowCompare(true)}
+              className="text-sm px-3 py-1.5 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+              title="AI가 직전 차수와 변경사항을 요약해줍니다"
+            >
+              📊 직전 차수와 비교
+            </button>
+          )}
           <button
             onClick={() => setShowImport(true)}
             className="text-sm px-3 py-1.5 border border-navy-300 text-navy-700 rounded hover:bg-navy-50"
@@ -600,6 +648,16 @@ function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
           className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 resize-none"
         />
       </div>
+
+      {/* AI 비교 모달 */}
+      {showCompare && previousQuoteId && (
+        <CompareModal
+          projectId={projectId}
+          quoteId={quoteId}
+          previousQuoteId={previousQuoteId}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
 
       {/* 다른 견적에서 가져오기 모달 */}
       {showImport && (
@@ -1011,6 +1069,77 @@ function Row({ k, v }) {
     <div className="flex py-0.5 border-b last:border-b-0">
       <span className="w-16 text-gray-500">{k}</span>
       <span className="text-gray-800">{v || '—'}</span>
+    </div>
+  );
+}
+
+// ============================================
+// AI 차이 비교 모달
+// ============================================
+function CompareModal({ projectId, quoteId, previousQuoteId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    simpleQuotesApi
+      .compare(projectId, quoteId, previousQuoteId)
+      .then((res) => { if (!cancelled) setData(res); })
+      .catch((e) => { if (!cancelled) setErr(e.response?.data?.error || e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId, quoteId, previousQuoteId]);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="border-b px-4 py-3 flex items-center justify-between">
+          <div className="font-bold text-navy-800">📊 직전 차수와 비교 — AI 요약</div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+        <div className="flex-1 overflow-auto p-5">
+          {loading && (
+            <div className="text-sm text-gray-500 py-8 text-center">
+              <div className="mb-2">🤖 AI가 변경사항을 분석하고 있습니다...</div>
+              <div className="text-xs text-gray-400">5~10초 정도 걸립니다</div>
+            </div>
+          )}
+          {err && (
+            <div className="text-sm text-red-600 py-8 text-center">
+              요약 실패: {err}
+            </div>
+          )}
+          {data && (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+                <div className="bg-gray-50 rounded p-3">
+                  <div className="text-[11px] text-gray-500">이전 ({data.previousTitle})</div>
+                  <div className="text-base font-bold text-gray-700 tabular-nums">{formatWon(data.previousTotal)} 원</div>
+                </div>
+                <div className="bg-navy-50 rounded p-3">
+                  <div className="text-[11px] text-navy-600">현재 ({data.currentTitle})</div>
+                  <div className="text-base font-bold text-navy-800 tabular-nums">{formatWon(data.currentTotal)} 원</div>
+                </div>
+                <div className={`rounded p-3 ${data.diff > 0 ? 'bg-red-50' : data.diff < 0 ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                  <div className="text-[11px] text-gray-500">차이</div>
+                  <div className={`text-base font-bold tabular-nums ${data.diff > 0 ? 'text-red-700' : data.diff < 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
+                    {data.diff > 0 ? '+' : ''}{formatWon(data.diff)} 원
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                {data.summary}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="border-t px-4 py-3 flex justify-end">
+          <button onClick={onClose} className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800">
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

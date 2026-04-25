@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { formatDateDot, weeksBetween } from '../utils/date';
+import { SIMPLE_QUOTE_STATUS_META, formatWon } from '../api/simpleQuotes';
 
 const STATUS_LABEL = {
   PLANNED: { label: '예정', color: 'bg-amber-100 text-amber-700' },
@@ -8,19 +10,31 @@ const STATUS_LABEL = {
   CANCELLED: { label: '취소', color: 'bg-red-100 text-red-700' },
 };
 
-export default function ProjectInfoCard({ project, showHeader = true, actions = null, compact = false }) {
+export default function ProjectInfoCard({ project, showHeader = true, actions = null, compact = false, activeQuote = null }) {
   const status = STATUS_LABEL[project.status] || STATUS_LABEL.PLANNED;
   const weeks = weeksBetween(project.startDate, project.expectedEndDate);
+  const quoteMeta = activeQuote ? (SIMPLE_QUOTE_STATUS_META[activeQuote.status] || SIMPLE_QUOTE_STATUS_META.DRAFT) : null;
 
   return (
     <div className={`bg-white rounded-xl border ${compact ? 'p-3 sm:p-4' : 'p-3 sm:p-5'}`}>
       {showHeader && (
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className={`text-xs px-2 py-0.5 rounded ${status.color}`}>{status.label}</span>
               {project.customerName && (
                 <span className="text-xs text-gray-500">고객: {project.customerName}</span>
+              )}
+              {activeQuote && (
+                <Link
+                  to={`/projects/${project.id}/quotes`}
+                  className="text-xs px-2 py-0.5 rounded bg-navy-50 text-navy-700 hover:bg-navy-100 inline-flex items-center gap-1.5"
+                  title="견적 탭으로 이동"
+                >
+                  <span>📄 견적 {activeQuote.title}</span>
+                  <span className="tabular-nums font-medium">{formatWon(activeQuote.total)}원</span>
+                  <span className={`px-1 rounded text-[10px] ${quoteMeta.color}`}>{quoteMeta.label}</span>
+                </Link>
               )}
             </div>
             <h2 className={`font-bold text-navy-800 ${compact ? 'text-lg' : 'text-2xl'}`}>{project.name}</h2>

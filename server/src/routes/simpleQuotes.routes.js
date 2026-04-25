@@ -284,6 +284,183 @@ const linesSchema = z.object({
 });
 
 // ============================================
+// 같은 프로젝트 내 견적 복제 — 헤더 + 라인까지 모두 복사 후 새 차수 생성
+//   POST /:id/duplicate
+// ============================================
+router.post('/:id/duplicate', async (req, res, next) => {
+  try {
+    const { projectId, id } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const source = await prisma.simpleQuote.findFirst({
+      where: { id, projectId },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+    });
+    if (!source) return res.status(404).json({ error: 'Quote not found' });
+
+    // 자동 title — 끝 숫자 + 1, 없으면 existingCount+1차
+    const existingCount = await prisma.simpleQuote.count({ where: { projectId } });
+    let nextTitle;
+    const m = source.title && source.title.match(/^(.*?)(\d+)(\D*)$/);
+    if (m) {
+      nextTitle = `${m[1]}${Number(m[2]) + 1}${m[3]}`;
+    } else {
+      nextTitle = `${existingCount + 1}차`;
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const newQuote = await tx.simpleQuote.create({
+        data: {
+          projectId,
+          title: nextTitle,
+          status: 'DRAFT',
+          quoteDate: new Date(),
+          // 헤더 스냅샷
+          supplierName: source.supplierName,
+          supplierRegNo: source.supplierRegNo,
+          supplierOwner: source.supplierOwner,
+          supplierAddress: source.supplierAddress,
+          supplierTel: source.supplierTel,
+          supplierEmail: source.supplierEmail,
+          supplierLogoUrl: source.supplierLogoUrl,
+          clientName: source.clientName,
+          projectName: source.projectName,
+          designFeeRate: source.designFeeRate,
+          vatRate: source.vatRate,
+          roundAdjustment: source.roundAdjustment,
+          templateKey: source.templateKey,
+          footerNotes: source.footerNotes,
+        },
+      });
+      if (source.lines.length > 0) {
+        await tx.simpleQuoteLine.createMany({
+          data: source.lines.map((l, i) => ({
+            quoteId: newQuote.id,
+            orderIndex: i,
+            isGroup: l.isGroup,
+            isGroupEnd: l.isGroupEnd,
+            itemName: l.itemName,
+            spec: l.spec,
+            quantity: l.quantity,
+            unit: l.unit,
+            unitPrice: l.unitPrice,
+            amount: l.amount,
+            notes: l.notes,
+          })),
+        });
+      }
+      // 원본을 SUPERSEDED로 — 단, 이미 ACCEPTED인 경우는 그대로 유지 (수주 확정 견적은 아카이브 가치)
+      if (source.status !== 'ACCEPTED') {
+        await tx.simpleQuote.update({
+          where: { id: source.id },
+          data: { status: 'SUPERSEDED' },
+        });
+      }
+      await recomputeQuote(tx, newQuote.id);
+      return newQuote;
+    });
+
+    const full = await prisma.simpleQuote.findUnique({
+      where: { id: created.id },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+    });
+    res.status(201).json({ quote: full, sourceId: id });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// AI 차이 비교 — 두 견적의 변경사항을 한국어로 요약
+//   POST /:id/compare  { previousId }
+// ============================================
+const compareSchema = z.object({
+  previousId: z.string().min(1),
+});
+
+router.post('/:id/compare', async (req, res, next) => {
+  try {
+    const { projectId, id } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const parsed = compareSchema.safeParse(req.body || {});
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid input', details: parsed.error.format() });
+
+    const [current, previous] = await Promise.all([
+      prisma.simpleQuote.findFirst({
+        where: { id, projectId },
+        include: { lines: { orderBy: { orderIndex: 'asc' } } },
+      }),
+      prisma.simpleQuote.findFirst({
+        where: { id: parsed.data.previousId, project: { companyId: req.user.companyId } },
+        include: { lines: { orderBy: { orderIndex: 'asc' } } },
+      }),
+    ]);
+    if (!current) return res.status(404).json({ error: 'Current quote not found' });
+    if (!previous) return res.status(404).json({ error: 'Previous quote not found' });
+
+    const formatLines = (q) =>
+      q.lines
+        .map((l) => {
+          if (l.isGroup && l.isGroupEnd) return '── 그룹 종료';
+          if (l.isGroup) return `▸ [그룹] ${l.itemName}`;
+          const amt = Math.round(Number(l.quantity) * Number(l.unitPrice));
+          return `  ${l.itemName} | ${Number(l.quantity)}${l.unit || ''} × ${Number(l.unitPrice).toLocaleString('ko-KR')} = ${amt.toLocaleString('ko-KR')}원${l.notes ? ` | 비고: ${l.notes}` : ''}`;
+        })
+        .join('\n');
+
+    const userMsg = `다음은 같은 프로젝트의 두 인테리어 견적 비교야. 변경 사항을 한국어로 짧게 요약해줘 (5~10줄 이내).
+
+[이전 견적: "${previous.title}" — 합계 ${Number(previous.total).toLocaleString('ko-KR')}원]
+${formatLines(previous)}
+
+[새 견적: "${current.title}" — 합계 ${Number(current.total).toLocaleString('ko-KR')}원]
+${formatLines(current)}
+
+요약 형식:
+- 추가된 항목: (있다면 항목명과 금액)
+- 삭제된 항목: (있다면)
+- 단가/수량 변경: (변경된 항목과 변경 전후)
+- 그룹 구조 변경: (있다면)
+- **총 차이: ±N원**
+
+불필요한 인사말이나 도입부 없이 바로 요약만.`;
+
+    const env = require('../config/env');
+    if (!env.anthropic?.apiKey) {
+      return res.status(503).json({ error: 'AI service not configured' });
+    }
+    const AnthropicMod = require('@anthropic-ai/sdk');
+    const Anthropic = AnthropicMod.default || AnthropicMod;
+    const client = new Anthropic({ apiKey: env.anthropic.apiKey });
+    const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: userMsg }],
+    });
+    const summary = response.content
+      ?.filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('\n')
+      .trim();
+
+    res.json({
+      summary: summary || '(요약을 생성하지 못했습니다)',
+      previousTitle: previous.title,
+      currentTitle: current.title,
+      previousTotal: Number(previous.total),
+      currentTotal: Number(current.total),
+      diff: Number(current.total) - Number(previous.total),
+    });
+  } catch (e) {
+    console.error('[simple-quote compare]', e);
+    next(e);
+  }
+});
+
+// ============================================
 // 다른 견적의 라인을 현재 견적에 복사 (append/replace)
 //   POST /:id/import-lines  { sourceId, mode: 'append' | 'replace' }
 // ============================================

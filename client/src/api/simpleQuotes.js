@@ -19,6 +19,14 @@ export const simpleQuotesApi = {
     api.get(`/projects/${projectId}/simple-quotes/_sources`, { params: { q } }).then((r) => r.data),
   importLines: (projectId, id, sourceId, mode = 'append') =>
     api.post(`/projects/${projectId}/simple-quotes/${id}/import-lines`, { sourceId, mode }).then((r) => r.data),
+
+  // 같은 프로젝트 내 견적 복제 (헤더 + 라인 모두 복사 + 새 차수, 원본 SUPERSEDED)
+  duplicate: (projectId, id) =>
+    api.post(`/projects/${projectId}/simple-quotes/${id}/duplicate`).then((r) => r.data),
+
+  // AI 차이 비교 (직전 차수와 변경사항 한국어 요약)
+  compare: (projectId, id, previousId) =>
+    api.post(`/projects/${projectId}/simple-quotes/${id}/compare`, { previousId }).then((r) => r.data),
 };
 
 export const SIMPLE_QUOTE_STATUS_META = {

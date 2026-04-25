@@ -4,6 +4,7 @@ import api from '../api/client';
 import BackupMenu from '../components/BackupMenu';
 import EditProjectModal from '../components/EditProjectModal';
 import ProjectInfoCard from '../components/ProjectInfoCard';
+import { simpleQuotesApi } from '../api/simpleQuotes';
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null);
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(false);
+  const [activeQuote, setActiveQuote] = useState(null);
 
   function reload() {
     api.get(`/projects/${id}`)
@@ -18,7 +20,21 @@ export default function ProjectDetail() {
       .catch((e) => setErr(e.response?.data?.error || '프로젝트를 불러올 수 없습니다'));
   }
 
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [id]);
+  // 활성 견적: ACCEPTED 상태 우선, 없으면 가장 최근 (작성중/발송됨)
+  function reloadActiveQuote() {
+    simpleQuotesApi.list(id)
+      .then(({ quotes }) => {
+        const active = quotes.find((q) => q.status === 'ACCEPTED') || quotes[0] || null;
+        setActiveQuote(active);
+      })
+      .catch(() => setActiveQuote(null));
+  }
+
+  useEffect(() => {
+    reload();
+    reloadActiveQuote();
+    /* eslint-disable-next-line */
+  }, [id]);
 
   if (err) return <div className="bg-white rounded-xl border p-8 text-red-600">{err}</div>;
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
@@ -34,6 +50,7 @@ export default function ProjectDetail() {
     <div className="space-y-4">
       <ProjectInfoCard
         project={project}
+        activeQuote={activeQuote}
         actions={
           <>
             <button
@@ -63,7 +80,7 @@ export default function ProjectDetail() {
           <NavLink to="expenses" className={tab}>지출</NavLink>
         </div>
         <div className="p-1 sm:p-5">
-          <Outlet context={{ project }} />
+          <Outlet context={{ project, reloadActiveQuote }} />
         </div>
       </div>
 
