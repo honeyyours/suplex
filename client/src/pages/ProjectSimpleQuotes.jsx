@@ -1,0 +1,748 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
+import { formatDateDot } from '../utils/date';
+
+const SAVE_DELAY = 1000;
+
+export default function ProjectSimpleQuotes() {
+  const { id: projectId } = useParams();
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeId, setActiveId] = useState(null);
+
+  async function reload(selectId) {
+    setLoading(true);
+    try {
+      const { quotes } = await simpleQuotesApi.list(projectId);
+      setQuotes(quotes);
+      if (selectId) setActiveId(selectId);
+      else if (!activeId && quotes[0]) setActiveId(quotes[0].id);
+      else if (activeId && !quotes.find((q) => q.id === activeId)) {
+        setActiveId(quotes[0]?.id || null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    reload();
+    /* eslint-disable-next-line */
+  }, [projectId]);
+
+  async function handleCreate() {
+    try {
+      const { quote } = await simpleQuotesApi.create(projectId);
+      await reload(quote.id);
+    } catch (e) {
+      alert('견적 생성 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('이 견적을 삭제할까요? (되돌릴 수 없음)')) return;
+    try {
+      await simpleQuotesApi.remove(projectId, id);
+      await reload();
+    } catch (e) {
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  if (loading && quotes.length === 0) {
+    return <div className="text-sm text-gray-400">불러오는 중...</div>;
+  }
+
+  if (quotes.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-sm text-gray-500 mb-4">아직 작성된 간편 견적이 없습니다.</div>
+        <button
+          onClick={handleCreate}
+          className="text-sm px-5 py-2.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+        >
+          + 새 간편 견적 작성
+        </button>
+        <div className="mt-3 text-xs text-gray-400">
+          회사 설정의 정보가 자동으로 채워집니다.
+        </div>
+        <div className="mt-6 pt-4 border-t text-xs text-gray-400">
+          <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 hover:underline">
+            기존 상세 견적 시스템 보기 →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
+      <aside>
+        <button
+          onClick={handleCreate}
+          className="w-full text-sm px-3 py-2 bg-navy-700 text-white rounded hover:bg-navy-800 mb-2"
+        >
+          + 새 견적
+        </button>
+        <div className="space-y-1 mb-3">
+          {quotes.map((q) => {
+            const meta = SIMPLE_QUOTE_STATUS_META[q.status] || SIMPLE_QUOTE_STATUS_META.DRAFT;
+            const active = q.id === activeId;
+            return (
+              <button
+                key={q.id}
+                onClick={() => setActiveId(q.id)}
+                className={`w-full text-left px-3 py-2 rounded border text-sm ${
+                  active ? 'border-navy-700 bg-navy-50 text-navy-800' : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className="font-medium truncate">{q.title}</div>
+                <div className="flex items-center justify-between mt-1 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded ${meta.color}`}>{meta.label}</span>
+                  <span className="text-gray-400 tabular-nums">
+                    {formatWon(q.total)}
+                  </span>
+                </div>
+                <div className="text-[11px] text-gray-400 mt-0.5">
+                  {formatDateDot(q.quoteDate)} · {q._count?.lines || 0}개 항목
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="pt-2 border-t text-[11px] text-gray-400">
+          <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 hover:underline">
+            상세 견적 (구버전) →
+          </Link>
+        </div>
+      </aside>
+
+      <div className="min-w-0">
+        {activeId && (
+          <QuoteEditor
+            projectId={projectId}
+            quoteId={activeId}
+            onChange={() => reload(activeId)}
+            onDelete={() => handleDelete(activeId)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// QuoteEditor
+// ============================================
+function QuoteEditor({ projectId, quoteId, onChange, onDelete }) {
+  const [quote, setQuote] = useState(null);
+  const [lines, setLines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savingLines, setSavingLines] = useState(false);
+  const [savingHeader, setSavingHeader] = useState(false);
+  const [showPrint, setShowPrint] = useState(false);
+
+  // 디바운스 타이머 ref
+  const linesTimer = useRef(null);
+  const headerTimer = useRef(null);
+  const linesPending = useRef(null);
+  const headerPending = useRef(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { quote } = await simpleQuotesApi.get(projectId, quoteId);
+      setQuote(quote);
+      setLines(
+        (quote.lines || []).map((l) => ({
+          _key: l.id,
+          itemName: l.itemName || '',
+          spec: l.spec || '',
+          quantity: Number(l.quantity) || 0,
+          unit: l.unit || '식',
+          unitPrice: Number(l.unitPrice) || 0,
+          notes: l.notes || '',
+        })),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    /* eslint-disable-next-line */
+  }, [quoteId]);
+
+  // ========== 라인 자동 저장 ==========
+  function scheduleLineSave(nextLines) {
+    linesPending.current = nextLines;
+    if (linesTimer.current) clearTimeout(linesTimer.current);
+    linesTimer.current = setTimeout(flushLineSave, SAVE_DELAY);
+  }
+
+  async function flushLineSave() {
+    const pending = linesPending.current;
+    if (!pending) return;
+    linesPending.current = null;
+    setSavingLines(true);
+    try {
+      const payload = pending.map((l) => ({
+        itemName: l.itemName || '',
+        spec: l.spec || null,
+        quantity: Number(l.quantity) || 0,
+        unit: l.unit || null,
+        unitPrice: Number(l.unitPrice) || 0,
+        notes: l.notes || null,
+      }));
+      const { quote: updated } = await simpleQuotesApi.putLines(projectId, quoteId, payload);
+      setQuote(updated);
+      onChange?.();
+    } catch (e) {
+      console.error(e);
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setSavingLines(false);
+    }
+  }
+
+  // 컴포넌트 언마운트 시 잔여 저장 플러시
+  useEffect(() => () => {
+    if (linesTimer.current) clearTimeout(linesTimer.current);
+    if (headerTimer.current) clearTimeout(headerTimer.current);
+    if (linesPending.current) flushLineSave();
+    if (headerPending.current) flushHeaderSave();
+    /* eslint-disable-next-line */
+  }, []);
+
+  // ========== 헤더 자동 저장 ==========
+  function scheduleHeaderSave(patch) {
+    headerPending.current = { ...(headerPending.current || {}), ...patch };
+    if (headerTimer.current) clearTimeout(headerTimer.current);
+    headerTimer.current = setTimeout(flushHeaderSave, SAVE_DELAY);
+    setQuote((q) => ({ ...q, ...patch }));
+  }
+
+  async function flushHeaderSave() {
+    const pending = headerPending.current;
+    if (!pending) return;
+    headerPending.current = null;
+    setSavingHeader(true);
+    try {
+      const { quote: updated } = await simpleQuotesApi.update(projectId, quoteId, pending);
+      setQuote(updated);
+      onChange?.();
+    } catch (e) {
+      console.error(e);
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setSavingHeader(false);
+    }
+  }
+
+  function patchLine(idx, patch) {
+    setLines((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], ...patch };
+      scheduleLineSave(next);
+      return next;
+    });
+  }
+
+  function addLine() {
+    setLines((prev) => {
+      const next = [
+        ...prev,
+        { _key: `tmp-${Date.now()}-${Math.random()}`, itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '' },
+      ];
+      scheduleLineSave(next);
+      return next;
+    });
+  }
+
+  function removeLine(idx) {
+    setLines((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      scheduleLineSave(next);
+      return next;
+    });
+  }
+
+  if (loading || !quote) {
+    return <div className="text-sm text-gray-400">불러오는 중...</div>;
+  }
+
+  // 클라이언트 합계 미리보기 (서버 캐시는 저장 후 갱신)
+  const liveSubtotal = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0), 0);
+  const liveDesignFee = Math.round(liveSubtotal * (Number(quote.designFeeRate) / 100));
+  const liveSubAfterDesign = liveSubtotal + liveDesignFee + (Number(quote.roundAdjustment) || 0);
+  const liveVat = Math.round(liveSubAfterDesign * (Number(quote.vatRate) / 100));
+  const liveTotal = liveSubAfterDesign + liveVat;
+
+  return (
+    <div className="space-y-4">
+      {/* 헤더 액션 */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <input
+            value={quote.title || ''}
+            onChange={(e) => scheduleHeaderSave({ title: e.target.value })}
+            className="text-lg font-bold text-navy-800 bg-transparent border-b border-transparent focus:border-navy-400 outline-none px-1 max-w-[120px]"
+          />
+          <select
+            value={quote.status}
+            onChange={(e) => scheduleHeaderSave({ status: e.target.value })}
+            className="text-xs px-2 py-1 border rounded bg-white"
+          >
+            {Object.entries(SIMPLE_QUOTE_STATUS_META).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+          <span className="text-xs text-gray-400">
+            {savingLines || savingHeader ? '저장 중...' : '저장됨'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPrint(true)}
+            className="text-sm px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+          >
+            🖨 PDF 출력
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-sm px-3 py-1.5 border border-red-300 text-red-600 rounded hover:bg-red-50"
+          >
+            🗑 삭제
+          </button>
+        </div>
+      </div>
+
+      {/* 헤더 폼 */}
+      <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        <Field label="견적일자">
+          <input
+            type="date"
+            value={quote.quoteDate ? String(quote.quoteDate).slice(0, 10) : ''}
+            onChange={(e) => scheduleHeaderSave({ quoteDate: e.target.value })}
+            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+          />
+        </Field>
+        <Field label="수신자">
+          <input
+            value={quote.clientName || ''}
+            onChange={(e) => scheduleHeaderSave({ clientName: e.target.value })}
+            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+            placeholder="○○○ 귀하"
+          />
+        </Field>
+        <Field label="공사명">
+          <input
+            value={quote.projectName || ''}
+            onChange={(e) => scheduleHeaderSave({ projectName: e.target.value })}
+            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+          />
+        </Field>
+      </div>
+
+      {/* 라인 테이블 */}
+      <div className="bg-white border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500">
+              <tr>
+                <th className="text-left px-3 py-2 w-[30%]">품명 (공정)</th>
+                <th className="text-left px-3 py-2 w-[12%]">규격</th>
+                <th className="text-right px-3 py-2 w-16">수량</th>
+                <th className="text-center px-3 py-2 w-14">단위</th>
+                <th className="text-right px-3 py-2 w-28">단가</th>
+                <th className="text-right px-3 py-2 w-28">금액</th>
+                <th className="text-left px-3 py-2">비고</th>
+                <th className="w-8"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {lines.map((l, idx) => (
+                <LineRow
+                  key={l._key}
+                  line={l}
+                  onChange={(patch) => patchLine(idx, patch)}
+                  onRemove={() => removeLine(idx)}
+                />
+              ))}
+              {lines.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="text-center py-6 text-gray-400 text-sm">
+                    아래 [+ 항목 추가] 버튼을 눌러 공정을 추가하세요.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t p-2">
+          <button
+            onClick={addLine}
+            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-600 hover:bg-gray-50 hover:border-navy-400"
+          >
+            + 항목 추가
+          </button>
+        </div>
+      </div>
+
+      {/* 합계 영역 */}
+      <div className="bg-white border rounded-xl p-4">
+        <div className="space-y-2 max-w-md ml-auto text-sm">
+          <SumRow label="합계" value={liveSubtotal} />
+          <SumRow
+            label={
+              <span className="flex items-center gap-2">
+                디자인 및 감리비
+                <input
+                  type="number"
+                  step="0.01"
+                  value={quote.designFeeRate}
+                  onChange={(e) => scheduleHeaderSave({ designFeeRate: Number(e.target.value) || 0 })}
+                  className="w-14 px-1 py-0.5 border rounded text-right text-xs"
+                />
+                <span className="text-xs text-gray-400">%</span>
+              </span>
+            }
+            value={liveDesignFee}
+          />
+          <SumRow
+            label={
+              <span className="flex items-center gap-2 text-gray-500">
+                단수조정
+                <input
+                  type="number"
+                  value={quote.roundAdjustment}
+                  onChange={(e) => scheduleHeaderSave({ roundAdjustment: Number(e.target.value) || 0 })}
+                  className="w-24 px-1 py-0.5 border rounded text-right text-xs"
+                />
+              </span>
+            }
+            value={Number(quote.roundAdjustment) || 0}
+            neutral
+          />
+          <SumRow
+            label={
+              <span className="flex items-center gap-2">
+                부가세
+                <input
+                  type="number"
+                  step="0.01"
+                  value={quote.vatRate}
+                  onChange={(e) => scheduleHeaderSave({ vatRate: Number(e.target.value) || 0 })}
+                  className="w-14 px-1 py-0.5 border rounded text-right text-xs"
+                />
+                <span className="text-xs text-gray-400">%</span>
+              </span>
+            }
+            value={liveVat}
+          />
+          <div className="border-t pt-2">
+            <SumRow label={<span className="font-bold text-navy-800">총합계</span>} value={liveTotal} highlight />
+          </div>
+        </div>
+      </div>
+
+      {/* 푸터 비고 편집 */}
+      <div className="bg-white border rounded-xl p-4">
+        <div className="text-xs text-gray-500 mb-1">하단 안내문 (PDF 출력 시 표시)</div>
+        <textarea
+          value={quote.footerNotes || ''}
+          onChange={(e) => scheduleHeaderSave({ footerNotes: e.target.value })}
+          rows={3}
+          className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 resize-none"
+        />
+      </div>
+
+      {/* PDF 미리보기 모달 */}
+      {showPrint && (
+        <PrintModal
+          quote={quote}
+          lines={lines}
+          totals={{
+            subtotal: liveSubtotal,
+            designFeeAmount: liveDesignFee,
+            vatAmount: liveVat,
+            total: liveTotal,
+          }}
+          onClose={() => setShowPrint(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// 라인 행
+// ============================================
+function LineRow({ line, onChange, onRemove }) {
+  const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-3 py-1.5">
+        <input
+          value={line.itemName}
+          onChange={(e) => onChange({ itemName: e.target.value })}
+          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          placeholder="예: 목공"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={line.spec}
+          onChange={(e) => onChange({ spec: e.target.value })}
+          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          type="number"
+          step="0.01"
+          value={line.quantity}
+          onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
+          className="w-full px-1 py-1 text-right tabular-nums border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={line.unit}
+          onChange={(e) => onChange({ unit: e.target.value })}
+          className="w-full px-1 py-1 text-center border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          type="number"
+          value={line.unitPrice}
+          onChange={(e) => onChange({ unitPrice: Number(e.target.value) || 0 })}
+          className="w-full px-1 py-1 text-right tabular-nums border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+        />
+      </td>
+      <td className="px-3 py-1.5 text-right tabular-nums text-navy-800 font-medium">
+        {formatWon(amount)}
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={line.notes}
+          onChange={(e) => onChange({ notes: e.target.value })}
+          className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200"
+          placeholder="설명/규격/색상 등"
+        />
+      </td>
+      <td className="px-2">
+        <button
+          onClick={onRemove}
+          className="text-gray-300 hover:text-red-500 text-sm"
+          title="삭제"
+        >
+          ✕
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      {children}
+    </label>
+  );
+}
+
+function SumRow({ label, value, highlight, neutral }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="text-gray-700">{label}</div>
+      <div className={`tabular-nums ${highlight ? 'text-lg font-bold text-navy-800' : neutral ? 'text-gray-500' : 'text-gray-800'}`}>
+        {value < 0 ? '-' : ''}{formatWon(Math.abs(value))} 원
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// PDF 미리보기 / 인쇄 모달
+// styles/index.css 의 body.print-quote .quote-printable 패턴을 재사용
+// ============================================
+function PrintModal({ quote, lines, totals, onClose }) {
+  useEffect(() => {
+    document.body.classList.add('print-quote');
+    return () => document.body.classList.remove('print-quote');
+  }, []);
+
+  function handlePrint() {
+    window.print();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+        <div className="sticky top-0 bg-gray-100 border-b px-4 py-2 flex items-center justify-between no-print">
+          <div className="text-sm font-medium">PDF 미리보기</div>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePrint}
+              className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+            >
+              🖨 인쇄 / PDF 저장
+            </button>
+            <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">
+              닫기
+            </button>
+          </div>
+        </div>
+        <div className="p-6 quote-printable">
+          <SimpleQuotePrintView quote={quote} lines={lines} totals={totals} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// 인쇄용 견적서 (classic 템플릿)
+// ============================================
+function SimpleQuotePrintView({ quote, lines, totals }) {
+  const designFeeOn = Number(quote.designFeeRate) > 0;
+  const round = Number(quote.roundAdjustment) || 0;
+  return (
+    <div className="font-sans text-[13px] text-gray-900 quote-print">
+      <h1 className="text-3xl font-bold text-center mb-6 underline tracking-widest">견 적 서</h1>
+
+      {/* 헤더 정보 */}
+      <table className="w-full border-collapse mb-4">
+        <tbody>
+          <tr>
+            <td className="border px-3 py-2 w-1/2 align-top">
+              <div className="text-xs text-gray-500">{formatDateDot(quote.quoteDate)}</div>
+              <div className="mt-2 text-base font-medium">{quote.clientName || '—'} 귀하</div>
+              <div className="mt-1 text-sm text-gray-700">{quote.projectName}</div>
+              <div className="mt-2 text-xs text-gray-500">아래와 같이 견적합니다.</div>
+            </td>
+            <td className="border px-3 py-2 w-1/2 text-xs">
+              <div className="font-bold text-sm mb-1">{quote.supplierName}</div>
+              <Row k="등록번호" v={quote.supplierRegNo} />
+              <Row k="대 표" v={quote.supplierOwner} />
+              <Row k="주 소" v={quote.supplierAddress} />
+              <Row k="Tel" v={quote.supplierTel} />
+              <Row k="E-mail" v={quote.supplierEmail} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 합계 강조 */}
+      <table className="w-full border-collapse mb-4">
+        <tbody>
+          <tr>
+            <td className="border bg-gray-50 px-3 py-3 w-32 text-center font-bold">합 계 금 액</td>
+            <td className="border px-3 py-3 text-2xl font-bold tabular-nums">
+              {formatWon(totals.total)} 원
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 라인 테이블 */}
+      <table className="w-full border-collapse text-xs">
+        <thead className="bg-emerald-700 text-white">
+          <tr>
+            <th className="border px-2 py-2 text-left">품 명</th>
+            <th className="border px-2 py-2 w-20">규 격</th>
+            <th className="border px-2 py-2 w-12">수량</th>
+            <th className="border px-2 py-2 w-12">단위</th>
+            <th className="border px-2 py-2 w-24">단 가</th>
+            <th className="border px-2 py-2 w-28">금 액</th>
+            <th className="border px-2 py-2 text-left">비 고</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((l, i) => {
+            const amt = (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
+            return (
+              <tr key={l._key || i}>
+                <td className="border px-2 py-1.5">{l.itemName}</td>
+                <td className="border px-2 py-1.5 text-center">{l.spec}</td>
+                <td className="border px-2 py-1.5 text-center tabular-nums">{Number(l.quantity) || 0}</td>
+                <td className="border px-2 py-1.5 text-center">{l.unit}</td>
+                <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(l.unitPrice)}</td>
+                <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(amt)}</td>
+                <td className="border px-2 py-1.5">{l.notes}</td>
+              </tr>
+            );
+          })}
+          {/* 빈 행 채우기 (시각적 안정감) */}
+          {Array.from({ length: Math.max(0, 8 - lines.length) }).map((_, i) => (
+            <tr key={`empty-${i}`}>
+              <td className="border px-2 py-1.5">&nbsp;</td>
+              <td className="border"></td>
+              <td className="border"></td>
+              <td className="border"></td>
+              <td className="border"></td>
+              <td className="border"></td>
+              <td className="border"></td>
+            </tr>
+          ))}
+
+          {/* 합계 영역 */}
+          <tr className="bg-yellow-100">
+            <td colSpan={5} className="border px-2 py-2 text-center font-bold">합 계</td>
+            <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.subtotal)}</td>
+            <td className="border"></td>
+          </tr>
+          {designFeeOn && (
+            <tr className="bg-yellow-100">
+              <td colSpan={5} className="border px-2 py-2 text-center font-bold">
+                설계 및 감리비 ({Number(quote.designFeeRate)}%)
+              </td>
+              <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.designFeeAmount)}</td>
+              <td className="border"></td>
+            </tr>
+          )}
+          {round !== 0 && (
+            <tr className="bg-yellow-50">
+              <td colSpan={5} className="border px-2 py-2 text-center text-gray-600">단수조정</td>
+              <td className="border px-2 py-2 text-right tabular-nums">{round < 0 ? '-' : ''}{formatWon(Math.abs(round))}</td>
+              <td className="border"></td>
+            </tr>
+          )}
+          <tr className="bg-yellow-100">
+            <td colSpan={5} className="border px-2 py-2 text-center font-bold">
+              부가세 ({Number(quote.vatRate)}%)
+            </td>
+            <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.vatAmount)}</td>
+            <td className="border"></td>
+          </tr>
+          <tr className="bg-yellow-200">
+            <td colSpan={5} className="border px-2 py-2 text-center font-bold">총 금 액</td>
+            <td className="border px-2 py-2 text-right tabular-nums font-bold text-base">{formatWon(totals.total)}</td>
+            <td className="border"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 푸터 */}
+      {quote.footerNotes && (
+        <div className="mt-4 text-xs text-gray-700 whitespace-pre-line">
+          {quote.footerNotes}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ k, v }) {
+  return (
+    <div className="flex py-0.5 border-b last:border-b-0">
+      <span className="w-16 text-gray-500">{k}</span>
+      <span className="text-gray-800">{v || '—'}</span>
+    </div>
+  );
+}

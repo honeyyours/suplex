@@ -13,6 +13,7 @@ import Projects from './pages/Projects';
 import NewProject from './pages/NewProject';
 import ProjectDetail from './pages/ProjectDetail';
 import ProjectQuotes from './pages/ProjectQuotes';
+import ProjectSimpleQuotes from './pages/ProjectSimpleQuotes';
 import Expenses from './pages/Expenses';
 import Orders from './pages/Orders';
 import AIBookkeeper from './pages/AIBookkeeper';
@@ -48,7 +49,8 @@ export default function App() {
 
         <Route path="/projects/:id" element={<ProjectDetail />}>
           <Route index element={<Navigate to="schedule" replace />} />
-          <Route path="quotes" element={<ProjectQuotes />} />
+          <Route path="quotes" element={<ProjectSimpleQuotes />} />
+          <Route path="quotes-detail" element={<ProjectQuotes />} />
           <Route path="schedule" element={<ProjectSchedule />} />
           <Route path="materials" element={<ProjectMaterials />} />
           <Route path="checklist" element={<ProjectChecklist />} />

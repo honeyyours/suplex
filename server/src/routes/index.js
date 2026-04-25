@@ -12,6 +12,7 @@ const reportRoutes = require('./reports.routes');
 const materialRequestRoutes = require('./materialRequests.routes');
 const photoRoutes = require('./photos.routes');
 const quoteRoutes = require('./quotes.routes');
+const simpleQuoteRoutes = require('./simpleQuotes.routes');
 const quoteTemplateRoutes = require('./quoteLineItemTemplates.routes');
 const companyRoutes = require('./company.routes');
 const purchaseOrders = require('./purchaseOrders.routes');
@@ -42,6 +43,7 @@ router.use('/projects/:projectId/reports', reportRoutes);
 router.use('/projects/:projectId/material-requests', materialRequestRoutes);
 router.use('/projects/:projectId/photos', photoRoutes);
 router.use('/projects/:projectId/quotes', quoteRoutes);
+router.use('/projects/:projectId/simple-quotes', simpleQuoteRoutes);
 router.use('/projects/:projectId/purchase-orders', purchaseOrders.projectRouter);
 
 // 회사 전체 스코프

@@ -198,6 +198,7 @@ model Project {
   photos               ProjectPhoto[]
   materialRequests     MaterialRequest[]
   quotes               Quote[]
+  simpleQuotes         SimpleQuote[]
   purchaseOrders       PurchaseOrder[]
   expenses             Expense[]
 
@@ -987,4 +988,80 @@ model QuoteLineItemTemplate {
 
   @@index([companyId, workType, orderIndex])
   @@map("quote_line_item_templates")
+}
+
+// ============================================
+// 간편 견적서 (SimpleQuote) — 공정 기반 1장짜리 견적
+// 상세 견적(Quote)와 별도 모델. 공정을 척추로 하는 신규 흐름.
+// ============================================
+
+enum SimpleQuoteStatus {
+  DRAFT // 작성 중
+  SENT // 발송됨 (고객 전달 완료)
+  ACCEPTED // 수주 확정
+  SUPERSEDED // 다음 차수로 대체됨
+}
+
+model SimpleQuote {
+  id        String            @id @default(cuid())
+  projectId String
+  title     String // "1차" / "수정 1차" / "최종" 등 자유 텍스트
+  status    SimpleQuoteStatus @default(DRAFT)
+  quoteDate DateTime          @default(now()) @db.Date
+
+  // 공급자 (스냅샷 — 작성 시 Company에서 복사)
+  supplierName    String
+  supplierRegNo   String?
+  supplierOwner   String?
+  supplierAddress String?
+  supplierTel     String?
+  supplierEmail   String?
+  supplierLogoUrl String?
+
+  // 수신자 / 프로젝트 표시명
+  clientName  String
+  projectName String
+
+  // 합계 조정
+  designFeeRate   Decimal @default(10) @db.Decimal(5, 2) // 디자인 및 감리비 % (0이면 미적용)
+  vatRate         Decimal @default(10) @db.Decimal(5, 2) // 부가세 %
+  roundAdjustment Decimal @default(0) @db.Decimal(14, 2) // 단수조정 (음수 가능)
+
+  // 양식
+  templateKey String  @default("classic") // classic / modern 등
+  footerNotes String? // 하단 안내문
+
+  // 캐시 (자동 계산, PATCH 시 재계산)
+  subtotal        Decimal @default(0) @db.Decimal(14, 2) // 라인 합계
+  designFeeAmount Decimal @default(0) @db.Decimal(14, 2)
+  vatAmount       Decimal @default(0) @db.Decimal(14, 2)
+  total           Decimal @default(0) @db.Decimal(14, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lines   SimpleQuoteLine[]
+
+  @@index([projectId, createdAt])
+  @@map("simple_quotes")
+}
+
+model SimpleQuoteLine {
+  id         String @id @default(cuid())
+  quoteId    String
+  orderIndex Int    @default(0)
+
+  itemName  String // 품명 (= 공정명, 예: "철거 및 폐기물", "목공")
+  spec      String? // 규격 (보통 비움)
+  quantity  Decimal @default(1) @db.Decimal(10, 2)
+  unit      String? // "식" / "m²" / "개" 등
+  unitPrice Decimal @default(0) @db.Decimal(14, 2)
+  amount    Decimal @default(0) @db.Decimal(14, 2) // quantity × unitPrice (캐시)
+  notes     String? // 비고
+
+  quote SimpleQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId, orderIndex])
+  @@map("simple_quote_lines")
 }
