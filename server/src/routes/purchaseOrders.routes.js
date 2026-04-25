@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { getDeadlineDays } = require('../services/phaseDeadlines');
 
 const router = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -35,9 +36,65 @@ globalRouter.get('/', async (req, res, next) => {
         vendorEntity: { select: { id: true, name: true, category: true } },
       },
     });
-    res.json({ orders });
+
+    // 각 PO에 데드라인 자동 계산 — 같은 프로젝트 일정 entry 중 같은 카테고리(=spaceGroup)의 가장 빠른 시작일 - D-N
+    const enriched = await annotateOrdersWithDeadline(orders);
+    res.json({ orders: enriched });
   } catch (e) { next(e); }
 });
+
+// 데드라인 계산 — N+1 방지 위해 프로젝트별 일정 한 번에 fetch
+async function annotateOrdersWithDeadline(orders) {
+  const projectIds = [...new Set(orders.map((o) => o.projectId).filter(Boolean))];
+  if (projectIds.length === 0) return orders.map((o) => ({ ...o, deadline: null, daysToDeadline: null }));
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 각 프로젝트의 카테고리별 가장 빠른 (오늘 이후) 시작일
+  const entries = await prisma.dailyScheduleEntry.findMany({
+    where: { projectId: { in: projectIds }, date: { gte: today } },
+    orderBy: { date: 'asc' },
+    select: { projectId: true, date: true, category: true },
+  });
+  // map[projectId][categoryKey] = earliestDate
+  const earliestMap = new Map();
+  for (const e of entries) {
+    if (!e.category) continue;
+    const cat = String(e.category).trim();
+    if (!cat) continue;
+    if (!earliestMap.has(e.projectId)) earliestMap.set(e.projectId, new Map());
+    const inner = earliestMap.get(e.projectId);
+    if (!inner.has(cat)) inner.set(cat, e.date);
+  }
+
+  // 부분 매칭(spaceGroup → category) 헬퍼
+  function findEarliestForGroup(projectId, group) {
+    const inner = earliestMap.get(projectId);
+    if (!inner) return null;
+    const g = String(group || '').trim();
+    if (!g) return null;
+    if (inner.has(g)) return inner.get(g);
+    // 부분 포함 매칭
+    for (const [cat, date] of inner) {
+      if (cat.includes(g) || g.includes(cat)) return date;
+    }
+    return null;
+  }
+
+  return orders.map((o) => {
+    const group = o.material?.spaceGroup;
+    const earliest = findEarliestForGroup(o.projectId, group);
+    if (!earliest) return { ...o, deadline: null, daysToDeadline: null };
+    const dn = getDeadlineDays(group);
+    const deadline = new Date(earliest);
+    deadline.setDate(deadline.getDate() - dn);
+    deadline.setHours(0, 0, 0, 0);
+    const diffMs = deadline.getTime() - today.getTime();
+    const daysToDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return { ...o, deadline: deadline.toISOString(), daysToDeadline };
+  });
+}
 
 // GET /api/purchase-orders/pending-models   — 모델 확인 필요 마감재 (PO 생성 전 단계)
 globalRouter.get('/pending-models', async (req, res, next) => {
@@ -65,7 +122,7 @@ globalRouter.get('/summary', async (req, res, next) => {
     const projectFilter = req.query.projectId ? { projectId: req.query.projectId } : {};
     const baseWhere = { project: { companyId }, ...projectFilter };
 
-    const [pending, ordered, received, cancelled, pendingModels] = await Promise.all([
+    const [pending, ordered, received, cancelled, pendingModels, pendingOrders] = await Promise.all([
       prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'PENDING' } }),
       prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'ORDERED' } }),
       prisma.purchaseOrder.count({ where: { ...baseWhere, status: 'RECEIVED' } }),
@@ -77,9 +134,20 @@ globalRouter.get('/summary', async (req, res, next) => {
           status: { in: ['UNDECIDED', 'REVIEWING'] },
         },
       }),
+      // 데드라인 임박 계산용 — PENDING 발주 자세히
+      prisma.purchaseOrder.findMany({
+        where: { ...baseWhere, status: 'PENDING' },
+        include: {
+          material: { select: { spaceGroup: true } },
+        },
+      }),
     ]);
 
-    res.json({ pending, ordered, received, cancelled, pendingModels });
+    // 데드라인 임박(D-7 이내) 카운트 — PENDING 중에서만
+    const enriched = await annotateOrdersWithDeadline(pendingOrders);
+    const urgent = enriched.filter((o) => o.daysToDeadline != null && o.daysToDeadline <= 7).length;
+
+    res.json({ pending, ordered, received, cancelled, pendingModels, urgent });
   } catch (e) { next(e); }
 });
 

@@ -165,8 +165,9 @@ export default function Orders({ lockedProjectId = null }) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <SummaryCard label="⚠️ 모델 확인 필요" count={summary.pendingModels} tone="amber" highlight />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <SummaryCard label="⚠️ 모델 확인" count={summary.pendingModels} tone="amber" highlight />
+          <SummaryCard label="🔥 임박 (D-7 이내)" count={summary.urgent || 0} tone="red" highlight />
           <SummaryCard label="⏳ 발주 대기" count={summary.pending} tone="amber" />
           <SummaryCard label="📦 발주됨" count={summary.ordered} tone="sky" />
           <SummaryCard label="✅ 수령" count={summary.received} tone="emerald" />
@@ -345,12 +346,14 @@ function formatItemLine(o) {
 function SummaryCard({ label, count, tone, highlight }) {
   const toneClass = {
     amber: 'bg-amber-50 text-amber-800',
+    red: 'bg-red-50 text-red-800',
     sky: 'bg-sky-50 text-sky-800',
     emerald: 'bg-emerald-50 text-emerald-800',
     gray: 'bg-gray-50 text-gray-700',
   }[tone] || 'bg-gray-50 text-gray-700';
+  const ringClass = tone === 'red' ? 'ring-red-400' : 'ring-amber-400';
   return (
-    <div className={`border rounded-md px-2.5 py-1.5 flex items-center justify-between ${toneClass} ${highlight && count > 0 ? 'ring-1 ring-amber-400' : ''}`}>
+    <div className={`border rounded-md px-2.5 py-1.5 flex items-center justify-between ${toneClass} ${highlight && count > 0 ? `ring-1 ${ringClass}` : ''}`}>
       <span className="text-[11px] font-medium truncate">{label}</span>
       <span className="text-sm font-bold tabular-nums ml-2">{count}</span>
     </div>
@@ -432,6 +435,9 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
               className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
             >{order.project.name}</Link>
           )}
+          {order.deadline && order.daysToDeadline != null && (
+            <DeadlineChip days={order.daysToDeadline} deadline={order.deadline} />
+          )}
         </div>
         {order.spec && (
           <div className="text-xs text-gray-500 truncate mt-0.5">{order.spec}</div>
@@ -460,5 +466,31 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
         >🗑</button>
       </div>
     </div>
+  );
+}
+
+// 발주 데드라인 칩 — 일정의 시작일에서 D-N 차감해서 자동 계산된 날짜 표시
+// daysToDeadline: 음수 = 이미 지남, 0~3 = 위험(빨강), 4~7 = 임박(노랑), 그 외 = 회색
+function DeadlineChip({ days, deadline }) {
+  let cls = 'bg-gray-100 text-gray-600';
+  let prefix = '';
+  if (days < 0) { cls = 'bg-red-100 text-red-800 font-semibold'; prefix = '⚠ '; }
+  else if (days <= 3) { cls = 'bg-red-100 text-red-700'; prefix = '🔥 '; }
+  else if (days <= 7) { cls = 'bg-amber-100 text-amber-800'; prefix = '⏰ '; }
+  const d = new Date(deadline);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const label = days < 0
+    ? `${prefix}${Math.abs(days)}일 지남`
+    : days === 0
+    ? `${prefix}오늘까지`
+    : `${prefix}D-${days} (${m}/${day})`;
+  return (
+    <span
+      className={`text-[10px] px-1.5 py-0.5 rounded ${cls}`}
+      title={`자재 도착 데드라인: ${m}월 ${day}일 (공정 시작일 - D-N)`}
+    >
+      {label}
+    </span>
   );
 }
