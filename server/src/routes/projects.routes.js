@@ -2,6 +2,8 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
+const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 
 const router = express.Router();
 
@@ -84,6 +86,18 @@ router.post('/_seed-sample', async (req, res, next) => {
     const isoTag = today.toISOString().slice(5, 16).replace(/[-:T]/g, '');
 
     const project = await prisma.$transaction(async (tx) => {
+      // 0) 표준 어드바이스 시드 — 회사에 없으면 추가 (이미 있으면 그대로)
+      for (const a of STANDARD_ADVICES) {
+        const existing = await tx.phaseAdvice.findFirst({
+          where: { companyId: req.user.companyId, phase: a.phase, daysBefore: a.daysBefore, title: a.title },
+        });
+        if (!existing) {
+          await tx.phaseAdvice.create({
+            data: { companyId: req.user.companyId, ...a, active: true },
+          });
+        }
+      }
+
       // 1) 프로젝트
       const p = await tx.project.create({
         data: {
@@ -118,16 +132,25 @@ router.post('/_seed-sample', async (req, res, next) => {
         { d: 28, cat: '입주', content: '준공 청소 + 점검' },
       ];
       for (const s of schedules) {
+        const entryDate = addDays(s.d);
         await tx.dailyScheduleEntry.create({
           data: {
             projectId: p.id,
-            date: addDays(s.d),
+            date: entryDate,
             category: s.cat,
             content: s.content,
             createdById: req.user.id,
             updatedById: req.user.id,
             orderIndex: 0,
           },
+        });
+        // 일정 entry 생성 시 어드바이스 자동 적용 (체크리스트 자동 등록)
+        await syncAdvicesFromPhase(tx, {
+          projectId: p.id,
+          companyId: req.user.companyId,
+          phase: s.cat,
+          scheduleDate: entryDate,
+          userId: req.user.id,
         });
       }
 
