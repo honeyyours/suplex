@@ -390,7 +390,9 @@ router.patch('/:id', async (req, res, next) => {
       if (['quantity', 'unitPrice', 'totalPrice'].includes(f)) {
         newValue = num(newValue);
       } else if (typeof newValue === 'string') {
-        newValue = newValue.trim() || null;
+        const trimmed = newValue.trim();
+        // itemName / spaceGroup은 DB NOT NULL — 빈 문자열 허용, null 변환 X
+        newValue = (f === 'itemName' || f === 'spaceGroup') ? trimmed : (trimmed || null);
       }
 
       const oldStr = fmtValue(existing[f]);
