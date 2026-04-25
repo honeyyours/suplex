@@ -33,6 +33,26 @@ export default function Orders({ lockedProjectId = null }) {
     setSearchParams(next, { replace: true });
   }
 
+  // 선택된 PO들 일괄 상태 변경
+  async function bulkChangeStatus(newStatus) {
+    const selected = orders.filter((o) => selectedIds.has(o.id));
+    if (selected.length === 0) return;
+    const meta = PO_STATUS_META[newStatus];
+    if (newStatus === 'CANCELLED') {
+      if (!confirm(`선택된 ${selected.length}개 항목을 [${meta.label}]로 변경합니다.\n발주 취소 시 연결된 마감재가 다시 미정 상태로 돌아갑니다.\n\n계속할까요?`)) return;
+    }
+    try {
+      await Promise.all(selected.map((o) =>
+        purchaseOrdersApi.update(o.projectId, o.id, { status: newStatus })
+      ));
+      reload();
+      clearSelection();
+    } catch (e) {
+      alert('일괄 변경 실패: ' + (e.response?.data?.error || e.message));
+      reload();
+    }
+  }
+
   const { data: ordersData } = useQuery({
     queryKey: ['orders', projectIdFilter],
     queryFn: () => ordersGlobalApi.list(projectIdFilter ? { projectId: projectIdFilter } : {}),
@@ -97,34 +117,52 @@ export default function Orders({ lockedProjectId = null }) {
         )}
       </div>
 
-      {/* 선택 복사 액션바 (1개 이상 선택 시 노출) */}
+      {/* 선택 복사 + 일괄 상태 변경 액션바 */}
       {selectedIds.size > 0 && (
-        <div className="bg-navy-50 border border-navy-200 rounded-md px-3 py-2 flex items-center justify-between text-sm">
-          <span className="text-navy-800">
-            ✓ <span className="font-bold">{selectedIds.size}</span>개 선택됨
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={async () => {
-                const selected = orders.filter((o) => selectedIds.has(o.id));
-                const text = formatOrdersForCopy(selected, { company, user: auth?.user });
-                try {
-                  await navigator.clipboard.writeText(text);
-                  alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
-                } catch (e) {
-                  alert('클립보드 복사 실패: ' + e.message);
-                }
-              }}
-              className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
-            >
-              📋 선택 복사
-            </button>
-            <button
-              onClick={clearSelection}
-              className="text-xs px-2 py-1.5 text-navy-700 hover:bg-navy-100 rounded"
-            >
-              해제
-            </button>
+        <div className="bg-navy-50 border border-navy-200 rounded-md px-3 py-2 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-navy-800">
+              ✓ <span className="font-bold">{selectedIds.size}</span>개 선택됨
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  const selected = orders.filter((o) => selectedIds.has(o.id));
+                  const text = formatOrdersForCopy(selected, { company, user: auth?.user });
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
+                  } catch (e) {
+                    alert('클립보드 복사 실패: ' + e.message);
+                  }
+                }}
+                className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+              >
+                선택 복사
+              </button>
+              <button
+                onClick={clearSelection}
+                className="text-xs px-2 py-1.5 text-navy-700 hover:bg-navy-100 rounded"
+              >
+                해제
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            <span className="text-navy-600">상태 일괄 변경:</span>
+            {STATUS_KEYS.map((s) => {
+              const m = PO_STATUS_META[s];
+              return (
+                <button
+                  key={s}
+                  onClick={() => bulkChangeStatus(s)}
+                  className={`px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
+                  title={`선택된 ${selectedIds.size}개를 ${m.label}로 변경`}
+                >
+                  {m.icon} {m.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -358,14 +396,6 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
     } finally { setBusy(false); }
   }
 
-  async function changeStatus(s) {
-    setBusy(true);
-    try {
-      await purchaseOrdersApi.update(order.projectId, order.id, { status: s });
-      onChange();
-    } finally { setBusy(false); }
-  }
-
   async function remove() {
     if (!confirm('이 발주 항목을 삭제할까요?')) return;
     setBusy(true);
@@ -426,16 +456,9 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           placeholder="매입처"
           className="w-28 text-sm px-2 py-1 border rounded"
         />
-        <select
-          value={order.status}
-          onChange={(e) => changeStatus(e.target.value)}
-          disabled={busy}
-          className={`text-xs font-semibold px-2 py-1 rounded-full border-0 ${meta.color}`}
-        >
-          {STATUS_KEYS.map((s) => (
-            <option key={s} value={s}>{PO_STATUS_META[s].icon} {PO_STATUS_META[s].label}</option>
-          ))}
-        </select>
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${meta.color}`} title="상태 변경은 위 액션바에서 일괄로">
+          {meta.icon} {meta.label}
+        </span>
         <button
           onClick={remove}
           disabled={busy}
