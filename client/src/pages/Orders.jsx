@@ -117,61 +117,62 @@ export default function Orders({ lockedProjectId = null }) {
         )}
       </div>
 
-      {/* 선택 시 화면 하단 floating 액션바 — 콘텐츠는 안 밀림 */}
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap text-sm">
-            <span className="text-navy-800 font-medium">
-              ✓ {selectedIds.size}개
-            </span>
-            <button
-              onClick={async () => {
-                const selected = orders.filter((o) => selectedIds.has(o.id));
-                const text = formatOrdersForCopy(selected, { company, user: auth?.user });
-                try {
-                  await navigator.clipboard.writeText(text);
-                  alert(`${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.`);
-                } catch (e) {
-                  alert('클립보드 복사 실패: ' + e.message);
-                }
-              }}
-              className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
-            >
-              선택 복사
-            </button>
-            <span className="text-gray-300">|</span>
-            <span className="text-xs text-gray-500">변경:</span>
-            {STATUS_KEYS.map((s) => {
-              const m = PO_STATUS_META[s];
-              return (
-                <button
-                  key={s}
-                  onClick={() => bulkChangeStatus(s)}
-                  className={`text-xs px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
-                  title={`선택된 ${selectedIds.size}개를 ${m.label}로 변경`}
-                >
-                  {m.icon} {m.label}
-                </button>
+      {/* 통계 카드 자리 — 선택 시 액션바로 토글 (밀림 0, 한눈에 작업) */}
+      {selectedIds.size > 0 ? (
+        <div className="bg-white border rounded-md px-3 py-2 flex items-center gap-2 flex-wrap text-sm shadow-sm">
+          <span className="text-navy-800 font-medium">
+            ✓ {selectedIds.size}개
+          </span>
+          <button
+            onClick={async () => {
+              const selected = orders.filter((o) => selectedIds.has(o.id));
+              const text = formatOrdersForCopy(selected, { company, user: auth?.user });
+              try {
+                await navigator.clipboard.writeText(text);
+              } catch (e) {
+                alert('클립보드 복사 실패: ' + e.message);
+                return;
+              }
+              const goOrdered = confirm(
+                `${selected.length}개 항목이 클립보드에 복사되었습니다.\n발주처에 카톡으로 붙여넣으세요.\n\n바로 [발주됨]으로 처리하시겠습니까?`,
               );
-            })}
-            <button
-              onClick={clearSelection}
-              className="ml-auto text-xs px-2 py-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
-            >
-              ✕ 해제
-            </button>
-          </div>
+              if (goOrdered) await bulkChangeStatus('ORDERED');
+            }}
+            className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+          >
+            선택 복사
+          </button>
+          <span className="text-gray-300">|</span>
+          <span className="text-xs text-gray-500">변경:</span>
+          {STATUS_KEYS.map((s) => {
+            const m = PO_STATUS_META[s];
+            return (
+              <button
+                key={s}
+                onClick={() => bulkChangeStatus(s)}
+                className={`text-xs px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
+                title={`선택된 ${selectedIds.size}개를 ${m.label}로 변경`}
+              >
+                {m.icon} {m.label}
+              </button>
+            );
+          })}
+          <button
+            onClick={clearSelection}
+            className="ml-auto text-xs px-2 py-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
+          >
+            ✕ 해제
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <SummaryCard label="⚠️ 모델 확인 필요" count={summary.pendingModels} tone="amber" highlight />
+          <SummaryCard label="⏳ 발주 대기" count={summary.pending} tone="amber" />
+          <SummaryCard label="📦 발주됨" count={summary.ordered} tone="sky" />
+          <SummaryCard label="✅ 수령" count={summary.received} tone="emerald" />
+          <SummaryCard label="⊘ 취소" count={summary.cancelled} tone="gray" />
         </div>
       )}
-
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <SummaryCard label="⚠️ 모델 확인 필요" count={summary.pendingModels} tone="amber" highlight />
-        <SummaryCard label="⏳ 발주 대기" count={summary.pending} tone="amber" />
-        <SummaryCard label="📦 발주됨" count={summary.ordered} tone="sky" />
-        <SummaryCard label="✅ 수령" count={summary.received} tone="emerald" />
-        <SummaryCard label="⊘ 취소" count={summary.cancelled} tone="gray" />
-      </div>
 
       {/* 모델 확인 필요 섹션 */}
       {pendingModels.length > 0 && (
