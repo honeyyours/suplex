@@ -25,6 +25,7 @@ export default function ProjectMaterialsSimple() {
         materials.map((m) => ({
           id: m.id,
           kind: m.kind || 'FINISH',
+          status: m.status || 'UNDECIDED',
           spaceGroup: m.spaceGroup || '기타',
           itemName: m.itemName === '(미정)' || m.itemName === '(이름없음)' ? '' : (m.itemName || ''),
           brand: m.brand || '',
@@ -103,7 +104,32 @@ export default function ProjectMaterialsSimple() {
     // 가전 전용
     if ('size' in patch) serverPatch.size = patch.size || null;
     if ('installed' in patch) serverPatch.installed = patch.installed; // boolean | null
+    // 상태 (status 변경 시 백엔드의 syncPurchaseOrders가 자동으로 PO 생성/동기화)
+    if ('status' in patch) serverPatch.status = patch.status;
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
+  }
+
+  // 그룹 일괄 확정 — 미정인 항목들만 CONFIRMED로 (이미 확정/재사용/해당없음은 그대로)
+  async function confirmGroup(name) {
+    const targets = items.filter((it) => it.spaceGroup === name && it.status === 'UNDECIDED');
+    if (targets.length === 0) {
+      alert('이 그룹에는 미정 항목이 없습니다.');
+      return;
+    }
+    if (!confirm(`"${name}" 그룹의 미정 항목 ${targets.length}개를 모두 확정으로 변경합니다. 자동으로 발주 대기 항목이 생성됩니다.\n\n계속할까요?`)) return;
+    try {
+      // 직렬 N개 patch — syncPurchaseOrders가 트랜잭션 안에서 호출되므로 안전
+      // 화면도 즉시 반영
+      setItems((prev) => prev.map((it) => (
+        it.spaceGroup === name && it.status === 'UNDECIDED' ? { ...it, status: 'CONFIRMED' } : it
+      )));
+      await Promise.all(targets.map((t) => materialsApi.update(projectId, t.id, { status: 'CONFIRMED' })));
+      alert(`✅ ${targets.length}개 항목 확정 완료. 발주 탭에서 확인하세요.`);
+    } catch (e) {
+      alert('일괄 확정 실패: ' + (e.response?.data?.error || e.message));
+      // 롤백 위해 reload
+      reload();
+    }
   }
 
   // ========== 항목 추가/삭제 ==========
@@ -351,6 +377,7 @@ export default function ProjectMaterialsSimple() {
           onAddItem={() => addItem(g.name)}
           onRenameGroup={() => renameGroup(g.name)}
           onRemoveGroup={() => removeGroup(g.name)}
+          onConfirmGroup={() => confirmGroup(g.name)}
           onCellKeyDown={handleCellKeyDown}
         />
       ))}
@@ -375,7 +402,7 @@ export default function ProjectMaterialsSimple() {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onCellKeyDown }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onConfirmGroup, onCellKeyDown }) {
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -383,6 +410,11 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
   const badge = isAppliance
     ? 'bg-violet-100 text-violet-700'
     : 'bg-navy-100 text-navy-700';
+
+  // 진행률 — UNDECIDED는 미확정, 그 외(CONFIRMED/CHANGED/REUSED/NOT_APPLICABLE)는 처리됨으로 간주
+  const total = group.items.length;
+  const undecidedCount = group.items.filter((it) => (it.status || 'UNDECIDED') === 'UNDECIDED').length;
+  const decidedCount = total - undecidedCount;
 
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
@@ -399,9 +431,20 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
           <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
             {isAppliance ? '가전·가구' : '마감재'}
           </span>
-          <span className="text-xs text-gray-400 flex-shrink-0">{group.items.length}개</span>
+          <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
+            {decidedCount}/{total} 처리
+          </span>
         </div>
         <div className="flex items-center gap-1">
+          {undecidedCount > 0 && (
+            <button
+              onClick={onConfirmGroup}
+              className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+              title={`미정 ${undecidedCount}개를 모두 확정 → 발주 자동 생성`}
+            >
+              ✅ 모두 확정 → 발주 ({undecidedCount})
+            </button>
+          )}
           <button
             onClick={onAddItem}
             className="text-xs px-2 py-1 border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
@@ -436,10 +479,11 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
-        <col style={{ width: '20%' }} />
+        <col style={{ width: '18%' }} />
         <col style={{ width: '22%' }} />
-        <col style={{ width: '90px' }} />
+        <col style={{ width: '80px' }} />
         <col />
+        <col style={{ width: '60px' }} />{/* status */}
         <col style={{ width: '24px' }} />
       </colgroup>
       <thead className="bg-gray-50 text-xs text-gray-500">
@@ -448,6 +492,7 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
           <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
           <th className="text-left px-2 py-1.5">수량</th>
           <th className="text-left px-2 py-1.5">비고</th>
+          <th className="text-center px-2 py-1.5">상태</th>
           <th></th>
         </tr>
       </thead>
@@ -464,7 +509,7 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
         ))}
         {group.items.length === 0 && (
           <tr>
-            <td colSpan={5} className="text-center py-3 text-xs text-gray-400">
+            <td colSpan={6} className="text-center py-3 text-xs text-gray-400">
               아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
             </td>
           </tr>
@@ -481,11 +526,12 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
-        <col style={{ width: '15%' }} />{/* 품목 */}
-        <col style={{ width: '24%' }} />{/* 모델명 */}
-        <col style={{ width: '130px' }} />{/* 사이즈 */}
+        <col style={{ width: '14%' }} />{/* 품목 */}
+        <col style={{ width: '22%' }} />{/* 모델명 */}
+        <col style={{ width: '125px' }} />{/* 사이즈 */}
         <col style={{ width: '70px' }} />{/* 설치 */}
         <col />{/* 비고 */}
+        <col style={{ width: '60px' }} />{/* status */}
         <col style={{ width: '24px' }} />
       </colgroup>
       <thead className="bg-gray-50 text-xs text-gray-500">
@@ -495,6 +541,7 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
           <th className="text-left px-2 py-1.5">사이즈 (W×D×H)</th>
           <th className="text-center px-2 py-1.5">설치</th>
           <th className="text-left px-2 py-1.5">비고 (빌트인/도어방향)</th>
+          <th className="text-center px-2 py-1.5">상태</th>
           <th></th>
         </tr>
       </thead>
@@ -511,7 +558,7 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
         ))}
         {group.items.length === 0 && (
           <tr>
-            <td colSpan={6} className="text-center py-3 text-xs text-gray-400">
+            <td colSpan={7} className="text-center py-3 text-xs text-gray-400">
               아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
             </td>
           </tr>
@@ -581,6 +628,9 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
           placeholder="빌트인 여부, 도어 개폐 방향, 콘센트 위치 등"
         />
       </td>
+      <td className="px-1 py-1.5 text-center">
+        <StatusChip status={item.status} onChange={(s) => onChange({ status: s })} />
+      </td>
       <td className="px-1 text-right">
         {saving ? (
           <span className="text-[10px] text-gray-400" title="저장 중">…</span>
@@ -641,6 +691,9 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
           placeholder="설명/색상/위치 등"
         />
       </td>
+      <td className="px-1 py-1.5 text-center">
+        <StatusChip status={item.status} onChange={(s) => onChange({ status: s })} />
+      </td>
       <td className="px-1 text-right">
         {saving ? (
           <span className="text-[10px] text-gray-400" title="저장 중">…</span>
@@ -656,5 +709,35 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
         )}
       </td>
     </tr>
+  );
+}
+
+// ============================================
+// 상태 칩 (4가지 status select)
+// ============================================
+const STATUS_OPTIONS = [
+  { key: 'UNDECIDED',      icon: '🔍', label: '미정',     bg: 'bg-gray-100 text-gray-600' },
+  { key: 'CONFIRMED',      icon: '✅', label: '확정',     bg: 'bg-emerald-100 text-emerald-700' },
+  { key: 'REUSED',         icon: '♻️', label: '재사용',   bg: 'bg-sky-100 text-sky-700' },
+  { key: 'NOT_APPLICABLE', icon: '⊘', label: '해당없음', bg: 'bg-gray-100 text-gray-400' },
+];
+function StatusChip({ status, onChange }) {
+  // legacy 매핑: REVIEWING/CHANGED 도 표시 가능하게
+  const effective = status === 'REVIEWING' ? 'UNDECIDED'
+    : status === 'CHANGED' ? 'CONFIRMED'
+    : (status || 'UNDECIDED');
+  const meta = STATUS_OPTIONS.find((o) => o.key === effective) || STATUS_OPTIONS[0];
+  return (
+    <select
+      value={effective}
+      onChange={(e) => onChange(e.target.value)}
+      tabIndex={-1}
+      className={`text-[11px] px-1.5 py-0.5 rounded ${meta.bg} border-transparent outline-none focus:border-navy-400 cursor-pointer`}
+      title={meta.label}
+    >
+      {STATUS_OPTIONS.map((o) => (
+        <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
+      ))}
+    </select>
   );
 }
