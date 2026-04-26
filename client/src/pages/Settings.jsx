@@ -230,7 +230,7 @@ function QuoteRatesSection({ company, onSaved, canEdit }) {
   if (!company) return null;
 
   return (
-    <Section title="견적 기본 비율 (% 단위)">
+    <Section title="견적 기본 비율 (% 단위)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         새 견적 작성 시 이 값이 견적에 스냅샷됩니다. 견적별로 따로 조정 가능.
       </p>
@@ -478,7 +478,7 @@ function QuoteTemplatesSection() {
   }
 
   return (
-    <Section title="견적 항목 템플릿 (회사 마스터)">
+    <Section title="견적 항목 템플릿 (회사 마스터)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         자주 쓰는 자재/단가를 공종별로 저장. 견적 작성 시 "📋 템플릿에서 가져오기"로 라인 일괄 추가.
       </p>
@@ -700,7 +700,7 @@ function PhaseKeywordsSection() {
   const filtered = rules.filter((r) => r.phase === activePhase);
 
   return (
-    <Section title="공종 자동 인식 키워드">
+    <Section title="공종 자동 인식 키워드" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         일정 입력 시 내용에 키워드가 포함되면 해당 공종으로 자동 분류 → 체크리스트 자동 생성에 연결됩니다.
         예: "철거" 키워드가 있으면 일정 "거실 철거"는 철거 공종으로 인식.
@@ -925,7 +925,7 @@ function ChecklistTemplatesSection() {
   const phaseChips = [...phases, '(공종 없음)'];
 
   return (
-    <Section title="체크리스트 템플릿 (회사 마스터)">
+    <Section title="체크리스트 템플릿 (회사 마스터)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         공종별 표준 사진 체크리스트. 일정에 해당 공종이 추가되면 자동으로 프로젝트 체크리스트에 투입됩니다.
         프로젝트 체크리스트에서 "📋 템플릿에서 가져오기"로 수동 추가도 가능.
@@ -1106,7 +1106,7 @@ function PhaseDeadlineRulesSection() {
   const ruleMap = new Map(rules.map((r) => [r.phase, r]));
 
   return (
-    <Section title="공정별 발주 데드라인 (D-N 룰)">
+    <Section title="공정별 발주 데드라인 (D-N 룰)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         자재가 공정 시작 며칠 전까지 도착해야 하는지. 회사 룰이 우선, 없으면 표준 기본값 적용.
       </p>
@@ -1251,7 +1251,7 @@ function PhaseAdvicesSection() {
   }
 
   return (
-    <Section title="공정 어드바이스 (체크리스트 자동 생성)">
+    <Section title="공정 어드바이스 (체크리스트 자동 생성)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         일정에 해당 공정이 추가되면 (시작일 - D-N) 날짜에 체크리스트로 자동 등록.
         예: "철거 D-3 → 보양 관련 관리실 문의" → 철거 일정 시작 3일 전에 체크리스트 알림.
@@ -1334,11 +1334,43 @@ function PhaseAdvicesSection() {
 // ============================================
 // Helpers
 // ============================================
-function Section({ title, children, hint }) {
+function Section({ title, children, hint, collapsible = false, defaultOpen = false }) {
+  const storageKey = collapsible ? `settings:section:${title}` : null;
+  const [open, setOpen] = useState(() => {
+    if (!collapsible) return true;
+    if (typeof window === 'undefined') return defaultOpen;
+    const v = localStorage.getItem(storageKey);
+    if (v === '1') return true;
+    if (v === '0') return false;
+    return defaultOpen;
+  });
+  function toggle() {
+    setOpen((v) => {
+      const next = !v;
+      if (storageKey) localStorage.setItem(storageKey, next ? '1' : '0');
+      return next;
+    });
+  }
+
+  if (!collapsible) {
+    return (
+      <div className={`bg-white rounded-xl border p-5 ${hint ? 'border-dashed' : ''}`}>
+        <div className="text-sm font-semibold text-navy-800 mb-3">{title}</div>
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div className={`bg-white rounded-xl border p-5 ${hint ? 'border-dashed' : ''}`}>
-      <div className="text-sm font-semibold text-navy-800 mb-3">{title}</div>
-      {children}
+    <div className={`bg-white rounded-xl border ${hint ? 'border-dashed' : ''}`}>
+      <button
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 rounded-xl"
+      >
+        <span className="text-sm font-semibold text-navy-800">{title}</span>
+        <span className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      {open && <div className="px-5 pb-5 -mt-2">{children}</div>}
     </div>
   );
 }
