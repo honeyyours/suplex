@@ -61,10 +61,10 @@ const TAGS = [
     chipText: 'text-amber-800',
     hint: '발주 정리·복사용 — 카톡으로 복사해 거래처 전송, 정리해두면 다음 발주 시 재활용',
     wide: true,   // 한 줄 폭으로 강조 (col-span)
-    mono: true,   // 모노스페이스 폰트
     examples: [
-      '목공 자재 발주 내역 정리\n· 합판 18T x 20장\n· 각재 30x40 x 50개\n(예상 금액: 약 ___원)',
-      '타일 자재 발주 내역 정리\n· 욕실 바닥 300x300 x 8박스\n· 본드, 메지\n(예상 금액: 약 ___원)',
+      '목공 자재 발주 정리',
+      '타일 자재 발주 정리',
+      '도배 자재 발주 정리',
     ],
   },
   {
@@ -331,17 +331,17 @@ function CreateMemoModal({ onClose, onSave }) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={s.examples[0].split('\n')[0]}
-              className={`input ${s.mono ? 'font-mono' : ''}`}
+              placeholder={s.examples[0]}
+              className="input"
             />
           </L>
           <L label="내용">
             <textarea
-              rows={s.mono ? 8 : 5}
+              rows={5}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={s.examples[s.mono ? 0 : 1] || s.examples[0]}
-              className={`input resize-y ${s.mono ? 'font-mono' : ''}`}
+              placeholder={`예: ${s.examples[1] || s.examples[0]}`}
+              className="input resize-y"
             />
           </L>
         </div>
@@ -422,7 +422,6 @@ function MemoCard({ memo, onUpdate, onRemove }) {
   }
 
   const s = tagStyle(tag);
-  const monoClass = s.mono ? 'font-mono' : '';
   // 자재발주는 강조 — 항상 복사 버튼 노출, 좌측 색상 보더
   const accentBorder = s.wide ? 'border-l-4 border-l-amber-400' : '';
   const alwaysShowCopy = !!s.wide;
@@ -455,14 +454,14 @@ function MemoCard({ memo, onUpdate, onRemove }) {
         value={title}
         onChange={(e) => handleTitleChange(e.target.value)}
         placeholder="제목 (선택)"
-        className={`w-full bg-transparent outline-none text-sm font-semibold text-navy-800 placeholder:text-gray-300 mb-1 ${monoClass}`}
+        className="w-full bg-transparent outline-none text-sm font-semibold text-navy-800 placeholder:text-gray-300 mb-1"
       />
       <textarea
         value={content}
         onChange={(e) => handleContentChange(e.target.value)}
         placeholder="메모 작성..."
         rows={Math.min(20, Math.max(3, content.split('\n').length + 1))}
-        className={`w-full bg-transparent outline-none resize-none text-sm leading-relaxed text-gray-700 placeholder:text-gray-300 ${monoClass}`}
+        className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed text-gray-700 placeholder:text-gray-300"
       />
     </div>
   );
