@@ -1195,20 +1195,22 @@ function roleLabel(role) {
 // ============================================
 const APPLI_CATEGORY_LABEL = {
   REFRIGERATOR: '냉장고',
+  KIMCHI_REFRIGERATOR: '김치냉장고',
   DISHWASHER: '식기세척기',
   WASHING_MACHINE: '세탁기',
   DRYER: '건조기',
   OVEN: '오븐',
   COOKTOP: '쿡탑',
   AIR_CONDITIONER: '에어컨',
+  ROBOT_VACUUM: '로봇청소기',
 };
 
 function VerifyChip({ status, count }) {
   const map = {
-    VERIFIED:       { label: `✅ 검증됨 (${count}출처)`, cls: 'bg-emerald-50 text-emerald-700' },
-    USER_CORRECTED: { label: '🛠️ 사용자 정정',           cls: 'bg-sky-50 text-sky-700' },
-    PENDING:        { label: '⚠️ 검증 대기',             cls: 'bg-amber-50 text-amber-700' },
-    DISPUTED:       { label: '❌ 출처 불일치',           cls: 'bg-rose-50 text-rose-700' },
+    VERIFIED:       { label: `✅ 확신 (${count}출처)`, cls: 'bg-emerald-50 text-emerald-700' },
+    USER_CORRECTED: { label: '🛠️ 사용자 정정',          cls: 'bg-sky-50 text-sky-700' },
+    PENDING:        { label: '△ 확인필요',              cls: 'bg-amber-50 text-amber-700' },
+    DISPUTED:       { label: '△ 출처 불일치',           cls: 'bg-amber-50 text-amber-700' },
   };
   const m = map[status] || { label: status, cls: 'bg-gray-100 text-gray-700' };
   return <span className={`inline-block text-[11px] px-2 py-0.5 rounded ${m.cls}`}>{m.label}</span>;

@@ -8,7 +8,7 @@ const { authRequired, requireRole } = require('../middlewares/auth');
 const router = express.Router();
 router.use(authRequired);
 
-const APPLI_CATEGORIES = ['REFRIGERATOR', 'DISHWASHER', 'WASHING_MACHINE', 'DRYER', 'OVEN', 'COOKTOP', 'AIR_CONDITIONER'];
+const APPLI_CATEGORIES = ['REFRIGERATOR', 'KIMCHI_REFRIGERATOR', 'DISHWASHER', 'WASHING_MACHINE', 'DRYER', 'OVEN', 'COOKTOP', 'AIR_CONDITIONER', 'ROBOT_VACUUM'];
 const VERIFY_STATUSES = ['VERIFIED', 'PENDING', 'DISPUTED', 'USER_CORRECTED'];
 
 // ============================================

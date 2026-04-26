@@ -209,8 +209,10 @@ export default function ProjectMaterialsSimple() {
   async function addItemFromSpec(spaceGroup, spec) {
     const sizeStr = `${spec.widthMm} × ${spec.depthMm} × ${spec.heightMm}`;
     const itemNameLabel = ({
-      REFRIGERATOR: '냉장고', DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기',
+      REFRIGERATOR: '냉장고', KIMCHI_REFRIGERATOR: '김치냉장고',
+      DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기',
       DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨',
+      ROBOT_VACUUM: '로봇청소기',
     })[spec.category] || '가전';
     const brandStr = `${spec.brand} ${spec.productName} (${spec.modelCode})`;
     const memoBits = [];
@@ -539,8 +541,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
   const verifyChip = (s) => {
     if (s.verifyStatus === 'VERIFIED') return <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded">✅ {s.consensusCount}출처</span>;
     if (s.verifyStatus === 'USER_CORRECTED') return <span className="text-[10px] px-1.5 py-0.5 bg-sky-50 text-sky-700 rounded">🛠️ 정정</span>;
-    if (s.verifyStatus === 'DISPUTED') return <span className="text-[10px] px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded">❌ 불일치</span>;
-    return <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">⚠️ 대기</span>;
+    return <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">△ 확인필요</span>;
   };
 
   return (
@@ -565,12 +566,14 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
             <select value={category} onChange={(e) => setCategory(e.target.value)} className="text-sm px-2 py-1.5 border rounded">
               <option value="">전체 카테고리</option>
               <option value="REFRIGERATOR">냉장고</option>
+              <option value="KIMCHI_REFRIGERATOR">김치냉장고</option>
               <option value="DISHWASHER">식기세척기</option>
               <option value="WASHING_MACHINE">세탁기</option>
               <option value="DRYER">건조기</option>
               <option value="OVEN">오븐</option>
               <option value="COOKTOP">쿡탑</option>
               <option value="AIR_CONDITIONER">에어컨</option>
+              <option value="ROBOT_VACUUM">로봇청소기</option>
             </select>
             <select value={brand} onChange={(e) => setBrand(e.target.value)} className="text-sm px-2 py-1.5 border rounded">
               <option value="">전체 브랜드</option>
@@ -619,7 +622,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
           <div className="border-t px-5 py-3 bg-gray-50">
             <div className="text-xs text-gray-500 mb-2">선택됨 — 미리보기:</div>
             <div className="text-sm">
-              <div><span className="text-gray-500">품목:</span> {({ REFRIGERATOR: '냉장고', DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기', DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨' })[selected.category]}</div>
+              <div><span className="text-gray-500">품목:</span> {({ REFRIGERATOR: '냉장고', KIMCHI_REFRIGERATOR: '김치냉장고', DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기', DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨', ROBOT_VACUUM: '로봇청소기' })[selected.category]}</div>
               <div><span className="text-gray-500">모델명:</span> {selected.brand} {selected.productName} ({selected.modelCode})</div>
               <div><span className="text-gray-500">사이즈:</span> {selected.widthMm} × {selected.depthMm} × {selected.heightMm}</div>
             </div>

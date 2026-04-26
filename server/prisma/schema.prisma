@@ -1126,7 +1126,7 @@ model PhaseAdvice {
 // ============================================
 model ApplianceSpec {
   id           String   @id @default(cuid())
-  category     String   // REFRIGERATOR | DISHWASHER | WASHING_MACHINE | DRYER | OVEN | COOKTOP | AIR_CONDITIONER
+  category     String   // REFRIGERATOR | KIMCHI_REFRIGERATOR | DISHWASHER | WASHING_MACHINE | DRYER | OVEN | COOKTOP | AIR_CONDITIONER | ROBOT_VACUUM
   brand        String   // "LG" | "삼성" | ...
   modelCode    String   @unique // 정확 모델코드 (예: S634S30Q)
   modelAliases String[] @default([]) // 별칭/약어 검색용
