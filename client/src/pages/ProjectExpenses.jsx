@@ -125,7 +125,7 @@ export default function ProjectExpenses() {
                         {e.type === 'INCOME' ? '+' : ''}{formatWon(e.amount)}
                       </td>
                       <td className="py-1.5 text-right w-8">
-                        <button onClick={() => removeExpense(e.id)} className="text-gray-300 hover:text-red-500" title="삭제">×</button>
+                        <button onClick={() => removeExpense(e.id)} className="text-gray-300 hover:text-rose-500" title="삭제">×</button>
                       </td>
                     </tr>
                   );
@@ -242,7 +242,7 @@ function OrderRow({ order, onEdit, onChangeStatus, onAcknowledge, onRemove }) {
       </td>
       <td className="px-3 py-2 text-right text-xs whitespace-nowrap">
         {changed && <button onClick={onAcknowledge} className="text-orange-700 hover:underline mr-2">확인</button>}
-        <button onClick={onRemove} className="text-gray-300 hover:text-red-500" title="삭제">×</button>
+        <button onClick={onRemove} className="text-gray-300 hover:text-rose-500" title="삭제">×</button>
       </td>
     </tr>
   );
@@ -414,7 +414,7 @@ function OrderModal({ projectId, order, onClose, onSaved }) {
 }
 
 function Field({ label, required, children }) {
-  return <label className="block"><span className="block text-xs font-medium text-gray-700 mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</span>{children}</label>;
+  return <label className="block"><span className="block text-xs font-medium text-gray-700 mb-1">{label}{required && <span className="text-rose-500 ml-0.5">*</span>}</span>{children}</label>;
 }
 
 function ModalStyles() {

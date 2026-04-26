@@ -470,7 +470,7 @@ export default function ProjectMaterials() {
               <button
                 onClick={handleClearAll}
                 disabled={importing || materials.length === 0}
-                className="text-xs px-3 py-1.5 border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
+                className="text-xs px-3 py-1.5 border border-rose-300 text-rose-700 rounded-md hover:bg-rose-50 disabled:opacity-50"
                 title="이 프로젝트의 마감재 항목 전부 삭제"
               >
                 🗑 모두 삭제

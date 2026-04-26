@@ -128,7 +128,7 @@ export default function ProjectChecklist({ projectId } = {}) {
             📷 사진 첨부 필수
           </label>
         </div>
-        {displayErr && <div className="mt-2 text-sm text-red-600">{displayErr}</div>}
+        {displayErr && <div className="mt-2 text-sm text-rose-600">{displayErr}</div>}
       </div>
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
@@ -256,7 +256,7 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
           )}
           <button
             onClick={() => onDelete(item.id)}
-            className="text-xs text-gray-500 hover:text-red-600 px-1"
+            className="text-xs text-gray-500 hover:text-rose-600 px-1"
           >✕</button>
         </div>
       </div>

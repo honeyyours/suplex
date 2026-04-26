@@ -93,7 +93,7 @@ export default function VendorPicker({
         {currentVendorId && (
           <button
             onClick={() => pick(null)}
-            className="w-full text-left text-xs px-2 py-1.5 hover:bg-red-50 text-red-600 border-b"
+            className="w-full text-left text-xs px-2 py-1.5 hover:bg-rose-50 text-rose-600 border-b"
           >
             ✕ 태그 제거 <span className="text-gray-500">({currentVendorName})</span>
           </button>

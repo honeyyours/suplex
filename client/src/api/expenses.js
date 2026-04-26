@@ -17,7 +17,7 @@ export const expensesApi = {
 
 // 거래 종류 메타
 export const EXPENSE_TYPE_META = {
-  EXPENSE:  { label: '지출', color: 'bg-red-50 text-red-700 border-red-200',         sign: '-' },
+  EXPENSE:  { label: '지출', color: 'bg-rose-50 text-rose-700 border-rose-200',         sign: '-' },
   INCOME:   { label: '매출', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', sign: '+' },
   TRANSFER: { label: '이체', color: 'bg-gray-100 text-gray-600 border-gray-200',     sign: '↔' },
 };

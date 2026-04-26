@@ -99,7 +99,7 @@ export default function Settings() {
         <div className="pt-3">
           <button
             onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
-            className="text-sm px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50"
+            className="text-sm px-4 py-2 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
           >
             로그아웃
           </button>
@@ -560,7 +560,7 @@ function QuoteTemplatesSection() {
                   <td className="px-2 py-1.5 text-right tabular-nums">{formatWon(t.defaultExpensePrice)}</td>
                   <td className="px-2 py-1.5 text-right text-xs">
                     <button onClick={() => startEdit(t)} className="text-navy-700 hover:underline mr-2">편집</button>
-                    <button onClick={() => remove(t.id)} className="text-red-500 hover:underline">삭제</button>
+                    <button onClick={() => remove(t.id)} className="text-rose-500 hover:underline">삭제</button>
                   </td>
                 </tr>
               ))}
@@ -757,7 +757,7 @@ function PhaseKeywordsSection() {
             <button
               onClick={() => remove(r.id)}
               title="삭제"
-              className="text-gray-400 hover:text-red-500"
+              className="text-gray-400 hover:text-rose-500"
             >×</button>
           </span>
         ))}
@@ -780,7 +780,7 @@ function PhaseKeywordsSection() {
         >추가</button>
         <button
           onClick={removeActivePhase}
-          className="text-sm px-3 py-1.5 border border-red-300 text-red-600 rounded hover:bg-red-50"
+          className="text-sm px-3 py-1.5 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
           title={`"${activePhase}" 공정 자체를 삭제 (키워드/D-N/어드바이스 일괄 제거)`}
         >🗑 공정 삭제</button>
       </div>
@@ -928,7 +928,7 @@ function PhaseDeadlineRulesSection() {
                   {defaults[r.phase] != null ? `D-${defaults[r.phase]}` : '—'}
                 </td>
                 <td className="px-2 py-1.5 text-right">
-                  <button onClick={() => remove(r.id)} className="text-red-500 hover:underline">삭제</button>
+                  <button onClick={() => remove(r.id)} className="text-rose-500 hover:underline">삭제</button>
                 </td>
               </tr>
             ))}
@@ -1065,7 +1065,7 @@ function PhaseAdvicesSection() {
                   </button>
                 </td>
                 <td className="px-2 py-1.5 text-right">
-                  <button onClick={() => remove(a.id)} className="text-red-500 hover:underline">삭제</button>
+                  <button onClick={() => remove(a.id)} className="text-rose-500 hover:underline">삭제</button>
                 </td>
               </tr>
             ))}

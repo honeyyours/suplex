@@ -53,7 +53,7 @@ export default function ContextMenu({ x, y, items, onClose }) {
             item.disabled
               ? 'text-gray-300 cursor-not-allowed'
               : item.danger
-              ? 'text-red-600 hover:bg-red-50'
+              ? 'text-rose-600 hover:bg-rose-50'
               : 'text-gray-700 hover:bg-gray-50'
           }`}
         >

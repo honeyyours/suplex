@@ -136,7 +136,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           <button
             onClick={() => onDelete(entry.id)}
             title="삭제"
-            className="text-xs sm:text-[10px] text-gray-500 hover:text-red-600 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
+            className="text-xs sm:text-[10px] text-gray-500 hover:text-rose-600 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
           >
             ✕
           </button>

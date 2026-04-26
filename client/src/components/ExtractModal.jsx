@@ -75,7 +75,7 @@ export default function ExtractModal({ projectId, onClose }) {
             />
             오늘 이후 일정만
           </label>
-          {err && <div className="text-sm text-red-600">{err}</div>}
+          {err && <div className="text-sm text-rose-600">{err}</div>}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">

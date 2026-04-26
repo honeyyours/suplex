@@ -324,7 +324,7 @@ function FooterActions({ saving, savedFlash, onShowHistory, onDelete, onClose })
           type="button"
           data-no-row-click
           onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-          className="text-red-500 hover:underline"
+          className="text-rose-500 hover:underline"
         >🗑 삭제 (Del)</button>
         <button
           type="button"

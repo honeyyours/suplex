@@ -51,7 +51,7 @@ export default function Login() {
               className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
             />
           </div>
-          {err && <p className="text-sm text-red-600">{err}</p>}
+          {err && <p className="text-sm text-rose-600">{err}</p>}
           <button
             type="submit"
             disabled={busy}

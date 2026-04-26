@@ -149,7 +149,7 @@ function MembersSection({ isOwner, currentUserId }) {
                       {m.userId !== currentUserId && (
                         <button
                           onClick={() => handleRemove(m)}
-                          className="text-xs px-2 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50"
+                          className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
                         >
                           제거
                         </button>
@@ -421,7 +421,7 @@ function ResetPasswordModal({ member, onClose, onSaved }) {
         <button
           onClick={submit}
           disabled={busy}
-          className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          className="px-4 py-2 text-sm bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50"
         >
           {busy ? '리셋중...' : '리셋'}
         </button>
@@ -568,7 +568,7 @@ function VendorsSection({ isOwner, role }) {
                       {isOwner && (
                         <button
                           onClick={() => handleRemove(v)}
-                          className="text-xs px-2 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50"
+                          className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
                         >
                           삭제
                         </button>

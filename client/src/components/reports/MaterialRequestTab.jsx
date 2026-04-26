@@ -118,7 +118,7 @@ function RequestCard({ request, onSetStatus, onDelete }) {
               → {REQUEST_STATUS_META[k].label}
             </button>
           ))}
-          <button onClick={onDelete} className="px-2 py-1 text-gray-400 hover:text-red-600">삭제</button>
+          <button onClick={onDelete} className="px-2 py-1 text-gray-400 hover:text-rose-600">삭제</button>
         </div>
       </div>
     </div>
@@ -206,7 +206,7 @@ function RequestFormModal({ projectId, onClose, onSaved }) {
             🔔 대표에게 발주 요청 알림
             <span className="text-xs text-gray-400 ml-1">(카카오 알림톡 연동 후 발송)</span>
           </label>
-          {err && <div className="text-sm text-red-600">{err}</div>}
+          {err && <div className="text-sm text-rose-600">{err}</div>}
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 border rounded-md text-sm">취소</button>
@@ -228,7 +228,7 @@ function L({ label, required, children }) {
     <label className="block">
       <span className="block text-xs font-medium text-gray-600 mb-1">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
       {children}
     </label>

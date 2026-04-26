@@ -78,7 +78,7 @@ export default function ProjectDetail() {
     } finally { setBusy(false); }
   }
 
-  if (err) return <div className="bg-white rounded-xl border p-8 text-red-600">{err}</div>;
+  if (err) return <div className="bg-white rounded-xl border p-8 text-rose-600">{err}</div>;
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
 
   const tab = ({ isActive }) =>

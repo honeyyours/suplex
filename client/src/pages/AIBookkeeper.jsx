@@ -184,7 +184,7 @@ function Bubble({ message }) {
             isUser
               ? 'bg-navy-700 text-white rounded-br-sm'
               : message.error
-                ? 'bg-red-50 border border-red-200 text-red-700 rounded-bl-sm'
+                ? 'bg-rose-50 border border-rose-200 text-rose-700 rounded-bl-sm'
                 : 'bg-white border rounded-bl-sm text-gray-800'
           }`}
         >

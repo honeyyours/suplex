@@ -19,7 +19,7 @@ export const CATEGORY_META = {
   CLIENT_REQUEST: { label: '고객요청', color: 'bg-rose-100 text-rose-700' },
   DESIGN_TO_FIELD: { label: '디자인→현장', color: 'bg-sky-100 text-sky-700' },
   TOUCH_UP: { label: '잔손', color: 'bg-amber-100 text-amber-800' },
-  URGENT: { label: '긴급', color: 'bg-red-600 text-white' },
+  URGENT: { label: '긴급', color: 'bg-rose-600 text-white' },
 };
 
 export const CATEGORY_KEYS = Object.keys(CATEGORY_META);

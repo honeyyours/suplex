@@ -5,7 +5,7 @@ import { relativeTime, formatDateDisplay } from '../utils/date';
 const ACTION_LABEL = {
   ADD: { label: '추가', color: 'bg-emerald-100 text-emerald-700' },
   UPDATE: { label: '수정', color: 'bg-sky-100 text-sky-700' },
-  DELETE: { label: '삭제', color: 'bg-red-100 text-red-700' },
+  DELETE: { label: '삭제', color: 'bg-rose-100 text-rose-700' },
   CONFIRM: { label: '확정', color: 'bg-amber-100 text-amber-700' },
   UNCONFIRM: { label: '확정해제', color: 'bg-gray-100 text-gray-700' },
 };

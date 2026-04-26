@@ -33,7 +33,7 @@ export default function EditProjectModal({ project, onClose, onSaved, onDeleted 
           <h2 className="text-lg font-bold text-navy-800">프로젝트 편집</h2>
           <button
             onClick={remove}
-            className="text-sm text-red-600 hover:text-red-700 hover:underline"
+            className="text-sm text-rose-600 hover:text-rose-700 hover:underline"
           >
             🗑 삭제
           </button>

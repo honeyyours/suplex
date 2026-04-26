@@ -341,7 +341,7 @@ function ListView({ expenses, total, onEdit, onRemove }) {
                   {e.type === 'INCOME' ? '+' : e.type === 'TRANSFER' ? '↔' : ''}{formatWon(e.amount)}
                 </td>
                 <td className="px-3 py-1.5 text-center">
-                  <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-red-500 text-xs" title="삭제">×</button>
+                  <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
                 </td>
               </tr>
             );
@@ -423,7 +423,7 @@ function PnLTable({ pnl, onChanged }) {
         </thead>
         <tbody className="divide-y">
           {pnl.map((p) => {
-            const profitColor = p.profit >= 0 ? 'text-emerald-700' : 'text-red-600';
+            const profitColor = p.profit >= 0 ? 'text-emerald-700' : 'text-rose-600';
             return (
               <tr key={p.id} className="hover:bg-gray-50">
                 <td className="px-3 py-2">
@@ -454,7 +454,7 @@ function PnLTable({ pnl, onChanged }) {
               <td colSpan={3} className="px-3 py-2.5">합계 ({pnl.length}개)</td>
               <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(sumContract)}</td>
               <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(sumExpense)}</td>
-              <td className={`px-3 py-2.5 text-right tabular-nums ${sumProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{formatWon(sumProfit)}</td>
+              <td className={`px-3 py-2.5 text-right tabular-nums ${sumProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{formatWon(sumProfit)}</td>
               <td />
             </tr>
           </tfoot>
@@ -821,7 +821,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                     </td>
                     <td className="px-2 py-1">{dateRaw}</td>
                     <td className="px-2 py-1 text-right tabular-nums">
-                      {amt ? <span className={isIncome ? 'text-emerald-700' : ''}>{isIncome && '+'}{formatWon(amt)}</span> : <span className="text-red-500">없음</span>}
+                      {amt ? <span className={isIncome ? 'text-emerald-700' : ''}>{isIncome && '+'}{formatWon(amt)}</span> : <span className="text-rose-500">없음</span>}
                     </td>
                     <td className="px-2 py-1 text-gray-700 truncate max-w-xs">{getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}</td>
                     <td className="px-2 py-1">
@@ -861,7 +861,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
 function Field({ label, required, children }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-gray-700 mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</span>
+      <span className="block text-xs font-medium text-gray-700 mb-1">{label}{required && <span className="text-rose-500 ml-0.5">*</span>}</span>
       {children}
     </label>
   );

@@ -308,7 +308,7 @@ function QuoteEditor({ projectId, quoteId, company, onChanged, onDuplicate, onDe
         <div className="flex gap-2">
           <button onClick={handlePrint} className="text-sm px-3 py-1.5 border rounded-md hover:bg-gray-50">🖨️ 인쇄/PDF</button>
           <button onClick={onDuplicate} className="text-sm px-3 py-1.5 border rounded-md hover:bg-gray-50">📄 수정본</button>
-          <button onClick={onDelete} className="text-sm px-3 py-1.5 border rounded-md text-red-600 hover:bg-red-50">삭제</button>
+          <button onClick={onDelete} className="text-sm px-3 py-1.5 border rounded-md text-rose-600 hover:bg-rose-50">삭제</button>
         </div>
       </div>
 
@@ -620,7 +620,7 @@ function LineRow({ line, onPatch, onRemove }) {
       <td className="px-1 py-1 text-right tabular-nums text-navy-800 font-medium">{formatWon(Number(line.materialCost) + Number(line.laborCost) + Number(line.expenseCost))}</td>
       <td className="px-1 py-1"><CellText value={line.notes || ''} onSave={(v) => onPatch(line.id, { notes: v || null })} /></td>
       <td className="px-1 py-1 text-center">
-        <button onClick={() => onRemove(line.id)} className="text-gray-300 hover:text-red-500 text-xs" title="삭제">×</button>
+        <button onClick={() => onRemove(line.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
       </td>
     </tr>
   );
@@ -859,7 +859,7 @@ function PrintCover({ quote, company, today }) {
       </div>
 
       {quote.notes && (
-        <div className="text-sm text-red-600 mb-6 whitespace-pre-line">{quote.notes}</div>
+        <div className="text-sm text-rose-600 mb-6 whitespace-pre-line">{quote.notes}</div>
       )}
 
       {quote.terms && (
@@ -981,7 +981,7 @@ function PrintWorkSummary({ quote, linesByType, ppy }) {
             })}
             {ppy && (
               <tr className="bg-emerald-50">
-                <td colSpan={8} className="border px-2 py-1.5 text-right text-red-600">인테리어공사 총계 (평당: {formatWon(ppy)}원)</td>
+                <td colSpan={8} className="border px-2 py-1.5 text-right text-rose-600">인테리어공사 총계 (평당: {formatWon(ppy)}원)</td>
                 <td className="border px-2 py-1.5 text-right tabular-nums font-bold">{formatWon(quote.totalDirect)}</td>
               </tr>
             )}

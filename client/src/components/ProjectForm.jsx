@@ -177,7 +177,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
         />
       </Field>
 
-      {err && <div className="text-sm text-red-600">{err}</div>}
+      {err && <div className="text-sm text-rose-600">{err}</div>}
 
       <div className="flex justify-end gap-2 pt-2">
         {onCancel && (
@@ -221,7 +221,7 @@ function Field({ label, required, hint, children }) {
     <label className="block">
       <span className="block text-sm font-medium text-gray-700 mb-1">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
       {children}
       {hint && <span className="block text-[11px] text-gray-500 mt-1">{hint}</span>}

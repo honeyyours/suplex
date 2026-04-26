@@ -91,10 +91,10 @@ function DDayBadge({ date }) {
   const days = daysUntil(date);
   if (days === null) return null;
   if (days < 0) {
-    return <span className="text-red-600">D+{Math.abs(days)} (지연)</span>;
+    return <span className="text-rose-600">D+{Math.abs(days)} (지연)</span>;
   }
   if (days === 0) {
-    return <span className="text-red-600 font-semibold">D-DAY</span>;
+    return <span className="text-rose-600 font-semibold">D-DAY</span>;
   }
   if (days <= 14) {
     return <span className="text-amber-700 font-semibold">D-{days}</span>;

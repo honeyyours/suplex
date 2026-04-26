@@ -537,7 +537,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           </button>
           <button
             onClick={onDelete}
-            className="text-sm px-3 py-1.5 border border-red-300 text-red-600 rounded hover:bg-red-50"
+            className="text-sm px-3 py-1.5 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
           >
             🗑 삭제
           </button>
@@ -801,7 +801,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
           <button
             onClick={onRemove}
             tabIndex={-1}
-            className="text-gray-300 hover:text-red-500 text-xs"
+            className="text-gray-300 hover:text-rose-500 text-xs"
             title="이 종료 마커 삭제"
           >
             ✕
@@ -831,7 +831,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
           <button
             onClick={onRemove}
             tabIndex={-1}
-            className="text-gray-300 hover:text-red-500 text-sm"
+            className="text-gray-300 hover:text-rose-500 text-sm"
             title="그룹 삭제"
           >
             ✕
@@ -909,7 +909,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
         <button
           onClick={onRemove}
           tabIndex={-1}
-          className="text-gray-300 hover:text-red-500 text-sm"
+          className="text-gray-300 hover:text-rose-500 text-sm"
           title="삭제"
         >
           ✕

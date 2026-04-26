@@ -503,7 +503,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
           </button>
           <button
             onClick={onRemoveGroup}
-            className="text-xs px-2 py-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded"
+            className="text-xs px-2 py-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded"
             title="그룹 통째 삭제"
           >
             ✕
@@ -713,7 +713,7 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
           <button
             onClick={onRemove}
             tabIndex={-1}
-            className="text-gray-300 hover:text-red-500 text-sm"
+            className="text-gray-300 hover:text-rose-500 text-sm"
             title="삭제"
           >
             ✕
@@ -777,7 +777,7 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) 
           <button
             onClick={onRemove}
             tabIndex={-1}
-            className="text-gray-300 hover:text-red-500 text-sm"
+            className="text-gray-300 hover:text-rose-500 text-sm"
             title="삭제"
           >
             ✕
@@ -824,8 +824,8 @@ function StatusChip({ status, onChange }) {
 function DeadlineWarning({ days, count }) {
   let cls = 'bg-amber-100 text-amber-800';
   let prefix = '⏰ ';
-  if (days < 0) { cls = 'bg-red-100 text-red-800 font-semibold'; prefix = '⚠ '; }
-  else if (days <= 3) { cls = 'bg-red-100 text-red-700'; prefix = '🔥 '; }
+  if (days < 0) { cls = 'bg-rose-100 text-rose-800 font-semibold'; prefix = '⚠ '; }
+  else if (days <= 3) { cls = 'bg-rose-100 text-rose-700'; prefix = '🔥 '; }
   const label = days < 0
     ? `${prefix}데드라인 ${Math.abs(days)}일 지남 — 미정 ${count}개`
     : days === 0

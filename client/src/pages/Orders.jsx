@@ -346,12 +346,12 @@ function formatItemLine(o) {
 function SummaryCard({ label, count, tone, highlight }) {
   const toneClass = {
     amber: 'bg-amber-50 text-amber-800',
-    red: 'bg-red-50 text-red-800',
+    red: 'bg-rose-50 text-rose-800',
     sky: 'bg-sky-50 text-sky-800',
     emerald: 'bg-emerald-50 text-emerald-800',
     gray: 'bg-gray-50 text-gray-700',
   }[tone] || 'bg-gray-50 text-gray-700';
-  const ringClass = tone === 'red' ? 'ring-red-400' : 'ring-amber-400';
+  const ringClass = tone === 'red' ? 'ring-rose-400' : 'ring-amber-400';
   return (
     <div className={`border rounded-md px-2.5 py-1.5 flex items-center justify-between ${toneClass} ${highlight && count > 0 ? `ring-1 ${ringClass}` : ''}`}>
       <span className="text-[11px] font-medium truncate">{label}</span>
@@ -462,7 +462,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
         <button
           onClick={remove}
           disabled={busy}
-          className="text-xs text-gray-400 hover:text-red-500 px-1 opacity-0 group-hover:opacity-100"
+          className="text-xs text-gray-400 hover:text-rose-500 px-1 opacity-0 group-hover:opacity-100"
         >🗑</button>
       </div>
     </div>
@@ -474,8 +474,8 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
 function DeadlineChip({ days, deadline }) {
   let cls = 'bg-gray-100 text-gray-600';
   let prefix = '';
-  if (days < 0) { cls = 'bg-red-100 text-red-800 font-semibold'; prefix = '⚠ '; }
-  else if (days <= 3) { cls = 'bg-red-100 text-red-700'; prefix = '🔥 '; }
+  if (days < 0) { cls = 'bg-rose-100 text-rose-800 font-semibold'; prefix = '⚠ '; }
+  else if (days <= 3) { cls = 'bg-rose-100 text-rose-700'; prefix = '🔥 '; }
   else if (days <= 7) { cls = 'bg-amber-100 text-amber-800'; prefix = '⏰ '; }
   const d = new Date(deadline);
   const m = d.getMonth() + 1;

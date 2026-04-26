@@ -336,7 +336,7 @@ export default function MaterialModal({
               </>
             )}
 
-            {err && <div className="text-sm text-red-600">{err}</div>}
+            {err && <div className="text-sm text-rose-600">{err}</div>}
           </div>
         ) : (
           <HistoryPanel history={history} />
@@ -349,7 +349,7 @@ export default function MaterialModal({
                 <button
                   onClick={remove}
                   disabled={busy}
-                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                  className="text-sm text-rose-600 hover:underline disabled:opacity-50"
                 >
                   🗑 삭제
                 </button>
@@ -501,7 +501,7 @@ function Field({ label, required, full, children }) {
     <label className={`block ${full ? 'col-span-2' : ''}`}>
       <span className="block text-xs font-medium text-gray-600 mb-1">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
       {children}
     </label>

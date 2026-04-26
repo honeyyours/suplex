@@ -112,7 +112,7 @@ export default function MobileScheduleSheet({
                 )}
                 <button
                   onClick={() => onDelete(e.id)}
-                  className="text-gray-400 hover:text-red-500 px-2"
+                  className="text-gray-400 hover:text-rose-500 px-2"
                 >✕</button>
               </div>
             ))

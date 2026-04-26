@@ -85,10 +85,11 @@ html.dark .text-emerald-700,
 html.dark .text-emerald-800 { color: rgb(110 231 183); }
 html.dark .text-amber-700,
 html.dark .text-amber-800   { color: rgb(252 211 77); }
+html.dark .text-rose-600,
 html.dark .text-rose-700,
 html.dark .text-rose-800    { color: rgb(252 165 165); }
-html.dark .text-red-600,
-html.dark .text-red-700     { color: rgb(252 165 165); }
+/* 캘린더 일요일 — red-500는 rose 통일 대상이 아님 (한국 캘린더 관습) */
+html.dark .text-red-500     { color: rgb(252 165 165); }
 
 /* 테두리 */
 html.dark .border-gray-200,

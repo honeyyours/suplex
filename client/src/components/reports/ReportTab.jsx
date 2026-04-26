@@ -259,7 +259,7 @@ function ReportCard({ report, project, company, user, uploadProgress, onOpenLigh
             {dateLabel} · {report.author?.name} · {relativeTime(report.createdAt)}
           </div>
         </div>
-        <button onClick={onDelete} className="text-xs text-gray-400 hover:text-red-600">삭제</button>
+        <button onClick={onDelete} className="text-xs text-gray-400 hover:text-rose-600">삭제</button>
       </div>
 
       {report.caption && (
@@ -397,7 +397,7 @@ function ReportFormModal({ projectId, onClose, onCreated }) {
           <L label="사진">
             <PhotoUploader value={files} onChange={setFiles} max={10} />
           </L>
-          {err && <div className="text-sm text-red-600">{err}</div>}
+          {err && <div className="text-sm text-rose-600">{err}</div>}
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 border rounded-md text-sm">취소</button>

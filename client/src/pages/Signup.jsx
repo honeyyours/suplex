@@ -40,7 +40,7 @@ export default function Signup() {
           <Field label="비밀번호 (8자 이상)" type="password" value={form.password} onChange={update('password')} required minLength={8} />
           <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} />
 
-          {err && <p className="text-sm text-red-600">{err}</p>}
+          {err && <p className="text-sm text-rose-600">{err}</p>}
           <button
             type="submit"
             disabled={busy}

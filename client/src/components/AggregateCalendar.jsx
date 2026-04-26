@@ -12,7 +12,7 @@ const PROJECT_COLORS = [
   'bg-emerald-100 text-emerald-800',
   'bg-violet-100 text-violet-800',
   'bg-indigo-100 text-indigo-800',
-  'bg-red-100 text-red-800',
+  'bg-rose-100 text-rose-800',
   'bg-yellow-100 text-yellow-800',
   'bg-teal-100 text-teal-800',
 ];

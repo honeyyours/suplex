@@ -193,7 +193,7 @@ export default function ScheduleCalendar({ projectId, project }) {
         </div>
       </div>
 
-      {err && <div className="mb-3 text-sm text-red-600 px-2 sm:px-0">{err}</div>}
+      {err && <div className="mb-3 text-sm text-rose-600 px-2 sm:px-0">{err}</div>}
 
       {mobileSheetKey && (
         <MobileScheduleSheet

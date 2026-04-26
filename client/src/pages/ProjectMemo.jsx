@@ -444,7 +444,7 @@ function MemoCard({ memo, onUpdate, onRemove }) {
           </button>
           <button
             onClick={onRemove}
-            className="px-2 py-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100"
+            className="px-2 py-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded opacity-0 group-hover:opacity-100"
           >
             삭제
           </button>
