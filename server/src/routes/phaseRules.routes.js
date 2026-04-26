@@ -113,6 +113,7 @@ const adviceSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().max(1000).optional().nullable(),
   category: z.string().max(50).optional().nullable(),
+  requiresPhoto: z.boolean().optional(),
   active: z.boolean().optional(),
 });
 
@@ -127,6 +128,7 @@ router.post('/advices', async (req, res, next) => {
         title: data.title,
         description: data.description || null,
         category: data.category || null,
+        requiresPhoto: data.requiresPhoto ?? false,
         active: data.active ?? true,
       },
     });

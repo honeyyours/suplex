@@ -2,7 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
-const { addChecklistFromTemplateIds } = require('../services/checklistAutoSeed');
+// (deprecated — ChecklistTemplate 폐기, from-templates 라우트도 함께 제거)
 
 const router = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -168,30 +168,6 @@ router.delete('/:id', async (req, res, next) => {
       prisma.projectChecklist.delete({ where: { id } }),
     ]);
     res.json({ ok: true });
-  } catch (e) {
-    next(e);
-  }
-});
-
-// POST /api/projects/:projectId/checklists/from-templates  body: { templateIds: [] }
-router.post('/from-templates', async (req, res, next) => {
-  try {
-    const { projectId } = req.params;
-    const project = await assertProjectAccess(projectId, req.user.companyId);
-    if (!project) return res.status(404).json({ error: 'Project not found' });
-
-    const ids = Array.isArray(req.body?.templateIds) ? req.body.templateIds : [];
-    if (ids.length === 0) return res.status(400).json({ error: 'templateIds 필요' });
-
-    const result = await prisma.$transaction((tx) =>
-      addChecklistFromTemplateIds(tx, {
-        projectId,
-        companyId: req.user.companyId,
-        templateIds: ids,
-        userId: req.user.id,
-      }),
-    );
-    res.status(201).json({ ok: true, ...result });
   } catch (e) {
     next(e);
   }

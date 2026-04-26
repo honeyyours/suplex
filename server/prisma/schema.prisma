@@ -48,7 +48,6 @@ model Company {
   vendors                Vendor[]
   projects               Project[]
   materialTemplates      MaterialTemplate[]
-  checklistTemplates     ChecklistTemplate[]
   phaseKeywordRules      PhaseKeywordRule[]
   quoteLineItemTemplates QuoteLineItemTemplate[]
   expenses               Expense[]
@@ -218,7 +217,7 @@ enum ChecklistCategory {
   URGENT // 긴급
 }
 
-// 프로젝트별 체크리스트 (사용자 관리 + 향후 phase 자동 생성 공용)
+// 프로젝트별 체크리스트 (사용자 관리 + PhaseAdvice 자동 생성 공용)
 model ProjectChecklist {
   id               String            @id @default(cuid())
   projectId        String
@@ -226,8 +225,7 @@ model ProjectChecklist {
   category         ChecklistCategory @default(GENERAL)
   title            String // 체크 항목 제목
   isDone           Boolean           @default(false)
-  requiresPhoto    Boolean           @default(false) // 사진 첨부 필수 여부 (예: 철거 전/후)
-  sourceTemplateId String? // 자동 생성 출처 템플릿 (중복 방지)
+  requiresPhoto    Boolean           @default(false) // 사진 첨부 필수 여부
   dueDate          DateTime?
   completedAt      DateTime?
   completedById    String?
@@ -236,13 +234,11 @@ model ProjectChecklist {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
-  project        Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy      User?              @relation("ChecklistCreatedBy", fields: [createdById], references: [id])
-  completedBy    User?              @relation("ChecklistCompletedBy", fields: [completedById], references: [id])
-  sourceTemplate ChecklistTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation("ChecklistCreatedBy", fields: [createdById], references: [id])
+  completedBy User?   @relation("ChecklistCompletedBy", fields: [completedById], references: [id])
 
   @@index([projectId, isDone])
-  @@index([projectId, sourceTemplateId])
   @@map("project_checklists")
 }
 
@@ -264,25 +260,7 @@ model PhaseKeywordRule {
   @@map("phase_keyword_rules")
 }
 
-// 회사별 체크리스트 템플릿 — phase(공종) 매칭으로 일정 시작 시 자동 투입 + 수동 가져오기
-model ChecklistTemplate {
-  id            String            @id @default(cuid())
-  companyId     String
-  title         String // 항목 제목 (예: 철거 전 전체 사진)
-  category      ChecklistCategory @default(GENERAL)
-  phase         String? // 공종 (철거/목공/전기 등) — 비어있으면 자동 트리거 X
-  requiresPhoto Boolean           @default(false)
-  orderIndex    Int               @default(0)
-  active        Boolean           @default(true)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  generated ProjectChecklist[]
-
-  @@index([companyId, phase, active])
-  @@map("checklist_templates")
-}
+// (deprecated — 2026-04-26 PhaseAdvice로 통합 폐기)
 
 // ============================================
 // 3-2. 캘린더식 공정 일정 (날짜당 여러 항목, 개별 확정)
@@ -1122,16 +1100,17 @@ model PhaseDeadlineRule {
 // 일정 entry 생성/수정 시 (entry.date - daysBefore) 날짜에 체크리스트 자동 추가
 // ============================================
 model PhaseAdvice {
-  id          String   @id @default(cuid())
-  companyId   String
-  phase       String   // 공정명 (entry.category 와 매칭)
-  daysBefore  Int      // 일정 시작 며칠 전 (음수면 시작 후)
-  title       String   // 체크리스트 제목 (예: "보양 관련 관리실 문의")
-  description String?  // 상세 설명
-  category    String?  // 안전 / 자재 / 관리실 협의 / 사전 준비 등
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  companyId     String
+  phase         String   // 공정명 (entry.category 와 매칭)
+  daysBefore    Int      // 일정 시작 며칠 전 (음수면 시작 후, 0이면 시작 당일 = 옛 ChecklistTemplate)
+  title         String   // 체크리스트 제목 (예: "보양 관련 관리실 문의")
+  description   String?  // 상세 설명
+  category      String?  // 안전 / 자재 / 관리실 협의 / 사전 준비 등
+  requiresPhoto Boolean  @default(false) // 사진 첨부 필수 — 시공 사진 증거용 (옛 ChecklistTemplate.requiresPhoto)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 

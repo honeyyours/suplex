@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi } from '../api/checklists';
-import { checklistTemplatesApi, projectChecklistsApi } from '../api/checklistTemplates';
 import { photosApi } from '../api/reports';
 import { relativeTime } from '../utils/date';
 
@@ -15,7 +14,6 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
   const [newDueDate, setNewDueDate] = useState('');
   const [err, setErr] = useState('');
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['checklists', 'project', id],
@@ -80,14 +78,6 @@ export default function ProjectChecklist({ projectId } = {}) {
   return (
     <div>
       <div className="bg-white border rounded-lg p-4 mb-4">
-        <div className="flex justify-end mb-2">
-          <button
-            onClick={() => setTemplatePickerOpen(true)}
-            className="text-xs px-3 py-1.5 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
-          >
-            📋 템플릿에서 가져오기
-          </button>
-        </div>
         <div className="flex gap-2 flex-wrap sm:flex-nowrap">
           <input
             value={newTitle}
@@ -175,132 +165,6 @@ export default function ProjectChecklist({ projectId } = {}) {
         </Column>
       </div>
 
-      {templatePickerOpen && (
-        <TemplatePicker
-          projectId={id}
-          existingTemplateIds={items.map((i) => i.sourceTemplateId).filter(Boolean)}
-          onClose={() => setTemplatePickerOpen(false)}
-          onAdded={() => { setTemplatePickerOpen(false); reload(); }}
-        />
-      )}
-    </div>
-  );
-}
-
-function TemplatePicker({ projectId, existingTemplateIds, onClose, onAdded }) {
-  const [templates, setTemplates] = useState(null);
-  const [selected, setSelected] = useState(new Set());
-  const [busy, setBusy] = useState(false);
-  const existingSet = useMemo(() => new Set(existingTemplateIds), [existingTemplateIds]);
-
-  useEffect(() => {
-    checklistTemplatesApi.list({ active: true })
-      .then(({ templates }) => setTemplates(templates))
-      .catch(() => setTemplates([]));
-  }, []);
-
-  function toggle(id) {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelected(next);
-  }
-
-  function selectAllVisible(list) {
-    const next = new Set(selected);
-    for (const t of list) if (!existingSet.has(t.id)) next.add(t.id);
-    setSelected(next);
-  }
-
-  async function add() {
-    if (selected.size === 0) return;
-    setBusy(true);
-    try {
-      const res = await projectChecklistsApi.fromTemplates(projectId, [...selected]);
-      const msg = res.skipped
-        ? `${res.created}개 추가됨 (이미 있는 ${res.skipped}개는 스킵)`
-        : `${res.created}개 추가됨`;
-      alert(`✅ ${msg}`);
-      onAdded();
-    } catch (e) {
-      alert('추가 실패: ' + (e.response?.data?.error || e.message));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const grouped = useMemo(() => {
-    const g = {};
-    for (const t of templates || []) {
-      const key = t.phase || '(공종 없음)';
-      (g[key] ||= []).push(t);
-    }
-    return g;
-  }, [templates]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
-        <div className="px-4 py-3 border-b flex items-center justify-between">
-          <div className="text-sm font-semibold text-navy-800">📋 체크리스트 템플릿에서 가져오기</div>
-          <button onClick={onClose} className="text-gray-400 px-2">✕</button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-4">
-          {templates === null && <div className="text-sm text-gray-400">불러오는 중...</div>}
-          {templates && templates.length === 0 && (
-            <div className="text-center text-sm text-gray-400 py-6">
-              등록된 템플릿이 없습니다. 설정 → 체크리스트 템플릿에서 추가하세요.
-            </div>
-          )}
-          {templates && templates.length > 0 && Object.entries(grouped).map(([phase, list]) => (
-            <div key={phase}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="text-xs font-semibold text-gray-700">{phase}</div>
-                <button
-                  onClick={() => selectAllVisible(list)}
-                  className="text-[11px] text-navy-700 hover:underline"
-                >
-                  이 공종 전체 선택
-                </button>
-              </div>
-              <div className="space-y-1">
-                {list.map((t) => {
-                  const already = existingSet.has(t.id);
-                  return (
-                    <label
-                      key={t.id}
-                      className={`flex items-center gap-2 px-2 py-1.5 border rounded text-sm ${already ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50 cursor-pointer'}`}
-                    >
-                      <input
-                        type="checkbox"
-                        disabled={already}
-                        checked={selected.has(t.id)}
-                        onChange={() => toggle(t.id)}
-                        className="w-4 h-4 accent-navy-700"
-                      />
-                      <span className="flex-1">{t.title}</span>
-                      {t.requiresPhoto && (
-                        <span className="text-xs sm:text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷</span>
-                      )}
-                      {already && <span className="text-xs sm:text-[10px] text-gray-400">이미 있음</span>}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="px-4 py-3 border-t flex justify-end gap-2 bg-gray-50">
-          <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded">취소</button>
-          <button
-            onClick={add}
-            disabled={selected.size === 0 || busy}
-            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
-          >
-            {busy ? '추가 중...' : `${selected.size}개 추가`}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

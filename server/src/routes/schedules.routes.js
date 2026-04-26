@@ -3,7 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { recordChange } = require('../services/scheduleChangeLogger');
-const { syncChecklistFromPhase, syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
+const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
 const { detectPhase, detectPhaseMatch } = require('../services/phaseDetect');
 
 // entries 배열에 phaseKeyword(매칭된 원본 substring) 동적 첨부
@@ -186,14 +186,8 @@ projectRouter.post('/', async (req, res, next) => {
         userName,
       });
 
-      const seeded = await syncChecklistFromPhase(tx, {
-        projectId,
-        companyId: req.user.companyId,
-        phase: created.category,
-        dueDate: dateObj,
-        userId: req.user.id,
-      });
-      // 공정 어드바이스 — 시작일에서 daysBefore 차감한 날짜에 체크리스트 추가
+      // 공정 어드바이스 — daysBefore 차감 날짜에 체크리스트 자동 추가
+      // (daysBefore=0 + requiresPhoto=true는 옛 ChecklistTemplate 역할 — 시공 사진 증거)
       const advised = await syncAdvicesFromPhase(tx, {
         projectId,
         companyId: req.user.companyId,
@@ -202,7 +196,7 @@ projectRouter.post('/', async (req, res, next) => {
         userId: req.user.id,
       });
 
-      return { created, seededChecklists: seeded.created + advised.created };
+      return { created, seededChecklists: advised.created };
     });
 
     res.status(201).json({ entry: entry.created, seededChecklists: entry.seededChecklists });
@@ -287,13 +281,6 @@ projectRouter.patch('/:id', async (req, res, next) => {
 
       let seededChecklists = 0;
       if (categoryChanged && u.category) {
-        const seeded = await syncChecklistFromPhase(tx, {
-          projectId,
-          companyId: req.user.companyId,
-          phase: u.category,
-          dueDate: existing.date,
-          userId: req.user.id,
-        });
         const advised = await syncAdvicesFromPhase(tx, {
           projectId,
           companyId: req.user.companyId,
@@ -301,7 +288,7 @@ projectRouter.patch('/:id', async (req, res, next) => {
           scheduleDate: existing.date,
           userId: req.user.id,
         });
-        seededChecklists = seeded.created + advised.created;
+        seededChecklists = advised.created;
       }
 
       return { u, seededChecklists };
