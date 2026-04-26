@@ -141,7 +141,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[11px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate flex items-center gap-1
+                          relative text-[9px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:bg-white sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95
