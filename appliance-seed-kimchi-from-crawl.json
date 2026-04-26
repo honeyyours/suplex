@@ -1,0 +1,4127 @@
+[
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34A7845AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 1도어 키친핏 347L (우열림, 오토오픈도어, UV탈취)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/RQ34A7845AP/RQ34A7845AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42B99T1W5G",
+    "modelAliases": [],
+    "productName": "Infinite Line 김치플러스 4도어 키친핏 420L (글래스 쿨링커버)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/RQ42B99T1W5G/RQ42B99T1W5G/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ22K5R01EC",
+    "modelAliases": [],
+    "productName": "빌트인 김치냉장고 220 L",
+    "widthMm": 557,
+    "heightMm": 1780,
+    "depthMm": 550,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/builtin-kimchi-refrigerators-rq22k5r01ec/RQ22K5R01EC/",
+        "value": {
+          "widthMm": 557,
+          "heightMm": 1780,
+          "depthMm": 550
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB9431AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 487L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-RQ49DB9431AP-d2c/RQ49DB9431AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F42F2X",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 Max 420L (냄새케어 김치통)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f42f2x-d2c/RK70F42F2X/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F42M3Z",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 Max 420L",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f42m3z-d2c/RK70F42M3Z/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F49D1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 487L (맞춤숙성실)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f49d1a-d2c/RK70F49D1A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F49F1DD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (냄새케어 김치통)",
+    "widthMm": 799,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f49f1dd-d2c/RK70F49F1DD/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F49F1X",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (냄새케어 김치통)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f49f1x-d2c/RK70F49F1X/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F49M1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f49m1a-d2c/RK70F49M1A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F49M2ZD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L",
+    "widthMm": 799,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f49m2zd-d2c/RK70F49M2ZD/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK70F58M1ZG",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 586L",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk70f58m1zg-d2c/RK70F58M1ZG/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK80F42C2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 Max 418L (맞춤숙성실)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk80f42c2a-d2c/RK80F42C2A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK80F42E2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 Max 420L (메탈쿨링 선반)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk80f42e2a-d2c/RK80F42E2A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK80F49C1W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 487L (맞춤숙성실)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk80f49c1w-d2c/RK80F49C1W/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK80F49E1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (메탈쿨링 선반)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk80f49e1a-d2c/RK80F49E1A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RK80F58B1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 583L (냄새케어 메탈쿨링 김치통)",
+    "widthMm": 799,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rk80f58b1a-d2c/RK80F58B1A/",
+        "value": {
+          "widthMm": 799,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ32C7612AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 319L (우열림/열림방향가변)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq32c7612ap-d2c/RQ32C7612AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ32C76A2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 319L (우열림/열림방향가변)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq32c76a2ap-d2c/RQ32C76A2AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33C7411AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33c7411ap-d2c/RQ33C7411AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33C7441AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33c7441ap-d2c/RQ33C7441AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33C74C3AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33c74c3ap-d2c/RQ33C74C3AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33C74E1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33c74e1ap-d2c/RQ33C74E1AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB7411AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db7411ap-d2c/RQ33DB7411AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB7411EW",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db7411ew-d2c/RQ33DB7411EW/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB7441AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db7441ap-d2c/RQ33DB7441AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74B1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db74b1ap-d2c/RQ33DB74B1AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74C1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db74c1ap-d2c/RQ33DB74C1AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74D2AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db74d2ap-d2c/RQ33DB74D2AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74E1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33db74e1ap-d2c/RQ33DB74E1AP/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DG71J2EW",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 328L",
+    "widthMm": 693,
+    "heightMm": 1797,
+    "depthMm": 649,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq33dg71j2ew-d2c/RQ33DG71J2EW/",
+        "value": {
+          "widthMm": 693,
+          "heightMm": 1797,
+          "depthMm": 649
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C7815AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 348L (우열림)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq34c7815ap-d2c/RQ34C7815AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C7845AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 347L (우열림)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq34c7845ap-d2c/RQ34C7845AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42A94B1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42a94b1ap-d2c/RQ42A94B1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42A94C1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L (글래스 쿨링커버)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42a94c1ap-d2c/RQ42A94C1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42A94F1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42a94f1ap-d2c/RQ42A94F1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42A94G2AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42a94g2ap-d2c2/RQ42A94G2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42A94J1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42a94j1ap-d2c/RQ42A94J1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42B99T1APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 김치플러스 4도어 키친핏 420L (글래스 쿨링커버)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42b99t1apg-d2c/RQ42B99T1APG/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42B99T1APK",
+    "modelAliases": [],
+    "productName": "Infinite Line 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42b99t1apk-d2c/RQ42B99T1APK/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42C94A2AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L (글래스 쿨링커버)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42c94a2ap-d2c/RQ42C94A2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42C94G2AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42c94g2ap-d2c/RQ42C94G2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42C94J2AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 키친핏 420L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42c94j2ap-d2c/RQ42C94J2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42C94Q2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 418L (맞춤숙성실)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42c94q2ap-d2c/RQ42C94Q2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42C99T2APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 김치플러스 4도어 키친핏 420L (글래스 쿨링커버)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42c99t2apg-d2c/RQ42C99T2APG/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42DB94J2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 420L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42db94j2ap-d2c/RQ42DB94J2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42DB94L3AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 420L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42db94l3ap-d2c/RQ42DB94L3AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42DB94Q2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 418L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42db94q2ap-d2c/RQ42DB94Q2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42DB94R2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 키친핏 420L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42db94r2ap-d2c/RQ42DB94R2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ42DB99T2APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 김치플러스 4도어 키친핏 418L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq42db99t2apg-d2c/RQ42DB99T2APG/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48A9003S9",
+    "modelAliases": [],
+    "productName": "김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48a9003s9-d2c/RQ48A9003S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48A9402AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48a9402ap-d2c/RQ48A9402AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48A9421AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L (메탈김치통 포함)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48a9421ap-d2c/RQ48A9421AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48A94W1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48a94w1ap-d2c/RQ48A94W1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48A94Y126",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 프리스탠딩 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48a94y1s9-d2c/RQ48A94Y126/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ48B94M1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq48b94m1ap-d2c2/RQ48B94M1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C9001S9",
+    "modelAliases": [],
+    "productName": "김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c9001s9-d2c/RQ49C9001S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C9003S9",
+    "modelAliases": [],
+    "productName": "김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c9003s9-d2c/RQ49C9003S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C90X24W",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c90x24w-d2c/RQ49C90X24W/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C9401H6",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c9401ap-d2c/RQ49C9401H6/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C940201",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c9402ap-d2c/RQ49C940201/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C9431AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L (메탈김치통 포함)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c9431ap-d2c/RQ49C9431AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49C94R1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 490L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49c94r1ap-d2c/RQ49C94R1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB9401AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49db9401ap-d2c/RQ49DB9401AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB9402AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49db9402ap-d2c/RQ49DB9402AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB9421AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49db9421ap-d2c/RQ49DB9421AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB94H2AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49db94h2ap-d2c/RQ49DB94H2AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB94Y1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49db94y1ap-d2c/RQ49DB94Y1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DG9001S9",
+    "modelAliases": [],
+    "productName": "AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49dg9001s9-d2c/RQ49DG9001S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DG9002S9",
+    "modelAliases": [],
+    "productName": "AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49dg9002s9-d2c/RQ49DG9002S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DG9003S9",
+    "modelAliases": [],
+    "productName": "AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1825,
+    "depthMm": 787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq49dg9003s9-d2c/RQ49DG9003S9/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1825,
+          "depthMm": 787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58A9471AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 586L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq58a9471ap-d2c2/RQ58A9471AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58C9452AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 586L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq58c9452ap-d2c/RQ58C9452AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58C94N1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 4도어 586L",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq58c94n1ap-d2c/RQ58C94N1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58DB9471AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 583L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq58db9471ap-d2c/RQ58DB9471AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58DB94U1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 583L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-stand-rq58db94u1ap-d2c/RQ58DB94U1AP/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP13C1022S9",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 126L",
+    "widthMm": 650,
+    "heightMm": 920,
+    "depthMm": 575,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loading-rp13c1022s9-d2c/RP13C1022S9/",
+        "value": {
+          "widthMm": 650,
+          "heightMm": 920,
+          "depthMm": 575
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP20C32417Z",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 202L (5면 메탈쿨링)",
+    "widthMm": 925,
+    "heightMm": 923,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loading-rp20c32417z-d2c/RP20C32417Z/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 923,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP22C31A1EG",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 221L",
+    "widthMm": 925,
+    "heightMm": 973,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loading-rp22c31a1eg-d2c/RP22C31A1EG/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 973,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP22C3231Z3",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 221L (5면 메탈쿨링)",
+    "widthMm": 925,
+    "heightMm": 973,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loading-rp22c3231z3-d2c/RP22C3231Z3/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 973,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP20C3111EG",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 202L",
+    "widthMm": 925,
+    "heightMm": 923,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loadingrp20c3111eg-d2c/RP20C3111EG/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 923,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP22C3111Z1",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 221L",
+    "widthMm": 925,
+    "heightMm": 973,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loadingrp22c3111z1-d2c/RP22C3111Z1/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 973,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RP22C3531CE",
+    "modelAliases": [],
+    "productName": "김치플러스 뚜껑형 221L (5면 메탈쿨링)",
+    "widthMm": 925,
+    "heightMm": 973,
+    "depthMm": 702,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/kimchi-top-loadingrp22c33531c0-d2c/RP22C3531CE/",
+        "value": {
+          "widthMm": 925,
+          "heightMm": 973,
+          "depthMm": 702
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ32C7645AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 319L (우열림/열림방향가변)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq32c7645ap-d2c/RQ32C7645AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34A7915AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치냉장고 1도어 348L (우힌지, 우개폐)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq34a7915ap-d2c2/RQ34A7915AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34A7835AP",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 1도어 키친핏 347L (우열림, 오토오픈도어, UV탈취)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq34a7935ap-d2c/RQ34A7835AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C8945APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 김치플러스 1도어 키친핏 347L (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq34b8945ap-d2c/RQ34C8945APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C7835AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 347L (우열림)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq34c7835ap-d2c/RQ34C7835AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ38C9991APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 김치플러스 1도어 키친핏 404L (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq38c9991apg-d2c/RQ38C9991APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ70H32R10",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 319L (우열림/열림방향가변)",
+    "widthMm": 595,
+    "heightMm": 1858,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/one-door-rq70h32r10-d2c/RQ70H32R10/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1858,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB7441APGD",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq33db7441apgd-d2c/RQ33DB7441APGD/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74B1GD",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq33db74b1gd-d2c/RQ33DB74B1GD/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ33DB74D2GD",
+    "modelAliases": [],
+    "productName": "Bespoke 김치플러스 3도어 키친핏 313L",
+    "widthMm": 695,
+    "heightMm": 1853,
+    "depthMm": 600,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq33db74d2gd-d2c/RQ33DB74D2GD/",
+        "value": {
+          "widthMm": 695,
+          "heightMm": 1853,
+          "depthMm": 600
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C7835APGD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 347L (우열림)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq34c7835apgd-d2c/RQ34C7835APGD/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ34C7915APGD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 1도어 키친핏 348L (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq34c7915apgd-d2c/RQ34C7915APGD/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB9421WSD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq49db9421wsd-d2c/RQ49DB9421WSD/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ49DB94H2WSD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 490L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 794,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq49db94h2wsd-d2c/RQ49DB94H2WSD/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 794
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RQ58DB9471WS",
+    "modelAliases": [],
+    "productName": "Bespoke AI 김치플러스 4도어 583L (AI 정온 모드)",
+    "widthMm": 795,
+    "heightMm": 1853,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/kimchi-refrigerators/package-rq58db9471ws-d2c/RQ58DB9471WS/",
+        "value": {
+          "widthMm": 795,
+          "heightMm": 1853,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "K135LW123",
+    "modelAliases": [],
+    "productName": "LG 디오스 김치톡톡",
+    "widthMm": 666,
+    "heightMm": 612,
+    "depthMm": 900,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/k135lw123",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 612,
+          "depthMm": 900
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "K220S111",
+    "modelAliases": [],
+    "productName": "LG 디오스 김치톡톡",
+    "widthMm": 920,
+    "heightMm": 691,
+    "depthMm": 949,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/k220s111",
+        "value": {
+          "widthMm": 920,
+          "heightMm": 691,
+          "depthMm": 949
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "K225LW121",
+    "modelAliases": [],
+    "productName": "LG 디오스 김치톡톡",
+    "widthMm": 920,
+    "heightMm": 691,
+    "depthMm": 949,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/k225lw121",
+        "value": {
+          "widthMm": 920,
+          "heightMm": 691,
+          "depthMm": 949
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "K225MB131",
+    "modelAliases": [],
+    "productName": "LG 디오스 김치톡톡",
+    "widthMm": 920,
+    "heightMm": 691,
+    "depthMm": 949,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/k225mb131",
+        "value": {
+          "widthMm": 920,
+          "heightMm": 691,
+          "depthMm": 949
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z135MEE123",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 666,
+    "heightMm": 612,
+    "depthMm": 900,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z135mee123",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 612,
+          "depthMm": 900
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z225MEE151",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 920,
+    "heightMm": 691,
+    "depthMm": 949,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z225mee151",
+        "value": {
+          "widthMm": 920,
+          "heightMm": 691,
+          "depthMm": 949
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z330MEEF11",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 666,
+    "heightMm": 737,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z330meef11",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 737,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z330MRRF21",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 666,
+    "heightMm": 737,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z330mrrf21",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 737,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334GBB122",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334gbb122",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334GBB151",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334gbb151",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334GBB171",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334gbb171",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334GBB172",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334gbb172",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334MQQ122S",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334mqq122s",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z334SVV171S",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 666,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z334svv171s",
+        "value": {
+          "widthMm": 666,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z403MEEF53",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 750,
+    "heightMm": 795,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z403meef53",
+        "value": {
+          "widthMm": 750,
+          "heightMm": 795,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z484GBB123",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 835,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z484gbb123",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z484GBB152",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 835,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z484gbb152",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z484GBB172",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 835,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z484gbb172",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z484GBB173",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡 Fit & Max",
+    "widthMm": 835,
+    "heightMm": 685,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z484gbb173",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 685,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z490MEEF11",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1795,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z490meef11",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1795
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z490MEEF12",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1795,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z490meef12",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1795
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z490MPSF11",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1795,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z490mpsf11",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1795
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z495GBB261",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z495gbb261",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z495GBB271",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z495gbb271",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z495SVV271",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 838,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z495svv271",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 838,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z509MEEF33",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 730,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z509meef33",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 730,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "KIMCHI_REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Z509MPSF13",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 김치톡톡",
+    "widthMm": 835,
+    "heightMm": 730,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/kimchi-refrigerators/z509mpsf13",
+        "value": {
+          "widthMm": 835,
+          "heightMm": 730,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  }
+]

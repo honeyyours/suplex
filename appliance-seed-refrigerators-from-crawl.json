@@ -1,0 +1,6503 @@
+[
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RB33A3661AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 2도어 키친핏 333L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 669,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/RB33A3661AP/RB33A3661AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 669
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24C58E0AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 변온 냉동고 1도어 키친핏 240L (우열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/RZ24C58E0AP/RZ24C58E0AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34A7855AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/RZ34A7855AP/RZ34A7855AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRB70F26D3F0",
+    "modelAliases": [],
+    "productName": "냉장고 259L",
+    "widthMm": 540,
+    "heightMm": 1775,
+    "depthMm": 550,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-brb70f26d3f0-d2c/BRB70F26D3F0/",
+        "value": {
+          "widthMm": 540,
+          "heightMm": 1775,
+          "depthMm": 550
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRB80F26A2F0",
+    "modelAliases": [],
+    "productName": "냉장고 256L",
+    "widthMm": 540,
+    "heightMm": 1775,
+    "depthMm": 550,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-brb80f26a2f0-d2c/BRB80F26A2F0/",
+        "value": {
+          "widthMm": 540,
+          "heightMm": 1775,
+          "depthMm": 550
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RB30D4051S9",
+    "modelAliases": [],
+    "productName": "냉장고 306L",
+    "widthMm": 595,
+    "heightMm": 1700,
+    "depthMm": 663,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-rb30d4051s9-d2c/RB30D4051S9/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1700,
+          "depthMm": 663
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RB30F4051WW",
+    "modelAliases": [],
+    "productName": "냉장고 306L",
+    "widthMm": 595,
+    "heightMm": 1700,
+    "depthMm": 663,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-rb30f4051ww-d2c/RB30F4051WW/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1700,
+          "depthMm": 663
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RB30R3503AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 3도어 296L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 668,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-rb30r3503ap-d2c/RB30R3503AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 668
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RB33R8798SR",
+    "modelAliases": [],
+    "productName": "냉장고 343L",
+    "widthMm": 595,
+    "heightMm": 1927,
+    "depthMm": 590,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/bottom-mount-freezer-rb33r8798sr-d2c/RB33R8798SR/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1927,
+          "depthMm": 590
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRF425220AP",
+    "modelAliases": [],
+    "productName": "셰프컬렉션 T-Type 냉장고 621L",
+    "widthMm": 1048,
+    "heightMm": 2118,
+    "depthMm": 605,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/brf425220ap-d2c/BRF425220AP/",
+        "value": {
+          "widthMm": 1048,
+          "heightMm": 2118,
+          "depthMm": 605
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRF425220AP",
+    "modelAliases": [],
+    "productName": "셰프컬렉션 T-Type 냉장고 621L",
+    "widthMm": 1048,
+    "heightMm": 2118,
+    "depthMm": 605,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/brf425220ap/BRF425220AP/",
+        "value": {
+          "widthMm": 1048,
+          "heightMm": 2118,
+          "depthMm": 605
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CFD-1144",
+    "modelAliases": [],
+    "productName": "업소용 냉동고 1087L (냉동전용)",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/cfd-1144/CFD-1144/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CFF-0622",
+    "modelAliases": [],
+    "productName": "업소용 냉동고 500L (냉동전용)",
+    "widthMm": 640,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/cff-0622/CFF-0622/",
+        "value": {
+          "widthMm": 640,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CFF-1144",
+    "modelAliases": [],
+    "productName": "업소용 냉동고 1053L (냉동전용)",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/cff-1144/CFF-1144/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRF-0620",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 505L (냉장전용)",
+    "widthMm": 640,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crf-0620/CRF-0620/",
+        "value": {
+          "widthMm": 640,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRF-1140",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1081L (냉장전용)",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crf-1140/CRF-1140/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFD-1141",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1056L",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crfd-1141/CRFD-1141/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFD-1142",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1049L",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crfd-1142/CRFD-1142/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFD-1762",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1643L",
+    "widthMm": 1900,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crfd-1762/CRFD-1762/",
+        "value": {
+          "widthMm": 1900,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFF-1141",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1021L",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crff-1141/CRFF-1141/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFF-1142",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1014L",
+    "widthMm": 1260,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crff-1142/CRFF-1142/",
+        "value": {
+          "widthMm": 1260,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "CRFF-1762",
+    "modelAliases": [],
+    "productName": "업소용 냉장고 1608L",
+    "widthMm": 1900,
+    "heightMm": 1830,
+    "depthMm": 800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/crff-1762/CRFF-1762/",
+        "value": {
+          "widthMm": 1900,
+          "heightMm": 1830,
+          "depthMm": 800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF10B9965APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉장고 4도어 900L (오토 듀얼 아이스/칵테일&큐브)",
+    "widthMm": 912,
+    "heightMm": 1856,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf10b9965apg-d2c/RF10B9965APG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1856,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF60A91R1AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 4도어 키친핏 584L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf60a91r1ap-d2c/RF60A91R1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF60B99Z2APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉장고 4도어 키친핏 596L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf60b99z2apg-d2c/RF60B99Z2APG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF60DB9342AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 596L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 683,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf60db9342ap-d2c/RF60DB9342AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 683
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF60DB9A62APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 정수기 냉장고 4도어 키친핏 585L (오토 아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 683,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf60db9a62apg-d2c/RF60DB9A62APG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 683
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF60DB9K41AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 597L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 683,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf60db9k41ap-d2c/RF60DB9K41AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 683
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF84R9203S8",
+    "modelAliases": [],
+    "productName": "T9000 2.0 푸드쇼케이스 848L",
+    "widthMm": 908,
+    "heightMm": 1825,
+    "depthMm": 932,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf84r9203s8-d2c/RF84R9203S8/",
+        "value": {
+          "widthMm": 908,
+          "heightMm": 1825,
+          "depthMm": 932
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85A95E1APN",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 838L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85a95e1apw-d2c/RF85A95E1APN/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85B92313Y",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 865L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85b9231ap-d2c/RF85B92313Y/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85C90F1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 875L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85c90f1ap-d2c/RF85C90F1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85C91M1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 852L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85c91m1ap-d2c/RF85C91M1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85C9481AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 846L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85c9481ap-d2c/RF85C9481AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85DB91F1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 869L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85db91f1ap-d2c/RF85DB91F1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85DB9481AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 847L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85db9481ap-d2c/RF85DB9481AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85DB9581APW",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 842L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85db9581apw-d2c/RF85DB9581APW/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85DB95A2APW",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 861L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85db95a2apw-d2c/RF85DB95A2APW/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF85DB9792AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 정수기 냉장고 4도어 830L (오토 듀얼 아이스/위스키볼&큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf85db9792ap-d2c/RF85DB9792AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF90DG90124E",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 905L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 908,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf90dg90124e-d2c/RF90DG90124E/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 908
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF90DG9111S9",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 902L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 908,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf90dg91114e-d2c/RF90DG9111S9/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 908
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF91DB90LEW6",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 900L (에너지 1등급 최저기준 대비 -30%)",
+    "widthMm": 912,
+    "heightMm": 1870,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf91db90le01-d2c/RF91DB90LEW6/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1870,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF91DB92K1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 871L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1870,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf91db92k1ap-d2c/RF91DB92K1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1870,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RF91DB98J1AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 868L (빅아이스/위스키볼)",
+    "widthMm": 912,
+    "heightMm": 1870,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rf91db98j1ap-d2c/RF91DB98J1AP/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1870,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63M2Z",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max 636L (푸드 쇼케이스)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f63m2z-d2c/RM70F63M2Z/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F64M2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max 633L (푸드 쇼케이스)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f64m2a-d2c/RM70F64M2A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F64Q1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max 623L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f64q1a-d2c/RM70F64Q1A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F64R1G",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max 637L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f64r1g-d2c/RM70F64R1G/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90M1ZD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 902L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 922,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f90m1zd-d2c/RM70F90M1ZD/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 922
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90M2D",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 902L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f90m2d-d2c/RM70F90M2D/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90Q2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 884L (빅아이스/큐브)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f90q2a-d2c/RM70F90Q2A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90R1ZD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 905L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 922,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f90r1zd-d2c/RM70F90R1ZD/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 922
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90R2D",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 905L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f90r2d-d2c/RM70F90R2D/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F91R1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 901L (UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f91r1a-d2c/RM70F91R1A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F91RMA",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 901L (에너지 1등급 최저기준 대비 -30%, UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70f91rma-d2c/RM70F91RMA/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70H91RMA",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 901L (에너지 1등급 최저기준 대비 -35%, UV탈취)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm70h91rma-d2c/RM70H91RMA/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F64L2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max 611L (푸드 쇼케이스)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm80f64l2a-d2c/RM80F64L2A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F91H1W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 874L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm80f91h1w-d2c/RM80F91H1W/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F91L1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 875L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm80f91l1a-d2c/RM80F91L1A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F91M1XJ",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 894L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm80f91m1xj-d2c/RM80F91M1XJ/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM90F91B1W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 864L (AI 비전 인사이드)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm90f91b1w-d2c/RM90F91B1W/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM90F91D1W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 864L (AI 홈)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm90f91d1w-d2c/RM90F91D1W/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM90H64P2W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 키친핏 Max 602L (22.5cm, AI 푸드매니저)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 683,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm90h64p2w-d2c/RM90H64P2W/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 683
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM90H91B1W",
+    "modelAliases": [],
+    "productName": "Bespoke AI 패밀리허브 4도어 864L (81.2cm, AI 푸드매니저)",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 916,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/french-door-rm90h91b1w-d2c/RM90H91B1W/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 916
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRR297231WW",
+    "modelAliases": [],
+    "productName": "빌트인 냉장고 278L",
+    "widthMm": 540,
+    "heightMm": 1775,
+    "depthMm": 550,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-brr297231ww-d2c/BRR297231WW/",
+        "value": {
+          "widthMm": 540,
+          "heightMm": 1775,
+          "depthMm": 550
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "BRZ227200WW",
+    "modelAliases": [],
+    "productName": "빌트인 냉동고 211L",
+    "widthMm": 540,
+    "heightMm": 1775,
+    "depthMm": 550,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-brz227200ww-d2c/BRZ227200WW/",
+        "value": {
+          "widthMm": 540,
+          "heightMm": 1775,
+          "depthMm": 550
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR09BG014WW",
+    "modelAliases": [],
+    "productName": "냉장고 89L (냉장전용)",
+    "widthMm": 475,
+    "heightMm": 842,
+    "depthMm": 448,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr09bg014ww-d2c/RR09BG014WW/",
+        "value": {
+          "widthMm": 475,
+          "heightMm": 842,
+          "depthMm": 448
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR39A7605AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 380L (좌열림/열림방향 가변, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr39a7605ap-d2c/RR39A7605AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR39A7685AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 380L (좌열림/열림방향 가변, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr39a7685ap-d2c/RR39A7685AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR39A7695AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 380L (좌열림/열림방향 가변, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr39a7695ap-d2c/RR39A7695AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40A7895AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 408L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40a7895ap-d2c/RR40A7895AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40A7905AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 409L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40a7905ap-d2c/RR40A7905AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40A7885AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 409L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40a7985ap-d2c/RR40A7885AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40B78A5AP",
+    "modelAliases": [],
+    "productName": "Bespoke 정수기 냉장고 1도어 키친핏 399L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40b78a5ap-d2c/RR40B78A5AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40B9971APK",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉장고 1도어 키친핏 396L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40b9971apk-d2c/RR40B9971APK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40B9981APK",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉장고 1도어 키친핏 386L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40b9981apk-d2c/RR40B9981APK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C7805AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 1도어 키친핏 409L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c7805ap-d2c/RR40C7805AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C7985AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 1도어 키친핏 409L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c7885ap-d2c/RR40C7985AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C7895AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 1도어 키친핏 408L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c7895ap-d2c/RR40C7895AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C8995APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉장고 1도어 키친핏 408L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c8995apg-d2c/RR40C8995APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C89A5APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 정수기 냉장고 1도어 키친핏 399L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c89a5apg-d2c/RR40C89A5APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C9971APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉장고 1도어 키친핏 396L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c9971apg-d2c/RR40C9971APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C9981APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 정수기 냉장고 1도어 키친핏 386L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rr40c9981apg-d2c/RR40C9981APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT09DG004WW",
+    "modelAliases": [],
+    "productName": "냉장고 82L",
+    "widthMm": 475,
+    "heightMm": 850,
+    "depthMm": 515,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rt09dg004ww-d2c/RT09DG004WW/",
+        "value": {
+          "widthMm": 475,
+          "heightMm": 850,
+          "depthMm": 515
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RW33B9981APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 와인냉장고 1도어 키친핏 101병 (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rw33b9981apg-d2c/RW33B9981APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RW33B9981APK",
+    "modelAliases": [],
+    "productName": "Infinite Line 와인냉장고 1도어 키친핏 101병 (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rw33b9981apk-d2c/RW33B9981APK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RW33B99B1TFG",
+    "modelAliases": [],
+    "productName": "Infinite Line 와인냉장고 1도어 키친핏 101병 (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rw33b99b1tfg-d2c/RW33B99B1TFG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RW33C99B1TFG",
+    "modelAliases": [],
+    "productName": "Infinite Line 와인냉장고 1도어 키친핏 101병 (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rw33c99b1tfg-d2c/RW33C99B1TFG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RW99H33WN0",
+    "modelAliases": [],
+    "productName": "Infinite AI 와인냉장고 1도어 키친핏 101병 (좌열림)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rw99h33wn0-d2c/RW99H33WN0/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ22FG4000S9",
+    "modelAliases": [],
+    "productName": "냉동고 227L (냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1720,
+    "depthMm": 590,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz22fg4000s9-d2c/RZ22FG4000S9/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1720,
+          "depthMm": 590
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24A5660AP",
+    "modelAliases": [],
+    "productName": "Bespoke 변온 냉동고 1도어 키친핏 240L (우열림/열림방향 가변)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 685,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz24a5660ap-d2c/RZ24A5660AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 685
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24A58G0AP",
+    "modelAliases": [],
+    "productName": "Bespoke 변온 냉동고 1도어 키친핏 240L (우열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz24a58g0ap-d2c/RZ24A58G0AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24A59G0AP",
+    "modelAliases": [],
+    "productName": "Bespoke 변온 냉동고 1도어 키친핏 240L (좌열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz24a59g0ap-d2c/RZ24A59G0AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24C58G0AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 변온 냉동고 1도어 키친핏 240L (우열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz24c58g0ap-d2c/RZ24C58G0AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ32A7665AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉동고 1도어 키친핏 318L (우열림/열림방향 가변, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz32a7665ap-d2c/RZ32A7665AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34A7905AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉동고 1도어 키친핏 347L (좌열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz34a7905ap-d2c/RZ34A7905AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34B78A5AP",
+    "modelAliases": [],
+    "productName": "Bespoke 냉동고 1도어 키친핏 306L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz34b78a5ap-d2c/RZ34B78A5AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C7805AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz34c7805ap-d2c/RZ34C7805AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C7855AP",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz34c7855ap-d2c/RZ34C7855AP/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C8865APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz34c8865apg-d2c/RZ34C8865APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ38B9871APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉동고 1도어 키친핏 404L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz38b9871apg-d2c/RZ38B9871APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ38B9881APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉동고 1도어 키친핏 379L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz38b9881apg-d2c/RZ38B9881APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ38B9891APG",
+    "modelAliases": [],
+    "productName": "Infinite Line 냉동고 1도어 키친핏 379L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz38b9891apg-d2c/RZ38B9891APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ38C9891APG",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉동고 1도어 키친핏 379L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/one-door-rz38c9891apg-d2c/RZ38C9891APG/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24A59A0AP",
+    "modelAliases": [],
+    "productName": "Bespoke 변온 냉동고 1도어 키친핏 240L (좌열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/onedoor-rz24a59a0ap-d2c/RZ24A59A0AP/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM63R274C1ARQ",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+김치플러스 3도어 키친핏 640/313L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm63r274c1arq-d2c/RM63R274C1ARQ/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM63R27915ARQ",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+김치플러스 1도어 키친핏 640/348L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm63r27915arq-d2c/RM63R27915ARQ/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F33C101",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max+김치플러스 3도어 키친핏 623/313L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f33c101-d2c/RM70F33C101/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F33GDAB",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max+김치플러스 3도어 키친핏 623/313L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f33gdab-d2c/RM70F33GDAB/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63R242M2A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+김치플러스 4도어 키친핏 Max 640/420L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f63r242m2a-d2c/RM70F63R242M2A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63R242M3Z",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+김치플러스 4도어 키친핏 Max 640/420L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f63r242m3z-d2c/RM70F63R242M3Z/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63R27955A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+냉동고 1도어 키친핏 640/347L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f63r27955a-d2c/RM70F63R27955A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63R2F2ZG",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏+김치플러스 4도어 키친핏 Max 640/420L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f63r2f2zg-d2c/RM70F63R2F2ZG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F63R2M2ZG",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어 키친핏 Max+김치플러스 4도어 키친핏 Max 640/420L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f63r2m2zg-d2c/RM70F63R2M2ZG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F64Q174C1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어 키친핏 Max+김치플러스 3도어 키친핏 623/313L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f64q174c1a-d2c/RM70F64Q174C1A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F64R17955A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 냉장고 4도어 키친핏Max+냉동고 1도어 키친핏 637/347L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f64r17955a-d2c/RM70F64R17955A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90M1M2ZD",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어+김치플러스 4도어 902/490L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 922,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f90m1m2zd-d2c/RM70F90M1M2ZD/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 922
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90M2M1ZG",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어+김치플러스 4도어 902/586L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f90m2m1zg-d2c/RM70F90M2M1ZG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F90R2M1ZG",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어+김치플러스 4도어 905/586L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f90r2m1zg-d2c/RM70F90R2M1ZG/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F91RM7955A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 냉장고 4도어+냉동고 1도어 키친핏 901/347L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f91rm7955a-d2c/RM70F91RM7955A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM70F91RM94U1A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 4도어+김치플러스 4도어 901/583L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm70f91rm94u1a-d2c/RM70F91RM94U1A/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F6442XJ",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고+김치플러스 4도어 키친핏 Max 611/418L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 697,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm80f6442xj-d2c/RM80F6442XJ/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 697
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM80F91K17955X",
+    "modelAliases": [],
+    "productName": "Bespoke AI 하이브리드 냉장고 4도어+냉동고 1도어 키친핏 889/347L",
+    "widthMm": 912,
+    "heightMm": 1853,
+    "depthMm": 930,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm80f91k17955x-d2c/RM80F91K17955X/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1853,
+          "depthMm": 930
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RM90R294U1ZDRQ",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 4도어+김치플러스 4도어 905/583L",
+    "widthMm": 912,
+    "heightMm": 1830,
+    "depthMm": 922,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rm90r294u1zdrq-d2c/RM90R294U1ZDRQ/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1830,
+          "depthMm": 922
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR39A7695A01FK",
+    "modelAliases": [],
+    "productName": "Bespoke 냉장고 1도어 키친핏 380L (좌열림/열림방향 가변, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr39a7695a01fk-d2c/RR39A7695A01FK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C7885AP01",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 1도어 키친핏 409L (우열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c7885ap01-d2c/RR40C7885AP01/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C78RZRQ79A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고+냉동고+김치플러스 1도어 키친핏 409/347/347L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c78rzrq79a-d2c/RR40C78RZRQ79A/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C790578001",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고+냉장고+김치플러스 1도어 키친핏 347/409/348L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c790578001--d2c/RR40C790578001/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C79057801",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고+냉장고+김치플러스 1도어 키친핏 347/409/348L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c79057801-d2c/RR40C79057801/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C79057915A",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고+김치플러스 1도어 키친핏 409/348L",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c79057915a-d2c/RR40C79057915A/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C7985AP01",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉장고 1도어 키친핏 409L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c7985ap01-d2c/RR40C7985AP01/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C8995AW6FK",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉장고 1도어 키친핏 408L (좌열림, 냉장전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c8995aw6fk-d2c/RR40C8995AW6FK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RR40C9981APGW6",
+    "modelAliases": [],
+    "productName": "Infinite AI 정수기 냉장고 1도어 키친핏 386L+수납존",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rr40c9981apgw6-d2c/RR40C9981APGW6/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS80F64J3F01",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 623L+교체형 정수필터 2개",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 716,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rs80f64j3f01-d2c/RS80F64J3F01/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 716
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24A5660A01FK",
+    "modelAliases": [],
+    "productName": "Bespoke 변온 냉동고 1도어 키친핏 240L (우열림/열림방향 가변)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 685,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz24a5660a01fk-d2c/RZ24A5660A01FK/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 685
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24C58G0A01FK",
+    "modelAliases": [],
+    "productName": "Bespoke AI 변온 냉동고 1도어 키친핏 240L (우열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz24c58g0a01fk-d2c/RZ24C58G0A01FK/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ24C59G001RC",
+    "modelAliases": [],
+    "productName": "Bespoke AI 변온 냉동고 1도어 키친핏 240L (좌열림)",
+    "widthMm": 455,
+    "heightMm": 1853,
+    "depthMm": 638,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz24c59g001rc-d2c/RZ24C59G001RC/",
+        "value": {
+          "widthMm": 455,
+          "heightMm": 1853,
+          "depthMm": 638
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ32A7665A01FK",
+    "modelAliases": [],
+    "productName": "Bespoke 냉동고 1도어 키친핏 318L (우열림/열림방향 가변, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz32a7665a01fk-d2c/RZ32A7665A01FK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C7855AP01",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz34c7855ap01-d2c/RZ34C7855AP01/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C7955AP01",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고 1도어 키친핏 347L (좌열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz34c7955ap01-d2c/RZ34C7955AP01/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C7965AP01",
+    "modelAliases": [],
+    "productName": "Bespoke AI 냉동고 1도어 키친핏 347L (좌열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1853,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz34c7965ap01-d2c/RZ34C7965AP01/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1853,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ34C8865AW6FK",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉동고 1도어 키친핏 347L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz34c8865aw6fk-d2c/RZ34C8865AW6FK/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ38C9891APGW6",
+    "modelAliases": [],
+    "productName": "Infinite AI 냉동고 1도어 키친핏 379L (우열림, 냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1855,
+    "depthMm": 688,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": true,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/package-rz38c9891apgw6-d2c/RZ38C9891APGW6/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1855,
+          "depthMm": 688
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS70F65Q2F",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 651L",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 716,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs70f65q2f-d2c/RS70F65Q2F/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 716
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS70F65Q2Y",
+    "modelAliases": [],
+    "productName": "Bespoke 양문형 냉장고 651L",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 716,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs70f65q2y-d2c/RS70F65Q2Y/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 716
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS80F64J3F",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 623L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 716,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs80f64j3f-d2c/RS80F64J3F/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 716
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS82M6000S8",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 815 L",
+    "widthMm": 912,
+    "heightMm": 1779,
+    "depthMm": 907,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs82m6000s8-d2c/RS82M6000S8/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1779,
+          "depthMm": 907
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DG5002M9",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 852L",
+    "widthMm": 912,
+    "heightMm": 1780,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84db5002m9-d2c/RS84DG5002M9/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1780,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DG5002WW",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 852L",
+    "widthMm": 912,
+    "heightMm": 1780,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84db5002ww-d2c/RS84DG5002WW/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1780,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DB5602CW",
+    "modelAliases": [],
+    "productName": "Bespoke  양문형 냉장고 846L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84db5602cw-d2c/RS84DB5602CW/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DG5022B4",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 852L (메탈쿨링커버)",
+    "widthMm": 912,
+    "heightMm": 1780,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84dg5022b4-d2c/RS84DG5022B4/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1780,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DG5202B4",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 852L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84dg5202b4-d2c/RS84DG5202B4/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RS84DG5602M9",
+    "modelAliases": [],
+    "productName": "양문형 냉장고 846L (오토오픈도어)",
+    "widthMm": 912,
+    "heightMm": 1786,
+    "depthMm": 892,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/side-by-side-rs84dg5602m9-d2c/RS84DG5602M9/",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 1786,
+          "depthMm": 892
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT25BAR41WW",
+    "modelAliases": [],
+    "productName": "냉장고 255L",
+    "widthMm": 555,
+    "heightMm": 1635,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-freezer-rt25bar41ww-d2c/RT25BAR41WW/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1635,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT19T3007GS",
+    "modelAliases": [],
+    "productName": "냉장고 203L",
+    "widthMm": 555,
+    "heightMm": 1445,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt19t3007gs-d2c/RT19T3007GS/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1445,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT20FARL3S9",
+    "modelAliases": [],
+    "productName": "냉장고 203L",
+    "widthMm": 555,
+    "heightMm": 1445,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt20farl3s9-d2c/RT20FARL3S9/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1445,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT25DARAHS9",
+    "modelAliases": [],
+    "productName": "냉장고 255L",
+    "widthMm": 555,
+    "heightMm": 1635,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt25darahs9-d2c/RT25DARAHS9/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1635,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT25FARA2S9",
+    "modelAliases": [],
+    "productName": "냉장고 255L",
+    "widthMm": 555,
+    "heightMm": 1635,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt25fara2s9-d2c/RT25FARA2S9/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1635,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT25NARAHS8",
+    "modelAliases": [],
+    "productName": "냉장고 255L",
+    "widthMm": 555,
+    "heightMm": 1635,
+    "depthMm": 637,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt25narahs8-d2c/RT25NARAHS8/",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 1635,
+          "depthMm": 637
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT31CB5624C3",
+    "modelAliases": [],
+    "productName": "냉장고 298L",
+    "widthMm": 600,
+    "heightMm": 1715,
+    "depthMm": 647,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt31cb5624c3-d2c/RT31CB5624C3/",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 1715,
+          "depthMm": 647
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT31CG5624S9",
+    "modelAliases": [],
+    "productName": "냉장고 298L",
+    "widthMm": 600,
+    "heightMm": 1715,
+    "depthMm": 647,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt31cg5624s9-d2c/RT31CG5624S9/",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 1715,
+          "depthMm": 647
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT42CG6024S9",
+    "modelAliases": [],
+    "productName": "냉장고 410L",
+    "widthMm": 700,
+    "heightMm": 1785,
+    "depthMm": 672,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt42cg6024s9-d2c/RT42CG6024S9/",
+        "value": {
+          "widthMm": 700,
+          "heightMm": 1785,
+          "depthMm": 672
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT50T6035WW",
+    "modelAliases": [],
+    "productName": "냉장고 499 L",
+    "widthMm": 790,
+    "heightMm": 1785,
+    "depthMm": 720,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt50t6035ww-N/RT50T6035WW/",
+        "value": {
+          "widthMm": 790,
+          "heightMm": 1785,
+          "depthMm": 720
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT53DB7A1CET",
+    "modelAliases": [],
+    "productName": "냉장고 525L",
+    "widthMm": 790,
+    "heightMm": 1855,
+    "depthMm": 725,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt53db7a1cet-d2c/RT53DB7A1CET/",
+        "value": {
+          "widthMm": 790,
+          "heightMm": 1855,
+          "depthMm": 725
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT53DG7A1CWW",
+    "modelAliases": [],
+    "productName": "냉장고 525L",
+    "widthMm": 790,
+    "heightMm": 1855,
+    "depthMm": 725,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt53dg7a1cww-d2c/RT53DG7A1CWW/",
+        "value": {
+          "widthMm": 790,
+          "heightMm": 1855,
+          "depthMm": 725
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RT62A7049S9",
+    "modelAliases": [],
+    "productName": "냉장고 615L",
+    "widthMm": 836,
+    "heightMm": 1862,
+    "depthMm": 788,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rt62a7049s9-n/RT62A7049S9/",
+        "value": {
+          "widthMm": 836,
+          "heightMm": 1862,
+          "depthMm": 788
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "삼성",
+    "modelCode": "RZ22CG4000WW",
+    "modelAliases": [],
+    "productName": "냉동고 227L (냉동전용)",
+    "widthMm": 595,
+    "heightMm": 1720,
+    "depthMm": 590,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.samsung.com/sec/refrigerators/top-mount-freezer-rz22cg4000ww-d2c/RZ22CG4000WW/",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 1720,
+          "depthMm": 590
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: 삼성 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "A202S",
+    "modelAliases": [],
+    "productName": "LG 냉동고",
+    "widthMm": 600,
+    "heightMm": 629,
+    "depthMm": 1383,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/a202s",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 629,
+          "depthMm": 1383
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B053S14",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 443,
+    "heightMm": 450,
+    "depthMm": 501,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b053s14",
+        "value": {
+          "widthMm": 443,
+          "heightMm": 450,
+          "depthMm": 501
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B103S14",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 463,
+    "heightMm": 482,
+    "depthMm": 820,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b103s14",
+        "value": {
+          "widthMm": 463,
+          "heightMm": 482,
+          "depthMm": 820
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B182W13",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 555,
+    "heightMm": 585,
+    "depthMm": 1400,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b182w13",
+        "value": {
+          "widthMm": 555,
+          "heightMm": 585,
+          "depthMm": 1400
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B312W31",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 600,
+    "heightMm": 710,
+    "depthMm": 1640,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b312w31",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 710,
+          "depthMm": 1640
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B502S33",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 780,
+    "heightMm": 730,
+    "depthMm": 1800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b502s33",
+        "value": {
+          "widthMm": 780,
+          "heightMm": 730,
+          "depthMm": 1800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "B502S53",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고",
+    "widthMm": 780,
+    "heightMm": 730,
+    "depthMm": 1800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/b502s53",
+        "value": {
+          "widthMm": 780,
+          "heightMm": 730,
+          "depthMm": 1800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "D312MBE31",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고 오브제컬렉션",
+    "widthMm": 600,
+    "heightMm": 710,
+    "depthMm": 1640,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/d312mbe31",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 710,
+          "depthMm": 1640
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "D332MBE34",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고 오브제컬렉션",
+    "widthMm": 600,
+    "heightMm": 710,
+    "depthMm": 1720,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/d332mbe34",
+        "value": {
+          "widthMm": 600,
+          "heightMm": 710,
+          "depthMm": 1720
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "D463MRR33",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고 오브제컬렉션",
+    "widthMm": 700,
+    "heightMm": 725,
+    "depthMm": 1845,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/d463mrr33",
+        "value": {
+          "widthMm": 700,
+          "heightMm": 725,
+          "depthMm": 1845
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "D502MEE33",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고 오브제컬렉션",
+    "widthMm": 780,
+    "heightMm": 730,
+    "depthMm": 1800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/d502mee33",
+        "value": {
+          "widthMm": 780,
+          "heightMm": 730,
+          "depthMm": 1800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "D502MEE53",
+    "modelAliases": [],
+    "productName": "LG 일반냉장고 오브제컬렉션",
+    "widthMm": 780,
+    "heightMm": 730,
+    "depthMm": 1800,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/d502mee53",
+        "value": {
+          "widthMm": 780,
+          "heightMm": 730,
+          "depthMm": 1800
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "F904ND79E",
+    "modelAliases": [],
+    "productName": "LG SIGNATURE 상냉장고",
+    "widthMm": 912,
+    "heightMm": 929,
+    "depthMm": 1784,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/f904nd79e",
+        "value": {
+          "widthMm": 912,
+          "heightMm": 929,
+          "depthMm": 1784
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "H875GBB012",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 베이직 냉장고",
+    "widthMm": 914,
+    "heightMm": 918,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/h875gbb012",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 918,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M301S31",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고",
+    "widthMm": 595,
+    "heightMm": 677,
+    "depthMm": 1720,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m301s31",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 677,
+          "depthMm": 1720
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M402ND",
+    "modelAliases": [],
+    "productName": "LG SIGNATURE 냉장고",
+    "widthMm": 700,
+    "heightMm": 735,
+    "depthMm": 1793,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m402nd",
+        "value": {
+          "widthMm": 700,
+          "heightMm": 735,
+          "depthMm": 1793
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M616GBB0M1",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 Fit & Max",
+    "widthMm": 914,
+    "heightMm": 698,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m616gbb0m1",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 698,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M616MQQ0M1",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 Fit & Max",
+    "widthMm": 914,
+    "heightMm": 698,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m616mqq0m1",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 698,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M626GBB032",
+    "modelAliases": [],
+    "productName": "LG 디오스 오브제컬렉션 냉장고 Fit & Max",
+    "widthMm": 914,
+    "heightMm": 698,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m626gbb032",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 698,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "M876GBB231",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 (더블매직스페이스)",
+    "widthMm": 914,
+    "heightMm": 918,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/m876gbb231",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 918,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Q342GBB133S",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고 오브제컬렉션",
+    "widthMm": 595,
+    "heightMm": 676,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/q342gbb133s",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 676,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Q342GBB153",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고 오브제컬렉션",
+    "widthMm": 595,
+    "heightMm": 676,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/q342gbb153",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 676,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Q343GIC183S",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고 오브제컬렉션 노크온",
+    "widthMm": 595,
+    "heightMm": 676,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/q343gic183s",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 676,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Q343MEEF53",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고 오브제컬렉션",
+    "widthMm": 595,
+    "heightMm": 676,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/q343meef53",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 676,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "Q343MHHF33",
+    "modelAliases": [],
+    "productName": "LG 모던엣지 냉장고 오브제컬렉션",
+    "widthMm": 595,
+    "heightMm": 676,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/q343mhhf33",
+        "value": {
+          "widthMm": 595,
+          "heightMm": 676,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "S834MEE111",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 (양문형, 매직스페이스)",
+    "widthMm": 913,
+    "heightMm": 913,
+    "depthMm": 1790,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/s834mee111",
+        "value": {
+          "widthMm": 913,
+          "heightMm": 913,
+          "depthMm": 1790
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "S834MTE011",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 (양문형)",
+    "widthMm": 913,
+    "heightMm": 913,
+    "depthMm": 1790,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/s834mte011",
+        "value": {
+          "widthMm": 913,
+          "heightMm": 913,
+          "depthMm": 1790
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "S836MEE022",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 냉장고 (양문형)",
+    "widthMm": 913,
+    "heightMm": 1790,
+    "depthMm": 913,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/s836mee022",
+        "value": {
+          "widthMm": 913,
+          "heightMm": 1790,
+          "depthMm": 913
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "T875MEE011",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 베이직 냉장고",
+    "widthMm": 914,
+    "heightMm": 918,
+    "depthMm": 1787,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/t875mee011",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 918,
+          "depthMm": 1787
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  },
+  {
+    "category": "REFRIGERATOR",
+    "brand": "LG",
+    "modelCode": "W826GBB482",
+    "modelAliases": [],
+    "productName": "LG 디오스 AI 오브제컬렉션 STEM 얼음정수 냉장고 (노크온 매직스페이스)",
+    "widthMm": 914,
+    "heightMm": 918,
+    "depthMm": 1860,
+    "hingeOpenWidthMm": null,
+    "ventTopMm": null,
+    "ventSideMm": null,
+    "ventBackMm": null,
+    "doorType": null,
+    "capacityL": null,
+    "builtIn": false,
+    "releaseYear": null,
+    "discontinued": false,
+    "sources": [
+      {
+        "tier": 1,
+        "url": "https://www.lge.co.kr/refrigerators/w826gbb482",
+        "value": {
+          "widthMm": 914,
+          "heightMm": 918,
+          "depthMm": 1860
+        }
+      }
+    ],
+    "consensusCount": 1,
+    "verifyStatus": "PENDING",
+    "notes": "자동 크롤링 (2026-04-26 수집). 출처: LG 공식 사이트."
+  }
+]
