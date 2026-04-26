@@ -1083,6 +1083,7 @@ model ProjectMemo {
   projectId  String
   title      String?
   content    String   // 메모 본문 (자유 형식, 줄바꿈은 사용자 입력 그대로)
+  tag        String?  // 분류 — 일반/회고/AS/피드백 (자유 문자열, null 허용). AI 어드바이스 입력 신호로 사용.
   pinned     Boolean  @default(false)
   orderIndex Int      @default(0)
   createdAt  DateTime @default(now())
@@ -1091,6 +1092,7 @@ model ProjectMemo {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId, orderIndex])
+  @@index([projectId, tag])
   @@map("project_memos")
 }
 

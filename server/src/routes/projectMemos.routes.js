@@ -11,15 +11,30 @@ async function assertProjectAccess(projectId, companyId) {
   return prisma.project.findFirst({ where: { id: projectId, companyId } });
 }
 
-// GET /api/projects/:projectId/memos
+// GET /api/projects/:projectId/memos?tag=회고&q=검색어
 router.get('/', async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
+    const where = { projectId };
+    if (req.query.tag) {
+      const t = String(req.query.tag).trim();
+      where.tag = t === '__none__' ? null : t;
+    }
+    if (req.query.q) {
+      const q = String(req.query.q).trim();
+      if (q) {
+        where.OR = [
+          { title: { contains: q, mode: 'insensitive' } },
+          { content: { contains: q, mode: 'insensitive' } },
+        ];
+      }
+    }
+
     const memos = await prisma.projectMemo.findMany({
-      where: { projectId },
+      where,
       orderBy: [{ pinned: 'desc' }, { orderIndex: 'asc' }, { createdAt: 'desc' }],
     });
     res.json({ memos });
@@ -29,6 +44,7 @@ router.get('/', async (req, res, next) => {
 const createSchema = z.object({
   title: z.string().max(200).optional().nullable(),
   content: z.string().default(''),
+  tag: z.string().max(50).optional().nullable(),
   pinned: z.boolean().optional(),
 });
 
@@ -49,6 +65,7 @@ router.post('/', async (req, res, next) => {
         projectId,
         title: data.title?.trim() || null,
         content: data.content || '',
+        tag: data.tag?.trim() || null,
         pinned: data.pinned ?? false,
         orderIndex: (last?.orderIndex ?? -1) + 1,
       },
@@ -63,6 +80,7 @@ router.post('/', async (req, res, next) => {
 const patchSchema = z.object({
   title: z.string().max(200).optional().nullable(),
   content: z.string().optional(),
+  tag: z.string().max(50).optional().nullable(),
   pinned: z.boolean().optional(),
   orderIndex: z.number().int().optional(),
 });
@@ -80,6 +98,7 @@ router.patch('/:id', async (req, res, next) => {
     const updateData = {};
     if (data.title !== undefined) updateData.title = data.title?.trim() || null;
     if (data.content !== undefined) updateData.content = data.content;
+    if (data.tag !== undefined) updateData.tag = data.tag?.trim() || null;
     if (data.pinned !== undefined) updateData.pinned = data.pinned;
     if (data.orderIndex !== undefined) updateData.orderIndex = data.orderIndex;
 
