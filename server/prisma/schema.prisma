@@ -85,6 +85,7 @@ model User {
   createdExpenses        Expense[]             @relation("ExpenseCreatedBy")
   createdAccountCodes    AccountCode[]         @relation("AccountCodeCreatedBy")
   createdExpenseRules    ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
+  applianceCorrections   ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
 
   @@map("users")
 }
@@ -1116,4 +1117,54 @@ model PhaseAdvice {
 
   @@index([companyId, phase])
   @@map("phase_advices")
+}
+
+// ============================================
+// 가전 규격 DB (글로벌, 회사 공유)
+// 모델명 → 검증된 사이즈 자동 채움
+// 100% 정확도 가드레일: 다중 출처 합의 + 사용자 정정 + 출처 만료
+// ============================================
+model ApplianceSpec {
+  id           String   @id @default(cuid())
+  category     String   // REFRIGERATOR | DISHWASHER | WASHING_MACHINE | DRYER | OVEN | COOKTOP | AIR_CONDITIONER
+  brand        String   // "LG" | "삼성" | ...
+  modelCode    String   @unique // 정확 모델코드 (예: S634S30Q)
+  modelAliases String[] @default([]) // 별칭/약어 검색용
+  productName  String   // "디오스 양문형 800L"
+
+  // 외형 치수 (mm)
+  widthMm  Int
+  heightMm Int
+  depthMm  Int
+
+  // 설치 요구사항 (정확도 핵심)
+  hingeOpenWidthMm Int? // 문 열림 시 필요 폭
+  ventTopMm        Int? // 상부 통풍 간극
+  ventSideMm       Int? // 측면 통풍 간극
+  ventBackMm       Int? // 후면 통풍 간극
+
+  // 카테고리별 메타
+  doorType     String? // SIDE_BY_SIDE | FRENCH_DOOR | 4_DOOR | TOP_FREEZER 등
+  capacityL    Int?
+  builtIn      Boolean @default(false)
+  releaseYear  Int?
+  discontinued Boolean @default(false)
+
+  // 검증 메타 (가드레일)
+  sources        Json   @default("[]") // [{tier, url, scrapedAt, value}]
+  consensusCount Int    @default(0) // 일치하는 출처 수
+  verifyStatus   String @default("PENDING") // VERIFIED | PENDING | DISPUTED | USER_CORRECTED
+  lastVerifiedAt DateTime?
+  correctedById  String?
+  correctedAt    DateTime?
+  correctionNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  correctedBy User? @relation("ApplianceSpecCorrectedBy", fields: [correctedById], references: [id], onDelete: SetNull)
+
+  @@index([category, brand])
+  @@index([modelCode])
+  @@map("appliance_specs")
 }

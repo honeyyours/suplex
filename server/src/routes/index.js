@@ -26,6 +26,7 @@ const teamRoutes = require('./team.routes');
 const vendorRoutes = require('./vendors.routes');
 const backupRoutes = require('./backup.routes');
 const activityRoutes = require('./activity.routes');
+const applianceSpecsRoutes = require('./applianceSpecs.routes');
 
 const router = express.Router();
 
@@ -67,6 +68,7 @@ router.use('/ai-bookkeeper', aiBookkeeperRoutes);
 router.use('/team', teamRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/activity', activityRoutes);
+router.use('/appliance-specs', applianceSpecsRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);

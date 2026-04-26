@@ -6,6 +6,7 @@ import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
+import { applianceSpecsApi } from '../api/applianceSpecs';
 import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
@@ -56,6 +57,8 @@ export default function Settings() {
       <PhaseDeadlineRulesSection />
 
       <PhaseAdvicesSection />
+
+      <ApplianceSpecsSection canEdit={isOwner} />
 
       <Section title="내 계정">
         <div className="flex items-center py-2 border-b text-sm">
@@ -1185,4 +1188,353 @@ function FormField({ label, value, onChange, type = 'text', step, full }) {
 
 function roleLabel(role) {
   return ({ OWNER: '대표', DESIGNER: '디자인팀', FIELD: '현장팀' }[role] || role);
+}
+
+// ============================================
+// 가전 규격 DB (글로벌 — 모든 회사 공유)
+// ============================================
+const APPLI_CATEGORY_LABEL = {
+  REFRIGERATOR: '냉장고',
+  DISHWASHER: '식기세척기',
+  WASHING_MACHINE: '세탁기',
+  DRYER: '건조기',
+  OVEN: '오븐',
+  COOKTOP: '쿡탑',
+  AIR_CONDITIONER: '에어컨',
+};
+
+function VerifyChip({ status, count }) {
+  const map = {
+    VERIFIED:       { label: `✅ 검증됨 (${count}출처)`, cls: 'bg-emerald-50 text-emerald-700' },
+    USER_CORRECTED: { label: '🛠️ 사용자 정정',           cls: 'bg-sky-50 text-sky-700' },
+    PENDING:        { label: '⚠️ 검증 대기',             cls: 'bg-amber-50 text-amber-700' },
+    DISPUTED:       { label: '❌ 출처 불일치',           cls: 'bg-rose-50 text-rose-700' },
+  };
+  const m = map[status] || { label: status, cls: 'bg-gray-100 text-gray-700' };
+  return <span className={`inline-block text-[11px] px-2 py-0.5 rounded ${m.cls}`}>{m.label}</span>;
+}
+
+function ApplianceSpecsSection({ canEdit }) {
+  const [specs, setSpecs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [includeDiscontinued, setIncludeDiscontinued] = useState(false);
+  const [editing, setEditing] = useState(null); // null | 'new' | spec object
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filterCategory) params.category = filterCategory;
+      if (filterBrand) params.brand = filterBrand;
+      if (filterStatus) params.verifyStatus = filterStatus;
+      if (includeDiscontinued) params.includeDiscontinued = 'true';
+      const { specs } = await applianceSpecsApi.list(params);
+      setSpecs(specs);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, [filterCategory, filterBrand, filterStatus, includeDiscontinued]);
+
+  async function remove(id) {
+    if (!confirm('이 가전 규격을 삭제할까요? (모든 회사에서 사라집니다)')) return;
+    await applianceSpecsApi.remove(id);
+    reload();
+  }
+
+  return (
+    <Section title="가전 규격 DB (글로벌, 모든 회사 공유)" collapsible>
+      <p className="text-xs text-gray-500 mb-3">
+        모델명·브랜드별 정확한 사이즈 DB. 디자이너가 마감재(가전) 입력 시 모델 선택하면 사이즈 자동 채움.
+        검증된 데이터만 표시되며, 출처 2개 이상 일치 시 ✅ 검증됨, 사용자 정정은 최우선 반영.
+      </p>
+
+      <div className="flex flex-wrap gap-2 items-center mb-3 text-sm">
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="px-2 py-1 border rounded text-sm"
+        >
+          <option value="">전체 카테고리</option>
+          {Object.entries(APPLI_CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <select
+          value={filterBrand}
+          onChange={(e) => setFilterBrand(e.target.value)}
+          className="px-2 py-1 border rounded text-sm"
+        >
+          <option value="">전체 브랜드</option>
+          <option value="LG">LG</option>
+          <option value="삼성">삼성</option>
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="px-2 py-1 border rounded text-sm"
+        >
+          <option value="">전체 상태</option>
+          <option value="VERIFIED">✅ 검증됨</option>
+          <option value="USER_CORRECTED">🛠️ 사용자 정정</option>
+          <option value="PENDING">⚠️ 검증 대기</option>
+          <option value="DISPUTED">❌ 불일치</option>
+        </select>
+        <label className="flex items-center gap-1 text-xs text-gray-500">
+          <input
+            type="checkbox"
+            checked={includeDiscontinued}
+            onChange={(e) => setIncludeDiscontinued(e.target.checked)}
+            className="w-3.5 h-3.5 accent-navy-700"
+          />
+          단종 포함
+        </label>
+        {canEdit && (
+          <button
+            onClick={() => setEditing('new')}
+            className="ml-auto text-sm px-3 py-1 bg-navy-700 text-white rounded hover:bg-navy-800"
+          >+ 새 가전 추가</button>
+        )}
+      </div>
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50 text-gray-500">
+            <tr>
+              <th className="text-left px-2 py-1.5 w-20">카테고리</th>
+              <th className="text-left px-2 py-1.5 w-16">브랜드</th>
+              <th className="text-left px-2 py-1.5 w-32">모델코드</th>
+              <th className="text-left px-2 py-1.5">제품명</th>
+              <th className="text-right px-2 py-1.5 w-32">치수 (W×H×D)</th>
+              <th className="text-left px-2 py-1.5 w-32">검증</th>
+              {canEdit && <th className="px-2 py-1.5 w-20"></th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {specs.map((s) => (
+              <tr key={s.id} className={`hover:bg-gray-50 ${s.discontinued ? 'opacity-60' : ''}`}>
+                <td className="px-2 py-1.5 text-gray-600">{APPLI_CATEGORY_LABEL[s.category] || s.category}</td>
+                <td className="px-2 py-1.5 font-medium">{s.brand}</td>
+                <td className="px-2 py-1.5 font-mono text-[11px] text-navy-700">{s.modelCode}</td>
+                <td className="px-2 py-1.5">
+                  {s.productName}
+                  {s.discontinued && <span className="ml-1 text-[10px] text-gray-400">(단종)</span>}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-gray-600">
+                  {s.widthMm}×{s.heightMm}×{s.depthMm}
+                </td>
+                <td className="px-2 py-1.5">
+                  <VerifyChip status={s.verifyStatus} count={s.consensusCount} />
+                </td>
+                {canEdit && (
+                  <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                    <button onClick={() => setEditing(s)} className="text-navy-700 hover:underline mr-2">수정</button>
+                    <button onClick={() => remove(s.id)} className="text-rose-500 hover:underline">삭제</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+            {specs.length === 0 && !loading && (
+              <tr><td colSpan={canEdit ? 7 : 6} className="text-center py-6 text-gray-400">
+                등록된 가전이 없습니다. {canEdit && '"새 가전 추가"로 시작하세요.'}
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {editing && (
+        <ApplianceSpecModal
+          spec={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); reload(); }}
+        />
+      )}
+    </Section>
+  );
+}
+
+function ApplianceSpecModal({ spec, onClose, onSaved }) {
+  const isNew = !spec;
+  const [form, setForm] = useState(() => ({
+    category: spec?.category || 'REFRIGERATOR',
+    brand: spec?.brand || 'LG',
+    modelCode: spec?.modelCode || '',
+    modelAliases: (spec?.modelAliases || []).join(', '),
+    productName: spec?.productName || '',
+    widthMm: spec?.widthMm ?? '',
+    heightMm: spec?.heightMm ?? '',
+    depthMm: spec?.depthMm ?? '',
+    hingeOpenWidthMm: spec?.hingeOpenWidthMm ?? '',
+    ventTopMm: spec?.ventTopMm ?? '',
+    ventSideMm: spec?.ventSideMm ?? '',
+    ventBackMm: spec?.ventBackMm ?? '',
+    doorType: spec?.doorType || '',
+    capacityL: spec?.capacityL ?? '',
+    builtIn: !!spec?.builtIn,
+    releaseYear: spec?.releaseYear ?? '',
+    discontinued: !!spec?.discontinued,
+    sourcesText: JSON.stringify(spec?.sources || [], null, 2),
+  }));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  function field(key) {
+    return { value: form[key] ?? '', onChange: (v) => setForm({ ...form, [key]: v }) };
+  }
+
+  async function save() {
+    setErr('');
+    setSaving(true);
+    try {
+      let sources = [];
+      try { sources = JSON.parse(form.sourcesText || '[]'); } catch { throw new Error('출처 JSON 형식 오류'); }
+      const intOrNull = (v) => v === '' || v === null ? null : Number(v);
+      const intReq = (v) => Number(v);
+      const aliases = form.modelAliases.split(',').map((s) => s.trim()).filter(Boolean);
+
+      const payload = {
+        category: form.category,
+        brand: form.brand.trim(),
+        modelCode: form.modelCode.trim(),
+        modelAliases: aliases,
+        productName: form.productName.trim(),
+        widthMm: intReq(form.widthMm),
+        heightMm: intReq(form.heightMm),
+        depthMm: intReq(form.depthMm),
+        hingeOpenWidthMm: intOrNull(form.hingeOpenWidthMm),
+        ventTopMm: intOrNull(form.ventTopMm),
+        ventSideMm: intOrNull(form.ventSideMm),
+        ventBackMm: intOrNull(form.ventBackMm),
+        doorType: form.doorType.trim() || null,
+        capacityL: intOrNull(form.capacityL),
+        builtIn: form.builtIn,
+        releaseYear: intOrNull(form.releaseYear),
+        discontinued: form.discontinued,
+        sources,
+      };
+
+      if (isNew) {
+        await applianceSpecsApi.create(payload);
+      } else {
+        await applianceSpecsApi.update(spec.id, payload);
+      }
+      onSaved();
+    } catch (e) {
+      setErr(e.response?.data?.error || e.message || '저장 실패');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b flex items-center justify-between sticky top-0 bg-white">
+          <h3 className="font-semibold text-navy-800">{isNew ? '새 가전 추가' : '가전 규격 수정'}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700">✕</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-0.5">카테고리</label>
+              <select {...field('category')} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full text-sm px-3 py-1.5 border rounded">
+                {Object.entries(APPLI_CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-0.5">브랜드</label>
+              <select {...field('brand')} onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                className="w-full text-sm px-3 py-1.5 border rounded">
+                <option value="LG">LG</option>
+                <option value="삼성">삼성</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+            <FormField label="모델코드 (예: S634S30Q)" {...field('modelCode')} />
+            <FormField label="제품명 (예: 디오스 양문형 800L)" {...field('productName')} />
+            <FormField label="별칭 (쉼표 구분)" {...field('modelAliases')} full />
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="text-xs font-semibold text-gray-700 mb-2">외형 치수 (mm) — 필수</div>
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="가로 (W)" type="number" {...field('widthMm')} />
+              <FormField label="높이 (H)" type="number" {...field('heightMm')} />
+              <FormField label="깊이 (D)" type="number" {...field('depthMm')} />
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="text-xs font-semibold text-gray-700 mb-2">설치 요구사항 (mm) — 선택</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <FormField label="문 열림 폭" type="number" {...field('hingeOpenWidthMm')} />
+              <FormField label="상부 통풍" type="number" {...field('ventTopMm')} />
+              <FormField label="측면 통풍" type="number" {...field('ventSideMm')} />
+              <FormField label="후면 통풍" type="number" {...field('ventBackMm')} />
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="text-xs font-semibold text-gray-700 mb-2">메타</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <FormField label="문 타입 (예: 양문형, 4도어)" {...field('doorType')} />
+              <FormField label="용량 (L)" type="number" {...field('capacityL')} />
+              <FormField label="출시년도" type="number" {...field('releaseYear')} />
+            </div>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.builtIn}
+                  onChange={(e) => setForm({ ...form, builtIn: e.target.checked })}
+                  className="w-4 h-4 accent-navy-700" />
+                빌트인
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.discontinued}
+                  onChange={(e) => setForm({ ...form, discontinued: e.target.checked })}
+                  className="w-4 h-4 accent-navy-700" />
+                단종
+              </label>
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="text-xs font-semibold text-gray-700 mb-2">
+              출처 (JSON 배열) — 검증 가드레일
+            </div>
+            <p className="text-[11px] text-gray-500 mb-2">
+              형식: <code>{`[{"tier":1,"url":"https://...","value":{"widthMm":832,"heightMm":1850,"depthMm":738}},{"tier":3,"url":"..."}]`}</code><br/>
+              tier 1=공식 / 2=PDF카탈로그 / 3=다나와 / 4=쇼핑몰 / 5=매뉴얼.
+              치수가 일치하는 출처 2개 이상이면 자동으로 ✅ 검증됨 처리됨.
+            </p>
+            <textarea
+              value={form.sourcesText}
+              onChange={(e) => setForm({ ...form, sourcesText: e.target.value })}
+              className="w-full font-mono text-xs px-3 py-2 border rounded focus:border-navy-700 outline-none"
+              rows={6}
+            />
+          </div>
+
+          {err && <div className="text-sm text-rose-600">{err}</div>}
+        </div>
+
+        <div className="px-5 py-3 border-t bg-gray-50 flex justify-end gap-2 sticky bottom-0">
+          <button onClick={onClose} className="text-sm px-4 py-1.5 border rounded hover:bg-white">취소</button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+          >
+            {saving ? '저장 중...' : isNew ? '추가' : '수정'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

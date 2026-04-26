@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
+import { applianceSpecsApi } from '../api/applianceSpecs';
 
 const SAVE_DELAY = 1000;
 
@@ -12,6 +13,7 @@ export default function ProjectMaterialsSimple() {
   const [items, setItems] = useState([]); // 행 단위 로컬 상태 (서버 Material 매핑)
   const [loading, setLoading] = useState(true);
   const [savingMap, setSavingMap] = useState({}); // {id: true} - 저장 중 표시
+  const [applianceSearchGroup, setApplianceSearchGroup] = useState(null); // 가전 검색 모달 대상 그룹
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -200,6 +202,60 @@ export default function ProjectMaterialsSimple() {
     } catch (e) {
       alert('항목 추가 실패: ' + (e.response?.data?.error || e.message));
       return null;
+    }
+  }
+
+  // 가전 규격 DB에서 선택한 spec으로 새 APPLIANCE 항목 생성 (자동 채움)
+  async function addItemFromSpec(spaceGroup, spec) {
+    const sizeStr = `${spec.widthMm} × ${spec.depthMm} × ${spec.heightMm}`;
+    const itemNameLabel = ({
+      REFRIGERATOR: '냉장고', DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기',
+      DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨',
+    })[spec.category] || '가전';
+    const brandStr = `${spec.brand} ${spec.productName} (${spec.modelCode})`;
+    const memoBits = [];
+    if (spec.builtIn) memoBits.push('빌트인');
+    if (spec.hingeOpenWidthMm) memoBits.push(`문열림 ${spec.hingeOpenWidthMm}mm`);
+    if (spec.ventTopMm || spec.ventSideMm || spec.ventBackMm) {
+      const vents = [
+        spec.ventTopMm && `상부 ${spec.ventTopMm}`,
+        spec.ventSideMm && `측면 ${spec.ventSideMm}`,
+        spec.ventBackMm && `후면 ${spec.ventBackMm}`,
+      ].filter(Boolean).join(' / ');
+      memoBits.push(`통풍 ${vents}mm`);
+    }
+    try {
+      const { material } = await materialsApi.create(projectId, {
+        kind: 'APPLIANCE',
+        spaceGroup,
+        itemName: itemNameLabel,
+        brand: brandStr,
+        size: sizeStr,
+        memo: memoBits.join(', ') || null,
+        orderIndex: nextOrderIndex(spaceGroup),
+      });
+      setItems((prev) => [
+        ...prev,
+        {
+          id: material.id,
+          kind: 'APPLIANCE',
+          status: material.status || 'UNDECIDED',
+          spaceGroup: material.spaceGroup,
+          itemName: itemNameLabel,
+          brand: brandStr,
+          quantityText: '',
+          size: sizeStr,
+          installed: null,
+          memo: memoBits.join(', '),
+          orderIndex: material.orderIndex ?? 0,
+          createdAt: material.createdAt,
+          locked: false,
+          activeOrderStatus: null,
+        },
+      ]);
+      setApplianceSearchGroup(null);
+    } catch (e) {
+      alert('가전 추가 실패: ' + (e.response?.data?.error || e.message));
     }
   }
 
@@ -417,6 +473,7 @@ export default function ProjectMaterialsSimple() {
           onItemPatch={patchItem}
           onItemRemove={removeItem}
           onAddItem={() => addItem(g.name)}
+          onAddApplianceFromSpec={() => setApplianceSearchGroup(g.name)}
           onRenameGroup={() => renameGroup(g.name)}
           onRemoveGroup={() => removeGroup(g.name)}
           onConfirmGroup={() => confirmGroup(g.name)}
@@ -438,6 +495,146 @@ export default function ProjectMaterialsSimple() {
           </div>
         </div>
       )}
+
+      {applianceSearchGroup && (
+        <ApplianceSearchModal
+          spaceGroup={applianceSearchGroup}
+          onClose={() => setApplianceSearchGroup(null)}
+          onSelect={(spec) => addItemFromSpec(applianceSearchGroup, spec)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// 가전 규격 DB 검색 모달 — 모델 선택 → 자동 채움
+// ============================================
+function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
+  const [q, setQ] = useState('');
+  const [category, setCategory] = useState('');
+  const [brand, setBrand] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const params = { limit: 30 };
+        if (q.trim()) params.q = q.trim();
+        if (category) params.category = category;
+        if (brand) params.brand = brand;
+        const { specs } = await applianceSpecsApi.search(params);
+        if (!cancelled) setResults(specs);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [q, category, brand]);
+
+  const verifyChip = (s) => {
+    if (s.verifyStatus === 'VERIFIED') return <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded">✅ {s.consensusCount}출처</span>;
+    if (s.verifyStatus === 'USER_CORRECTED') return <span className="text-[10px] px-1.5 py-0.5 bg-sky-50 text-sky-700 rounded">🛠️ 정정</span>;
+    if (s.verifyStatus === 'DISPUTED') return <span className="text-[10px] px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded">❌ 불일치</span>;
+    return <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">⚠️ 대기</span>;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-3 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-navy-800">가전 규격 검색 → "{spaceGroup}"에 추가</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700">✕</button>
+          </div>
+          <div className="mt-3 flex gap-2 flex-wrap">
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="모델코드 / 제품명 검색 (예: S634, 디오스, 매직스페이스)"
+              className="flex-1 min-w-[200px] text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+            />
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="text-sm px-2 py-1.5 border rounded">
+              <option value="">전체 카테고리</option>
+              <option value="REFRIGERATOR">냉장고</option>
+              <option value="DISHWASHER">식기세척기</option>
+              <option value="WASHING_MACHINE">세탁기</option>
+              <option value="DRYER">건조기</option>
+              <option value="OVEN">오븐</option>
+              <option value="COOKTOP">쿡탑</option>
+              <option value="AIR_CONDITIONER">에어컨</option>
+            </select>
+            <select value={brand} onChange={(e) => setBrand(e.target.value)} className="text-sm px-2 py-1.5 border rounded">
+              <option value="">전체 브랜드</option>
+              <option value="LG">LG</option>
+              <option value="삼성">삼성</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-3">
+          {loading && <div className="text-sm text-gray-400">검색 중...</div>}
+          {!loading && results.length === 0 && (
+            <div className="text-sm text-gray-400 text-center py-8">
+              {q.trim() ? '검색 결과가 없습니다.' : '검색어를 입력하거나 필터를 선택하세요.'}
+              <div className="text-xs text-gray-400 mt-2">
+                DB에 없는 모델은 Settings → 가전 규격 DB에서 추가하세요.
+              </div>
+            </div>
+          )}
+          <div className="divide-y">
+            {results.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelected(s)}
+                className={`w-full text-left py-2.5 px-2 hover:bg-gray-50 transition ${selected?.id === s.id ? 'bg-navy-50' : ''}`}
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium">{s.brand}</span>
+                  <span className="font-mono text-xs text-navy-700">{s.modelCode}</span>
+                  {verifyChip(s)}
+                  {s.discontinued && <span className="text-[10px] text-gray-400">(단종)</span>}
+                </div>
+                <div className="text-xs text-gray-700 mt-0.5">{s.productName}</div>
+                <div className="text-xs text-gray-500 mt-0.5 tabular-nums">
+                  {s.widthMm} × {s.depthMm} × {s.heightMm} mm
+                  {s.builtIn && ' · 빌트인'}
+                  {s.doorType && ` · ${s.doorType}`}
+                  {s.capacityL && ` · ${s.capacityL}L`}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {selected && (
+          <div className="border-t px-5 py-3 bg-gray-50">
+            <div className="text-xs text-gray-500 mb-2">선택됨 — 미리보기:</div>
+            <div className="text-sm">
+              <div><span className="text-gray-500">품목:</span> {({ REFRIGERATOR: '냉장고', DISHWASHER: '식기세척기', WASHING_MACHINE: '세탁기', DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨' })[selected.category]}</div>
+              <div><span className="text-gray-500">모델명:</span> {selected.brand} {selected.productName} ({selected.modelCode})</div>
+              <div><span className="text-gray-500">사이즈:</span> {selected.widthMm} × {selected.depthMm} × {selected.heightMm}</div>
+            </div>
+            <div className="mt-3 flex justify-end gap-2">
+              <button onClick={() => setSelected(null)} className="text-sm px-3 py-1.5 border rounded hover:bg-white">취소</button>
+              <button
+                onClick={() => onSelect(selected)}
+                className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+              >
+                이 사이즈로 추가
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -445,7 +642,7 @@ export default function ProjectMaterialsSimple() {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown }) {
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -493,6 +690,15 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
               title={`미정·잠금해제 ${pendingActionable}개를 모두 확정 → 발주 자동 생성 (이미 발주된 건 제외)`}
             >
               ✅ 모두 확정 → 발주 ({pendingActionable})
+            </button>
+          )}
+          {isAppliance && (
+            <button
+              onClick={onAddApplianceFromSpec}
+              className="text-xs px-2 py-1 border border-violet-300 text-violet-700 rounded hover:bg-violet-50"
+              title="가전 규격 DB에서 모델 검색 → 사이즈 자동 채움"
+            >
+              🔍 가전 검색
             </button>
           )}
           <button
