@@ -105,7 +105,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           setContextMenu({ x: e.clientX, y: e.clientY });
         }}
         className={`
-          relative group text-[11px] sm:text-xs rounded sm:rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
+          relative group text-[9px] sm:text-xs rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
           ${catColor} sm:bg-navy-50/60 sm:text-navy-800
           sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
         `}
