@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { CATEGORIES, categoryClass } from '../utils/date';
+import { categoryClass } from '../utils/date';
+import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import ContextMenu from './ContextMenu';
 import PhaseInlineContent from './PhaseInlineContent';
@@ -198,6 +199,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
 
 function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
   const ref = useRef(null);
+  const phases = useCompanyPhases();
   useEffect(() => {
     function handleOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) onClose();
@@ -231,7 +233,7 @@ function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
         >
           (없음)
         </button>
-        {CATEGORIES.map((c) => (
+        {phases.map((c) => (
           <button
             key={c}
             onClick={() => onPick(c)}

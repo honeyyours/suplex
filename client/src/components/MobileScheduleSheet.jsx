@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CATEGORIES, categoryClass, fromDateKey } from '../utils/date';
+import { categoryClass, fromDateKey } from '../utils/date';
+import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import PhaseInlineContent from './PhaseInlineContent';
 
@@ -26,6 +27,7 @@ export default function MobileScheduleSheet({
 }) {
   const [content, setContent] = useState('');
   const [vendorMenu, setVendorMenu] = useState(null); // { x, y, entry } | null
+  const phases = useCompanyPhases();
 
   const date = fromDateKey(dateKey);
   const dateLabel = `${date.getMonth() + 1}/${date.getDate()} (${DAY_LABELS[date.getDay()]})`;
@@ -121,7 +123,7 @@ export default function MobileScheduleSheet({
         <div className="px-3 py-2 border-t">
           <div className="text-[11px] text-gray-500 mb-1.5">탭 한 번으로 추가</div>
           <div className="grid grid-cols-5 gap-1.5">
-            {CATEGORIES.map((c) => (
+            {phases.map((c) => (
               <button
                 key={c}
                 onClick={() => quickAddCategory(c)}

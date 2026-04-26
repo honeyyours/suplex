@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
 import { companyApi } from '../api/company';
@@ -6,7 +7,7 @@ import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { checklistTemplatesApi } from '../api/checklistTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
-import { CATEGORIES as PHASE_CATEGORIES } from '../utils/date';
+import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
 
@@ -600,10 +601,14 @@ function QuoteTemplatesSection() {
 }
 
 function PhaseKeywordsSection() {
+  const queryClient = useQueryClient();
+  const phases = useCompanyPhases();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activePhase, setActivePhase] = useState(PHASE_CATEGORIES[0]);
+  const [activePhase, setActivePhase] = useState(phases[0]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [newPhaseModal, setNewPhaseModal] = useState(false);
+  const [newPhase, setNewPhase] = useState({ name: '', keyword: '' });
 
   async function reload() {
     setLoading(true);
@@ -613,6 +618,25 @@ function PhaseKeywordsSection() {
     } finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, []);
+
+  async function addNewPhase() {
+    const name = newPhase.name.trim();
+    const keyword = newPhase.keyword.trim();
+    if (!name || !keyword) {
+      alert('공정명과 첫 키워드를 모두 입력해주세요.');
+      return;
+    }
+    try {
+      await phaseKeywordsApi.create({ phase: name, keyword });
+      setNewPhaseModal(false);
+      setNewPhase({ name: '', keyword: '' });
+      await queryClient.invalidateQueries({ queryKey: ['phases'] });
+      setActivePhase(name);
+      reload();
+    } catch (e) {
+      alert('공정 추가 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
 
   async function add() {
     const k = newKeyword.trim();
@@ -670,7 +694,7 @@ function PhaseKeywordsSection() {
       </div>
 
       <div className="flex flex-wrap gap-1 border-b mb-3 pb-2">
-        {PHASE_CATEGORIES.map((p) => {
+        {phases.map((p) => {
           const cnt = rules.filter((r) => r.phase === p).length;
           const active = activePhase === p;
           return (
@@ -685,6 +709,13 @@ function PhaseKeywordsSection() {
             </button>
           );
         })}
+        <button
+          onClick={() => setNewPhaseModal(true)}
+          className="text-xs px-2.5 py-1 rounded border border-dashed border-navy-400 text-navy-700 hover:bg-navy-50"
+          title="새 공정 추가"
+        >
+          + 새 공정
+        </button>
       </div>
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
@@ -729,14 +760,53 @@ function PhaseKeywordsSection() {
           className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
         >추가</button>
       </div>
+
+      {newPhaseModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setNewPhaseModal(false)}>
+          <div className="bg-white rounded-lg max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b font-bold text-navy-800">새 공정 추가</div>
+            <div className="p-4 space-y-3">
+              <p className="text-xs text-gray-500">
+                공정명과 자동 인식할 첫 키워드를 입력해주세요. 공정 추가 후 일정 입력에서 자동 인식되며,
+                공정 칩·발주 D-N·어드바이스 등 모든 곳에 즉시 반영됩니다.
+              </p>
+              <div>
+                <label className="block text-xs text-gray-500 mb-0.5">공정명 (예: 조경)</label>
+                <input
+                  autoFocus
+                  value={newPhase.name}
+                  onChange={(e) => setNewPhase({ ...newPhase, name: e.target.value })}
+                  placeholder="예: 조경, 가구, 가전"
+                  className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-0.5">첫 키워드 (예: 조경 또는 식재)</label>
+                <input
+                  value={newPhase.keyword}
+                  onChange={(e) => setNewPhase({ ...newPhase, keyword: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && addNewPhase()}
+                  placeholder="이 키워드가 일정 내용에 들어가면 새 공정으로 자동 분류됩니다"
+                  className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+                />
+              </div>
+            </div>
+            <div className="px-4 py-3 border-t flex justify-end gap-2">
+              <button onClick={() => setNewPhaseModal(false)} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">취소</button>
+              <button onClick={addNewPhase} className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800">추가</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Section>
   );
 }
 
 function ChecklistTemplatesSection() {
+  const phases = useCompanyPhases();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activePhase, setActivePhase] = useState(PHASE_CATEGORIES[0]);
+  const [activePhase, setActivePhase] = useState(phases[0]);
   const [editingId, setEditingId] = useState(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(null);
@@ -825,7 +895,7 @@ function ChecklistTemplatesSection() {
   }
 
   const filtered = templates.filter((t) => (t.phase || '') === (activePhase || ''));
-  const phaseChips = [...PHASE_CATEGORIES, '(공종 없음)'];
+  const phaseChips = [...phases, '(공종 없음)'];
 
   return (
     <Section title="체크리스트 템플릿 (회사 마스터)">
@@ -923,7 +993,7 @@ function ChecklistTemplatesSection() {
                 placeholder="비우면 자동 트리거 X"
               />
               <datalist id="phase-list">
-                {PHASE_CATEGORIES.map((c) => <option key={c} value={c} />)}
+                {phases.map((c) => <option key={c} value={c} />)}
               </datalist>
             </div>
             <FormField

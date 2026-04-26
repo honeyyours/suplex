@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { reportsApi, photosApi, CATEGORIES } from '../../api/reports';
+import { reportsApi, photosApi } from '../../api/reports';
 import { relativeTime, toDateKey, formatDateDisplay } from '../../utils/date';
+import { useCompanyPhases } from '../../hooks/useCompanyPhases';
 import PhotoUploader from '../PhotoUploader';
 
 export default function ReportTab({ projectId }) {
@@ -125,6 +126,8 @@ function ReportFormModal({ projectId, onClose, onSaved }) {
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const phases = useCompanyPhases();
+  const reportCategories = [...phases, '기타'];
 
   const upd = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -173,7 +176,7 @@ function ReportFormModal({ projectId, onClose, onSaved }) {
             </L>
             <L label="공종">
               <select value={form.category} onChange={upd('category')} className="input">
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {reportCategories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </L>
             <L label="진행률 (%)">

@@ -101,6 +101,8 @@ export function relativeTime(timestamp) {
   return new Date(t).toLocaleDateString('ko-KR');
 }
 
+// 기본 10개 — 신규 회사가 비어 있어도 fallback으로 보이도록 유지.
+// 동적 회사별 phase 목록은 useCompanyPhases() hook 사용.
 export const CATEGORIES = [
   '철거', '목공', '전기', '설비', '타일', '도배', '도장', '필름', '마루', '준공',
 ];
@@ -118,7 +120,24 @@ export const CATEGORY_COLORS = {
   준공:   'bg-emerald-100 text-emerald-800',
 };
 
+// 신규 phase는 이름 hash 기반으로 6종 색상 중 deterministic 배정 — 같은 이름은 항상 같은 색.
+const FALLBACK_PHASE_COLORS = [
+  'bg-stone-100 text-stone-800',
+  'bg-lime-100 text-lime-800',
+  'bg-cyan-100 text-cyan-800',
+  'bg-indigo-100 text-indigo-800',
+  'bg-purple-100 text-purple-800',
+  'bg-blue-100 text-blue-800',
+];
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 export function categoryClass(cat) {
   if (!cat) return 'bg-gray-100 text-gray-700';
-  return CATEGORY_COLORS[cat] || 'bg-gray-100 text-gray-700';
+  if (CATEGORY_COLORS[cat]) return CATEGORY_COLORS[cat];
+  return FALLBACK_PHASE_COLORS[hashString(cat) % FALLBACK_PHASE_COLORS.length];
 }
