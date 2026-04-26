@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORIES, categoryClass, fromDateKey } from '../utils/date';
 import VendorPicker from './VendorPicker';
+import PhaseInlineContent from './PhaseInlineContent';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -93,13 +94,8 @@ export default function MobileScheduleSheet({
                   }`}
                 >{e.confirmed && '✓'}</button>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {e.category && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${categoryClass(e.category)}`}>
-                        {e.category}
-                      </span>
-                    )}
-                    <span className="text-sm text-navy-800">{e.content}</span>
+                  <div className="text-sm text-navy-800">
+                    <PhaseInlineContent entry={e} />
                   </div>
                   {e.vendor && (
                     <div className="text-[11px] text-violet-700 mt-0.5">🏢 {e.vendor.name}</div>

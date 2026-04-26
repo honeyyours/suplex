@@ -4,7 +4,21 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { recordChange } = require('../services/scheduleChangeLogger');
 const { syncChecklistFromPhase, syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
-const { detectPhase } = require('../services/phaseDetect');
+const { detectPhase, detectPhaseMatch } = require('../services/phaseDetect');
+
+// entries 배열에 phaseKeyword(매칭된 원본 substring) 동적 첨부
+// 표시 시 inline chip 렌더링에 사용 — category가 있는 entry만 다시 매칭
+async function annotatePhaseKeyword(entries, companyId) {
+  for (const e of entries) {
+    if (!e.category || !e.content) continue;
+    const m = await detectPhaseMatch(companyId, e.content);
+    if (m && m.phase === e.category) {
+      e.phaseKeyword = m.keyword;
+      e.phaseKeywordStart = m.start;
+    }
+  }
+  return entries;
+}
 
 const projectRouter = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -47,6 +61,7 @@ projectRouter.get('/', async (req, res, next) => {
       orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
       include: { vendor: { select: { id: true, name: true, category: true } } },
     });
+    await annotatePhaseKeyword(entries, req.user.companyId);
     res.json({ entries });
   } catch (e) {
     next(e);
@@ -410,6 +425,7 @@ globalRouter.get('/', async (req, res, next) => {
       },
       orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
     });
+    await annotatePhaseKeyword(entries, req.user.companyId);
     res.json({ entries });
   } catch (e) {
     next(e);

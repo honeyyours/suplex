@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { CATEGORIES, categoryClass } from '../utils/date';
 import VendorPicker from './VendorPicker';
 import ContextMenu from './ContextMenu';
+import PhaseInlineContent from './PhaseInlineContent';
 
 export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm, showVendorButton = false }) {
   const [editing, setEditing] = useState(false);
@@ -110,14 +111,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1 flex-wrap">
-            {entry.category && (
-              <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${catColor}`}>
-                {entry.category}
-              </span>
-            )}
-            <span className="truncate">
-              {entry.content}
-            </span>
+            <PhaseInlineContent entry={entry} />
             {entry.vendor && (
               <span className="hidden sm:inline-block text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
                 🏢 {entry.vendor.name}

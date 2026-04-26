@@ -37,4 +37,27 @@ async function detectPhase(companyId, text) {
   return null;
 }
 
-module.exports = { detectPhase, invalidateCache };
+// 매칭 결과를 위치 정보와 함께 반환 — 프론트에서 inline chip 렌더링에 사용
+// 반환: { phase, keyword, start, end } | null
+//   - keyword: text 원본의 substring (대소문자 보존)
+//   - start/end: text 내 위치 (end는 exclusive)
+async function detectPhaseMatch(companyId, text) {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const rules = await loadRules(companyId);
+  for (const r of rules) {
+    const kwLower = r.keyword.toLowerCase();
+    const idx = lower.indexOf(kwLower);
+    if (idx >= 0) {
+      return {
+        phase: r.phase,
+        keyword: text.slice(idx, idx + r.keyword.length),
+        start: idx,
+        end: idx + r.keyword.length,
+      };
+    }
+  }
+  return null;
+}
+
+module.exports = { detectPhase, detectPhaseMatch, invalidateCache };
