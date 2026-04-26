@@ -236,7 +236,6 @@ function ReportCard({ report, project, company, user, onDelete }) {
 // ============================================
 function ReportFormModal({ projectId, onClose, onSaved }) {
   const phases = useCompanyPhases();
-  const reportCategories = [...phases, '기타'];
   const [form, setForm] = useState({
     reportDate: toDateKey(new Date()),
     category: phases[0] || '목공',
@@ -297,7 +296,7 @@ function ReportFormModal({ projectId, onClose, onSaved }) {
             </L>
             <L label="공종">
               <select value={form.category} onChange={upd('category')} className="input">
-                {reportCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                {phases.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </L>
             <L label="진행률 (%)">
