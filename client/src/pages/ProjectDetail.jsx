@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/client';
 import BackupMenu from '../components/BackupMenu';
 import EditProjectModal from '../components/EditProjectModal';
 import ProjectInfoCard from '../components/ProjectInfoCard';
+import ProjectActionsMenu from '../components/ProjectActionsMenu';
+import ExtractModal from '../components/ExtractModal';
+import ChangesModal from '../components/ChangesModal';
+import { backupApi, downloadJson } from '../api/backup';
 import { simpleQuotesApi } from '../api/simpleQuotes';
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [project, setProject] = useState(null);
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(false);
+  const [showExtract, setShowExtract] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
   const [activeQuote, setActiveQuote] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
 
   function reload() {
     api.get(`/projects/${id}`)
@@ -20,7 +29,6 @@ export default function ProjectDetail() {
       .catch((e) => setErr(e.response?.data?.error || '프로젝트를 불러올 수 없습니다'));
   }
 
-  // 활성 견적: ACCEPTED 상태 우선, 없으면 가장 최근 (작성중/발송됨)
   function reloadActiveQuote() {
     simpleQuotesApi.list(id)
       .then(({ quotes }) => {
@@ -36,6 +44,42 @@ export default function ProjectDetail() {
     /* eslint-disable-next-line */
   }, [id]);
 
+  // 백업 export/import — 일정 탭 햄버거에서 직접 호출
+  async function handleExport() {
+    setBusy(true);
+    try {
+      const data = await backupApi.exportProject(id);
+      const safe = (project?.name || 'suplex').replace(/[^\w가-힣]+/g, '_');
+      const date = new Date().toISOString().slice(0, 10);
+      downloadJson(data, `suplex_${safe}_${date}.json`);
+    } catch (e) {
+      alert('백업 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+  function triggerImport() { fileRef.current?.click(); }
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const text = await file.text();
+    let parsed;
+    try { parsed = JSON.parse(text); }
+    catch { alert('JSON 파싱 실패'); return; }
+    if (!parsed.version) { alert('올바른 Suplex 백업 파일이 아닙니다'); return; }
+    const confirmMsg = parsed.type === 'company'
+      ? `회사 전체 백업입니다. ${parsed.company?.projects?.length || 0}개 프로젝트를 새로 만듭니다. 진행할까요?`
+      : `프로젝트 "${parsed.project?.name}"을(를) 새 프로젝트로 복원합니다. 진행할까요?`;
+    if (!confirm(confirmMsg)) return;
+    setBusy(true);
+    try {
+      const res = await backupApi.import({ data: parsed, mode: 'new' });
+      alert(`✅ 복원 완료: ${res.projects.length}개 프로젝트`);
+      if (res.projects[0]) navigate(`/projects/${res.projects[0].id}`);
+    } catch (e) {
+      alert('복원 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
   if (err) return <div className="bg-white rounded-xl border p-8 text-red-600">{err}</div>;
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
 
@@ -46,28 +90,44 @@ export default function ProjectDetail() {
         : 'border-transparent text-gray-500 hover:text-navy-700 hover:border-gray-300'
     }`;
 
+  // 공정 일정 탭 인식 — 라우트 끝이 /schedule
+  const isScheduleTab = location.pathname.endsWith('/schedule');
+
+  const scheduleMenuItems = [
+    { icon: '✏️', label: '수정', onClick: () => setEditing(true) },
+    { icon: '📝', label: '변동 로그', onClick: () => setShowChanges(true) },
+    { icon: '🔍', label: '일정 추출', onClick: () => setShowExtract(true) },
+    { divider: true },
+    { icon: '💾', label: 'JSON 내보내기', onClick: handleExport },
+    { icon: '📥', label: 'JSON 복원', onClick: triggerImport },
+  ];
+
+  const headerActions = isScheduleTab ? (
+    <ProjectActionsMenu items={scheduleMenuItems} />
+  ) : (
+    <>
+      <button
+        onClick={() => setEditing(true)}
+        className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50"
+      >
+        ✏️ 수정
+      </button>
+      <BackupMenu
+        projectId={id}
+        projectName={project.name}
+        onRestored={(projects) => {
+          if (projects[0]) navigate(`/projects/${projects[0].id}`);
+        }}
+      />
+    </>
+  );
+
   return (
     <div className="space-y-4">
       <ProjectInfoCard
         project={project}
         activeQuote={activeQuote}
-        actions={
-          <>
-            <button
-              onClick={() => setEditing(true)}
-              className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50"
-            >
-              ✏️ 수정
-            </button>
-            <BackupMenu
-              projectId={id}
-              projectName={project.name}
-              onRestored={(projects) => {
-                if (projects[0]) navigate(`/projects/${projects[0].id}`);
-              }}
-            />
-          </>
-        }
+        actions={headerActions}
       />
 
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
@@ -94,6 +154,20 @@ export default function ProjectDetail() {
           onDeleted={() => navigate('/')}
         />
       )}
+
+      {/* 일정 탭 모달 — 햄버거 메뉴에서 트리거 */}
+      {showExtract && <ExtractModal projectId={id} onClose={() => setShowExtract(false)} />}
+      {showChanges && <ChangesModal projectId={id} onClose={() => setShowChanges(false)} />}
+
+      {/* 일정 탭 백업 import용 hidden input */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleFile}
+        className="hidden"
+      />
+      {busy && <div className="fixed top-4 right-4 z-50 bg-navy-700 text-white text-sm px-3 py-1.5 rounded shadow">처리 중...</div>}
     </div>
   );
 }
