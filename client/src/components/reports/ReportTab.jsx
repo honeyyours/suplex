@@ -108,12 +108,16 @@ function buildKakaoMessage({ report, project, company, user }) {
 
 // ============================================
 // 사진 일괄 다운로드 — fetch + blob
+// 반환: { ok: 성공 N, fail: 실패 N }
 // ============================================
 async function downloadAllPhotos(photos, baseName) {
+  let ok = 0;
+  let fail = 0;
   for (let i = 0; i < photos.length; i++) {
     const p = photos[i];
     try {
       const res = await fetch(p.url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const ext = (p.filename?.split('.').pop() || 'jpg').toLowerCase();
@@ -124,11 +128,14 @@ async function downloadAllPhotos(photos, baseName) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      ok += 1;
       await new Promise((r) => setTimeout(r, 300)); // 브라우저 다운로드 제한 회피
     } catch (e) {
       console.error('사진 다운로드 실패:', p.url, e);
+      fail += 1;
     }
   }
+  return { ok, fail };
 }
 
 // ============================================
@@ -163,7 +170,12 @@ function ReportCard({ report, project, company, user, onDelete }) {
     try {
       const safeSite = (project?.name || 'project').replace(/[^\w가-힣]/g, '_');
       const baseName = `${safeSite}_${toDateKey(d)}_${report.category}`;
-      await downloadAllPhotos(photos, baseName);
+      const { ok, fail } = await downloadAllPhotos(photos, baseName);
+      if (fail > 0 && ok === 0) {
+        alert(`사진 다운로드에 실패했습니다 (${fail}장).\n네트워크 또는 사진 접근 권한을 확인해주세요.`);
+      } else if (fail > 0) {
+        alert(`사진 ${ok}장 다운로드 완료, ${fail}장 실패.\n실패한 사진은 카드에서 직접 클릭해 받아주세요.`);
+      }
     } finally {
       setDownloading(false);
     }

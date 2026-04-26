@@ -311,23 +311,49 @@ router.post('/_seed-sample', async (req, res, next) => {
         poIdx++;
       }
 
-      // 6) 메모 — 2개
-      await tx.projectMemo.create({
-        data: {
-          projectId: p.id,
-          title: '목공 추가 발주',
-          content: '각재 30단\n합판 5장 (B등급)\n타카 핀 추가 1박스',
-          orderIndex: 0,
-        },
-      });
-      await tx.projectMemo.create({
-        data: {
-          projectId: p.id,
-          title: '현장 메모',
-          content: '안방 천장 누수 흔적 → 도배 전 보강 필요\n화장실 환풍기 위치 이전 검토\n분배기 다용도실 천장에 있음 (사다리 필수)',
-          orderIndex: 1,
-        },
-      });
+      // 6) 메모 — 6개 태그 모두 시드 (데모 설득력 ↑)
+      const memos = [
+        { tag: '일반',     title: '내일 견적 회의', content: '오전 10시 견적서 검토 회의\n자료는 메일로 미리 공유' },
+        { tag: '거래처',   title: '가구 코리아싱크', content: '상판 고정 잘 안함. 다음부터 강조 필요' },
+        { tag: '거래처',   title: '도배 사장님 평가', content: '도배사장님한테 장판까지 맡겼더니 장판 퀄리티 떨어짐. 다음부터 다른 시공팀' },
+        { tag: 'A/S',      title: '도배지 이염', content: '안방 화장대 옆벽 도배지 이염 발생\n재시공 조치 (시공팀 부담)' },
+        { tag: '피드백',   title: '마루 모델 좋음', content: '마루 모델 생각보다 예쁨. 화이트우드 톤에 적격\n다음 견적에 추천' },
+        { tag: '자재발주', title: '목공 자재 발주 정리', content: '· 합판 18T x 20장\n· 각재 30x40 x 50개\n· 타카 핀 1박스' },
+        { tag: '현장 환경', title: '콘센트 호환 이슈', content: '콘센트 치수가 일반적이지 않음. 특정 모델만 호환됨\n다음에 같은 현장 들어올 때 주의' },
+      ];
+      let memoIdx = 0;
+      for (const m of memos) {
+        await tx.projectMemo.create({
+          data: {
+            projectId: p.id,
+            tag: m.tag,
+            title: m.title,
+            content: m.content,
+            orderIndex: memoIdx++,
+          },
+        });
+      }
+
+      // 7) 현장 보고 — 2건 시드 (카톡 메시지 자동 생성 데모용)
+      const reportSeed = [
+        { category: '철거', progress: 100, workerCount: 3, caption: '철거 완료, 폐기물 반출 끝',           daysAgo: 5 },
+        { category: '목공', progress: 70,  workerCount: 2, caption: '거실/안방 마감 끝, 주방 진행 중',     daysAgo: 1 },
+      ];
+      for (const r of reportSeed) {
+        const reportDate = new Date(today);
+        reportDate.setDate(reportDate.getDate() - r.daysAgo);
+        await tx.dailyReport.create({
+          data: {
+            projectId: p.id,
+            authorId: req.user.id,
+            reportDate,
+            category: r.category,
+            progress: r.progress,
+            workerCount: r.workerCount,
+            caption: r.caption,
+          },
+        });
+      }
 
       return p;
     }, { timeout: 30000 });
