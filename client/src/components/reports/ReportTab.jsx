@@ -1,19 +1,29 @@
-// 현장 보고 — 슬림 버전 (사진 + 진행률 + 한 줄 캡션)
+// 현장 보고 — 슬림 (사진 + 진행률 + 한 줄 캡션)
 // memo/nextDayPlan은 메모 탭/일정 탭으로 위임 (DB 컬럼은 호환성 유지).
-// 카드별 [📋 카톡 메시지 복사] / [📷 사진 일괄 다운] 버튼.
+// 사진: 카드별 [📋 카톡 메시지 복사] / [📷 사진 일괄 다운] 버튼.
+// 사진 클릭 → 인앱 라이트박스 (좌우 이동, ESC 닫기).
+// 업로드: 모달 즉시 닫히고 카드에 진행률 표시 (카톡 패턴).
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { reportsApi, photosApi } from '../../api/reports';
+import api from '../../api/client';
+import { reportsApi } from '../../api/reports';
 import { companyApi } from '../../api/company';
 import { projectsApi } from '../../api/projects';
 import { useAuth } from '../../contexts/AuthContext';
 import { relativeTime, toDateKey } from '../../utils/date';
 import { useCompanyPhases } from '../../hooks/useCompanyPhases';
 import PhotoUploader from '../PhotoUploader';
+import ImageLightbox from '../ImageLightbox';
 
 export default function ReportTab({ projectId }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+
+  // 카드별 업로드 진행 상태: { reportId: { total, done, percent } }
+  const [uploadProgress, setUploadProgress] = useState({});
+
+  // 라이트박스: { photos: [...], index: N } | null
+  const [lightbox, setLightbox] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['reports', 'project', projectId],
@@ -40,6 +50,41 @@ export default function ReportTab({ projectId }) {
     if (!confirm('이 보고를 삭제할까요?')) return;
     await reportsApi.remove(projectId, id);
     reload();
+  }
+
+  // 사진 업로드 — 카드 등장 후 백그라운드 진행, 진행률 카드에 표시
+  async function uploadPhotosForReport(reportId, files) {
+    if (!files || files.length === 0) return;
+    setUploadProgress((prev) => ({
+      ...prev,
+      [reportId]: { total: files.length, done: 0, percent: 0 },
+    }));
+    try {
+      const fd = new FormData();
+      fd.append('source', 'REPORT');
+      fd.append('sourceId', reportId);
+      files.forEach((f) => fd.append('photos', f));
+      await api.post(`/projects/${projectId}/photos`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (evt) => {
+          if (!evt.total) return;
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          setUploadProgress((prev) => ({
+            ...prev,
+            [reportId]: { ...prev[reportId], percent },
+          }));
+        },
+      });
+      reload();
+    } catch (e) {
+      const msg = e.response?.data?.error || '사진 업로드 실패';
+      alert(`사진 업로드 실패:\n${msg}`);
+    } finally {
+      setUploadProgress((prev) => {
+        const { [reportId]: _drop, ...rest } = prev;
+        return rest;
+      });
+    }
   }
 
   return (
@@ -71,6 +116,8 @@ export default function ReportTab({ projectId }) {
             project={project}
             company={company}
             user={auth?.user}
+            uploadProgress={uploadProgress[r.id]}
+            onOpenLightbox={(photos, idx) => setLightbox({ photos, index: idx })}
             onDelete={() => remove(r.id)}
           />
         ))}
@@ -80,7 +127,20 @@ export default function ReportTab({ projectId }) {
         <ReportFormModal
           projectId={projectId}
           onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); reload(); }}
+          onCreated={async (report, files) => {
+            // 모달 즉시 닫기 + 보고 카드 등장 + 사진은 백그라운드 업로드
+            setShowForm(false);
+            await queryClient.invalidateQueries({ queryKey: ['reports', 'project', projectId] });
+            uploadPhotosForReport(report.id, files); // await X — 백그라운드
+          }}
+        />
+      )}
+
+      {lightbox && (
+        <ImageLightbox
+          photos={lightbox.photos}
+          index={lightbox.index}
+          onClose={() => setLightbox(null)}
         />
       )}
     </div>
@@ -107,8 +167,7 @@ function buildKakaoMessage({ report, project, company, user }) {
 }
 
 // ============================================
-// 사진 일괄 다운로드 — fetch + blob
-// 반환: { ok: 성공 N, fail: 실패 N }
+// 사진 일괄 다운로드 — fetch + blob, { ok, fail } 반환
 // ============================================
 async function downloadAllPhotos(photos, baseName) {
   let ok = 0;
@@ -129,7 +188,7 @@ async function downloadAllPhotos(photos, baseName) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       ok += 1;
-      await new Promise((r) => setTimeout(r, 300)); // 브라우저 다운로드 제한 회피
+      await new Promise((r) => setTimeout(r, 300));
     } catch (e) {
       console.error('사진 다운로드 실패:', p.url, e);
       fail += 1;
@@ -141,7 +200,7 @@ async function downloadAllPhotos(photos, baseName) {
 // ============================================
 // 카드
 // ============================================
-function ReportCard({ report, project, company, user, onDelete }) {
+function ReportCard({ report, project, company, user, uploadProgress, onOpenLightbox, onDelete }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const photos = report.photos || [];
@@ -211,11 +270,33 @@ function ReportCard({ report, project, company, user, onDelete }) {
 
       {photos.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
-          {photos.map((p) => (
-            <a key={p.id} href={p.url} target="_blank" rel="noreferrer" className="block w-20 h-20 rounded overflow-hidden border">
+          {photos.map((p, idx) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onOpenLightbox(photos, idx)}
+              className="block w-20 h-20 rounded overflow-hidden border hover:opacity-80 transition"
+            >
               <img src={p.thumbnailUrl || p.url} alt="" className="w-full h-full object-cover" />
-            </a>
+            </button>
           ))}
+        </div>
+      )}
+
+      {uploadProgress && (
+        <div className="mt-3 px-3 py-2 rounded bg-amber-50 border border-amber-200 flex items-center gap-3">
+          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex-1">
+            <div className="text-xs text-amber-800 font-medium">
+              📤 사진 {uploadProgress.total}장 업로드 중 ({uploadProgress.percent}%)
+            </div>
+            <div className="mt-1 h-1.5 bg-amber-100 rounded overflow-hidden">
+              <div
+                className="h-full bg-amber-500 transition-all"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -244,9 +325,9 @@ function ReportCard({ report, project, company, user, onDelete }) {
 }
 
 // ============================================
-// 작성 모달 — 슬림 (날짜·공종·진행률·인원·캡션·사진)
+// 작성 모달 — 보고 생성 즉시 닫고 사진은 백그라운드 업로드
 // ============================================
-function ReportFormModal({ projectId, onClose, onSaved }) {
+function ReportFormModal({ projectId, onClose, onCreated }) {
   const phases = useCompanyPhases();
   const [form, setForm] = useState({
     reportDate: toDateKey(new Date()),
@@ -271,23 +352,10 @@ function ReportFormModal({ projectId, onClose, onSaved }) {
         workerCount: form.workerCount === '' ? null : Number(form.workerCount),
         caption: form.caption || null,
       });
-      if (files.length > 0) {
-        try {
-          await photosApi.upload(projectId, {
-            source: 'REPORT',
-            sourceId: report.id,
-            files,
-          });
-        } catch (e) {
-          const msg = e.response?.data?.error || '사진 업로드 실패';
-          const hint = e.response?.data?.hint;
-          alert(`보고는 저장됐지만 사진 업로드 실패:\n${msg}${hint ? '\n\n' + hint : ''}`);
-        }
-      }
-      onSaved();
+      // 모달 닫기 + 사진은 부모에서 백그라운드 업로드
+      onCreated(report, files);
     } catch (e) {
       setErr(e.response?.data?.error || '저장 실패');
-    } finally {
       setBusy(false);
     }
   }
@@ -298,7 +366,7 @@ function ReportFormModal({ projectId, onClose, onSaved }) {
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-navy-800">오늘 작업 보고</h2>
           <p className="text-xs text-gray-500 mt-1">
-            사진과 진행률 위주로 가볍게 — 카톡 메시지는 자동 생성됩니다.
+            보고 올리면 즉시 카드가 생기고, 사진은 백그라운드에서 업로드됩니다.
           </p>
         </div>
         <div className="px-6 py-5 space-y-3">
