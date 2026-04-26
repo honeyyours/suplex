@@ -112,7 +112,7 @@ export default function VendorPicker({
               }`}
             >
               <div className="font-medium text-gray-800 truncate">{v.name}</div>
-              <div className="text-[10px] text-gray-500 truncate">
+              <div className="text-xs sm:text-[10px] text-gray-500 truncate">
                 {v.category}{v.contact ? ` · ${v.contact}` : ''}
               </div>
             </button>

@@ -37,7 +37,7 @@ export default function PhaseInlineContent({ entry, textClassName = '', chipClas
 
   return (
     <>
-      <span className={`inline-block text-[10px] px-1 py-0.5 rounded ${catColor} ${chipClassName}`}>
+      <span className={`inline-block text-[11px] sm:text-[10px] px-1 py-0.5 rounded ${catColor} ${chipClassName}`}>
         {phase}
       </span>
       {remainder && <span className={`truncate ${textClassName}`}>{remainder}</span>}

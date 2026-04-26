@@ -33,7 +33,7 @@ export default function HomeActivityFeed({ days = 7, limit = 20 }) {
             const meta = ACTIVITY_META[it.kind] || { label: '', icon: '·', color: 'bg-gray-100 text-gray-700' };
             const inner = (
               <div className="flex items-start gap-2 px-2 py-2 rounded hover:bg-gray-50 transition">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 mt-0.5 ${meta.color}`}>
+                <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 mt-0.5 ${meta.color}`}>
                   {meta.icon} {meta.label}
                 </span>
                 <div className="flex-1 min-w-0">

@@ -357,7 +357,7 @@ export default function ProjectMaterials() {
           onClick={() => setActiveKey(ALL_KEY)}
         />
         {sections.FINISH.length > 0 && (
-          <span className="text-[10px] text-gray-400 self-center px-1">·마감재</span>
+          <span className="text-xs sm:text-[10px] text-gray-400 self-center px-1">·마감재</span>
         )}
         {sections.FINISH.map((g) => (
           <GroupChip
@@ -370,7 +370,7 @@ export default function ProjectMaterials() {
           />
         ))}
         {sections.APPLIANCE.length > 0 && (
-          <span className="text-[10px] text-violet-400 self-center px-1">·가전</span>
+          <span className="text-xs sm:text-[10px] text-violet-400 self-center px-1">·가전</span>
         )}
         {sections.APPLIANCE.map((g) => (
           <GroupChip
@@ -431,7 +431,7 @@ export default function ProjectMaterials() {
           {/* 헤더 */}
           <div className="flex items-end justify-between gap-3 flex-wrap pb-3 border-b mb-4">
             <div>
-              <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+              <div className="text-xs sm:text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                 {headerCrumb}
               </div>
               <h3 className="text-lg font-semibold text-navy-800">{headerLabel}</h3>
@@ -443,7 +443,7 @@ export default function ProjectMaterials() {
                 </div>
                 <span className="tabular-nums">{pct}%</span>
               </div>
-              <div className="hidden md:block text-[10px] text-gray-400 mt-1">
+              <div className="hidden md:block text-xs sm:text-[10px] text-gray-400 mt-1">
                 ↑↓ 이동 · Enter 펼침 · Tab 다음 칸 · Esc 닫음 · 1/2/3/4 상태 · H 이력 · Del 삭제
               </div>
             </div>
@@ -534,13 +534,13 @@ export default function ProjectMaterials() {
                       <span className={`w-1 h-1 rounded-full ${dotColor}`} />
                       <span>{g.name}</span>
                       {g.kind && (
-                        <span className={`text-[9px] font-normal normal-case px-1.5 py-px rounded ${
+                        <span className={`text-[11px] sm:text-[9px] font-normal normal-case px-1.5 py-px rounded ${
                           g.kind === 'APPLIANCE' ? 'bg-violet-100 text-violet-700' : 'bg-navy-100 text-navy-700'
                         }`}>
                           {KIND_META[g.kind].label}
                         </span>
                       )}
-                      <span className="ml-auto text-[10px] font-normal normal-case text-gray-400">
+                      <span className="ml-auto text-xs sm:text-[10px] font-normal normal-case text-gray-400">
                         {g.items.length}개
                       </span>
                     </div>
@@ -551,7 +551,7 @@ export default function ProjectMaterials() {
                         {sub.name && (
                           <div className="text-[11px] font-medium text-gray-600 mb-1 px-1 flex items-center gap-1.5">
                             <span>{sub.name}</span>
-                            <span className="text-[10px] text-gray-400">· {sub.items.length}</span>
+                            <span className="text-xs sm:text-[10px] text-gray-400">· {sub.items.length}</span>
                           </div>
                         )}
                         <div>
@@ -621,7 +621,7 @@ function SidebarItem({ name, confirmed, total, active, indent = false, tone = 'n
     >
       {active && <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${barColor}`} />}
       <span className="flex-1 truncate">{name}</span>
-      <span className={`text-[10px] tabular-nums ${active ? 'text-gray-500' : 'text-gray-400'}`}>
+      <span className={`text-xs sm:text-[10px] tabular-nums ${active ? 'text-gray-500' : 'text-gray-400'}`}>
         {confirmed}/{total}
       </span>
     </button>
@@ -633,7 +633,7 @@ function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, s
   if (totalGroups === 0 && kindAllCount.total === 0) return null;
   return (
     <>
-      <div className={`text-[10px] font-semibold uppercase tracking-wider px-4 pt-3 pb-1 ${
+      <div className={`text-xs sm:text-[10px] font-semibold uppercase tracking-wider px-4 pt-3 pb-1 ${
         tone === 'violet' ? 'text-violet-500' : 'text-navy-500'
       }`}>
         {label}
@@ -650,7 +650,7 @@ function SidebarSection({ label, tone, kindAllActive, kindAllCount, onKindAll, s
       {superGroups.map((sg, i) => (
         <div key={i}>
           {sg.label && sg.groups.length > 0 && (
-            <div className="text-[10px] text-gray-400 font-semibold px-7 pt-2 pb-0.5">
+            <div className="text-xs sm:text-[10px] text-gray-400 font-semibold px-7 pt-2 pb-0.5">
               {sg.label}
             </div>
           )}
@@ -682,7 +682,7 @@ function GroupChip({ label, count, confirmed, active, onClick, tone = 'navy' }) 
       }`}
     >
       <span>{label}</span>
-      <span className={`text-[10px] tabular-nums ${active ? 'text-white/80' : 'text-gray-400'}`}>
+      <span className={`text-xs sm:text-[10px] tabular-nums ${active ? 'text-white/80' : 'text-gray-400'}`}>
         {confirmed}/{count}
       </span>
     </button>
@@ -732,7 +732,7 @@ function Row({ material, onClick, onStatusChange }) {
         {/* 체크(V) */}
         <span className="flex items-center justify-center">
           {material.checked ? (
-            <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-[10px]">✓</span>
+            <span className="w-4 h-4 bg-emerald-500 text-white rounded-sm flex items-center justify-center text-xs sm:text-[10px]">✓</span>
           ) : (
             <span className="w-4 h-4 border border-gray-300 rounded-sm" />
           )}
@@ -742,7 +742,7 @@ function Row({ material, onClick, onStatusChange }) {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-gray-800 truncate">{material.itemName}</span>
-            <span className={`text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
+            <span className={`text-[11px] sm:text-[9px] font-semibold px-1.5 py-px rounded ${kind.color}`}>
               {kind.label}
             </span>
           </div>
@@ -759,9 +759,9 @@ function Row({ material, onClick, onStatusChange }) {
             <div className={`inline-flex items-center gap-1.5 px-2 py-1 border rounded text-xs max-w-full ${
               isInheriting ? 'bg-sky-50 border-sky-200 text-sky-800' : 'bg-gray-50 text-gray-700'
             }`}>
-              {isInheriting && <span className="text-[10px] flex-shrink-0">🔗</span>}
+              {isInheriting && <span className="text-xs sm:text-[10px] flex-shrink-0">🔗</span>}
               {src.brand && (
-                <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
+                <span className="text-xs sm:text-[10px] font-bold bg-gray-200 text-gray-700 px-1 py-px rounded flex-shrink-0">
                   {src.brand}
                 </span>
               )}
@@ -779,7 +779,7 @@ function Row({ material, onClick, onStatusChange }) {
           type="button"
           onClick={openPicker}
           title="클릭해서 빠른 변경"
-          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
+          className={`text-xs sm:text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap hover:ring-2 hover:ring-navy-300 transition ${status.color}`}
         >
           {status.short || status.label}
         </button>

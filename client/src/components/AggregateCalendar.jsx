@@ -141,30 +141,30 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[11px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate flex items-center gap-1
+                          relative text-[11px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:bg-white sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.content}`}
                       >
-                        <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${projColor}`}>
+                        <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded ${projColor}`}>
                           {e.project?.name}
                         </span>
                         {e.category && (
-                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded ${categoryClass(e.category)}`}>
+                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded ${categoryClass(e.category)}`}>
                             {e.category}
                           </span>
                         )}
                         <span className="truncate flex-1">{e.content}</span>
                         {e.confirmed && (
-                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}
                       </Link>
                     );
                   })}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none mt-0.5">
+                    <span className="sm:hidden text-[11px] sm:text-[9px] text-gray-400 text-center leading-none mt-0.5">
                       +{dayEntries.length - 3}
                     </span>
                   )}

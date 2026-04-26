@@ -58,7 +58,7 @@ export default function HomeWeekSchedule() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold text-navy-800">이번주 일정</h2>
-          <div className="flex items-center gap-2 text-[10px] text-gray-600">
+          <div className="flex items-center gap-2 text-xs sm:text-[10px] text-gray-600">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-300"></span>현장</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-300"></span>견적</span>
           </div>
@@ -72,7 +72,7 @@ export default function HomeWeekSchedule() {
           >‹</button>
           <div className="text-sm font-medium text-navy-700 min-w-[140px] text-center">
             {formatRange(rangeStart, rangeEnd)}
-            {isThisWeek && <span className="ml-1 text-[10px] bg-navy-700 text-white px-1.5 py-0.5 rounded">이번주</span>}
+            {isThisWeek && <span className="ml-1 text-xs sm:text-[10px] bg-navy-700 text-white px-1.5 py-0.5 rounded">이번주</span>}
           </div>
           <button
             onClick={() => setWeekStart(addDays(weekStart, 7))}
@@ -107,7 +107,7 @@ export default function HomeWeekSchedule() {
                 isToday ? 'border-navy-500 bg-navy-50/40' : 'border-gray-200 bg-white'
               }`}
             >
-              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs font-semibold border-b flex items-center justify-between ${
+              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-xs font-semibold border-b flex items-center justify-between ${
                 isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
               }`}>
                 <span>{DAY_LABELS[i]}</span>
@@ -117,7 +117,7 @@ export default function HomeWeekSchedule() {
               </div>
               <div className="px-0.5 py-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
                 {dayEntries.length === 0 ? (
-                  <div className="text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
+                  <div className="text-xs sm:text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
                   dayEntries.map((e) => {
                     const projColor = STATUS_COLORS[e.project?.status] || DEFAULT_COLOR;
@@ -126,7 +126,7 @@ export default function HomeWeekSchedule() {
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[11px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate block
+                          relative text-[11px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate block
                           ${projColor} sm:bg-gray-50 sm:text-navy-800
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40' : 'sm:border-navy-400'}
                           hover:brightness-95
@@ -134,32 +134,32 @@ export default function HomeWeekSchedule() {
                         title={`${e.project?.name || ''} · ${e.content}`}
                       >
                         {e.project?.name && (
-                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${projColor}`}>
+                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded mr-1 ${projColor}`}>
                             {e.project.name}
                           </span>
                         )}
                         {e.category && (
-                          <span className={`hidden sm:inline-block text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
+                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
                             {e.category}
                           </span>
                         )}
                         <span className="truncate">{e.content}</span>
                         {e.confirmed && (
-                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}
                       </Link>
                     );
                   })
                 )}
                 {dayEntries.length > 3 && (
-                  <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
+                  <span className="sm:hidden text-[11px] sm:text-[9px] text-gray-400 text-center leading-none">
                     +{dayEntries.length - 3}
                   </span>
                 )}
                 {dayEntries.length > 4 && (
                   <Link
                     to="/schedule"
-                    className="hidden sm:block text-[10px] text-gray-500 text-center hover:text-navy-700"
+                    className="hidden sm:block text-xs sm:text-[10px] text-gray-500 text-center hover:text-navy-700"
                   >
                     +{dayEntries.length - 4}건 더
                   </Link>

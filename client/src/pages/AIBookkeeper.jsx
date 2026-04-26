@@ -152,7 +152,7 @@ export default function AIBookkeeper() {
             {busy ? '...' : '보내기'}
           </button>
         </div>
-        <div className="text-[10px] text-gray-400 mt-1.5 px-1">
+        <div className="text-xs sm:text-[10px] text-gray-400 mt-1.5 px-1">
           AI 응답은 잘못될 수 있으니 중요한 결정 전에는 데이터를 직접 확인하세요.
         </div>
       </div>
@@ -171,7 +171,7 @@ function Bubble({ message }) {
               <span
                 key={j}
                 title={JSON.stringify(tc.input)}
-                className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full"
+                className="text-xs sm:text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full"
               >
                 {TOOL_LABELS[tc.name] || tc.name}
                 {tc.resultPreview && <span className="ml-1 text-emerald-600/70">· {tc.resultPreview}</span>}

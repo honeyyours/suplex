@@ -280,9 +280,9 @@ function TemplatePicker({ projectId, existingTemplateIds, onClose, onAdded }) {
                       />
                       <span className="flex-1">{t.title}</span>
                       {t.requiresPhoto && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷</span>
+                        <span className="text-xs sm:text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷</span>
                       )}
-                      {already && <span className="text-[10px] text-gray-400">이미 있음</span>}
+                      {already && <span className="text-xs sm:text-[10px] text-gray-400">이미 있음</span>}
                     </label>
                   );
                 })}
@@ -449,7 +449,7 @@ function ChecklistPhotos({ projectId, item, onChange }) {
           <button
             type="button"
             onClick={() => removePhoto(p.id)}
-            className="absolute top-0.5 right-0.5 bg-black/60 text-white text-[10px] w-4 h-4 rounded-full leading-none"
+            className="absolute top-0.5 right-0.5 bg-black/60 text-white text-xs sm:text-[10px] w-4 h-4 rounded-full leading-none"
           >×</button>
         </div>
       ))}
@@ -457,7 +457,7 @@ function ChecklistPhotos({ projectId, item, onChange }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="w-16 h-16 border-2 border-dashed rounded flex flex-col items-center justify-center text-[10px] text-gray-400 hover:border-navy-500 hover:text-navy-600 disabled:opacity-50"
+        className="w-16 h-16 border-2 border-dashed rounded flex flex-col items-center justify-center text-xs sm:text-[10px] text-gray-400 hover:border-navy-500 hover:text-navy-600 disabled:opacity-50"
       >
         {busy ? (
           <span>업로드중</span>

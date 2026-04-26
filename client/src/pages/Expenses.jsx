@@ -322,7 +322,7 @@ function ListView({ expenses, total, onEdit, onRemove }) {
             return (
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="px-3 py-1.5 tabular-nums text-gray-600 text-xs">{String(e.date).slice(0, 10)}</td>
-                <td className="px-3 py-1.5"><span className={`text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span></td>
+                <td className="px-3 py-1.5"><span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span></td>
                 <td className="px-3 py-1.5">
                   {e.project ? (
                     <Link to={`/projects/${e.project.id}/expenses`} className="text-navy-700 hover:underline text-xs">{e.project.name}</Link>
@@ -513,7 +513,7 @@ function ContractAmountCell({ project, onSaved }) {
         className="w-full text-right tabular-nums px-2 py-1 border border-transparent hover:border-gray-300 focus:border-navy-700 rounded outline-none disabled:bg-gray-50 disabled:text-gray-400"
       />
       {busy && (
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">저장중</span>
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs sm:text-[10px] text-gray-400">저장중</span>
       )}
     </div>
   );

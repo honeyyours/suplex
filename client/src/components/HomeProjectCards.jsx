@@ -61,7 +61,7 @@ export default function HomeProjectCards({ status }) {
                 <div className={`font-semibold text-sm truncate ${v.titleColor}`}>
                   {p.name}
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${v.badge.color}`}>
+                <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${v.badge.color}`}>
                   {v.badge.label}
                 </span>
               </div>

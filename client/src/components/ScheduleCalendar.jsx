@@ -168,11 +168,11 @@ export default function ScheduleCalendar({ projectId, project }) {
       )}
 
       <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
-        <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
+        <div className="grid grid-cols-7 text-xs sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div
               key={d}
-              className={`px-1 sm:px-2 py-1 sm:py-2 text-center ${
+              className={`px-1 sm:px-2 py-1.5 sm:py-2 text-center ${
                 i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'
               }`}
             >{d}</div>
@@ -191,15 +191,15 @@ export default function ScheduleCalendar({ projectId, project }) {
               <div
                 key={key}
                 onClick={(e) => handleCellClick(e, key, inRange)}
-                className={`group border-r border-b last:border-r-0 min-h-[68px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
+                className={`group border-r border-b last:border-r-0 min-h-[96px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
                   inRange ? 'bg-white' : 'bg-gray-100/70 cursor-default'
                 }`}
               >
-                <div className={`flex items-center justify-between px-1 py-0.5 sm:px-1.5 sm:py-1 text-[10px] sm:text-xs flex-shrink-0 ${
+                <div className={`flex items-center justify-between px-1 py-1 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
                   !inRange ? 'text-gray-300' :
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
-                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}`}>
+                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''}`}>
                     {date.getDate()}
                   </span>
                   {inRange && (
@@ -222,7 +222,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                     />
                   ))}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[9px] text-gray-400 text-center leading-none">
+                    <span className="sm:hidden text-[11px] text-gray-400 text-center leading-none">
                       +{dayEntries.length - 3}
                     </span>
                   )}
@@ -238,7 +238,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                   {!isActive && inRange && (
                     <button
                       onClick={() => setActiveCellKey(key)}
-                      className="hidden sm:block text-[10px] text-gray-300 hover:text-navy-600 hover:bg-navy-50 text-left px-1 py-0.5 rounded mt-auto opacity-0 group-hover:opacity-100 transition"
+                      className="hidden sm:block text-xs text-gray-300 hover:text-navy-600 hover:bg-navy-50 text-left px-1 py-0.5 rounded mt-auto opacity-0 group-hover:opacity-100 transition"
                     >
                       + 추가
                     </button>

@@ -1150,7 +1150,7 @@ function PhaseDeadlineRulesSection() {
                 <td className="px-2 py-1.5 text-center">
                   <button
                     onClick={() => update(r, { active: !r.active })}
-                    className={`text-[10px] px-2 py-0.5 rounded ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
                   >
                     {r.active ? '활성' : '비활성'}
                   </button>
@@ -1168,7 +1168,7 @@ function PhaseDeadlineRulesSection() {
               <tr key={phase} className="opacity-50 hover:opacity-100">
                 <td className="px-2 py-1.5 text-gray-600">{phase}</td>
                 <td className="px-2 py-1.5 text-right text-gray-400">D-{days}</td>
-                <td className="px-2 py-1.5 text-center text-gray-400 text-[10px]">표준값</td>
+                <td className="px-2 py-1.5 text-center text-gray-400 text-xs sm:text-[10px]">표준값</td>
                 <td className="px-2 py-1.5 text-gray-400">D-{days}</td>
                 <td className="px-2 py-1.5 text-right">
                   <button

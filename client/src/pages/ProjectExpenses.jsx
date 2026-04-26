@@ -118,7 +118,7 @@ export default function ProjectExpenses() {
                   return (
                     <tr key={e.id} className="border-b border-emerald-100/60 last:border-b-0">
                       <td className="py-1.5 w-20 text-gray-600 tabular-nums">{String(e.date).slice(0, 10)}</td>
-                      <td className="py-1.5 w-12"><span className={`px-1.5 py-0.5 rounded border text-[10px] ${t.color}`}>{t.label}</span></td>
+                      <td className="py-1.5 w-12"><span className={`px-1.5 py-0.5 rounded border text-xs sm:text-[10px] ${t.color}`}>{t.label}</span></td>
                       <td className="py-1.5 w-32"><span className={`px-1.5 py-0.5 rounded ${accountColor(e.accountCode?.groupName)}`}>{e.accountCode?.code || '미분류'}</span></td>
                       <td className="py-1.5 text-gray-700 truncate max-w-xs">{e.description || e.vendor || ''}</td>
                       <td className={`py-1.5 text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}>

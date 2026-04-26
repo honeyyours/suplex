@@ -475,7 +475,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onR
           >
             {group.name}
           </button>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
+          <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
             {isAppliance ? '가전·가구' : '마감재'}
           </span>
           <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
@@ -708,7 +708,7 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
       </td>
       <td className="px-1 text-right">
         {saving ? (
-          <span className="text-[10px] text-gray-400" title="저장 중">…</span>
+          <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
         ) : locked ? null : (
           <button
             onClick={onRemove}
@@ -772,7 +772,7 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) 
       </td>
       <td className="px-1 text-right">
         {saving ? (
-          <span className="text-[10px] text-gray-400" title="저장 중">…</span>
+          <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
         ) : locked ? null : (
           <button
             onClick={onRemove}

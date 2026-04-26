@@ -127,7 +127,7 @@ export default function ProjectSimpleQuotes() {
                 <div className="px-2 pb-1.5 flex justify-end">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDuplicate(q.id); }}
-                    className="text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded opacity-0 group-hover:opacity-100 transition"
+                    className="text-xs sm:text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded opacity-0 group-hover:opacity-100 transition"
                     title="이 견적을 복제해 다음 차수 만들기"
                   >
                     📑 복제

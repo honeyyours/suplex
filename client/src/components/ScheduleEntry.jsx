@@ -105,7 +105,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           setContextMenu({ x: e.clientX, y: e.clientY });
         }}
         className={`
-          relative group text-[9px] sm:text-xs rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
+          relative group text-[11px] sm:text-xs rounded sm:rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
           ${catColor} sm:bg-navy-50/60 sm:text-navy-800
           sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50' : 'sm:border-navy-400'}
         `}
@@ -114,21 +114,21 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           <div className="flex items-center gap-1 flex-wrap">
             <PhaseInlineContent entry={entry} />
             {entry.vendor && (
-              <span className="hidden sm:inline-block text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+              <span className="hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
                 🏢 {entry.vendor.name}
               </span>
             )}
           </div>
         </div>
         {entry.confirmed && (
-          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] sm:text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] z-10">✓</span>
+          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] z-10">✓</span>
         )}
         <div className="hidden sm:flex absolute right-0.5 top-1/2 -translate-y-1/2 gap-0.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition z-20">
           {showVendorButton && (
             <button
               onClick={(e) => openVendorMenu(e.currentTarget)}
               title="협력업체 태그"
-              className="text-[10px] text-gray-500 hover:text-violet-700 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
+              className="text-xs sm:text-[10px] text-gray-500 hover:text-violet-700 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
             >
               🏢
             </button>
@@ -136,7 +136,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           <button
             onClick={() => onDelete(entry.id)}
             title="삭제"
-            className="text-[10px] text-gray-500 hover:text-red-600 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
+            className="text-xs sm:text-[10px] text-gray-500 hover:text-red-600 bg-white rounded shadow-sm border border-gray-200 px-1 leading-none py-0.5"
           >
             ✕
           </button>
@@ -225,7 +225,7 @@ function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
       className="bg-white border rounded-md shadow-lg p-2 w-[210px]"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="text-[10px] text-gray-500 mb-1.5">공종 선택</div>
+      <div className="text-xs sm:text-[10px] text-gray-500 mb-1.5">공종 선택</div>
       <div className="grid grid-cols-3 gap-1">
         <button
           onClick={() => onPick(null)}

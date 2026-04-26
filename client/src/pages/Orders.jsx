@@ -420,7 +420,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
         <div className="flex items-center gap-2 flex-wrap">
           {hasMaterialChanged && (
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 cursor-pointer"
+              className="text-xs sm:text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 cursor-pointer"
               title="마감재가 변경됨 — 클릭하여 확인"
               onClick={async () => {
                 await purchaseOrdersApi.acknowledge(order.projectId, order.id);
@@ -432,7 +432,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           {order.project && (
             <Link
               to={`/projects/${order.project.id}/materials`}
-              className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              className="text-xs sm:text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
             >{order.project.name}</Link>
           )}
           {order.deadline && order.daysToDeadline != null && (
@@ -487,7 +487,7 @@ function DeadlineChip({ days, deadline }) {
     : `${prefix}D-${days} (${m}/${day})`;
   return (
     <span
-      className={`text-[10px] px-1.5 py-0.5 rounded ${cls}`}
+      className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded ${cls}`}
       title={`자재 도착 데드라인: ${m}월 ${day}일 (공정 시작일 - D-N)`}
     >
       {label}

@@ -70,7 +70,7 @@ export default function InlineMaterialRow({
             <span className="text-xs text-gray-400 italic">{isReused ? '♻️ 재사용' : '⊘ 해당 없음'}</span>
           ) : hasMaterial ? (
             <div className="flex flex-wrap gap-1 items-center">
-              {isInheriting && <span className="text-[10px] flex-shrink-0 text-sky-700">🔗</span>}
+              {isInheriting && <span className="text-xs sm:text-[10px] flex-shrink-0 text-sky-700">🔗</span>}
               {summaryChips.map((c, i) => (
                 <span
                   key={i}
@@ -340,7 +340,7 @@ function FooterActions({ saving, savedFlash, onShowHistory, onDelete, onClose })
 function CellField({ field, value, onChange, onKeyDown, inputRef }) {
   const { type, label, placeholder, options, unit, key } = field;
   const labelEl = (
-    <span className="block text-[10px] font-medium text-gray-500 mb-0.5">
+    <span className="block text-xs sm:text-[10px] font-medium text-gray-500 mb-0.5">
       {label}{unit ? ` (${unit})` : ''}
     </span>
   );

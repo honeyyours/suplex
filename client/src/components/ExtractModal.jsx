@@ -98,12 +98,12 @@ export default function ExtractModal({ projectId, onClose }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     {e.category && (
-                      <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
+                      <span className={`inline-block text-xs sm:text-[10px] px-1.5 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
                         {e.category}
                       </span>
                     )}
                     {e.project?.name && (
-                      <span className="inline-block text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded mr-1">
+                      <span className="inline-block text-xs sm:text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded mr-1">
                         {e.project.name}
                       </span>
                     )}

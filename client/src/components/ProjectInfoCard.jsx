@@ -33,7 +33,7 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
                 >
                   <span>📄 견적 {activeQuote.title}</span>
                   <span className="tabular-nums font-medium">{formatWon(activeQuote.total)}원</span>
-                  <span className={`px-1 rounded text-[10px] ${quoteMeta.color}`}>{quoteMeta.label}</span>
+                  <span className={`px-1 rounded text-xs sm:text-[10px] ${quoteMeta.color}`}>{quoteMeta.label}</span>
                 </Link>
               )}
             </div>
