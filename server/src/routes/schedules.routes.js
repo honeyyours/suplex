@@ -7,12 +7,19 @@ const { syncChecklistFromPhase, syncAdvicesFromPhase } = require('../services/ch
 const { detectPhase, detectPhaseMatch } = require('../services/phaseDetect');
 
 // entries 배열에 phaseKeyword(매칭된 원본 substring) 동적 첨부
-// 표시 시 inline chip 렌더링에 사용 — category가 있는 entry만 다시 매칭
+// 표시 시 inline chip 렌더링에 사용.
+// - category 있고 매칭된 phase가 같으면 → phaseKeyword 채움
+// - category 비어 있어도 매칭되면 → category(임시) + phaseKeyword 채움 (DB는 변경 X, 표시 전용)
 async function annotatePhaseKeyword(entries, companyId) {
   for (const e of entries) {
-    if (!e.category || !e.content) continue;
+    if (!e.content) continue;
     const m = await detectPhaseMatch(companyId, e.content);
-    if (m && m.phase === e.category) {
+    if (!m) continue;
+    if (e.category && m.phase === e.category) {
+      e.phaseKeyword = m.keyword;
+      e.phaseKeywordStart = m.start;
+    } else if (!e.category) {
+      e.category = m.phase;
       e.phaseKeyword = m.keyword;
       e.phaseKeywordStart = m.start;
     }
