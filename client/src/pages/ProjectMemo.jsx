@@ -8,14 +8,14 @@ import { projectMemosApi } from '../api/projectMemos';
 
 const SAVE_DELAY = 800;
 
-// 태그 정의 — 일반(default) / 거래처 관련 / A/S / 추후 활용 피드백
-// AI 어드바이스 입력 신호로 사용. 각 태그별 사용 예시는 모달 placeholder/hint로 노출.
+// 태그 정의 — 6개. AI 어드바이스 입력 신호로 사용. 사용 예시는 모달 placeholder/hint로 노출.
+// 자재발주는 본질이 다름(행동 트리거) → wide=true로 한 줄 폭, mono=true로 모노스페이스.
 const TAGS = [
   {
     value: '일반',
     chipBg: 'bg-gray-100',
     chipText: 'text-gray-700',
-    hint: '자유 메모 — 회의 일정, 아이디어, 그 외 모든 것',
+    hint: '자유 메모 — 회의 일정, 아이디어, TODO, 그 외 모든 것',
     examples: [
       '내일 10시 견적서 작성 회의',
       '신축 현장 측정 일정 잡기',
@@ -23,13 +23,13 @@ const TAGS = [
     ],
   },
   {
-    value: '거래처 관련',
+    value: '거래처',
     chipBg: 'bg-sky-100',
     chipText: 'text-sky-800',
     hint: '협력업체·시공팀 메모 — 단가, 일정 준수, 품질, 재계약 여부 등',
     examples: [
-      '철거 김사장님 일정 30분 지연. 다음엔 버퍼 필요',
-      '도배 박사장님 마감 깔끔. 단가 합리적 → 재계약 추천',
+      '가구 코리아싱크 사장님네 상판 고정 잘 안함. 다음부터 강조 필요',
+      '도배사장님한테 장판까지 맡겼더니 장판 퀄리티 떨어짐. 다음부터 다른 시공팀',
       '전기 이사장님 야간 작업 가능. 다급할 때 의뢰',
     ],
   },
@@ -37,22 +37,45 @@ const TAGS = [
     value: 'A/S',
     chipBg: 'bg-rose-100',
     chipText: 'text-rose-800',
-    hint: 'A/S·하자·재시공 이력 — 자재 보증, 시공팀 부담 여부, 처리 결과',
+    hint: 'A/S·하자·재시공 이력 — 발생 원인, 조치 결과, 책임 소재 기록',
     examples: [
-      'OO프로젝트 안방 도배 보풀 발생, 시공 1년차 → 시공팀 부담',
-      '거실 마루 들뜸, 보증 6개월차 → 클레임 처리 중',
-      '주방 후드 소음 큼 → 가전사 콜센터 신모델 교환',
+      '문 와꾸가 안맞아서 재발주, 재설치 조치',
+      '도배지 이염, 화장대 옆벽 재시공 조치',
+      '타일 메지 깨짐, 3월 12일 재시공 조치',
     ],
   },
   {
-    value: '추후 활용 피드백',
+    value: '피드백',
     chipBg: 'bg-emerald-100',
     chipText: 'text-emerald-800',
-    hint: '클라이언트 반응·후기·인사이트 — 만족도, 소개, 개선점, 자산화 가능 자료',
+    hint: '자체 회고 — 자재 모델 평가, 디자인 인사이트, 다음에 더 나아지기 위한 메모',
     examples: [
-      'OO프로젝트 클라이언트 인스타에 사진 게시. 만족도 ↑',
-      'ZZ 사장님이 친구분 소개. 추가 견적 요청',
-      '거실 마루 색상 너무 밝다는 의견. 다음엔 샘플 2개 이상 제시',
+      '가구 상판 모델 너무 예쁨. 주로 많이 사용해보자',
+      '영림 *** 필름 모델 생각보다 밝음',
+      '마루 *** 모델 생각보다 예쁨, 화이트우드에 적격',
+    ],
+  },
+  {
+    value: '자재발주',
+    chipBg: 'bg-amber-100',
+    chipText: 'text-amber-800',
+    hint: '발주 정리·복사용 — 카톡으로 복사해 거래처 전송, 정리해두면 다음 발주 시 재활용',
+    wide: true,   // 한 줄 폭으로 강조 (col-span)
+    mono: true,   // 모노스페이스 폰트
+    examples: [
+      '목공 자재 발주 내역 정리\n· 합판 18T x 20장\n· 각재 30x40 x 50개\n(예상 금액: 약 ___원)',
+      '타일 자재 발주 내역 정리\n· 욕실 바닥 300x300 x 8박스\n· 본드, 메지\n(예상 금액: 약 ___원)',
+    ],
+  },
+  {
+    value: '현장 환경',
+    chipBg: 'bg-indigo-100',
+    chipText: 'text-indigo-800',
+    hint: '동일 현장 재진입 시 시행착오 방지 — 이 아파트·건물에 다시 들어왔을 때 알아야 할 것',
+    examples: [
+      '화장실 벽배수 X, 기존 바닥배수로 되어있음',
+      '콘센트 치수가 일반적이지 않음. *** 모델만 호환됨',
+      '천장 여유 치수가 거의 없어서 매립등 사용 불가',
     ],
   },
 ];
@@ -189,14 +212,19 @@ export default function ProjectMemo() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredMemos.map((m) => (
-            <MemoCard
-              key={m.id}
-              memo={m}
-              onUpdate={(patch) => handleUpdate(m.id, patch)}
-              onRemove={() => handleRemove(m.id)}
-            />
-          ))}
+          {filteredMemos.map((m) => {
+            const s = tagStyle(m.tag || '일반');
+            const wrapClass = s.wide ? 'sm:col-span-2 lg:col-span-3' : '';
+            return (
+              <div key={m.id} className={wrapClass}>
+                <MemoCard
+                  memo={m}
+                  onUpdate={(patch) => handleUpdate(m.id, patch)}
+                  onRemove={() => handleRemove(m.id)}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -303,17 +331,17 @@ function CreateMemoModal({ onClose, onSave }) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={s.examples[0]}
-              className="input"
+              placeholder={s.examples[0].split('\n')[0]}
+              className={`input ${s.mono ? 'font-mono' : ''}`}
             />
           </L>
           <L label="내용">
             <textarea
-              rows={5}
+              rows={s.mono ? 8 : 5}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={`예: ${s.examples[1] || s.examples[0]}`}
-              className="input resize-y"
+              placeholder={s.examples[s.mono ? 0 : 1] || s.examples[0]}
+              className={`input resize-y ${s.mono ? 'font-mono' : ''}`}
             />
           </L>
         </div>
@@ -393,8 +421,14 @@ function MemoCard({ memo, onUpdate, onRemove }) {
     }
   }
 
+  const s = tagStyle(tag);
+  const monoClass = s.mono ? 'font-mono' : '';
+  // 자재발주는 강조 — 항상 복사 버튼 노출, 좌측 색상 보더
+  const accentBorder = s.wide ? 'border-l-4 border-l-amber-400' : '';
+  const alwaysShowCopy = !!s.wide;
+
   return (
-    <div className="bg-white border rounded-lg p-4 group hover:shadow-sm transition">
+    <div className={`bg-white border rounded-lg p-4 group hover:shadow-sm transition ${accentBorder}`}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <TagSelect value={tag} onChange={handleTagChange} />
         <div className="flex items-center gap-1 text-xs">
@@ -402,10 +436,12 @@ function MemoCard({ memo, onUpdate, onRemove }) {
             onClick={copyAll}
             className={`px-2 py-1 rounded transition ${copied
               ? 'text-emerald-700 bg-emerald-50'
-              : 'text-gray-400 hover:text-navy-700 hover:bg-gray-50 opacity-0 group-hover:opacity-100'
+              : alwaysShowCopy
+                ? 'text-amber-800 bg-amber-50 hover:bg-amber-100 font-medium'
+                : 'text-gray-400 hover:text-navy-700 hover:bg-gray-50 opacity-0 group-hover:opacity-100'
             }`}
           >
-            {copied ? '✓ 복사됨' : '복사'}
+            {copied ? '✓ 복사됨' : alwaysShowCopy ? '📋 복사' : '복사'}
           </button>
           <button
             onClick={onRemove}
@@ -419,14 +455,14 @@ function MemoCard({ memo, onUpdate, onRemove }) {
         value={title}
         onChange={(e) => handleTitleChange(e.target.value)}
         placeholder="제목 (선택)"
-        className="w-full bg-transparent outline-none text-sm font-semibold text-navy-800 placeholder:text-gray-300 mb-1"
+        className={`w-full bg-transparent outline-none text-sm font-semibold text-navy-800 placeholder:text-gray-300 mb-1 ${monoClass}`}
       />
       <textarea
         value={content}
         onChange={(e) => handleContentChange(e.target.value)}
         placeholder="메모 작성..."
         rows={Math.min(20, Math.max(3, content.split('\n').length + 1))}
-        className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed text-gray-700 placeholder:text-gray-300"
+        className={`w-full bg-transparent outline-none resize-none text-sm leading-relaxed text-gray-700 placeholder:text-gray-300 ${monoClass}`}
       />
     </div>
   );
