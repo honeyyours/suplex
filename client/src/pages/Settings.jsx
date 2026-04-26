@@ -7,6 +7,7 @@ import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { checklistTemplatesApi } from '../api/checklistTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
+import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
@@ -638,6 +639,27 @@ function PhaseKeywordsSection() {
     }
   }
 
+  async function removeActivePhase() {
+    const target = activePhase;
+    if (!target) return;
+    const msg = `"${target}" 공정을 삭제하시겠습니까?\n\n` +
+      `· 이 공정의 키워드 / D-N 룰 / 어드바이스가 모두 삭제됩니다.\n` +
+      `· 과거 일정의 공정 표시는 그대로 보존됩니다.\n` +
+      `· 신규 일정에서는 더 이상 자동 인식되지 않습니다.`;
+    if (!confirm(msg)) return;
+    try {
+      const { deleted } = await phasesApi.remove(target);
+      await queryClient.invalidateQueries({ queryKey: ['phases'] });
+      // 첫 번째 남은 phase로 이동 (없으면 fallback 첫 번째)
+      const remaining = phases.filter((p) => p !== target);
+      setActivePhase(remaining[0] || phases[0]);
+      reload();
+      alert(`✅ "${target}" 삭제 완료\n키워드 ${deleted.keywords}개, D-N 룰 ${deleted.deadlines}개, 어드바이스 ${deleted.advices}개`);
+    } catch (e) {
+      alert('공정 삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   async function add() {
     const k = newKeyword.trim();
     if (!k) return;
@@ -759,6 +781,11 @@ function PhaseKeywordsSection() {
           onClick={add}
           className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
         >추가</button>
+        <button
+          onClick={removeActivePhase}
+          className="text-sm px-3 py-1.5 border border-red-300 text-red-600 rounded hover:bg-red-50"
+          title={`"${activePhase}" 공정 자체를 삭제 (키워드/D-N/어드바이스 일괄 제거)`}
+        >🗑 공정 삭제</button>
       </div>
 
       {newPhaseModal && (
