@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import BackupMenu from '../components/BackupMenu';
 import EditProjectModal from '../components/EditProjectModal';
 import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectActionsMenu from '../components/ProjectActionsMenu';
@@ -13,7 +12,6 @@ import { simpleQuotesApi } from '../api/simpleQuotes';
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [project, setProject] = useState(null);
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(false);
@@ -90,10 +88,8 @@ export default function ProjectDetail() {
         : 'border-transparent text-gray-500 hover:text-navy-700 hover:border-gray-300'
     }`;
 
-  // 공정 일정 탭 인식 — 라우트 끝이 /schedule
-  const isScheduleTab = location.pathname.endsWith('/schedule');
-
-  const scheduleMenuItems = [
+  // 모든 탭에서 동일한 햄버거 메뉴 5개 항목 — 일관된 UX
+  const menuItems = [
     { icon: '✏️', label: '수정', onClick: () => setEditing(true) },
     { icon: '📝', label: '변동 로그', onClick: () => setShowChanges(true) },
     { icon: '🔍', label: '일정 추출', onClick: () => setShowExtract(true) },
@@ -102,25 +98,7 @@ export default function ProjectDetail() {
     { icon: '📥', label: 'JSON 복원', onClick: triggerImport },
   ];
 
-  const headerActions = isScheduleTab ? (
-    <ProjectActionsMenu items={scheduleMenuItems} />
-  ) : (
-    <>
-      <button
-        onClick={() => setEditing(true)}
-        className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50"
-      >
-        ✏️ 수정
-      </button>
-      <BackupMenu
-        projectId={id}
-        projectName={project.name}
-        onRestored={(projects) => {
-          if (projects[0]) navigate(`/projects/${projects[0].id}`);
-        }}
-      />
-    </>
-  );
+  const headerActions = <ProjectActionsMenu items={menuItems} />;
 
   return (
     <div className="space-y-4">
