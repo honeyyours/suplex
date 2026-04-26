@@ -95,17 +95,63 @@ export default function ScheduleCalendar({ projectId, project }) {
     }
   }
 
+  // 모든 entries 캐시(현재 + 회사 전체 일정)에 patch 적용 — optimistic UI
+  function patchEntryInCaches(id, patch) {
+    queryClient.setQueriesData({ queryKey: ['schedules'] }, (old) => {
+      if (!old?.entries) return old;
+      return {
+        ...old,
+        entries: old.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+      };
+    });
+  }
+  function removeEntryInCaches(id) {
+    queryClient.setQueriesData({ queryKey: ['schedules'] }, (old) => {
+      if (!old?.entries) return old;
+      return { ...old, entries: old.entries.filter((e) => e.id !== id) };
+    });
+  }
+
   async function updateEntry(id, payload) {
-    await schedulesApi.update(projectId, id, payload);
-    invalidate();
+    // 즉시 표시 — content / category / vendorId 등 패치
+    patchEntryInCaches(id, payload);
+    try {
+      await schedulesApi.update(projectId, id, payload);
+      invalidate(); // 서버 결과로 동기화 (phaseKeyword 재계산 포함)
+    } catch (e) {
+      invalidate(); // 실패 시 롤백 = 서버에서 재 fetch
+      throw e;
+    }
   }
   async function deleteEntry(id) {
-    await schedulesApi.remove(projectId, id);
-    invalidate();
+    // 즉시 사라짐
+    removeEntryInCaches(id);
+    try {
+      await schedulesApi.remove(projectId, id);
+    } catch (e) {
+      invalidate();
+      throw e;
+    }
   }
   async function toggleConfirm(id) {
-    await schedulesApi.toggleConfirm(projectId, id);
-    invalidate();
+    // 즉시 토글 — 서버 응답 기다리지 않음
+    let nextConfirmed = null;
+    queryClient.setQueriesData({ queryKey: ['schedules'] }, (old) => {
+      if (!old?.entries) return old;
+      return {
+        ...old,
+        entries: old.entries.map((e) => {
+          if (e.id !== id) return e;
+          nextConfirmed = !e.confirmed;
+          return { ...e, confirmed: nextConfirmed, confirmedAt: nextConfirmed ? new Date().toISOString() : null };
+        }),
+      };
+    });
+    try {
+      await schedulesApi.toggleConfirm(projectId, id);
+    } catch (e) {
+      invalidate(); // 실패 시 서버 상태로 복원
+    }
   }
 
   // 시작/마감 미설정 시 안내
