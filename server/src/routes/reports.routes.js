@@ -60,6 +60,8 @@ const schema = z.object({
   category: z.string().min(1),
   progress: z.number().int().min(0).max(100).optional(),
   workerCount: z.number().int().min(0).optional().nullable(),
+  caption: z.string().max(200).optional().nullable(),
+  // memo, nextDayPlan은 deprecated이지만 기존 클라이언트 호환을 위해 schema에는 남겨둠 (2026-04-26)
   memo: z.string().optional().nullable(),
   nextDayPlan: z.string().optional().nullable(),
 });
@@ -80,6 +82,7 @@ router.post('/', async (req, res, next) => {
         category: data.category.trim(),
         progress: data.progress ?? 0,
         workerCount: data.workerCount ?? null,
+        caption: data.caption?.trim() || null,
         memo: data.memo?.trim() || null,
         nextDayPlan: data.nextDayPlan?.trim() || null,
       },
@@ -117,6 +120,7 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.category !== undefined && { category: data.category.trim() }),
         ...(data.progress !== undefined && { progress: data.progress }),
         ...(data.workerCount !== undefined && { workerCount: data.workerCount }),
+        ...(data.caption !== undefined && { caption: data.caption?.trim() || null }),
         ...(data.memo !== undefined && { memo: data.memo?.trim() || null }),
         ...(data.nextDayPlan !== undefined && { nextDayPlan: data.nextDayPlan?.trim() || null }),
       },

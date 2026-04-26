@@ -536,8 +536,9 @@ model DailyReport {
   category    String // 공종
   progress    Int      @default(0) // 진행률 %
   workerCount Int? // 작업 인원 수
-  memo        String? // 특이사항
-  nextDayPlan String? // 내일 예정 작업
+  caption     String? // 한 줄 캡션 — 카톡 보고 메시지에 들어감 (예: "거실/안방 마감 끝")
+  memo        String? // (deprecated) 특이사항 — UI 제거됨, 데이터 호환성 위해 컬럼 유지
+  nextDayPlan String? // (deprecated) 내일 예정 — UI 제거됨, 데이터 호환성 위해 컬럼 유지
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
