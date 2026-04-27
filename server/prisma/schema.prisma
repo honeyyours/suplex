@@ -362,8 +362,9 @@ model Material {
   essential  Boolean @default(false) // ●필수 vs ○옵션 (현재 UI에선 미사용)
   formKey    String? // 항목별 폼 매핑 키 (formSchemas.js의 키)
 
-  brand                 String? // 브랜드 (legacy + 일부 폼이 사용)
+  brand                 String? // APPLIANCE: 모델명 (예: "BESPOKE 4도어 871L"). FINISH: 브랜드 (legacy)
   productName           String? // 모델/품번 (legacy + 일부 폼이 사용)
+  modelCode             String? // APPLIANCE 전용 — 모델 품번 (예: "RF85R9013S8"). 자동 누적·검색 키
   spec                  String? // 규격 (legacy)
   customSpec            Json? // 폼별 맞춤 필드 값 (key→value)
   siteNotes             String? // 현장 시공 특이사항 (템플릿 디폴트, readonly hint)

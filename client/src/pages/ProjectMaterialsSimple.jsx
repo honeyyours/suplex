@@ -18,6 +18,8 @@ export default function ProjectMaterialsSimple() {
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
   const pendingRef = useRef({}); // {id: latest patch object}
+  // 가전 자동 학습 디바운스 (modelCode별 5초)
+  const learnTimersRef = useRef({});
 
   async function reload() {
     setLoading(true);
@@ -31,6 +33,7 @@ export default function ProjectMaterialsSimple() {
           spaceGroup: m.spaceGroup || '기타',
           itemName: m.itemName === '(미정)' || m.itemName === '(이름없음)' ? '' : (m.itemName || ''),
           brand: m.brand || '',
+          modelCode: m.modelCode || '',
           quantityText: m.unit && m.quantity != null && Number(m.quantity) > 0
             ? `${Number(m.quantity)}${m.unit}`
             : (m.unit || (m.quantity != null && Number(m.quantity) > 0 ? String(m.quantity) : '')),
@@ -57,7 +60,7 @@ export default function ProjectMaterialsSimple() {
     /* eslint-disable-next-line */
   }, [projectId]);
 
-  // 컴포넌트 언마운트 시 잔여 저장 플러시
+  // 컴포넌트 언마운트 시 잔여 저장 플러시 + 학습 타이머 정리
   useEffect(() => () => {
     for (const id of Object.keys(timersRef.current)) {
       clearTimeout(timersRef.current[id]);
@@ -65,6 +68,10 @@ export default function ProjectMaterialsSimple() {
       if (patch) {
         materialsApi.update(projectId, id, patch).catch(() => {});
       }
+    }
+    // 학습 타이머는 그냥 취소 (5초 안에 페이지 이탈한 경우 학습 중단)
+    for (const k of Object.keys(learnTimersRef.current)) {
+      clearTimeout(learnTimersRef.current[k]);
     }
     /* eslint-disable-next-line */
   }, []);
@@ -74,6 +81,53 @@ export default function ProjectMaterialsSimple() {
     pendingRef.current[id] = { ...(pendingRef.current[id] || {}), ...patch };
     if (timersRef.current[id]) clearTimeout(timersRef.current[id]);
     timersRef.current[id] = setTimeout(() => flushSave(id), SAVE_DELAY);
+  }
+
+  // ========== 가전 자동 학습 (5초 디바운스) ==========
+  // modelCode + brand + size 다 채워지면 ApplianceSpec DB에 자동 누적 (회사간 공유)
+  // 같은 사이즈 → consensusCount++, 다른 사이즈 → DISPUTED
+  const CATEGORY_GUESS = {
+    '냉장고': 'REFRIGERATOR', '김치냉장고': 'KIMCHI_REFRIGERATOR',
+    '식기세척기': 'DISHWASHER', '식세기': 'DISHWASHER',
+    '세탁기': 'WASHING_MACHINE', '건조기': 'DRYER',
+    '오븐': 'OVEN', '쿡탑': 'COOKTOP', '인덕션': 'COOKTOP', '하이라이트': 'COOKTOP',
+    '에어컨': 'AIR_CONDITIONER', '로봇청소기': 'ROBOT_VACUUM',
+  };
+  function guessCategory(itemName) {
+    if (!itemName) return undefined;
+    for (const [k, v] of Object.entries(CATEGORY_GUESS)) {
+      if (itemName.includes(k)) return v;
+    }
+    return undefined;
+  }
+  function guessBrand(brandStr) {
+    if (!brandStr) return undefined;
+    const first = brandStr.trim().split(/\s+/)[0];
+    const upper = first.toUpperCase();
+    if (['LG', '삼성', 'SAMSUNG', '대우', '위니아', 'WHIRLPOOL'].includes(upper) || upper === 'LG') {
+      return upper === 'SAMSUNG' ? '삼성' : first;
+    }
+    return undefined;
+  }
+  function scheduleLearn(item) {
+    if (!item || item.kind !== 'APPLIANCE') return;
+    const modelCode = (item.modelCode || '').trim();
+    const brand = (item.brand || '').trim();
+    const sizeStr = (item.size || '').trim();
+    if (!modelCode || !brand || !sizeStr) return;
+    if (!sizeStr.match(/\d{2,4}\s*[×x*Xㅅ]\s*\d{2,4}\s*[×x*Xㅅ]\s*\d{2,4}/)) return;
+    const key = modelCode.toUpperCase();
+    if (learnTimersRef.current[key]) clearTimeout(learnTimersRef.current[key]);
+    learnTimersRef.current[key] = setTimeout(() => {
+      applianceSpecsApi.learn({
+        modelCode,
+        productName: brand,
+        brand: guessBrand(brand),
+        category: guessCategory(item.itemName),
+        sizeStr,
+      }).catch(() => {}); // 조용히 실패 — 사용자 흐름 방해 안 함
+      delete learnTimersRef.current[key];
+    }, 5000);
   }
 
   async function flushSave(id) {
@@ -108,6 +162,7 @@ export default function ProjectMaterialsSimple() {
     const serverPatch = {};
     if ('itemName' in patch) serverPatch.itemName = patch.itemName || '';
     if ('brand' in patch) serverPatch.brand = patch.brand || null;
+    if ('modelCode' in patch) serverPatch.modelCode = patch.modelCode || null;
     if ('memo' in patch) serverPatch.memo = patch.memo || null;
     if ('quantityText' in patch) {
       serverPatch.unit = patch.quantityText || null;
@@ -118,6 +173,12 @@ export default function ProjectMaterialsSimple() {
     // 상태 (status 변경 시 백엔드의 syncPurchaseOrders가 자동으로 PO 생성/동기화)
     if ('status' in patch) serverPatch.status = patch.status;
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
+
+    // 가전 자동 학습 — APPLIANCE 행이고 modelCode/brand/size 변경에 영향 있는 patch면 트리거
+    if (it && it.kind === 'APPLIANCE'
+      && ('modelCode' in patch || 'brand' in patch || 'size' in patch || 'itemName' in patch)) {
+      scheduleLearn({ ...it, ...patch });
+    }
   }
 
   // 체크박스 토글 — 미체크→체크 = CONFIRMED (PO PENDING 자동 생성, 행 즉시 잠금 낙관적 반영)
@@ -187,6 +248,7 @@ export default function ProjectMaterialsSimple() {
           spaceGroup: material.spaceGroup,
           itemName: '',
           brand: '',
+          modelCode: '',
           quantityText: '',
           size: '',
           installed: null,
@@ -206,6 +268,7 @@ export default function ProjectMaterialsSimple() {
   }
 
   // 가전 규격 DB에서 선택한 spec으로 새 APPLIANCE 항목 생성 (자동 채움)
+  // 필드 분리: brand = 모델명("LG 디오스 식기세척기 14인용"), modelCode = 품번("DUE6BGL2E")
   async function addItemFromSpec(spaceGroup, spec) {
     const sizeStr = `${spec.widthMm} × ${spec.depthMm} × ${spec.heightMm}`;
     const itemNameLabel = ({
@@ -214,7 +277,9 @@ export default function ProjectMaterialsSimple() {
       DRYER: '건조기', OVEN: '오븐', COOKTOP: '쿡탑', AIR_CONDITIONER: '에어컨',
       ROBOT_VACUUM: '로봇청소기',
     })[spec.category] || '가전';
-    const brandStr = `${spec.brand} ${spec.productName} (${spec.modelCode})`;
+    // brand는 "브랜드 + 제품명" (예: "LG 디오스 오브제컬렉션 식기세척기")
+    const brandStr = `${spec.brand} ${spec.productName}`;
+    const modelCodeStr = spec.modelCode || '';
     const memoBits = [];
     if (spec.builtIn) memoBits.push('빌트인');
     if (spec.hingeOpenWidthMm) memoBits.push(`문열림 ${spec.hingeOpenWidthMm}mm`);
@@ -232,6 +297,7 @@ export default function ProjectMaterialsSimple() {
         spaceGroup,
         itemName: itemNameLabel,
         brand: brandStr,
+        modelCode: modelCodeStr,
         size: sizeStr,
         memo: memoBits.join(', ') || null,
         orderIndex: nextOrderIndex(spaceGroup),
@@ -245,6 +311,7 @@ export default function ProjectMaterialsSimple() {
           spaceGroup: material.spaceGroup,
           itemName: itemNameLabel,
           brand: brandStr,
+          modelCode: modelCodeStr,
           quantityText: '',
           size: sizeStr,
           installed: null,
@@ -267,7 +334,7 @@ export default function ProjectMaterialsSimple() {
   // ←/→: 커서가 input 끝/처음일 때만 같은 행 좌/우 셀로
   // Tab: 네이티브 (행 내 가로 이동)
   const FINISH_COLS = ['itemName', 'brand', 'quantityText', 'memo'];
-  const APPLIANCE_COLS = ['itemName', 'brand', 'size', 'installed', 'memo'];
+  const APPLIANCE_COLS = ['itemName', 'brand', 'modelCode', 'size', 'installed', 'memo'];
   function colsFor(itemId) {
     const it = items.find((x) => x.id === itemId);
     return it?.kind === 'APPLIANCE' ? APPLIANCE_COLS : FINISH_COLS;
@@ -782,15 +849,16 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
 }
 
 // ============================================
-// 가전·가구 테이블 (체크박스 + 품목 / 모델명 / 사이즈 / 설치 / 비고)
+// 가전·가구 테이블 (체크박스 + 품목 / 모델명 / 품번 / 사이즈 / 설치 / 비고)
 // ============================================
 function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
         <col style={{ width: '32px' }} />{/* 체크박스 */}
-        <col style={{ width: '13%' }} />{/* 품목 */}
-        <col style={{ width: '22%' }} />{/* 모델명 */}
+        <col style={{ width: '12%' }} />{/* 품목 */}
+        <col style={{ width: '20%' }} />{/* 모델명 */}
+        <col style={{ width: '14%' }} />{/* 품번 */}
         <col style={{ width: '125px' }} />{/* 사이즈 */}
         <col style={{ width: '70px' }} />{/* 설치 */}
         <col />{/* 비고 */}
@@ -800,7 +868,8 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
         <tr>
           <th className="text-center"></th>
           <th className="text-left px-2 py-1.5">품목</th>
-          <th className="text-left px-2 py-1.5">모델명 / 품번</th>
+          <th className="text-left px-2 py-1.5">모델명</th>
+          <th className="text-left px-2 py-1.5">품번</th>
           <th className="text-left px-2 py-1.5">사이즈 (W×D×H)</th>
           <th className="text-center px-2 py-1.5">설치</th>
           <th className="text-left px-2 py-1.5">비고 (빌트인/도어방향)</th>
@@ -821,7 +890,7 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
         ))}
         {group.items.length === 0 && (
           <tr>
-            <td colSpan={7} className="text-center py-3 text-xs text-gray-400">
+            <td colSpan={8} className="text-center py-3 text-xs text-gray-400">
               아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
             </td>
           </tr>
@@ -881,7 +950,16 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
           value={item.brand}
           onChange={(e) => onChange({ brand: e.target.value })}
           className={inputCls}
-          placeholder="예: BESPOKE 4도어 871L / RF85R9013S8"
+          placeholder="예: BESPOKE 4도어 871L"
+        />
+      </td>
+      <td className="px-2 py-1.5">
+        <input
+          {...cellAttrs('modelCode')}
+          value={item.modelCode || ''}
+          onChange={(e) => onChange({ modelCode: e.target.value })}
+          className={inputCls + ' font-mono text-xs'}
+          placeholder="예: RF85R9013S8"
         />
       </td>
       <td className="px-2 py-1.5">

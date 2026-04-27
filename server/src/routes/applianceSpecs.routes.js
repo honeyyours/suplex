@@ -186,6 +186,134 @@ router.delete('/:id', requireRole('OWNER'), async (req, res, next) => {
 });
 
 // ============================================
+// 자동 학습 — 사용자가 마감재에 입력한 가전 데이터 자동 누적 (Phase A-2)
+// 회사간 공유 (Suplex 공통 자가증식 DB)
+// 같은 사이즈 → consensusCount++, 다른 사이즈 → DISPUTED
+// ============================================
+
+const learnSchema = z.object({
+  modelCode: z.string().trim().min(1).max(100),
+  productName: z.string().trim().max(200).optional(),
+  brand: z.string().trim().max(50).optional(),
+  category: z.enum(APPLI_CATEGORIES).optional(),
+  sizeStr: z.string().trim().min(1), // "598 × 567 × 815" 형식 (W × D × H)
+});
+
+function parseSizeStr(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{2,4})\s*[×x*Xㅅ]\s*(\d{2,4})\s*[×x*Xㅅ]\s*(\d{2,4})/);
+  if (!m) return null;
+  // ProjectMaterialsSimple 표기: W × D × H 순서
+  return { widthMm: +m[1], depthMm: +m[2], heightMm: +m[3] };
+}
+
+router.post('/learn', async (req, res, next) => {
+  try {
+    const data = learnSchema.parse(req.body);
+    const dims = parseSizeStr(data.sizeStr);
+    if (!dims) {
+      return res.json({ skipped: true, reason: 'unparseable_size' });
+    }
+    // 가전 일반 범위 sanity 검사
+    if (dims.widthMm < 100 || dims.widthMm > 5000
+      || dims.heightMm < 100 || dims.heightMm > 5000
+      || dims.depthMm < 100 || dims.depthMm > 5000) {
+      return res.json({ skipped: true, reason: 'size_out_of_range' });
+    }
+
+    const existing = await prisma.applianceSpec.findUnique({
+      where: { modelCode: data.modelCode },
+    });
+
+    const userSource = {
+      tier: 4, // tier 1=제조사 공식, 2=2차자료(다나와 등), 3=리뷰, 4=사용자 보고, 5=매뉴얼
+      url: `user-input://${req.user.companyId}/${req.user.id}`,
+      value: { widthMm: dims.widthMm, heightMm: dims.heightMm, depthMm: dims.depthMm },
+      note: `사용자 자동 학습 (${new Date().toISOString().slice(0, 10)})`,
+    };
+
+    if (!existing) {
+      // 신규 — PENDING으로 INSERT (회사간 공유)
+      const newSpec = await prisma.applianceSpec.create({
+        data: {
+          modelCode: data.modelCode,
+          category: data.category || 'REFRIGERATOR', // 카테고리 미지정 시 기본값
+          brand: data.brand || 'unknown',
+          productName: data.productName || data.modelCode,
+          widthMm: dims.widthMm,
+          heightMm: dims.heightMm,
+          depthMm: dims.depthMm,
+          builtIn: false,
+          discontinued: false,
+          consensusCount: 1,
+          verifyStatus: 'PENDING',
+          sources: [userSource],
+        },
+      });
+      return res.json({ action: 'created', specId: newSpec.id });
+    }
+
+    // 기존 모델 — 사이즈 비교
+    const sameDims = (
+      existing.widthMm === dims.widthMm
+      && existing.heightMm === dims.heightMm
+      && existing.depthMm === dims.depthMm
+    );
+
+    const newSources = [...(existing.sources || []), userSource];
+
+    // 같은 사용자가 같은 모델로 여러 번 호출 시 노이즈 방지 (5초 디바운스를 프론트가 담당하지만
+    // 동시 요청 등 예외 케이스 안전망: 같은 (companyId, userId)의 출처가 이미 있으면 sources 갱신만)
+    const sameOriginExists = (existing.sources || []).some(
+      (s) => s.url === userSource.url
+    );
+
+    if (sameDims) {
+      // 같은 사이즈 — consensus 증가, USER_CORRECTED는 보호
+      const newCount = sameOriginExists
+        ? existing.consensusCount
+        : (existing.consensusCount || 1) + 1;
+      const newStatus = (newCount >= 2 && existing.verifyStatus !== 'USER_CORRECTED')
+        ? 'VERIFIED'
+        : existing.verifyStatus;
+      const updated = await prisma.applianceSpec.update({
+        where: { id: existing.id },
+        data: {
+          consensusCount: newCount,
+          verifyStatus: newStatus,
+          sources: newSources,
+          lastVerifiedAt: newCount >= 2 ? new Date() : existing.lastVerifiedAt,
+        },
+      });
+      return res.json({
+        action: sameOriginExists ? 'duplicate_origin' : 'consensus_up',
+        specId: updated.id,
+        consensusCount: newCount,
+        verifyStatus: newStatus,
+      });
+    } else {
+      // 다른 사이즈 — DISPUTED (USER_CORRECTED는 보호: 사용자 정정 우선)
+      if (existing.verifyStatus === 'USER_CORRECTED') {
+        // 출처만 추가, 상태/사이즈는 그대로
+        await prisma.applianceSpec.update({
+          where: { id: existing.id },
+          data: { sources: newSources },
+        });
+        return res.json({ action: 'noted_under_user_corrected', specId: existing.id });
+      }
+      const updated = await prisma.applianceSpec.update({
+        where: { id: existing.id },
+        data: { verifyStatus: 'DISPUTED', sources: newSources },
+      });
+      return res.json({ action: 'disputed', specId: updated.id });
+    }
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// ============================================
 // 사용자 정정 (모든 인증 사용자 가능 — 디자이너가 실측치 보고)
 // ============================================
 

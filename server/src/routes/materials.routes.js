@@ -12,7 +12,7 @@ const KINDS = ['FINISH', 'APPLIANCE'];
 
 const TRACKED_FIELDS = [
   'kind', 'spaceGroup', 'subgroup', 'itemName', 'essential', 'formKey',
-  'brand', 'productName', 'spec', 'customSpec', 'siteNotes', 'purchaseSource', 'checked',
+  'brand', 'productName', 'modelCode', 'spec', 'customSpec', 'siteNotes', 'purchaseSource', 'checked',
   'installed', 'size', 'remarks',
   'status', 'quantity', 'unit', 'unitPrice', 'totalPrice', 'memo',
   'inheritFromMaterialId',
@@ -231,6 +231,7 @@ const baseSchema = {
   inheritFromMaterialId: z.string().optional().nullable(),
   brand: z.string().optional().nullable(),
   productName: z.string().optional().nullable(),
+  modelCode: z.string().optional().nullable(),
   spec: z.string().optional().nullable(),
   siteNotes: z.string().optional().nullable(),
   purchaseSource: z.string().optional().nullable(),
@@ -266,6 +267,7 @@ function toCreateData(data) {
     inheritFromMaterialId: data.inheritFromMaterialId || null,
     brand: data.brand?.trim() || null,
     productName: data.productName?.trim() || null,
+    modelCode: data.modelCode?.trim() || null,
     spec: data.spec?.trim() || null,
     siteNotes: data.siteNotes?.trim() || null,
     purchaseSource: data.purchaseSource?.trim() || null,
