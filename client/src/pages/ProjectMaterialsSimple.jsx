@@ -541,7 +541,9 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
   const verifyChip = (s) => {
     if (s.verifyStatus === 'VERIFIED') return <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded">✅ {s.consensusCount}출처</span>;
     if (s.verifyStatus === 'USER_CORRECTED') return <span className="text-[10px] px-1.5 py-0.5 bg-sky-50 text-sky-700 rounded">🛠️ 정정</span>;
-    return <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">△ 확인필요</span>;
+    if (s.verifyStatus === 'DISPUTED') return <span className="text-[10px] px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded">⚠️ 출처 불일치</span>;
+    // PENDING — 단일 출처. "확인필요"는 사용자에게 부담스러워 톤 조정.
+    return <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">ⓘ 공식 1곳</span>;
   };
 
   return (
