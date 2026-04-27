@@ -373,9 +373,10 @@ model Material {
   inheritFromMaterialId String? // 공용부 동일 — 다른 Material(보통 거실) id 참조
 
   // APPLIANCE 전용 (가전/가구 별표)
-  installed Boolean? // 설치 유무 O/X
+  installed Boolean? // 설치 유무 O/X (legacy — UI에서 제거됨, 데이터 보존용)
   size      String? // W x D x H (mm)
   remarks   String? // 비고 (특이사항 / 빌트인 여부)
+  sourceUrl String? // 사이즈를 발견한 출처 URL (제조사 공식 페이지 등)
 
   // 공통 부가 (견적·수량)
   status     MaterialStatus @default(UNDECIDED)

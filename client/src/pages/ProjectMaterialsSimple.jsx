@@ -39,6 +39,7 @@ export default function ProjectMaterialsSimple() {
             : (m.unit || (m.quantity != null && Number(m.quantity) > 0 ? String(m.quantity) : '')),
           size: m.size || '',
           installed: m.installed,
+          sourceUrl: m.sourceUrl || '',
           memo: m.memo || '',
           orderIndex: m.orderIndex ?? 0,
           createdAt: m.createdAt,
@@ -170,6 +171,7 @@ export default function ProjectMaterialsSimple() {
     }
     if ('size' in patch) serverPatch.size = patch.size || null;
     if ('installed' in patch) serverPatch.installed = patch.installed;
+    if ('sourceUrl' in patch) serverPatch.sourceUrl = patch.sourceUrl || null;
     // 상태 (status 변경 시 백엔드의 syncPurchaseOrders가 자동으로 PO 생성/동기화)
     if ('status' in patch) serverPatch.status = patch.status;
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
@@ -252,6 +254,7 @@ export default function ProjectMaterialsSimple() {
           quantityText: '',
           size: '',
           installed: null,
+          sourceUrl: '',
           memo: '',
           orderIndex: material.orderIndex ?? 0,
           createdAt: material.createdAt,
@@ -280,6 +283,8 @@ export default function ProjectMaterialsSimple() {
     // brand는 "브랜드 + 제품명" (예: "LG 디오스 오브제컬렉션 식기세척기")
     const brandStr = `${spec.brand} ${spec.productName}`;
     const modelCodeStr = spec.modelCode || '';
+    // 출처 URL — sources 배열에서 첫 번째 (보통 제조사 공식)
+    const sourceUrlStr = spec.sources?.[0]?.url || '';
     const memoBits = [];
     if (spec.builtIn) memoBits.push('빌트인');
     if (spec.hingeOpenWidthMm) memoBits.push(`문열림 ${spec.hingeOpenWidthMm}mm`);
@@ -299,6 +304,7 @@ export default function ProjectMaterialsSimple() {
         brand: brandStr,
         modelCode: modelCodeStr,
         size: sizeStr,
+        sourceUrl: sourceUrlStr || null,
         memo: memoBits.join(', ') || null,
         orderIndex: nextOrderIndex(spaceGroup),
       });
@@ -315,6 +321,7 @@ export default function ProjectMaterialsSimple() {
           quantityText: '',
           size: sizeStr,
           installed: null,
+          sourceUrl: sourceUrlStr,
           memo: memoBits.join(', '),
           orderIndex: material.orderIndex ?? 0,
           createdAt: material.createdAt,
@@ -334,7 +341,8 @@ export default function ProjectMaterialsSimple() {
   // ←/→: 커서가 input 끝/처음일 때만 같은 행 좌/우 셀로
   // Tab: 네이티브 (행 내 가로 이동)
   const FINISH_COLS = ['itemName', 'brand', 'quantityText', 'memo'];
-  const APPLIANCE_COLS = ['itemName', 'brand', 'modelCode', 'size', 'installed', 'memo'];
+  // 가전: 설치 컬럼 제거됨 (가전은 발주 안 함)
+  const APPLIANCE_COLS = ['itemName', 'brand', 'modelCode', 'size', 'memo'];
   function colsFor(itemId) {
     const it = items.find((x) => x.id === itemId);
     return it?.kind === 'APPLIANCE' ? APPLIANCE_COLS : FINISH_COLS;
@@ -747,15 +755,24 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
             {isAppliance ? '가전·가구' : '마감재'}
           </span>
-          <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
-            {confirmedCount}/{total} 확정
-          </span>
-          {group.undecidedCount > 0 && group.minDaysToDeadline != null && group.minDaysToDeadline <= 7 && (
+          {/* 확정 카운트는 마감재에만 표시 (가전은 발주 안 함) */}
+          {!isAppliance && (
+            <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
+              {confirmedCount}/{total} 확정
+            </span>
+          )}
+          {isAppliance && total > 0 && (
+            <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
+              {total}개
+            </span>
+          )}
+          {!isAppliance && group.undecidedCount > 0 && group.minDaysToDeadline != null && group.minDaysToDeadline <= 7 && (
             <DeadlineWarning days={group.minDaysToDeadline} count={group.undecidedCount} />
           )}
         </div>
         <div className="flex items-center gap-1">
-          {pendingActionable > 0 && (
+          {/* 발주 자동 생성 버튼은 마감재에만 (가전은 발주 안 함) */}
+          {!isAppliance && pendingActionable > 0 && (
             <button
               onClick={onConfirmGroup}
               className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
@@ -791,7 +808,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
 
       <div className="overflow-x-auto">
         {isAppliance ? (
-          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
+          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
         ) : (
           <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
         )}
@@ -849,29 +866,26 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
 }
 
 // ============================================
-// 가전·가구 테이블 (체크박스 + 품목 / 모델명 / 품번 / 사이즈 / 설치 / 비고)
+// 가전·가구 테이블 (품목 / 모델명 / 품번+↗ / 사이즈 / 비고)
+// 가전은 발주 안 함 — 체크박스·설치·잠금 모두 제거
 // ============================================
-function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
+function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
-        <col style={{ width: '32px' }} />{/* 체크박스 */}
-        <col style={{ width: '12%' }} />{/* 품목 */}
-        <col style={{ width: '20%' }} />{/* 모델명 */}
-        <col style={{ width: '14%' }} />{/* 품번 */}
-        <col style={{ width: '125px' }} />{/* 사이즈 */}
-        <col style={{ width: '70px' }} />{/* 설치 */}
+        <col style={{ width: '13%' }} />{/* 품목 */}
+        <col style={{ width: '24%' }} />{/* 모델명 */}
+        <col style={{ width: '18%' }} />{/* 품번 + 링크 */}
+        <col style={{ width: '140px' }} />{/* 사이즈 */}
         <col />{/* 비고 */}
         <col style={{ width: '24px' }} />
       </colgroup>
       <thead className="bg-gray-50 text-xs text-gray-500">
         <tr>
-          <th className="text-center"></th>
           <th className="text-left px-2 py-1.5">품목</th>
           <th className="text-left px-2 py-1.5">모델명</th>
-          <th className="text-left px-2 py-1.5">품번</th>
+          <th className="text-left px-2 py-1.5">품번 / 출처</th>
           <th className="text-left px-2 py-1.5">사이즈 (W×D×H)</th>
-          <th className="text-center px-2 py-1.5">설치</th>
           <th className="text-left px-2 py-1.5">비고 (빌트인/도어방향)</th>
           <th></th>
         </tr>
@@ -885,12 +899,11 @@ function ApplianceTable({ group, savingMap, onItemPatch, onItemRemove, onCellKey
             onChange={(patch) => onItemPatch(it.id, patch)}
             onRemove={() => onItemRemove(it.id)}
             onCellKeyDown={onCellKeyDown}
-            onToggle={() => onToggleConfirmed(it.id)}
           />
         ))}
         {group.items.length === 0 && (
           <tr>
-            <td colSpan={8} className="text-center py-3 text-xs text-gray-400">
+            <td colSpan={6} className="text-center py-3 text-xs text-gray-400">
               아직 항목이 없습니다. [+ 항목]을 눌러 추가하세요.
             </td>
           </tr>
@@ -923,18 +936,16 @@ function ConfirmCheckbox({ item, onToggle }) {
 }
 
 // ============================================
-// 가전·가구 행
+// 가전·가구 행 — 체크박스·설치·잠금 모두 제거 (가전은 발주 안 함)
+// 품번 셀에 출처 URL 링크 (↗ 아이콘) 노출
 // ============================================
-function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) {
-  const locked = !!item.locked;
-  const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 ${locked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`;
+function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
+  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200';
   const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
-  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col), disabled: locked });
+  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col) });
+  const sourceUrl = (item.sourceUrl || '').trim();
   return (
-    <tr className={locked ? 'bg-gray-50/50' : 'hover:bg-gray-50'}>
-      <td className="px-2 py-1.5 text-center">
-        <ConfirmCheckbox item={item} onToggle={onToggle} />
-      </td>
+    <tr className="hover:bg-gray-50">
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('itemName')}
@@ -954,13 +965,27 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
         />
       </td>
       <td className="px-2 py-1.5">
-        <input
-          {...cellAttrs('modelCode')}
-          value={item.modelCode || ''}
-          onChange={(e) => onChange({ modelCode: e.target.value })}
-          className={inputCls + ' font-mono text-xs'}
-          placeholder="예: RF85R9013S8"
-        />
+        <div className="flex items-center gap-1">
+          <input
+            {...cellAttrs('modelCode')}
+            value={item.modelCode || ''}
+            onChange={(e) => onChange({ modelCode: e.target.value })}
+            className={inputCls + ' font-mono text-xs'}
+            placeholder="예: RF85R9013S8"
+          />
+          {sourceUrl ? (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              tabIndex={-1}
+              title={`출처 페이지 열기 (${sourceUrl})`}
+              className="text-violet-500 hover:text-violet-700 text-xs flex-shrink-0 px-1"
+            >
+              ↗
+            </a>
+          ) : null}
+        </div>
       </td>
       <td className="px-2 py-1.5">
         <input
@@ -970,21 +995,6 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
           className={inputCls + ' tabular-nums'}
           placeholder="예: 908 × 930 × 1853"
         />
-      </td>
-      <td className="px-2 py-1.5 text-center">
-        <select
-          {...cellAttrs('installed')}
-          value={item.installed === true ? 'Y' : item.installed === false ? 'N' : ''}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange({ installed: v === 'Y' ? true : v === 'N' ? false : null });
-          }}
-          className={`text-xs px-1 py-1 border-transparent border rounded outline-none focus:border-violet-400 hover:border-gray-200 bg-transparent ${locked ? 'cursor-not-allowed' : ''}`}
-        >
-          <option value="">—</option>
-          <option value="Y">✓ 유</option>
-          <option value="N">✕ 무</option>
-        </select>
       </td>
       <td className="px-2 py-1.5">
         <input
@@ -998,7 +1008,7 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggl
       <td className="px-1 text-right">
         {saving ? (
           <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : locked ? null : (
+        ) : (
           <button
             onClick={onRemove}
             tabIndex={-1}

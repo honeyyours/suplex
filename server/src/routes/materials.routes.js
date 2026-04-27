@@ -13,7 +13,7 @@ const KINDS = ['FINISH', 'APPLIANCE'];
 const TRACKED_FIELDS = [
   'kind', 'spaceGroup', 'subgroup', 'itemName', 'essential', 'formKey',
   'brand', 'productName', 'modelCode', 'spec', 'customSpec', 'siteNotes', 'purchaseSource', 'checked',
-  'installed', 'size', 'remarks',
+  'installed', 'size', 'remarks', 'sourceUrl',
   'status', 'quantity', 'unit', 'unitPrice', 'totalPrice', 'memo',
   'inheritFromMaterialId',
 ];
@@ -239,6 +239,7 @@ const baseSchema = {
   installed: z.boolean().optional().nullable(),
   size: z.string().optional().nullable(),
   remarks: z.string().optional().nullable(),
+  sourceUrl: z.string().optional().nullable(),
   status: z.enum(STATUSES).optional(),
   quantity: z.number().optional().nullable(),
   unit: z.string().optional().nullable(),
@@ -275,6 +276,7 @@ function toCreateData(data) {
     installed: data.installed ?? null,
     size: data.size?.trim() || null,
     remarks: data.remarks?.trim() || null,
+    sourceUrl: data.sourceUrl?.trim() || null,
     status: data.status || 'UNDECIDED',
     quantity: num(data.quantity),
     unit: data.unit?.trim() || null,
