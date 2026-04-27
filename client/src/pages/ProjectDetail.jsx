@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 import EditProjectModal from '../components/EditProjectModal';
 import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectActionsMenu from '../components/ProjectActionsMenu';
@@ -12,6 +13,8 @@ import { simpleQuotesApi } from '../api/simpleQuotes';
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const hideExpenses = !!auth?.company?.hideExpenses;
   const [project, setProject] = useState(null);
   const [err, setErr] = useState('');
   const [editing, setEditing] = useState(false);
@@ -116,7 +119,7 @@ export default function ProjectDetail() {
           <NavLink to="orders" className={tab}>발주</NavLink>
           <NavLink to="checklist" className={tab}>체크리스트</NavLink>
           <NavLink to="reports" className={tab}>현장 보고</NavLink>
-          <NavLink to="expenses" className={tab}>지출</NavLink>
+          {!hideExpenses && <NavLink to="expenses" className={tab}>지출</NavLink>}
           <NavLink to="memo" className={tab}>메모</NavLink>
         </div>
         <div className="p-1 sm:p-5">

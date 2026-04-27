@@ -18,6 +18,12 @@ router.get('/', async (req, res, next) => {
     const companyId = req.user.companyId;
     const projectScope = { project: { companyId } };
 
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { hideExpenses: true },
+    });
+    const hideExpenses = !!company?.hideExpenses;
+
     const [
       scheduleChanges,
       reports,
@@ -39,7 +45,7 @@ router.get('/', async (req, res, next) => {
         orderBy: { createdAt: 'desc' },
         take: limit,
       }),
-      prisma.expense.findMany({
+      hideExpenses ? Promise.resolve([]) : prisma.expense.findMany({
         where: { companyId, createdAt: { gte: since } },
         include: { project: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },

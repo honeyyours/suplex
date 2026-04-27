@@ -8,8 +8,8 @@ const NAV = [
   { to: '/schedule', label: '일정' },
   { to: '/projects', label: '프로젝트' },
   { to: '/orders', label: '발주' },
-  { to: '/expenses', label: '지출관리' },
-  { to: '/ai-bookkeeper', label: 'AI경리' },
+  { to: '/expenses', label: '지출관리', expense: true },
+  { to: '/ai-bookkeeper', label: 'AI경리', expense: true },
   { to: '/team', label: '팀관리' },
   { to: '/settings', label: '설정' },
 ];
@@ -17,6 +17,8 @@ const NAV = [
 export default function Layout() {
   const { auth } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
+  const hideExpenses = !!auth?.company?.hideExpenses;
+  const navItems = NAV.filter((n) => !(hideExpenses && n.expense));
 
   // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function Layout() {
           <div className="flex items-center gap-6">
             <Link to="/" className="text-xl font-bold tracking-tight">SUPLEX</Link>
             <nav className="hidden sm:flex gap-1">
-              {NAV.map((n) => (
+              {navItems.map((n) => (
                 <NavLink key={n.to} to={n.to} end={n.exact} className={navClass}>
                   {n.label}
                 </NavLink>
@@ -58,7 +60,7 @@ export default function Layout() {
           </div>
         </div>
         <nav className="sm:hidden flex gap-1 px-4 pb-2 overflow-x-auto">
-          {NAV.map((n) => (
+          {navItems.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}

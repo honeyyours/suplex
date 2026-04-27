@@ -40,6 +40,9 @@ model Company {
   rateDesign           Decimal @default(2) @db.Decimal(5, 2) // (18) 디자인비 (14)*X%
   rateVat              Decimal @default(10) @db.Decimal(5, 2) // 부가가치세
 
+  // 회사 단위 기능 토글
+  hideExpenses Boolean @default(false) // true면 지출관리 진입점 모두 숨김 (네비/탭/AI비서 도구/홈 피드)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

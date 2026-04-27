@@ -32,6 +32,7 @@ const updateSchema = z.object({
   bizNumber: z.string().optional().nullable(),
   representative: z.string().optional().nullable(),
   logoUrl: z.string().optional().nullable(),
+  hideExpenses: z.boolean().optional(),
   ...Object.fromEntries(RATE_KEYS.map((k) => [k, rateField.optional()])),
 });
 
@@ -47,6 +48,7 @@ router.patch('/', requireRole('OWNER'), async (req, res, next) => {
     if (data.bizNumber !== undefined) updateData.bizNumber = data.bizNumber?.trim() || null;
     if (data.representative !== undefined) updateData.representative = data.representative?.trim() || null;
     if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl?.trim() || null;
+    if (data.hideExpenses !== undefined) updateData.hideExpenses = data.hideExpenses;
     for (const k of RATE_KEYS) if (data[k] !== undefined) updateData[k] = data[k];
 
     const company = await prisma.company.update({

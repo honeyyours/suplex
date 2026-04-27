@@ -6,6 +6,20 @@ const { authRequired } = require('../middlewares/auth');
 const router = express.Router();
 router.use(authRequired);
 
+// 회사 설정으로 지출관리 비활성화된 경우 차단
+router.use(async (req, res, next) => {
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user.companyId },
+      select: { hideExpenses: true },
+    });
+    if (company?.hideExpenses) {
+      return res.status(403).json({ error: '지출관리 기능이 비활성화되어 있습니다', hideExpenses: true });
+    }
+    next();
+  } catch (e) { next(e); }
+});
+
 // GET /api/account-codes
 router.get('/', async (req, res, next) => {
   try {

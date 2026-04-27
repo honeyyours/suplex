@@ -50,7 +50,7 @@ router.post('/signup', async (req, res, next) => {
     res.status(201).json({
       token,
       user: { id: result.user.id, email: result.user.email, name: result.user.name },
-      company: { id: result.company.id, name: result.company.name },
+      company: { id: result.company.id, name: result.company.name, hideExpenses: result.company.hideExpenses },
       role: 'OWNER',
     });
   } catch (e) {
@@ -90,7 +90,7 @@ router.post('/login', async (req, res, next) => {
     res.json({
       token,
       user: { id: user.id, email: user.email, name: user.name },
-      company: { id: membership.company.id, name: membership.company.name },
+      company: { id: membership.company.id, name: membership.company.name, hideExpenses: membership.company.hideExpenses },
       role: membership.role,
     });
   } catch (e) {

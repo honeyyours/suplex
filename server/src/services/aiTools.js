@@ -677,15 +677,33 @@ const TOOLS = {
   get_pnl_summary,
 };
 
-function getToolSchemas() {
-  return Object.values(TOOLS).map((t) => t.schema);
+// 지출관리 토글 ON일 때 차단되는 도구 (지출/계정/PnL 모두)
+const EXPENSE_TOOLS = new Set([
+  'list_expenses', 'sum_expenses', 'list_account_codes', 'get_pnl_summary',
+]);
+
+function getToolSchemas(opts = {}) {
+  return Object.values(TOOLS)
+    .filter((t) => !(opts.hideExpenses && EXPENSE_TOOLS.has(t.schema.name)))
+    .map((t) => t.schema);
 }
 
 async function executeTool(name, args, ctx) {
+  if (ctx?.hideExpenses && EXPENSE_TOOLS.has(name)) {
+    return { error: '지출관리 기능이 비활성화되어 있어 이 도구는 사용할 수 없습니다' };
+  }
   const tool = TOOLS[name];
   if (!tool) return { error: `Unknown tool: ${name}` };
   try {
-    return await tool.run(ctx, args || {});
+    // get_project_summary는 지출 정보 포함 → hideExpenses 시 지출 필드 마스킹
+    const result = await tool.run(ctx, args || {});
+    if (ctx?.hideExpenses && name === 'get_project_summary' && result && !result.error) {
+      delete result.totalExpense;
+      delete result.profit;
+      delete result.margin;
+      delete result.expenseCount;
+    }
+    return result;
   } catch (e) {
     console.error(`[aiTools] ${name} error:`, e);
     return { error: e.message || 'Internal error' };

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ExpensesGate from './components/ExpensesGate';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -41,9 +42,9 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
-        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/expenses" element={<ExpensesGate><Expenses /></ExpensesGate>} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/ai-bookkeeper" element={<AIBookkeeper />} />
+        <Route path="/ai-bookkeeper" element={<ExpensesGate><AIBookkeeper /></ExpensesGate>} />
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/settings" element={<Settings />} />
 
@@ -61,7 +62,7 @@ export default function App() {
           <Route path="memo" element={<ProjectMemo />} />
           <Route path="checklist" element={<ProjectChecklist />} />
           <Route path="reports" element={<ProjectReports />} />
-          <Route path="expenses" element={<ProjectExpenses />} />
+          <Route path="expenses" element={<ExpensesGate redirectTo="schedule"><ProjectExpenses /></ExpensesGate>} />
         </Route>
       </Route>
 

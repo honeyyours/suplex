@@ -1,6 +1,7 @@
 // AI경리 채팅 — Claude API + Tool Use (manual agentic loop)
 const express = require('express');
 const { z } = require('zod');
+const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired } = require('../middlewares/auth');
 const { getToolSchemas, executeTool } = require('../services/aiTools');
@@ -55,8 +56,14 @@ router.post('/chat', async (req, res, next) => {
       });
     }
 
-    const ctx = { companyId: req.user.companyId, userId: req.user.id };
-    const tools = getToolSchemas();
+    const company = await prisma.company.findUnique({
+      where: { id: req.user.companyId },
+      select: { hideExpenses: true },
+    });
+    const hideExpenses = !!company?.hideExpenses;
+
+    const ctx = { companyId: req.user.companyId, userId: req.user.id, hideExpenses };
+    const tools = getToolSchemas({ hideExpenses });
 
     // 시스템에 오늘 날짜 동적 주입 (시간 변환 도움)
     const todayKR = new Date().toLocaleDateString('ko-KR', {
