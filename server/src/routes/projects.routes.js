@@ -6,10 +6,174 @@ const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 const { invalidateCache: invalidatePhaseCache } = require('../services/phaseDetect');
+const { STANDARD_PHASES, normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 
 router.use(authRequired);
+
+// ============================================
+// GET /api/projects/:id/process-overview
+// 25개 표준 공정(척추) × 4축(견적·마감재·일정·발주) 통합 뷰
+// 메모리 핵심결정 "공정=척추" 시각적 구현체. 베타 7-A.
+// ============================================
+router.get('/:id/process-overview', async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, companyId: req.user.companyId },
+    });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    // 견적 (ACCEPTED 우선, 없으면 가장 최근 updatedAt)
+    const quotes = await prisma.simpleQuote.findMany({
+      where: { projectId },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    const primaryQuote =
+      quotes.find((q) => q.status === 'ACCEPTED') || quotes[0] || null;
+
+    // 마감재 (FINISH만 — APPLIANCE는 spaceGroup이 공간명이라 phase 매칭 X)
+    const materials = await prisma.material.findMany({
+      where: { projectId, kind: 'FINISH' },
+      select: { id: true, spaceGroup: true, status: true, locked: true },
+    });
+
+    // 일정
+    const scheduleEntries = await prisma.dailyScheduleEntry.findMany({
+      where: { projectId },
+      select: { id: true, content: true, category: true, date: true },
+      orderBy: { date: 'asc' },
+    });
+
+    // 발주
+    const purchaseOrders = await prisma.purchaseOrder.findMany({
+      where: { projectId },
+      select: {
+        id: true, status: true, materialChangedAt: true,
+        material: { select: { spaceGroup: true } },
+      },
+    });
+
+    // phase별 집계 — Map<phase, {quote, material, schedule, order}>
+    const map = new Map();
+    function ensure(phase) {
+      if (!map.has(phase)) {
+        map.set(phase, {
+          phase,
+          quote:    { lineCount: 0, total: 0 },
+          material: { total: 0, confirmed: 0, undecided: 0 },
+          schedule: { firstDate: null, lastDate: null, count: 0 },
+          order:    { pending: 0, ordered: 0, received: 0, cancelled: 0, changedFlag: 0 },
+        });
+      }
+      return map.get(phase);
+    }
+
+    // 견적 라인 집계 — sendToMaterials와 동일 패턴 (normalizePhase)
+    if (primaryQuote) {
+      // isGroup=true 헤더 안 라인은 헤더 itemName 기준
+      // isGroup=false 외부 라인은 라인 itemName 자체 기준
+      let currentHeader = null;
+      for (const l of primaryQuote.lines) {
+        if (l.isGroup && l.isGroupEnd) { currentHeader = null; continue; }
+        if (l.isGroup) {
+          currentHeader = l.itemName ? normalizePhase(l.itemName).label : null;
+          continue;
+        }
+        const phase = currentHeader || (l.itemName ? normalizePhase(l.itemName).label : null);
+        if (!phase) continue;
+        const e = ensure(phase);
+        e.quote.lineCount++;
+        e.quote.total += Number(l.amount) || 0;
+      }
+    }
+
+    // 마감재 집계
+    for (const m of materials) {
+      if (!m.spaceGroup) continue;
+      const phase = normalizePhase(m.spaceGroup).label;
+      const e = ensure(phase);
+      e.material.total++;
+      if (['CONFIRMED', 'CHANGED', 'REUSED'].includes(m.status) || m.locked) {
+        e.material.confirmed++;
+      } else if (m.status === 'UNDECIDED' || m.status === 'REVIEWING') {
+        e.material.undecided++;
+      }
+    }
+
+    // 일정 집계 (category 기준 — 자유 텍스트면 normalizePhase로)
+    for (const s of scheduleEntries) {
+      if (!s.category) continue;
+      const phase = normalizePhase(s.category).label;
+      if (phase === '기타') continue; // 사용자 정책: 일정에서 '기타'는 공종으로 표시 X
+      const e = ensure(phase);
+      e.schedule.count++;
+      const d = s.date ? new Date(s.date) : null;
+      if (d) {
+        if (!e.schedule.firstDate || d < new Date(e.schedule.firstDate)) e.schedule.firstDate = d.toISOString().slice(0, 10);
+        if (!e.schedule.lastDate || d > new Date(e.schedule.lastDate)) e.schedule.lastDate = d.toISOString().slice(0, 10);
+      }
+    }
+
+    // 발주 집계
+    for (const po of purchaseOrders) {
+      const sg = po.material?.spaceGroup;
+      if (!sg) continue;
+      const phase = normalizePhase(sg).label;
+      const e = ensure(phase);
+      const k = (po.status || '').toLowerCase();
+      if (k === 'pending') e.order.pending++;
+      else if (k === 'ordered') e.order.ordered++;
+      else if (k === 'received') e.order.received++;
+      else if (k === 'cancelled') e.order.cancelled++;
+      if (po.materialChangedAt) e.order.changedFlag++;
+    }
+
+    // 25개 표준 + 추가로 등장한 비표준(=기타) 정렬
+    const standardOrder = new Map(STANDARD_PHASES.map((p) => [p.label, p.order]));
+    const phases = Array.from(map.values()).map((row) => {
+      // 리스크 배지 자동 계산
+      const risks = [];
+      const today = new Date();
+      const firstDate = row.schedule.firstDate ? new Date(row.schedule.firstDate) : null;
+      if (firstDate) {
+        const days = Math.floor((firstDate - today) / (24 * 60 * 60 * 1000));
+        if (days >= 0 && days <= 3 && row.material.undecided > 0) {
+          risks.push({ level: 'critical', text: `🚨 D-${days} 마감재 미확정 ${row.material.undecided}건` });
+        } else if (days < 0 && row.material.undecided > 0) {
+          risks.push({ level: 'critical', text: `🚨 일정 시작됨 / 마감재 미확정 ${row.material.undecided}건` });
+        }
+      }
+      if (row.quote.lineCount > 0 && row.material.total === 0) {
+        risks.push({ level: 'warning', text: `⚠️ 견적 ${row.quote.lineCount}라인 / 마감재 0개 (매칭 누락)` });
+      }
+      if (row.order.pending > 0) {
+        risks.push({ level: 'info', text: `🟡 발주 대기 ${row.order.pending}건` });
+      }
+      if (row.order.changedFlag > 0) {
+        risks.push({ level: 'warning', text: `⚠️ 발주 후 마감재 변경 ${row.order.changedFlag}건` });
+      }
+      return { ...row, risks, order_index: standardOrder.get(row.phase) ?? 999 };
+    });
+    phases.sort((a, b) => a.order_index - b.order_index);
+
+    res.json({
+      project: {
+        id: project.id, name: project.name,
+        startDate: project.startDate, expectedEndDate: project.expectedEndDate,
+        contractAmount: project.contractAmount, status: project.status,
+      },
+      quote: primaryQuote ? {
+        id: primaryQuote.id, title: primaryQuote.title, status: primaryQuote.status,
+      } : null,
+      phases,
+      // 표시 토글용 — 표준 25개 전체
+      standardPhases: STANDARD_PHASES.map((p) => ({ key: p.key, label: p.label, order: p.order })),
+    });
+  } catch (e) { next(e); }
+});
 
 // GET /api/projects
 router.get('/', async (req, res, next) => {
