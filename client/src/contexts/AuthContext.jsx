@@ -51,6 +51,12 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function acceptInvite(payload) {
+    const { data } = await api.post('/invitations/accept', payload);
+    setAuth(data);
+    return data;
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -71,7 +77,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, login, signup, logout, updateMe, patchCompany }}>
+    <AuthContext.Provider value={{ auth, login, signup, acceptInvite, logout, updateMe, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );

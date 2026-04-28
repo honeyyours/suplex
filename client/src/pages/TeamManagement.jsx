@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
+import { invitationsApi } from '../api/invitations';
 import { vendorsApi } from '../api/vendors';
 
 export default function TeamManagement() {
@@ -52,6 +53,7 @@ function MembersSection({ isOwner, currentUserId }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [editing, setEditing] = useState(null);
   const [resetting, setResetting] = useState(null);
 
@@ -81,20 +83,28 @@ function MembersSection({ isOwner, currentUserId }) {
 
   return (
     <div className="bg-white rounded-xl border">
-      <div className="px-5 py-4 border-b flex items-center justify-between">
+      <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap">
         <div>
           <div className="font-semibold text-navy-800">팀원 목록</div>
           <div className="text-xs text-gray-500 mt-0.5">
-            대표가 직접 계정을 만들어 임시 비밀번호를 카톡으로 공유합니다. 첫 로그인 후 본인이 비번 변경 가능.
+            <b>초대 링크</b>: 본인이 비번 설정 (권장) · <b>직접 생성</b>: 임시비번 카톡 공유
           </div>
         </div>
         {isOwner && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-sm px-4 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
-          >
-            + 팀원 추가
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowInvite(true)}
+              className="text-sm px-4 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
+            >
+              ✉️ 초대 링크 발송
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="text-sm px-4 py-2 border border-navy-700 text-navy-700 rounded hover:bg-navy-50"
+            >
+              + 직접 생성
+            </button>
+          </div>
         )}
       </div>
 
@@ -163,7 +173,10 @@ function MembersSection({ isOwner, currentUserId }) {
         </table>
       </div>
 
+      {isOwner && <InvitationsPanel />}
+
       {showAdd && <AddMemberModal onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />}
+      {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
       {editing && (
         <EditMemberModal
           member={editing}
@@ -427,6 +440,293 @@ function ResetPasswordModal({ member, onClose, onSaved }) {
         </button>
       </div>
     </Modal>
+  );
+}
+
+// ============================================================
+// 초대 발송 모달 + 발송 이력 패널
+// ============================================================
+function InviteModal({ onClose }) {
+  const [form, setForm] = useState({ email: '', role: 'DESIGNER' });
+  const [busy, setBusy] = useState(false);
+  const [issued, setIssued] = useState(null); // { inviteUrl, email, role, expiresAt }
+  const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  async function submit() {
+    if (!form.email.trim()) {
+      setErr('이메일을 입력해주세요');
+      return;
+    }
+    setErr('');
+    setBusy(true);
+    try {
+      const { invitation } = await invitationsApi.create({
+        email: form.email.trim(),
+        role: form.role,
+      });
+      setIssued({ ...invitation });
+    } catch (e) {
+      setErr(e.response?.data?.error || '발송 실패');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!issued?.inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(issued.inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      // 폴백: textarea select
+      const ta = document.getElementById('invite-link-ta');
+      if (ta) { ta.select(); document.execCommand('copy'); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    }
+  }
+
+  if (issued) {
+    const expDate = new Date(issued.expiresAt).toLocaleDateString('ko-KR');
+    return (
+      <Modal title="초대 링크 발송 완료" onClose={onClose}>
+        <div className="space-y-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded p-3 text-sm text-emerald-800">
+            <b>{issued.email}</b>님에게 보낼 초대 링크가 생성되었습니다.
+            <br />
+            아래 링크를 복사해서 <b>카톡·문자·이메일</b>로 본인에게 전달해주세요.
+          </div>
+
+          <div>
+            <div className="text-xs text-gray-600 mb-1">초대 링크 ({expDate}까지 유효)</div>
+            <div className="flex gap-2">
+              <textarea
+                id="invite-link-ta"
+                value={issued.inviteUrl}
+                readOnly
+                onClick={(e) => e.target.select()}
+                rows={2}
+                className="flex-1 px-3 py-2 border rounded text-xs font-mono bg-gray-50 break-all"
+              />
+              <button
+                onClick={copyLink}
+                className={`px-3 py-2 text-sm rounded whitespace-nowrap ${
+                  copied ? 'bg-emerald-600 text-white' : 'bg-navy-700 text-white hover:bg-navy-800'
+                }`}
+              >
+                {copied ? '✓ 복사됨' : '📋 복사'}
+              </button>
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-500 leading-relaxed">
+            본인이 링크 클릭 → 비밀번호 설정 → 자동으로 회사에 합류합니다.
+            <br />
+            7일이 지나면 자동 만료되며, 한 번 사용하면 재사용 불가합니다.
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5">
+          <button
+            onClick={() => { setIssued(null); setForm({ email: '', role: 'DESIGNER' }); }}
+            className="px-4 py-2 text-sm border rounded"
+          >
+            다른 사람도 초대
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800"
+          >
+            완료
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal title="✉️ 초대 링크 발송" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="이메일 *">
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="designer@company.com"
+            className="w-full px-3 py-2 border rounded text-sm"
+            autoFocus
+          />
+        </Field>
+        <Field label="역할 *">
+          <select
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value })}
+            className="w-full px-3 py-2 border rounded text-sm"
+          >
+            <option value="DESIGNER">{ROLE_META.DESIGNER.label}</option>
+            <option value="FIELD">{ROLE_META.FIELD.label}</option>
+          </select>
+          <div className="text-xs text-gray-500 mt-1">
+            대표(OWNER) 권한 부여는 가입 후 "수정"에서 직접 승격해주세요.
+          </div>
+        </Field>
+        {err && <p className="text-sm text-rose-600">{err}</p>}
+        <div className="text-xs text-gray-500 bg-gray-50 border rounded p-2 leading-relaxed">
+          링크가 생성되면 클립보드로 복사해서 본인에게 카톡으로 보내주세요. (메일 자동 발송은 정식 출시 시 추가)
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 mt-5">
+        <button onClick={onClose} className="px-4 py-2 text-sm border rounded">취소</button>
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="px-4 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+        >
+          {busy ? '발송중...' : '초대 링크 생성'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function InvitationsPanel() {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { invitations } = await invitationsApi.list();
+      setList(invitations);
+    } catch (e) {
+      // 베타 단계 — 라우트 없으면 무시
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { if (open) load(); }, [open]);
+
+  async function copyLink(inv) {
+    if (!inv.inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inv.inviteUrl);
+      setCopiedId(inv.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (e) { /* noop */ }
+  }
+
+  async function cancel(inv) {
+    if (!confirm(`${inv.email}에게 보낸 초대를 취소할까요?`)) return;
+    try {
+      await invitationsApi.remove(inv.id);
+      load();
+    } catch (e) {
+      alert('취소 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  const pending = list.filter((i) => !i.acceptedAt && !i.expired);
+  const expired = list.filter((i) => !i.acceptedAt && i.expired);
+  const accepted = list.filter((i) => i.acceptedAt);
+
+  return (
+    <div className="border-t bg-gray-50">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center justify-between"
+      >
+        <span>📨 초대 발송 이력 {list.length > 0 && <span className="text-gray-500">({list.length})</span>}</span>
+        <span className="text-gray-400">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 space-y-3">
+          {loading ? (
+            <div className="text-sm text-gray-400 py-4">로딩...</div>
+          ) : list.length === 0 ? (
+            <div className="text-sm text-gray-400 py-4">발송 이력이 없습니다</div>
+          ) : (
+            <>
+              {pending.length > 0 && (
+                <Section title={`대기 중 (${pending.length})`}>
+                  {pending.map((inv) => (
+                    <InvRow key={inv.id} inv={inv} status="pending" copiedId={copiedId} onCopy={copyLink} onCancel={cancel} />
+                  ))}
+                </Section>
+              )}
+              {expired.length > 0 && (
+                <Section title={`만료됨 (${expired.length})`}>
+                  {expired.map((inv) => (
+                    <InvRow key={inv.id} inv={inv} status="expired" onCancel={cancel} />
+                  ))}
+                </Section>
+              )}
+              {accepted.length > 0 && (
+                <Section title={`수락됨 (${accepted.length})`}>
+                  {accepted.map((inv) => (
+                    <InvRow key={inv.id} inv={inv} status="accepted" />
+                  ))}
+                </Section>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-gray-500 mb-1">{title}</div>
+      <div className="bg-white border rounded divide-y">{children}</div>
+    </div>
+  );
+}
+
+function InvRow({ inv, status, copiedId, onCopy, onCancel }) {
+  const meta = ROLE_META[inv.role] || { label: inv.role, color: 'bg-gray-100 text-gray-700 border-gray-200' };
+  return (
+    <div className="px-3 py-2 flex items-center gap-3 text-sm">
+      <span className="flex-1 truncate">
+        <span className="font-medium">{inv.email}</span>
+        <span className={`ml-2 inline-block px-1.5 py-0.5 text-xs rounded border ${meta.color}`}>{meta.label}</span>
+      </span>
+      <span className="text-xs text-gray-400 whitespace-nowrap">
+        {status === 'accepted'
+          ? `${new Date(inv.acceptedAt).toLocaleDateString('ko-KR')} 수락`
+          : `${new Date(inv.expiresAt).toLocaleDateString('ko-KR')}${status === 'expired' ? ' 만료' : ' 만료 예정'}`}
+      </span>
+      {status === 'pending' && (
+        <>
+          <button
+            onClick={() => onCopy(inv)}
+            className={`text-xs px-2 py-1 rounded ${
+              copiedId === inv.id ? 'bg-emerald-600 text-white' : 'border hover:bg-gray-50'
+            }`}
+          >
+            {copiedId === inv.id ? '✓ 복사됨' : '📋 링크 복사'}
+          </button>
+          <button
+            onClick={() => onCancel(inv)}
+            className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
+          >
+            취소
+          </button>
+        </>
+      )}
+      {status === 'expired' && (
+        <button
+          onClick={() => onCancel(inv)}
+          className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+        >
+          삭제
+        </button>
+      )}
+    </div>
   );
 }
 

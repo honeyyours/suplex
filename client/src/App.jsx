@@ -5,6 +5,7 @@ import ExpensesGate from './components/ExpensesGate';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import InviteAccept from './pages/InviteAccept';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import TeamManagement from './pages/TeamManagement';
@@ -32,6 +33,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/invite/:token" element={<InviteAccept />} />
 
       <Route
         element={
