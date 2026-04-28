@@ -11,6 +11,7 @@ const env = require('../config/env');
 const { authRequired, requireSuperAdmin } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { normalizePhase } = require('../services/phases');
+const { seedDemoProject } = require('../services/seedDemoProject');
 
 const router = express.Router();
 router.use(authRequired);
@@ -427,6 +428,41 @@ router.post('/companies/:id/impersonate', async (req, res, next) => {
       impersonating: true,
       impersonatedCompanyName: company.name,
     });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// POST /api/admin/companies/:id/seed-demo-project — 시연용 데모 프로젝트 생성
+// 같은 회사에 기존 데모(siteCode=DEMO_PROJECT)가 있으면 삭제 후 재생성 (idempotent).
+// 풍성한 4축(견적·마감재·일정·발주) 데이터로 공정 현황·공정 상세 시연 가능.
+// ============================================
+router.post('/companies/:id/seed-demo-project', async (req, res, next) => {
+  try {
+    const companyId = req.params.id;
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
+    });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+    const owner = company.memberships[0];
+    if (!owner) return res.status(400).json({ error: '회사에 OWNER가 없습니다 — 데모 프로젝트의 createdBy로 사용할 사용자가 필요합니다' });
+
+    const result = await seedDemoProject(prisma, {
+      companyId,
+      ownerUserId: owner.userId,
+    });
+
+    audit(req, 'admin.seed-demo-project', {
+      targetType: 'COMPANY',
+      targetId: companyId,
+      metadata: {
+        companyName: company.name,
+        projectId: result.projectId,
+        counts: result.counts,
+      },
+    });
+
+    res.json({ ok: true, ...result });
   } catch (e) { next(e); }
 });
 

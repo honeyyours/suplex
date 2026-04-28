@@ -128,6 +128,30 @@ function CompaniesTab() {
     }
   }
 
+  async function handleSeedDemo(c) {
+    if (!confirm(
+      `🌱 "${c.name}"에 시연용 데모 프로젝트를 생성합니다.\n\n` +
+      `· "데모 - 강남구 32평 아파트 리모델링" 1개\n` +
+      `· 견적 + 마감재 + 일정 + 발주 + 체크리스트 + 메모 풍부 데이터\n` +
+      `· 공정 현황 표·공정 상세 드로어 시연 가능\n` +
+      `· 같은 회사의 기존 데모(siteCode=DEMO_PROJECT)는 삭제 후 재생성\n\n` +
+      `계속하시겠습니까?`
+    )) return;
+    try {
+      const r = await adminApi.seedDemoProject(c.id);
+      const ct = r.counts || {};
+      alert(
+        `✅ 데모 프로젝트 생성 완료\n\n` +
+        `견적 라인 ${ct.quoteLines}개 · 마감재 ${ct.materials}개\n` +
+        `일정 ${ct.schedules}개 · 발주 ${ct.purchaseOrders}개\n` +
+        `체크리스트 ${ct.checklists}개 · 메모 ${ct.memos}개`
+      );
+      load();
+    } catch (e) {
+      alert('데모 생성 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   async function handleCleanupInvitations() {
     if (!confirm('만료된 초대 링크를 모두 삭제할까요?')) return;
     try {
@@ -237,6 +261,11 @@ function CompaniesTab() {
                     title="OWNER 변경"
                     className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
                   >👑 OWNER</button>
+                  <button
+                    onClick={() => handleSeedDemo(c)}
+                    title="시연용 데모 프로젝트 생성 (기존 데모는 삭제 후 재생성)"
+                    className="text-xs px-2 py-1 border rounded hover:bg-emerald-50 text-emerald-700 border-emerald-300"
+                  >🌱 데모</button>
                   <button
                     onClick={() => downloadBackup(c)}
                     title="회사 데이터 백업 (JSON)"

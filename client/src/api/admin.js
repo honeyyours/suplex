@@ -18,5 +18,7 @@ export const adminApi = {
   listAuditLogs: (params = {}) => api.get('/admin/audit-logs', { params }).then((r) => r.data),
   normalizePhases: (dryRun = false) =>
     api.post('/admin/normalize-phases', { dryRun }).then((r) => r.data),
+  seedDemoProject: (companyId) =>
+    api.post(`/admin/companies/${companyId}/seed-demo-project`).then((r) => r.data),
 };
 
