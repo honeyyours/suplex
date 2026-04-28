@@ -1,4 +1,4 @@
-// AI경리용 read-only 쿼리 도구 모음
+// AI비서용 read-only 쿼리 도구 모음
 // Claude한테 JSON Schema로 노출하고, 실행은 회사ID로 강제 필터링.
 const prisma = require('../config/prisma');
 

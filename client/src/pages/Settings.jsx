@@ -234,7 +234,7 @@ function FeatureTogglesSection({ company, onSaved, canEdit }) {
         <div className="min-w-0">
           <div className="text-sm font-medium text-gray-800">지출관리 기능 숨김</div>
           <div className="text-xs text-gray-500 mt-1 leading-relaxed">
-            ON이면 상위 네비의 <b>지출관리·AI경리</b>, 프로젝트의 <b>지출 탭</b>, 홈의 <b>지출 활동</b>이 모두 숨겨집니다.
+            ON이면 상위 네비의 <b>지출관리·AI비서</b>, 프로젝트의 <b>지출 탭</b>, 홈의 <b>지출 활동</b>이 모두 숨겨집니다.
             데이터는 그대로 보존되며, 토글을 OFF하면 즉시 복구됩니다.
             {' '}직원에게 계정을 공유할 때 회계 데이터를 가리는 용도로 사용하세요.
           </div>

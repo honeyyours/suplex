@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { aiBookkeeperApi } from '../api/aiBookkeeper';
+import { aiAssistantApi } from '../api/aiAssistant';
 
 const TOOL_LABELS = {
   search_projects:      '🔍 프로젝트 검색',
@@ -21,7 +21,7 @@ const SUGGESTED = [
   '최근 발주예정 중 대기중인 항목 정리해줘',
 ];
 
-export default function AIBookkeeper() {
+export default function AIAssistant() {
   const [messages, setMessages] = useState([]); // [{role, content, toolCalls?}]
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,7 +47,7 @@ export default function AIBookkeeper() {
     try {
       // 백엔드에는 role/content만 전달 (toolCalls는 클라 표시용)
       const payload = next.map(({ role, content }) => ({ role, content }));
-      const data = await aiBookkeeperApi.chat(payload);
+      const data = await aiAssistantApi.chat(payload);
       setMessages((prev) => [
         ...prev,
         {
@@ -89,8 +89,8 @@ export default function AIBookkeeper() {
       {/* 헤더 */}
       <header className="px-5 py-3 border-b bg-navy-800 text-white flex items-center justify-between">
         <div>
-          <div className="font-bold">🤖 AI 경리</div>
-          <div className="text-xs text-navy-100">스플렉스 데이터 기반 회계·운영 질문 어시스턴트</div>
+          <div className="font-bold">🤖 AI 비서</div>
+          <div className="text-xs text-navy-100">슈플렉스 데이터 기반 운영 질문 어시스턴트</div>
         </div>
         <button
           onClick={reset}
@@ -108,7 +108,7 @@ export default function AIBookkeeper() {
             <div className="text-5xl mb-3">💬</div>
             <div className="text-navy-800 font-medium mb-1">무엇을 도와드릴까요?</div>
             <div className="text-xs text-gray-500 mb-6">
-              스플렉스에 저장된 프로젝트·지출·마감재·견적 데이터를 검색해서 답해드려요.
+              슈플렉스에 저장된 프로젝트·지출·마감재·발주·견적·일정 데이터를 검색해서 답해드려요.
             </div>
             <div className="space-y-2 max-w-md mx-auto">
               {SUGGESTED.map((q) => (

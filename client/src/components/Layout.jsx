@@ -9,7 +9,7 @@ const NAV = [
   { to: '/projects', label: '프로젝트' },
   { to: '/orders', label: '발주' },
   { to: '/expenses', label: '지출관리', expense: true },
-  { to: '/ai-bookkeeper', label: 'AI경리', expense: true },
+  { to: '/ai-assistant', label: 'AI비서', expense: true },
   { to: '/team', label: '팀관리' },
   { to: '/settings', label: '설정' },
 ];

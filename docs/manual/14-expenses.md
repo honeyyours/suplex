@@ -76,4 +76,4 @@
 
 ---
 
-[← 챕터 12](13-schedule.md) · [다음: 챕터 14 — AI 경리 →](15-ai-bookkeeper.md)
+[← 챕터 12](13-schedule.md) · [다음: 챕터 14 — AI 비서 →](15-ai-assistant.md)
