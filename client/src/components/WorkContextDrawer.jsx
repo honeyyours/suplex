@@ -171,7 +171,7 @@ export default function WorkContextDrawer({ projectId, phase, open, onClose }) {
                 <div key={s.id} className="text-xs border rounded p-2 hover:bg-gray-50 flex items-baseline gap-2">
                   <span className="text-navy-700 font-semibold tabular-nums whitespace-nowrap">{fmtDate(s.date)}</span>
                   <span className="flex-1 text-gray-700 truncate">{s.content}</span>
-                  {s.isFixed && <span className="text-[10px] px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">픽스</span>}
+                  {s.confirmed && <span className="text-[10px] px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">✓ 확정</span>}
                 </div>
               ))}
             </Section>

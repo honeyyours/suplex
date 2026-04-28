@@ -236,7 +236,7 @@ router.get('/:id/phase-detail', async (req, res, next) => {
     const allEntries = await prisma.dailyScheduleEntry.findMany({
       where: { projectId },
       orderBy: { date: 'asc' },
-      select: { id: true, content: true, category: true, date: true, isFixed: true },
+      select: { id: true, content: true, category: true, date: true, confirmed: true },
     });
     const scheduleEntries = allEntries.filter((s) => {
       if (!s.category) return false;
