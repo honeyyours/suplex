@@ -1146,13 +1146,27 @@ function PhaseAdvicesSection() {
     } catch (e) { alert('저장 실패: ' + (e.response?.data?.error || e.message)); }
   }
   async function toggleActive(a) {
-    await phaseAdvicesApi.update(a.id, { active: !a.active });
-    reload();
+    // optimistic — 즉시 UI 반영, 실패 시 롤백 (전체 reload 안 함)
+    const next = !a.active;
+    setAdvices((prev) => prev.map((x) => x.id === a.id ? { ...x, active: next } : x));
+    try {
+      await phaseAdvicesApi.update(a.id, { active: next });
+    } catch (e) {
+      setAdvices((prev) => prev.map((x) => x.id === a.id ? { ...x, active: a.active } : x));
+      alert('변경 실패: ' + (e.response?.data?.error || e.message));
+    }
   }
   async function remove(id) {
     if (!confirm('이 어드바이스를 삭제할까요?')) return;
-    await phaseAdvicesApi.remove(id);
-    reload();
+    // optimistic — 즉시 제거
+    const snapshot = advices;
+    setAdvices((prev) => prev.filter((x) => x.id !== id));
+    try {
+      await phaseAdvicesApi.remove(id);
+    } catch (e) {
+      setAdvices(snapshot);
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
   }
   async function seed() {
     if (!confirm('인테리어 표준 어드바이스 16개를 회사 룰로 추가합니다 (중복 스킵). 계속할까요?')) return;
