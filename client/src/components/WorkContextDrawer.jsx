@@ -1,4 +1,4 @@
-// 공정 컨텍스트 드로어 — 한 공정의 4축(견적·마감재·일정·발주) 통합
+// 공정 상세 드로어 — 한 공정의 4축(견적·마감재·일정·발주) 통합
 // 메모리 핵심결정 "공정=척추" 시각적 구현체. 공정 현황 페이지 행 클릭 시 펼침.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { projectsApi } from '../api/projects';
@@ -88,7 +88,7 @@ export default function WorkContextDrawer({ projectId, phase, open, onClose }) {
     <aside ref={drawerRef} className="fixed top-0 right-0 bottom-0 w-full sm:w-[520px] bg-white shadow-2xl z-50 flex flex-col border-l">
       <header className="px-4 py-3 border-b bg-navy-800 text-white flex items-center justify-between">
         <div>
-          <div className="text-xs text-navy-100">🦴 공정 컨텍스트</div>
+          <div className="text-xs text-navy-100">공정 상세</div>
           <div className="text-lg font-bold">{displayPhase(phase)}</div>
         </div>
         <button onClick={onClose} className="text-navy-100 hover:text-white text-xl px-2">×</button>

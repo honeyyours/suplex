@@ -66,7 +66,7 @@ export default function ProjectProcessOverview() {
     <div className="space-y-4">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-lg font-bold text-navy-800">🦴 공정 현황</h2>
+          <h2 className="text-lg font-bold text-navy-800">공정 현황</h2>
           <div className="text-xs text-gray-500 mt-1">
             25개 표준 공정 척추 기준으로 견적·마감재·일정·발주 4축을 한눈에.
             {data.quote && (
