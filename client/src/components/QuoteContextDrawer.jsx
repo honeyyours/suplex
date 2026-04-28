@@ -12,28 +12,59 @@ function pickPrimaryQuote(quotes) {
   return [...quotes].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
 }
 
-// 견적 라인을 isGroup 헤더 기준으로 그룹화
-// 반환: [{ groupName, lines: [...isGroup=false], subtotal, notes: [...] }]
+// 견적 라인을 매칭 가능한 그룹들로 변환
+// 두 패턴 모두 지원:
+//   (A) isGroup=true 헤더 + 그 아래 라인들  →  헤더 itemName이 그룹명
+//   (B) 평면 라인 (그룹 헤더 없음)         →  각 라인의 itemName 자체가 그룹명
+//                                            (sendToMaterials 변환과 동일 키)
+// 반환: [{ groupName, lines, subtotal, notes }]
 function groupLinesBySection(lines) {
   if (!lines || lines.length === 0) return [];
-  const sorted = [...lines].sort((a, b) => a.orderIndex - b.orderIndex);
-  const groups = [];
-  let current = null;
-  let ungrouped = { groupName: '(미분류)', lines: [], subtotal: 0, notes: [] };
+  const sorted = [...lines].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+  const map = new Map(); // groupName → { groupName, lines, subtotal, notes }
+  const order = []; // 입력 순서 보존
+
+  function ensureGroup(name) {
+    if (!map.has(name)) {
+      const g = { groupName: name, lines: [], subtotal: 0, notes: [] };
+      map.set(name, g);
+      order.push(name);
+    }
+    return map.get(name);
+  }
+
+  // 1) isGroup=true 헤더 기반 그룹화
+  let currentHeader = null;
   for (const l of sorted) {
-    if (l.isGroup && l.isGroupEnd) { current = null; continue; }
+    if (l.isGroup && l.isGroupEnd) { currentHeader = null; continue; }
     if (l.isGroup) {
-      current = { groupName: l.itemName || '(이름 없음)', lines: [], subtotal: 0, notes: [] };
-      groups.push(current);
+      currentHeader = (l.itemName || '').trim() || '(이름 없음)';
+      ensureGroup(currentHeader);
       continue;
     }
-    const target = current || ungrouped;
-    target.lines.push(l);
-    target.subtotal += Number(l.amount) || 0;
-    if (l.notes) target.notes.push(l.notes);
+    if (currentHeader) {
+      const g = ensureGroup(currentHeader);
+      g.lines.push(l);
+      g.subtotal += Number(l.amount) || 0;
+      if (l.notes) g.notes.push(l.notes);
+    }
   }
-  if (ungrouped.lines.length > 0) groups.push(ungrouped);
-  return groups;
+
+  // 2) 그룹 헤더 외부의 평면 라인 → 각자 itemName으로 그룹화
+  //    (sendToMaterials가 spaceGroup으로 변환하는 것과 동일 키)
+  let inHeader = false;
+  for (const l of sorted) {
+    if (l.isGroup && l.isGroupEnd) { inHeader = false; continue; }
+    if (l.isGroup) { inHeader = true; continue; }
+    if (inHeader) continue; // 위에서 처리됨
+    const name = (l.itemName || '').trim() || '(이름 없음)';
+    const g = ensureGroup(name);
+    g.lines.push(l);
+    g.subtotal += Number(l.amount) || 0;
+    if (l.notes) g.notes.push(l.notes);
+  }
+
+  return order.map((n) => map.get(n));
 }
 
 export default function QuoteContextDrawer({ projectId, activeSpaceGroup, open, onClose }) {
