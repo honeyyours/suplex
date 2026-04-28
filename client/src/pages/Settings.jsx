@@ -1109,7 +1109,11 @@ function PhaseDeadlineRulesSection() {
 // ============================================
 // 공정 어드바이스 (체크리스트 자동 생성)
 // ============================================
+// 자주 쓰는 어드바이스 카테고리 — datalist 자동완성용 (자유 입력 허용)
+const ADVICE_CATEGORIES = ['관리실 협의', '안전', '사전 준비', '자재', '사진'];
+
 function PhaseAdvicesSection() {
+  const { displayPhase } = usePhaseLabels();
   const [advices, setAdvices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState({ phase: '', daysBefore: 1, title: '', category: '', requiresPhoto: false });
@@ -1124,12 +1128,14 @@ function PhaseAdvicesSection() {
   useEffect(() => { reload(); }, []);
 
   async function add() {
+    if (!draft.phase) {
+      alert('공정을 선택해주세요.');
+      return;
+    }
     if (!draft.title.trim()) return;
-    const phase = confirmPhaseInput(draft.phase);
-    if (!phase) return;
     try {
       await phaseAdvicesApi.create({
-        phase,
+        phase: draft.phase, // 드롭다운에서 선택한 표준 라벨
         daysBefore: Number(draft.daysBefore),
         title: draft.title.trim(),
         category: draft.category.trim() || null,
@@ -1189,7 +1195,7 @@ function PhaseAdvicesSection() {
           <tbody className="divide-y">
             {advices.map((a) => (
               <tr key={a.id} className={`hover:bg-gray-50 ${a.active ? '' : 'opacity-50'}`}>
-                <td className="px-2 py-1.5 font-medium text-navy-800">{a.phase}</td>
+                <td className="px-2 py-1.5 font-medium text-navy-800">{displayPhase(a.phase)}</td>
                 <td className="px-2 py-1.5 text-right">D-{a.daysBefore}</td>
                 <td className="px-2 py-1.5">{a.title}</td>
                 <td className="px-2 py-1.5 text-gray-500">{a.category || '—'}</td>
@@ -1211,18 +1217,39 @@ function PhaseAdvicesSection() {
         </table>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end border-t pt-3">
-        <FormField
-          label="공정 (예: 철거)"
-          value={draft.phase}
-          onChange={(v) => setDraft({ ...draft, phase: v })}
-        />
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end border-t pt-3">
+        <div className="md:col-span-2">
+          <label className="block text-xs text-gray-500 mb-1">공정</label>
+          <select
+            value={draft.phase}
+            onChange={(e) => setDraft({ ...draft, phase: e.target.value })}
+            className="w-full text-sm px-2 py-1.5 border rounded focus:border-navy-700 outline-none bg-white"
+          >
+            <option value="">— 선택 —</option>
+            {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
+              <option key={p.key} value={p.label}>{displayPhase(p.label)}</option>
+            ))}
+          </select>
+        </div>
         <FormField
           label="D-N (일)"
           type="number"
           value={draft.daysBefore}
           onChange={(v) => setDraft({ ...draft, daysBefore: v })}
         />
+        <div className="md:col-span-1">
+          <label className="block text-xs text-gray-500 mb-1">카테고리</label>
+          <input
+            list="advice-categories"
+            value={draft.category}
+            onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+            placeholder="예: 사전 준비"
+            className="w-full text-sm px-2 py-1.5 border rounded focus:border-navy-700 outline-none"
+          />
+          <datalist id="advice-categories">
+            {ADVICE_CATEGORIES.map((c) => <option key={c} value={c} />)}
+          </datalist>
+        </div>
         <div className="md:col-span-2 flex gap-2 items-end">
           <FormField
             label="제목 (예: 보양 관련 관리실 문의)"
@@ -1234,7 +1261,7 @@ function PhaseAdvicesSection() {
             className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 whitespace-nowrap"
           >+ 추가</button>
         </div>
-        <label className="flex items-center gap-2 text-sm md:col-span-4">
+        <label className="flex items-center gap-2 text-sm md:col-span-6">
           <input
             type="checkbox"
             checked={draft.requiresPhoto}
