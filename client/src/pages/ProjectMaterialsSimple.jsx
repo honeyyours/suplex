@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
+import MaterialImportModal from '../components/MaterialImportModal';
 import { OtherBadge } from '../components/PhaseSelect';
 import { normalizePhase, isOther } from '../utils/phases';
 
@@ -22,6 +23,8 @@ export default function ProjectMaterialsSimple() {
   // 빈 그룹 — 그룹은 추가됐지만 아직 항목이 없는 상태 (Material row 0개)
   // 새로고침 시 사라짐 (사용자가 첫 항목 빨리 입력해야 함). [{name, kind}]
   const [emptyGroups, setEmptyGroups] = useState([]);
+  // 공정별 불러오기 모달 — { spaceGroup, kind } 또는 null
+  const [importTarget, setImportTarget] = useState(null);
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -573,13 +576,6 @@ export default function ProjectMaterialsSimple() {
             : `총 ${grouped.length}개 그룹 / ${items.length}개 항목`}
         </div>
         <div className="flex gap-2 items-center">
-          <Link
-            to={`/projects/${projectId}/materials-advanced`}
-            className="text-xs text-gray-400 hover:text-navy-700 hover:underline mr-1"
-            title="고급 마감재 페이지 (사이드바·formKey·이력·다크모드 등 정밀 편집)"
-          >
-            🔧 고급 마감재 →
-          </Link>
           <button
             onClick={() => { setQuoteDrawerGroup(null); setQuoteDrawerOpen(true); }}
             title="현재 프로젝트 견적의 공정별 금액·비고 보기"
@@ -617,6 +613,7 @@ export default function ProjectMaterialsSimple() {
           onToggleConfirmed={toggleConfirmed}
           onCellKeyDown={handleCellKeyDown}
           onShowQuote={() => { setQuoteDrawerGroup(g.name); setQuoteDrawerOpen(true); }}
+          onShowImport={() => setImportTarget({ spaceGroup: g.name, kind: g.kind })}
         />
       ))}
 
@@ -648,6 +645,16 @@ export default function ProjectMaterialsSimple() {
         open={quoteDrawerOpen}
         onClose={() => setQuoteDrawerOpen(false)}
       />
+
+      {importTarget && (
+        <MaterialImportModal
+          projectId={projectId}
+          spaceGroup={importTarget.spaceGroup}
+          kind={importTarget.kind}
+          onClose={() => setImportTarget(null)}
+          onImported={() => { setImportTarget(null); reload(); }}
+        />
+      )}
     </div>
   );
 }
@@ -790,7 +797,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport }) {
   const [collapsed, setCollapsed] = useState(false);
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
@@ -844,6 +851,16 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           )}
         </div>
         <div className="flex items-center gap-1">
+          {/* 공정별 불러오기 — 회사 템플릿 + 다른 프로젝트 마감재 체크해서 일괄 추가 */}
+          {!isAppliance && onShowImport && (
+            <button
+              onClick={onShowImport}
+              title={`'${group.name}' 공정에 회사 템플릿/다른 프로젝트에서 불러오기`}
+              className="text-xs px-2 py-1 border border-sky-300 text-sky-700 rounded hover:bg-sky-50"
+            >
+              📋 불러오기
+            </button>
+          )}
           {/* 견적 컨텍스트 — 이 그룹의 견적 정보 즉시 보기 */}
           {onShowQuote && (
             <button

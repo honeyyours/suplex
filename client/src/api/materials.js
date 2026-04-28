@@ -21,6 +21,12 @@ export const materialsApi = {
     api.post(`/projects/${projectId}/materials/groups/rename`, { from, to }).then((r) => r.data),
   removeGroup: (projectId, name) =>
     api.delete(`/projects/${projectId}/materials/groups/${encodeURIComponent(name)}`).then((r) => r.data),
+
+  // 공정별 불러오기 — 회사 템플릿 + 다른 프로젝트 마감재
+  importSuggestions: (projectId, phase) =>
+    api.get(`/projects/${projectId}/materials/_import-suggestions`, { params: { phase } }).then((r) => r.data),
+  importItems: (projectId, payload) =>
+    api.post(`/projects/${projectId}/materials/_import`, payload).then((r) => r.data),
 };
 
 export const materialTemplatesApi = {

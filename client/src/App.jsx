@@ -22,7 +22,6 @@ import Expenses from './pages/Expenses';
 import Orders from './pages/Orders';
 import AIAssistant from './pages/AIAssistant';
 import ProjectSchedule from './pages/ProjectSchedule';
-import ProjectMaterials from './pages/ProjectMaterials';
 import ProjectMaterialsSimple from './pages/ProjectMaterialsSimple';
 import ProjectOrders from './pages/ProjectOrders';
 import ProjectChecklist from './pages/ProjectChecklist';
@@ -63,7 +62,6 @@ export default function App() {
           <Route path="quotes-detail" element={<ProjectQuotes />} />
           <Route path="schedule" element={<ProjectSchedule />} />
           <Route path="materials" element={<ProjectMaterialsSimple />} />
-          <Route path="materials-advanced" element={<ProjectMaterials />} />
           <Route path="orders" element={<ProjectOrders />} />
           <Route path="memo" element={<ProjectMemo />} />
           <Route path="process" element={<ProjectProcessOverview />} />

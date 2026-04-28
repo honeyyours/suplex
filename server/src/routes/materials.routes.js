@@ -493,4 +493,130 @@ router.delete('/:id', async (req, res, next) => {
   }
 });
 
+// ============================================
+// 공정별 불러오기 — 회사 템플릿 + 다른 프로젝트 마감재
+// 사용자가 그룹 헤더의 "📋 불러오기" 클릭 시 모달에 노출할 후보
+// ============================================
+router.get('/_import-suggestions', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const phase = String(req.query.phase || '').trim();
+    if (!phase) return res.status(400).json({ error: 'phase required' });
+
+    const companyId = req.user.companyId;
+    // 회사 템플릿 — 정확 일치
+    const templates = await prisma.materialTemplate.findMany({
+      where: { companyId, spaceGroup: phase, active: true },
+      orderBy: [{ orderIndex: 'asc' }, { itemName: 'asc' }],
+      select: {
+        id: true, kind: true, spaceGroup: true, subgroup: true, itemName: true,
+        formKey: true, defaultSiteNotes: true,
+      },
+    });
+
+    // 다른 프로젝트의 마감재 — 회사의 다른 프로젝트, 같은 spaceGroup
+    // distinct itemName + brand + productName + modelCode + spec 조합
+    const otherMaterials = await prisma.material.findMany({
+      where: {
+        project: { companyId },
+        projectId: { not: projectId },
+        spaceGroup: phase,
+        // 빈 itemName 제외
+        itemName: { not: '' },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, kind: true, spaceGroup: true, itemName: true,
+        brand: true, productName: true, modelCode: true, spec: true,
+        siteNotes: true, sourceUrl: true,
+        project: { select: { id: true, name: true } },
+      },
+    });
+
+    // distinct: 같은 itemName+brand+productName+spec은 가장 최근 1건만
+    const seen = new Set();
+    const distinctMaterials = [];
+    for (const m of otherMaterials) {
+      const key = [m.itemName, m.brand, m.productName, m.modelCode, m.spec].filter(Boolean).join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      distinctMaterials.push(m);
+    }
+
+    res.json({
+      phase,
+      templates,
+      otherProjectMaterials: distinctMaterials,
+    });
+  } catch (e) { next(e); }
+});
+
+// POST /:projectId/materials/_import
+// body: { spaceGroup, kind, items: [{ itemName, brand?, productName?, modelCode?, spec?, siteNotes?, formKey?, subgroup?, sourceUrl? }] }
+// 일괄 createMany. 새 마감재 status는 UNDECIDED.
+const importSchema = z.object({
+  spaceGroup: z.string().min(1),
+  kind: z.enum(['FINISH', 'APPLIANCE']).default('FINISH'),
+  items: z.array(z.object({
+    itemName: z.string().min(1),
+    brand: z.string().optional().nullable(),
+    productName: z.string().optional().nullable(),
+    modelCode: z.string().optional().nullable(),
+    spec: z.string().optional().nullable(),
+    siteNotes: z.string().optional().nullable(),
+    formKey: z.string().optional().nullable(),
+    subgroup: z.string().optional().nullable(),
+    sourceUrl: z.string().optional().nullable(),
+  })).min(1).max(50),
+});
+
+router.post('/_import', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, companyId: req.user.companyId },
+    });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const data = importSchema.parse(req.body);
+
+    // 다음 orderIndex
+    const last = await prisma.material.findFirst({
+      where: { projectId },
+      orderBy: { orderIndex: 'desc' },
+      select: { orderIndex: true },
+    });
+    let nextOrder = last ? last.orderIndex + 1 : 0;
+
+    const rows = data.items.map((it) => ({
+      projectId,
+      kind: data.kind,
+      spaceGroup: data.spaceGroup,
+      itemName: it.itemName,
+      brand: it.brand || null,
+      productName: it.productName || null,
+      modelCode: it.modelCode || null,
+      spec: it.spec || null,
+      siteNotes: it.siteNotes || null,
+      formKey: it.formKey || null,
+      subgroup: it.subgroup || null,
+      sourceUrl: it.sourceUrl || null,
+      orderIndex: nextOrder++,
+    }));
+
+    const created = await prisma.material.createMany({ data: rows });
+    const inserted = await prisma.material.findMany({
+      where: { projectId, spaceGroup: data.spaceGroup },
+      orderBy: { orderIndex: 'desc' },
+      take: created.count,
+    });
+
+    res.status(201).json({ count: created.count, materials: inserted });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
 module.exports = router;
