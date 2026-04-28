@@ -1051,8 +1051,8 @@ function PhaseDeadlineRulesSection() {
             <tr>
               <th className="text-left px-2 py-1.5 w-1/3">공정명</th>
               <th className="text-right px-2 py-1.5 w-24">D-N (일)</th>
-              <th className="text-center px-2 py-1.5 w-20">활성</th>
               <th className="text-left px-2 py-1.5">기본값</th>
+              <th className="text-center px-2 py-1.5 w-20">활성</th>
               <th className="px-2 py-1.5 w-16"></th>
             </tr>
           </thead>
@@ -1068,16 +1068,16 @@ function PhaseDeadlineRulesSection() {
                     className="w-16 text-right px-2 py-0.5 border rounded"
                   />
                 </td>
+                <td className="px-2 py-1.5 text-gray-400">
+                  {defaults[r.phase] != null ? `D-${defaults[r.phase]}` : '—'}
+                </td>
                 <td className="px-2 py-1.5 text-center">
                   <button
                     onClick={() => toggleActive(r)}
-                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
                   >
                     {r.active ? '활성' : '비활성'}
                   </button>
-                </td>
-                <td className="px-2 py-1.5 text-gray-400">
-                  {defaults[r.phase] != null ? `D-${defaults[r.phase]}` : '—'}
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <button onClick={() => remove(r.id)} className="text-rose-500 hover:underline">삭제</button>
@@ -1089,8 +1089,8 @@ function PhaseDeadlineRulesSection() {
               <tr key={phase} className="opacity-50 hover:opacity-100">
                 <td className="px-2 py-1.5 text-gray-600">{phase}</td>
                 <td className="px-2 py-1.5 text-right text-gray-400">D-{days}</td>
-                <td className="px-2 py-1.5 text-center text-gray-400 text-xs sm:text-[10px]">표준값</td>
                 <td className="px-2 py-1.5 text-gray-400">D-{days}</td>
+                <td className="px-2 py-1.5 text-center text-gray-400 text-xs sm:text-[10px]">표준값</td>
                 <td className="px-2 py-1.5 text-right">
                   <button
                     onClick={() => phaseDeadlinesApi.upsert({ phase, daysBefore: days }).then(reload)}
@@ -1230,8 +1230,8 @@ function PhaseAdvicesSection() {
               <th className="text-left px-2 py-1.5">제목</th>
               <th className="text-left px-2 py-1.5 w-24">카테고리</th>
               <th className="text-center px-2 py-1.5 w-12">📷</th>
-              <th className="text-center px-2 py-1.5 w-12">활성</th>
-              <th className="px-2 py-1.5 w-12"></th>
+              <th className="text-center px-2 py-1.5 w-20">활성</th>
+              <th className="px-2 py-1.5 w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -1245,7 +1245,7 @@ function PhaseAdvicesSection() {
                 <td className="px-2 py-1.5 text-center">
                   <button
                     onClick={() => toggleActive(a)}
-                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
                   >
                     {a.active ? '활성' : '비활성'}
                   </button>
