@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/simpleQuotes';
+import WorkContextDrawer from '../components/WorkContextDrawer';
 
 function fmtDate(iso) {
   if (!iso) return null;
@@ -21,6 +22,7 @@ export default function ProjectProcessOverview() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [drawerPhase, setDrawerPhase] = useState(null); // 행 클릭 시 활성 phase
 
   useEffect(() => {
     setLoading(true);
@@ -102,26 +104,35 @@ export default function ProjectProcessOverview() {
             {rows.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">데이터가 없습니다</td></tr>
             ) : rows.map((r) => (
-              <PhaseRow key={r.phase} row={r} />
+              <PhaseRow key={r.phase} row={r} onClick={() => setDrawerPhase(r.phase)} />
             ))}
           </tbody>
         </table>
       </div>
 
       <div className="text-[11px] text-gray-400 leading-relaxed">
-        💡 견적 라인 합계는 견적의 합계 캐시가 아닌 라인 합산입니다 (디자인비·부가세 별도).<br />
-        💡 일정의 "기타" 공정은 표시되지 않습니다 (자유 텍스트 메모로 처리).<br />
+        💡 행을 클릭하면 그 공정의 4축 상세를 우측 드로어에서 볼 수 있습니다.<br />
+        💡 견적 라인 합계는 라인 합산 (디자인비·부가세 별도). 일정 "기타"는 자유 메모로 처리.<br />
         💡 사용 중인 공정만 기본 표시. 매칭 누락을 발견하려면 "25개 전체 표시"를 켜세요.
       </div>
+
+      <WorkContextDrawer
+        projectId={projectId}
+        phase={drawerPhase}
+        open={!!drawerPhase}
+        onClose={() => setDrawerPhase(null)}
+      />
     </div>
   );
 }
 
-function PhaseRow({ row }) {
+function PhaseRow({ row, onClick }) {
   const empty = row.empty;
   const matRate = pct(row.material.confirmed, row.material.total);
   return (
-    <tr className={`border-t ${empty ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+    <tr
+      onClick={onClick}
+      className={`border-t cursor-pointer ${empty ? 'opacity-50 hover:opacity-100' : 'hover:bg-navy-50/40'}`}>
       {/* 공정 */}
       <td className="px-3 py-3 align-top">
         <span className={`font-semibold ${row.phase === '기타' ? 'text-amber-700' : 'text-navy-800'}`}>

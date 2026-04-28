@@ -175,6 +175,102 @@ router.get('/:id/process-overview', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ============================================
+// GET /api/projects/:id/phase-detail?phase=...
+// 단일 공정의 4축 상세 — 공정 현황 페이지 행 클릭 시 WorkContextDrawer에서 사용
+// ============================================
+router.get('/:id/phase-detail', async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const phase = String(req.query.phase || '').trim();
+    if (!phase) return res.status(400).json({ error: 'phase required' });
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, companyId: req.user.companyId },
+      select: { id: true, name: true },
+    });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    // 견적: ACCEPTED 우선, 없으면 최신
+    const quotes = await prisma.simpleQuote.findMany({
+      where: { projectId },
+      include: { lines: { orderBy: { orderIndex: 'asc' } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    const primaryQuote =
+      quotes.find((q) => q.status === 'ACCEPTED') || quotes[0] || null;
+
+    // 견적 라인 — 그 phase 그룹 또는 평면 라인 itemName이 phase에 정규화 매칭
+    const quoteLines = [];
+    if (primaryQuote) {
+      let inHeader = false;
+      let currentMatch = false;
+      for (const l of primaryQuote.lines) {
+        if (l.isGroup && l.isGroupEnd) { inHeader = false; currentMatch = false; continue; }
+        if (l.isGroup) {
+          inHeader = true;
+          const headerPhase = l.itemName ? normalizePhase(l.itemName).label : null;
+          // 매핑 표준이면 표준 / 매핑 실패(OTHER)면 원본
+          const headerKey = (headerPhase === '기타' && l.itemName) ? l.itemName.trim() : headerPhase;
+          currentMatch = headerKey === phase;
+          continue;
+        }
+        if (inHeader) {
+          if (currentMatch) quoteLines.push(l);
+        } else {
+          // 평면 라인 — itemName 자체로 매칭
+          const linePhase = l.itemName ? normalizePhase(l.itemName).label : null;
+          const lineKey = (linePhase === '기타' && l.itemName) ? l.itemName.trim() : linePhase;
+          if (lineKey === phase) quoteLines.push(l);
+        }
+      }
+    }
+
+    // 마감재 — spaceGroup === phase
+    const materials = await prisma.material.findMany({
+      where: { projectId, spaceGroup: phase, kind: 'FINISH' },
+      orderBy: { orderIndex: 'asc' },
+    });
+
+    // 일정 — category가 phase에 매칭되는 것
+    const allEntries = await prisma.dailyScheduleEntry.findMany({
+      where: { projectId },
+      orderBy: { date: 'asc' },
+      select: { id: true, content: true, category: true, date: true, isFixed: true },
+    });
+    const scheduleEntries = allEntries.filter((s) => {
+      if (!s.category) return false;
+      const sp = normalizePhase(s.category).label;
+      const key = sp === '기타' ? s.category.trim() : sp;
+      return key === phase;
+    });
+
+    // 발주 — material.spaceGroup === phase
+    const purchaseOrders = await prisma.purchaseOrder.findMany({
+      where: {
+        projectId,
+        material: { spaceGroup: phase },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        material: { select: { id: true, itemName: true, brand: true, productName: true, spec: true } },
+      },
+    });
+
+    res.json({
+      project,
+      phase,
+      quote: primaryQuote ? {
+        id: primaryQuote.id, title: primaryQuote.title, status: primaryQuote.status,
+        lines: quoteLines,
+      } : null,
+      materials,
+      scheduleEntries,
+      purchaseOrders,
+    });
+  } catch (e) { next(e); }
+});
+
 // GET /api/projects
 router.get('/', async (req, res, next) => {
   try {

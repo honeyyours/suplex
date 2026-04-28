@@ -10,4 +10,6 @@ export const projectsApi = {
   seedSample: () => api.post('/projects/_seed-sample').then((r) => r.data),
   // 공정 현황 — 25개 표준 공정 × 4축(견적·마감재·일정·발주) 통합 뷰
   processOverview: (id) => api.get(`/projects/${id}/process-overview`).then((r) => r.data),
+  // 단일 공정의 4축 상세 — WorkContextDrawer에서 사용
+  phaseDetail: (id, phase) => api.get(`/projects/${id}/phase-detail`, { params: { phase } }).then((r) => r.data),
 };
