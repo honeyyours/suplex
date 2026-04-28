@@ -16,11 +16,12 @@ const NAV = [
 ];
 
 export default function Layout() {
-  const { auth, memberships, switchCompany } = useAuth();
+  const { auth, memberships, switchCompany, exitImpersonate } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = !!auth?.isSuperAdmin;
+  const isImpersonating = !!auth?.impersonating;
   const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
 
   // 어드민이 일반 페이지 접근 시 /admin으로 자동 이동 (회사 컨텍스트 없을 수 있어서)
@@ -49,8 +50,28 @@ export default function Layout() {
       isActive ? 'bg-navy-700 text-white' : 'text-navy-100 hover:bg-navy-700/60'
     }`;
 
+  function handleExitImpersonate() {
+    if (exitImpersonate()) {
+      navigate('/admin', { replace: true });
+    }
+  }
+
   return (
     <div className="min-h-full flex flex-col">
+      {isImpersonating && (
+        <div className="bg-amber-500 text-amber-950 px-4 py-2 text-sm flex items-center justify-between gap-3">
+          <span>
+            🎭 <b>{auth?.company?.name}</b>의 OWNER 화면을 보고 있습니다 (READ-ONLY · 1시간 자동 만료).
+            데이터 변경은 차단됩니다.
+          </span>
+          <button
+            onClick={handleExitImpersonate}
+            className="text-xs px-3 py-1 bg-amber-900 text-amber-50 rounded hover:bg-amber-800 whitespace-nowrap"
+          >
+            🛡️ 어드민 콘솔로 돌아가기
+          </button>
+        </div>
+      )}
       <header className="bg-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">

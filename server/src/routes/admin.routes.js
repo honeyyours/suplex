@@ -4,21 +4,34 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
+const env = require('../config/env');
 const { authRequired, requireSuperAdmin } = require('../middlewares/auth');
 
 const router = express.Router();
 router.use(authRequired);
 router.use(requireSuperAdmin);
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DORMANT_DAYS = 7;
+
 // ============================================
-// GET /api/admin/companies — 모든 회사 메타 + OWNER + 멤버 수 + 프로젝트 수
+// GET /api/admin/companies — 모든 회사 메타 + OWNER + 멤버/프로젝트 수 + 활동 정보
+// query: q (검색어), sort=name|created|activity, dormantOnly=true
 // ============================================
 router.get('/companies', async (req, res, next) => {
   try {
+    const q = (req.query.q || '').toString().trim();
+    const sort = (req.query.sort || 'created').toString();
+    const dormantOnly = req.query.dormantOnly === 'true';
+
+    const where = q ? { name: { contains: q, mode: 'insensitive' } } : {};
+
     const companies = await prisma.company.findMany({
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
       include: {
         _count: { select: { memberships: true, projects: true } },
         memberships: {
@@ -27,8 +40,37 @@ router.get('/companies', async (req, res, next) => {
         },
       },
     });
-    res.json({
-      companies: companies.map((c) => ({
+
+    const weekAgo = new Date(Date.now() - WEEK_MS);
+    const dormantThreshold = new Date(Date.now() - DORMANT_DAYS * 24 * 60 * 60 * 1000);
+
+    // 회사별 활동 집계 (병렬)
+    const enriched = await Promise.all(companies.map(async (c) => {
+      const projectScope = { project: { companyId: c.id } };
+      const [
+        weekScheduleChanges,
+        weekReports,
+        weekChecklists,
+        weekExpenses,
+        lastSc,
+        lastReport,
+        lastExpense,
+      ] = await Promise.all([
+        prisma.scheduleChange.count({ where: { ...projectScope, createdAt: { gte: weekAgo } } }),
+        prisma.dailyReport.count({ where: { ...projectScope, createdAt: { gte: weekAgo } } }),
+        prisma.projectChecklist.count({ where: { ...projectScope, completedAt: { gte: weekAgo } } }),
+        prisma.expense.count({ where: { companyId: c.id, createdAt: { gte: weekAgo } } }),
+        prisma.scheduleChange.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+        prisma.dailyReport.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+        prisma.expense.findFirst({ where: { companyId: c.id }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+      ]);
+
+      const dates = [c.createdAt, lastSc?.createdAt, lastReport?.createdAt, lastExpense?.createdAt].filter(Boolean);
+      const lastActivityAt = dates.length > 0 ? new Date(Math.max(...dates.map((d) => +new Date(d)))) : c.createdAt;
+      const weekActivityScore = weekScheduleChanges + weekReports + weekChecklists + weekExpenses;
+      const isDormant = lastActivityAt < dormantThreshold;
+
+      return {
         id: c.id,
         name: c.name,
         hideExpenses: c.hideExpenses,
@@ -38,8 +80,19 @@ router.get('/companies', async (req, res, next) => {
         owners: c.memberships.map((m) => ({
           userId: m.user.id, email: m.user.email, name: m.user.name,
         })),
-      })),
-    });
+        lastActivityAt,
+        weekActivityScore,
+        isDormant,
+      };
+    }));
+
+    let result = enriched;
+    if (dormantOnly) result = result.filter((c) => c.isDormant);
+    if (sort === 'activity') {
+      result = [...result].sort((a, b) => b.weekActivityScore - a.weekActivityScore);
+    }
+
+    res.json({ companies: result });
   } catch (e) { next(e); }
 });
 
@@ -182,7 +235,7 @@ router.patch('/users/:id', async (req, res, next) => {
 });
 
 // ============================================
-// GET /api/admin/stats — 시스템 통계
+// GET /api/admin/stats — 시스템 통계 + 30일 가입 추세 (일별)
 // ============================================
 router.get('/stats', async (req, res, next) => {
   try {
@@ -193,17 +246,188 @@ router.get('/stats', async (req, res, next) => {
       prisma.expense.count(),
     ]);
 
-    // 최근 30일 가입 추이
     const since = new Date();
     since.setDate(since.getDate() - 30);
-    const [recentUsers, recentCompanies] = await Promise.all([
+    since.setHours(0, 0, 0, 0);
+
+    const [recentUsers, recentCompanies, allRecentUsers, allRecentCompanies] = await Promise.all([
       prisma.user.count({ where: { createdAt: { gte: since } } }),
       prisma.company.count({ where: { createdAt: { gte: since } } }),
+      prisma.user.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+      prisma.company.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
     ]);
+
+    // 일별 카운트 (지난 30일)
+    const dailyMap = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(since);
+      d.setDate(d.getDate() + i);
+      const k = d.toISOString().slice(0, 10);
+      dailyMap[k] = { date: k, users: 0, companies: 0 };
+    }
+    for (const u of allRecentUsers) {
+      const k = new Date(u.createdAt).toISOString().slice(0, 10);
+      if (dailyMap[k]) dailyMap[k].users++;
+    }
+    for (const c of allRecentCompanies) {
+      const k = new Date(c.createdAt).toISOString().slice(0, 10);
+      if (dailyMap[k]) dailyMap[k].companies++;
+    }
+    const daily = Object.values(dailyMap);
 
     res.json({
       total: { companies: companyCount, users: userCount, projects: projectCount, expenses: expenseCount },
-      last30Days: { newUsers: recentUsers, newCompanies: recentCompanies },
+      last30Days: { newUsers: recentUsers, newCompanies: recentCompanies, daily },
+    });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// POST /api/admin/companies/:id/transfer-ownership — 다른 멤버를 OWNER로 강제 승격
+// 기존 OWNER가 떠나거나 데드락 상태일 때
+// ============================================
+const transferSchema = z.object({ userId: z.string().min(1) });
+
+router.post('/companies/:id/transfer-ownership', async (req, res, next) => {
+  try {
+    const companyId = req.params.id;
+    const data = transferSchema.parse(req.body);
+
+    const targetMembership = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId: data.userId, companyId } },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!targetMembership) {
+      return res.status(404).json({ error: '대상 사용자가 이 회사의 멤버가 아닙니다' });
+    }
+
+    if (targetMembership.role !== 'OWNER') {
+      await prisma.membership.update({
+        where: { id: targetMembership.id },
+        data: { role: 'OWNER' },
+      });
+    }
+    res.json({
+      ok: true,
+      newOwner: { userId: data.userId, email: targetMembership.user.email, name: targetMembership.user.name },
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// ============================================
+// POST /api/admin/companies/:id/impersonate — 사칭 토큰 발급 (READ-ONLY 강제)
+// 어드민이 회사 OWNER 컨텍스트로 짧은 시간 진입 (지원·디버깅용)
+// 사칭 토큰은 1시간 만료 + impersonating 플래그로 모든 write 차단
+// ============================================
+router.post('/companies/:id/impersonate', async (req, res, next) => {
+  try {
+    const companyId = req.params.id;
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, name: true, hideExpenses: true },
+    });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+
+    const me = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, name: true },
+    });
+
+    const token = jwt.sign(
+      {
+        sub: me.id,
+        companyId,
+        role: 'OWNER',
+        impersonating: true,
+        originalAdminId: me.id,
+      },
+      env.jwt.secret,
+      { expiresIn: '1h' } // 짧은 만료
+    );
+
+    res.json({
+      token,
+      user: me,
+      company,
+      role: 'OWNER',
+      impersonating: true,
+      impersonatedCompanyName: company.name,
+    });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// POST /api/admin/cleanup-invitations — 만료된 초대 일괄 삭제
+// ============================================
+router.post('/cleanup-invitations', async (req, res, next) => {
+  try {
+    const r = await prisma.invitation.deleteMany({
+      where: {
+        acceptedAt: null,
+        expiresAt: { lt: new Date() },
+      },
+    });
+    res.json({ ok: true, deletedCount: r.count });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// GET /api/admin/companies/:id/backup — 회사 백업 JSON 다운로드 (Phase 4 활용)
+// ============================================
+router.get('/companies/:id/backup', async (req, res, next) => {
+  try {
+    const companyId = req.params.id;
+    const company = await prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+
+    // 회사의 모든 데이터 모음 (read-only export)
+    const [
+      memberships, vendors, projects, materialTemplates, accountCodes, expenseRules,
+      phaseKeywords, phaseDeadlines, phaseAdvices, applianceSpecs,
+    ] = await Promise.all([
+      prisma.membership.findMany({ where: { companyId } }),
+      prisma.vendor.findMany({ where: { companyId } }),
+      prisma.project.findMany({
+        where: { companyId },
+        include: {
+          materials: true,
+          schedules: { include: { tasks: true } },
+          dailyScheduleEntries: true,
+          checklists: true,
+          dailyReports: true,
+          expenses: true,
+          quotes: { include: { lineItems: true } },
+          simpleQuotes: { include: { lines: true } },
+          memos: true,
+          purchaseOrders: true,
+          photos: true,
+          measurements: true,
+          materialRequests: true,
+          scheduleChanges: true,
+          notifications: true,
+        },
+      }),
+      prisma.materialTemplate.findMany({ where: { companyId } }),
+      prisma.accountCode.findMany({ where: { companyId } }),
+      prisma.expenseCategoryRule.findMany({ where: { companyId } }),
+      prisma.phaseKeywordRule.findMany({ where: { companyId } }),
+      prisma.phaseDeadlineRule.findMany({ where: { companyId } }),
+      prisma.phaseAdvice.findMany({ where: { companyId } }),
+      prisma.applianceSpec.findMany({ where: { companyId } }),
+    ]);
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="suplex-admin-backup-${company.name}-${Date.now()}.json"`);
+    res.json({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      exportedByAdmin: req.user.id,
+      company,
+      memberships, vendors, projects, materialTemplates, accountCodes, expenseRules,
+      phaseKeywords, phaseDeadlines, phaseAdvices, applianceSpecs,
     });
   } catch (e) { next(e); }
 });

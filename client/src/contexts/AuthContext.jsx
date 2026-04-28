@@ -7,6 +7,8 @@ const TOKEN_KEY = 'suplex_token';
 const USER_KEY = 'suplex_user';
 const LEGACY_TOKEN_KEY = 'splex_token';
 const LEGACY_USER_KEY = 'splex_user';
+// 사칭(impersonation) 시 어드민 토큰을 백업해두는 키 (사칭 종료 시 복구용)
+const IMPERSONATE_BACKUP_KEY = 'suplex_admin_backup';
 
 function readStored() {
   let token = localStorage.getItem(TOKEN_KEY);
@@ -85,6 +87,37 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  // 어드민이 회사 OWNER로 임시 진입 (사칭). 1시간 만료 + READ-ONLY.
+  async function startImpersonate(companyId) {
+    if (!auth?.isSuperAdmin) throw new Error('어드민만 사용 가능합니다');
+    // 현재 어드민 토큰 백업
+    localStorage.setItem(IMPERSONATE_BACKUP_KEY, JSON.stringify({
+      token: auth.token,
+      user: auth.user,
+      role: auth.role,
+      isSuperAdmin: auth.isSuperAdmin,
+      company: auth.company,
+    }));
+    const { data } = await api.post(`/admin/companies/${companyId}/impersonate`);
+    setAuth(data);
+    return data;
+  }
+
+  // 사칭 종료 → 백업한 어드민 토큰으로 복구
+  function exitImpersonate() {
+    const raw = localStorage.getItem(IMPERSONATE_BACKUP_KEY);
+    if (!raw) return false;
+    try {
+      const backup = JSON.parse(raw);
+      localStorage.removeItem(IMPERSONATE_BACKUP_KEY);
+      setAuth(backup);
+      return true;
+    } catch (e) {
+      localStorage.removeItem(IMPERSONATE_BACKUP_KEY);
+      return false;
+    }
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -105,7 +138,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, logout, updateMe, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );
