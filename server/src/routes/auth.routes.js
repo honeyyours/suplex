@@ -122,6 +122,76 @@ const updateMeSchema = z.object({
   phone: z.string().max(40).nullable().optional(),
 });
 
+// GET /api/auth/me — 현재 사용자 + 모든 회사 멤버십 (다중 회사 전환용)
+router.get('/me', authRequired, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        memberships: {
+          include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+        },
+      },
+    });
+    if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
+
+    res.json({
+      user: { id: user.id, email: user.email, name: user.name, phone: user.phone },
+      memberships: user.memberships.map((m) => ({
+        companyId: m.companyId,
+        companyName: m.company.name,
+        hideExpenses: m.company.hideExpenses,
+        role: m.role,
+      })),
+      current: { companyId: req.user.companyId, role: req.user.role },
+    });
+  } catch (e) { next(e); }
+});
+
+// POST /api/auth/switch-company — 다른 회사로 JWT 재발급
+const switchSchema = z.object({ companyId: z.string().min(1) });
+
+router.post('/switch-company', authRequired, async (req, res, next) => {
+  try {
+    const data = switchSchema.parse(req.body);
+
+    const membership = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId: req.user.id, companyId: data.companyId } },
+      include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+    });
+    if (!membership) {
+      return res.status(403).json({ error: '소속되지 않은 회사입니다' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, name: true },
+    });
+
+    const token = jwt.sign(
+      { sub: user.id, companyId: membership.companyId, role: membership.role },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn }
+    );
+
+    res.json({
+      token,
+      user,
+      company: {
+        id: membership.company.id,
+        name: membership.company.name,
+        hideExpenses: membership.company.hideExpenses,
+      },
+      role: membership.role,
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
 router.patch('/me', authRequired, async (req, res, next) => {
   try {
     const data = updateMeSchema.parse(req.body);

@@ -60,10 +60,7 @@ router.post('/', authRequired, requireRole('OWNER'), async (req, res, next) => {
       if (existingMembership) {
         return res.status(409).json({ error: '이미 회사에 소속된 멤버입니다' });
       }
-      // 이미 다른 회사 가입 유저 — 베타엔 막음 (정식 출시 시 다중 회사 합류 흐름 활성)
-      return res.status(409).json({
-        error: '이미 다른 회사에 가입된 이메일입니다. 정식 출시 후 다중 회사 합류가 가능합니다.',
-      });
+      // 이미 다른 회사 가입 유저 — 받는 사람이 로그인 후 합류하는 흐름 (POST /invitations/join)
     }
 
     // 2) 같은 이메일에 사용되지 않은 초대가 있으면 만료시켜서 마지막 발송만 유효하게
@@ -170,11 +167,12 @@ router.post('/accept', async (req, res, next) => {
     if (inv.acceptedAt) return res.status(410).json({ error: '이미 사용된 초대 링크입니다' });
     if (inv.expiresAt < new Date()) return res.status(410).json({ error: '만료된 초대 링크입니다' });
 
-    // 베타: 기존 유저는 막음 (다중 회사 합류는 베타 5번에서 풀림)
+    // 이미 가입된 이메일 — /join 흐름으로 안내 (로그인 후 합류)
     const existingUser = await prisma.user.findUnique({ where: { email: inv.email } });
     if (existingUser) {
       return res.status(409).json({
-        error: '이미 가입된 이메일입니다. 정식 출시 후 다중 회사 합류가 가능합니다.',
+        error: '이미 가입된 이메일입니다. 로그인 후 초대 링크를 다시 클릭해 합류해주세요.',
+        code: 'EXISTING_USER',
       });
     }
 
@@ -207,6 +205,73 @@ router.post('/accept', async (req, res, next) => {
     res.status(201).json({
       token,
       user: { id: result.user.id, email: result.user.email, name: result.user.name },
+      company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
+      role: inv.role,
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
+// POST /api/invitations/join — 이미 로그인된 유저가 초대받은 회사에 합류
+// 응답으로 새 회사 컨텍스트 토큰 반환 (자동 전환). authRequired 필요.
+const joinSchema = z.object({ token: z.string().min(1) });
+
+router.post('/join', authRequired, async (req, res, next) => {
+  try {
+    const data = joinSchema.parse(req.body);
+
+    const inv = await prisma.invitation.findUnique({
+      where: { token: data.token },
+      include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+    });
+    if (!inv) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
+    if (inv.acceptedAt) return res.status(410).json({ error: '이미 사용된 초대 링크입니다' });
+    if (inv.expiresAt < new Date()) return res.status(410).json({ error: '만료된 초대 링크입니다' });
+
+    // 로그인된 유저의 이메일과 초대 이메일 일치 검증 (보안: 다른 사람의 초대 가로채기 방지)
+    const me = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, name: true },
+    });
+    if (!me) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
+    if (me.email.toLowerCase() !== inv.email.toLowerCase()) {
+      return res.status(403).json({
+        error: `이 초대는 ${inv.email} 으로 발송되었습니다. 해당 이메일로 로그인해주세요.`,
+      });
+    }
+
+    // 이미 같은 회사 멤버인지 확인
+    const existing = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId: me.id, companyId: inv.companyId } },
+    });
+    if (existing) {
+      return res.status(409).json({ error: '이미 이 회사에 소속되어 있습니다' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.create({
+        data: { userId: me.id, companyId: inv.companyId, role: inv.role },
+      });
+      await tx.invitation.update({
+        where: { id: inv.id },
+        data: { acceptedAt: new Date() },
+      });
+    });
+
+    // 새 회사 컨텍스트 토큰 발급 (자동 전환)
+    const token = jwt.sign(
+      { sub: me.id, companyId: inv.companyId, role: inv.role },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn }
+    );
+
+    res.status(201).json({
+      token,
+      user: me,
       company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
       role: inv.role,
     });

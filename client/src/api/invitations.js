@@ -5,4 +5,5 @@ export const invitationsApi = {
   create: (payload) => api.post('/invitations', payload).then((r) => r.data),
   remove: (id) => api.delete(`/invitations/${id}`).then((r) => r.data),
   byToken: (token) => api.get(`/invitations/by-token/${token}`).then((r) => r.data),
+  join: (token) => api.post('/invitations/join', { token }).then((r) => r.data),
 };

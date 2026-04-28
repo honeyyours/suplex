@@ -28,6 +28,7 @@ function readStored() {
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(readStored);
+  const [memberships, setMemberships] = useState([]); // 다중 회사 전환용
 
   useEffect(() => {
     if (auth) {
@@ -38,6 +39,19 @@ export function AuthProvider({ children }) {
       );
     }
   }, [auth]);
+
+  // 로그인 상태가 바뀌면 멤버십 목록 다시 로드 (회사 전환 드롭다운에 사용)
+  useEffect(() => {
+    if (!auth?.token) {
+      setMemberships([]);
+      return;
+    }
+    let alive = true;
+    api.get('/auth/me').then((r) => {
+      if (alive) setMemberships(r.data?.memberships || []);
+    }).catch(() => { /* 401 등은 client.js interceptor가 처리 */ });
+    return () => { alive = false; };
+  }, [auth?.token, auth?.company?.id]);
 
   async function login(email, password) {
     const { data } = await api.post('/auth/login', { email, password });
@@ -53,6 +67,20 @@ export function AuthProvider({ children }) {
 
   async function acceptInvite(payload) {
     const { data } = await api.post('/invitations/accept', payload);
+    setAuth(data);
+    return data;
+  }
+
+  // 다른 회사로 전환 (memberships에 있는 회사만)
+  async function switchCompany(companyId) {
+    const { data } = await api.post('/auth/switch-company', { companyId });
+    setAuth(data);
+    return data;
+  }
+
+  // 이미 로그인된 유저가 초대 받아 합류 (자동으로 새 회사로 전환)
+  async function joinByInvite(token) {
+    const { data } = await api.post('/invitations/join', { token });
     setAuth(data);
     return data;
   }
@@ -77,7 +105,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, login, signup, acceptInvite, logout, updateMe, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, logout, updateMe, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );
