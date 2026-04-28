@@ -64,10 +64,12 @@ async function annotateOrdersWithDeadline(orders, companyId = null) {
 }
 
 // GET /api/purchase-orders/pending-models   — 모델 확인 필요 마감재 (PO 생성 전 단계)
+// 가전(APPLIANCE)은 별도 흐름이라 확정 트래킹 대상이 아님 — FINISH만 집계.
 globalRouter.get('/pending-models', async (req, res, next) => {
   try {
     const where = {
       project: { companyId: req.user.companyId },
+      kind: 'FINISH',
       status: { in: ['UNDECIDED', 'REVIEWING'] },
     };
     if (req.query.projectId) where.projectId = req.query.projectId;
@@ -98,6 +100,7 @@ globalRouter.get('/summary', async (req, res, next) => {
         where: {
           project: { companyId },
           ...(req.query.projectId ? { projectId: req.query.projectId } : {}),
+          kind: 'FINISH', // 가전은 확정 트래킹 대상 X
           status: { in: ['UNDECIDED', 'REVIEWING'] },
         },
       }),
