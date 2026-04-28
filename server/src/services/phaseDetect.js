@@ -3,8 +3,25 @@
 // - 키워드 길이 내림차순 (긴 키워드 우선) — "철거공사" > "철거"
 // - 대소문자 무시
 // - 회사별 5분 캐시 (자동분류 엔진과 동일한 패턴)
+// - 회사 룰 매칭 실패 시 fallback: 표준 25개 라벨 + BUILT_IN_ALIASES (코드 상수)
+//   → 회사가 PhaseKeywordRule 비어있어도 "방수" 입력하면 자동 "방수"로 인식
 
 const prisma = require('../config/prisma');
+const { STANDARD_PHASES, BUILT_IN_ALIASES } = require('./phases');
+
+// fallback 키워드 — 표준 라벨 + 별칭. 길이 내림차순 정렬 (긴 키워드 우선)
+const FALLBACK_KEYWORDS = (() => {
+  const list = [];
+  for (const p of STANDARD_PHASES) {
+    if (p.key === 'OTHER') continue;
+    list.push({ keyword: p.label, phase: p.label });
+  }
+  for (const [alias, label] of Object.entries(BUILT_IN_ALIASES)) {
+    list.push({ keyword: alias, phase: label });
+  }
+  list.sort((a, b) => b.keyword.length - a.keyword.length);
+  return list;
+})();
 
 const CACHE = new Map(); // companyId -> { rules: [...], expiresAt: number }
 const TTL_MS = 5 * 60 * 1000;
@@ -34,6 +51,10 @@ async function detectPhase(companyId, text) {
   for (const r of rules) {
     if (lower.includes(r.keyword.toLowerCase())) return r.phase;
   }
+  // Fallback — 회사 룰 매칭 실패 시 표준 라벨/별칭으로 매칭
+  for (const fb of FALLBACK_KEYWORDS) {
+    if (lower.includes(fb.keyword.toLowerCase())) return fb.phase;
+  }
   return null;
 }
 
@@ -54,6 +75,19 @@ async function detectPhaseMatch(companyId, text) {
         keyword: text.slice(idx, idx + r.keyword.length),
         start: idx,
         end: idx + r.keyword.length,
+      };
+    }
+  }
+  // Fallback — 회사 룰 매칭 실패 시 표준 라벨/별칭으로
+  for (const fb of FALLBACK_KEYWORDS) {
+    const kwLower = fb.keyword.toLowerCase();
+    const idx = lower.indexOf(kwLower);
+    if (idx >= 0) {
+      return {
+        phase: fb.phase,
+        keyword: text.slice(idx, idx + fb.keyword.length),
+        start: idx,
+        end: idx + fb.keyword.length,
       };
     }
   }

@@ -6,6 +6,7 @@ const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
+const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 
 const router = express.Router();
 
@@ -55,6 +56,9 @@ router.post('/signup', async (req, res, next) => {
       await tx.membership.create({
         data: { userId: user.id, companyId: company.id, role: 'OWNER' },
       });
+      // 표준 25개 phase 기본 키워드 자동 시드 — 일정 자동 인식이 즉시 작동하도록
+      const seedRows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: company.id }));
+      await tx.phaseKeywordRule.createMany({ data: seedRows, skipDuplicates: true });
       return { user, company };
     });
 
