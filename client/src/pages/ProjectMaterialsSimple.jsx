@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
+import QuoteContextDrawer from '../components/QuoteContextDrawer';
 
 const SAVE_DELAY = 1000;
 
@@ -14,6 +15,8 @@ export default function ProjectMaterialsSimple() {
   const [loading, setLoading] = useState(true);
   const [savingMap, setSavingMap] = useState({}); // {id: true} - 저장 중 표시
   const [applianceSearchGroup, setApplianceSearchGroup] = useState(null); // 가전 검색 모달 대상 그룹
+  const [quoteDrawerOpen, setQuoteDrawerOpen] = useState(false);
+  const [quoteDrawerGroup, setQuoteDrawerGroup] = useState(null); // 드로어 활성 spaceGroup
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -528,6 +531,13 @@ export default function ProjectMaterialsSimple() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => { setQuoteDrawerGroup(null); setQuoteDrawerOpen(true); }}
+            title="현재 프로젝트 견적의 공정별 금액·비고 보기"
+            className="text-sm px-3 py-2 border border-amber-300 text-amber-700 bg-amber-50 rounded hover:bg-amber-100"
+          >
+            🪙 견적 보기
+          </button>
+          <button
             onClick={() => addGroup('FINISH')}
             className="text-sm px-3 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
           >
@@ -556,6 +566,7 @@ export default function ProjectMaterialsSimple() {
           onConfirmGroup={() => confirmGroup(g.name)}
           onToggleConfirmed={toggleConfirmed}
           onCellKeyDown={handleCellKeyDown}
+          onShowQuote={() => { setQuoteDrawerGroup(g.name); setQuoteDrawerOpen(true); }}
         />
       ))}
 
@@ -580,6 +591,13 @@ export default function ProjectMaterialsSimple() {
           onSelect={(spec) => addItemFromSpec(applianceSearchGroup, spec)}
         />
       )}
+
+      <QuoteContextDrawer
+        projectId={projectId}
+        activeSpaceGroup={quoteDrawerGroup}
+        open={quoteDrawerOpen}
+        onClose={() => setQuoteDrawerOpen(false)}
+      />
     </div>
   );
 }
@@ -722,7 +740,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote }) {
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -752,9 +770,6 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           >
             {group.name}
           </button>
-          <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded ${badge} flex-shrink-0`}>
-            {isAppliance ? '가전·가구' : '마감재'}
-          </span>
           {/* 확정 카운트는 마감재에만 표시 (가전은 발주 안 함) */}
           {!isAppliance && (
             <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
@@ -771,6 +786,16 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           )}
         </div>
         <div className="flex items-center gap-1">
+          {/* 견적 컨텍스트 — 이 그룹의 견적 정보 즉시 보기 */}
+          {onShowQuote && (
+            <button
+              onClick={onShowQuote}
+              title={`'${group.name}' 견적 정보 보기`}
+              className="text-xs px-2 py-1 border border-amber-300 text-amber-700 rounded hover:bg-amber-50"
+            >
+              🪙 견적
+            </button>
+          )}
           {/* 발주 자동 생성 버튼은 마감재에만 (가전은 발주 안 함) */}
           {!isAppliance && pendingActionable > 0 && (
             <button
