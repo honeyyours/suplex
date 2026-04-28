@@ -270,7 +270,7 @@ function OtherProjectsList({ groups, checked, keyOf, onToggle, onToggleProjectGr
 }
 
 function ProjectGroupSection({ group, checked, keyOf, onToggle, onToggleProjectGroup, currentSpaceGroup }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // 디폴트 접힘 — 프로젝트가 많을 때 가독성
   const allKeys = group.items.map((it) => keyOf('other', it));
   const allOn = allKeys.every((k) => checked.has(k));
   const someOn = !allOn && allKeys.some((k) => checked.has(k));

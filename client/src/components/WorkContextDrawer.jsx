@@ -67,7 +67,7 @@ export default function WorkContextDrawer({ projectId, phase, open, onClose }) {
     const items = data?.materials || [];
     const total = items.length;
     const confirmed = items.filter((m) =>
-      ['CONFIRMED', 'CHANGED', 'REUSED'].includes(m.status) || m.locked
+      ['CONFIRMED', 'CHANGED', 'REUSED'].includes(m.status)
     ).length;
     return { total, confirmed };
   }, [data]);

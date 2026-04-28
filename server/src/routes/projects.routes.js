@@ -37,7 +37,7 @@ router.get('/:id/process-overview', async (req, res, next) => {
     // 마감재 (FINISH만 — APPLIANCE는 spaceGroup이 공간명이라 phase 매칭 X)
     const materials = await prisma.material.findMany({
       where: { projectId, kind: 'FINISH' },
-      select: { id: true, spaceGroup: true, status: true, locked: true },
+      select: { id: true, spaceGroup: true, status: true },
     });
 
     // 일정
@@ -96,7 +96,7 @@ router.get('/:id/process-overview', async (req, res, next) => {
       const phase = normalizePhase(m.spaceGroup).label;
       const e = ensure(phase);
       e.material.total++;
-      if (['CONFIRMED', 'CHANGED', 'REUSED'].includes(m.status) || m.locked) {
+      if (['CONFIRMED', 'CHANGED', 'REUSED'].includes(m.status)) {
         e.material.confirmed++;
       } else if (m.status === 'UNDECIDED' || m.status === 'REVIEWING') {
         e.material.undecided++;
