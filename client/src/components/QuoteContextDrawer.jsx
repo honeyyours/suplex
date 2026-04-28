@@ -122,16 +122,22 @@ export default function QuoteContextDrawer({ projectId, activeSpaceGroup, open, 
   // 사이드바에서 그룹이 바뀌면 사용자 직접 선택은 초기화 (자동 매칭 다시)
   useEffect(() => { setSelectedGroup(null); }, [activeSpaceGroup]);
 
-  // 드로어 외부 클릭 시 자동 닫힘 — 클릭은 그대로 진행되어 그 셀이 활성화됨
+  // 드로어 외부 클릭 시 자동 닫힘 — 단 입력 element 클릭 시는 유지
+  // (사용자가 견적 보면서 마감재 항목 입력하는 시나리오)
   const drawerRef = useRef(null);
   useEffect(() => {
     if (!open) return;
     function handler(e) {
-      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
-        onClose?.();
-      }
+      if (drawerRef.current && drawerRef.current.contains(e.target)) return;
+      // 입력 element(input/textarea/select) 또는 contenteditable 클릭은 무시
+      const el = e.target;
+      const tag = el?.tagName?.toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag)) return;
+      if (el?.isContentEditable) return;
+      // 입력 element를 감싸는 label 클릭도 무시 (label 클릭으로 input 활성)
+      if (el?.closest && (el.closest('label') || el.closest('[contenteditable]'))) return;
+      onClose?.();
     }
-    // mousedown으로 빠르게 (click보다 먼저 발화) — 단 stopPropagation X
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open, onClose]);

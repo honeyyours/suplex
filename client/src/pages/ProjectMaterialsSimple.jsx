@@ -446,7 +446,7 @@ export default function ProjectMaterialsSimple() {
       alert('이미 발주에 들어간 항목이라 삭제할 수 없습니다.\n발주 탭에서 [발주 취소]하면 잠금이 해제됩니다.');
       return;
     }
-    if (!confirm('이 항목을 삭제할까요?')) return;
+    // 빠른 편집 UX — 확인 다이얼로그 없이 즉시 삭제
     try {
       await materialsApi.remove(projectId, id);
       setItems((prev) => prev.filter((x) => x.id !== id));
