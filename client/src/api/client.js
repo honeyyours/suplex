@@ -19,6 +19,14 @@ api.interceptors.response.use(
       localStorage.removeItem('suplex_user');
       localStorage.removeItem('splex_token');
       localStorage.removeItem('splex_user');
+      // 토큰 만료/무효화 시 로그인으로 자동 이동.
+      // 단, 로그인/가입/초대 등 public 페이지에 있을 땐 그대로 (무한 루프 방지).
+      const path = window.location.pathname;
+      const publicRoutes = ['/login', '/signup', '/invite'];
+      const isPublic = publicRoutes.some((p) => path === p || path.startsWith(p + '/'));
+      if (!isPublic) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }

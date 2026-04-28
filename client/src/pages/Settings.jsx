@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
+import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
@@ -108,6 +109,7 @@ export default function Settings() {
         </div>
         <Row label="이메일" value={auth?.user?.email} />
         <Row label="권한" value={roleLabel(auth?.role)} />
+        <ChangePasswordRow />
         <div className="pt-3">
           <button
             onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
@@ -1237,6 +1239,105 @@ function Row({ label, value, mono }) {
       <span className={`text-gray-800 ${mono ? 'font-mono text-xs' : ''}`}>
         {value || <span className="text-gray-400 italic">—</span>}
       </span>
+    </div>
+  );
+}
+
+function ChangePasswordRow() {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ current: '', next: '', confirm: '' });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  function reset() {
+    setForm({ current: '', next: '', confirm: '' });
+    setErr('');
+    setOpen(false);
+  }
+
+  async function submit() {
+    setErr('');
+    if (!form.current || form.next.length < 8) {
+      setErr('현재 비밀번호와 새 비밀번호(8자 이상)를 입력하세요');
+      return;
+    }
+    if (form.next !== form.confirm) {
+      setErr('새 비밀번호 확인이 일치하지 않습니다');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword: form.current,
+        newPassword: form.next,
+      });
+      alert('비밀번호가 변경되었습니다.');
+      reset();
+    } catch (e) {
+      setErr(e.response?.data?.error || '변경 실패');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="flex py-2 border-b last:border-b-0 text-sm items-center">
+        <span className="w-24 text-gray-500">비밀번호</span>
+        <span className="text-gray-400 flex-1">●●●●●●●●</span>
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
+        >🔒 변경</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-3 border-b last:border-b-0 bg-gray-50 -mx-2 px-3 rounded">
+      <div className="text-sm font-medium text-gray-700 mb-2">🔒 비밀번호 변경</div>
+      <div className="space-y-2">
+        <input
+          type="password"
+          placeholder="현재 비밀번호"
+          autoFocus
+          value={form.current}
+          onChange={(e) => setForm({ ...form, current: e.target.value })}
+          autoComplete="current-password"
+          className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+        <input
+          type="password"
+          placeholder="새 비밀번호 (8자 이상)"
+          value={form.next}
+          onChange={(e) => setForm({ ...form, next: e.target.value })}
+          autoComplete="new-password"
+          minLength={8}
+          className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+        <input
+          type="password"
+          placeholder="새 비밀번호 확인"
+          value={form.confirm}
+          onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+          autoComplete="new-password"
+          className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+      </div>
+      {err && <div className="mt-2 text-xs text-rose-600">{err}</div>}
+      <div className="flex justify-end gap-2 mt-3">
+        <button
+          onClick={reset}
+          disabled={busy}
+          className="text-xs px-3 py-1.5 border rounded hover:bg-white disabled:opacity-50"
+        >취소</button>
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+        >{busy ? '변경 중...' : '비밀번호 변경'}</button>
+      </div>
     </div>
   );
 }
