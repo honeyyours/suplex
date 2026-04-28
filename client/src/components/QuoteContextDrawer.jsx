@@ -1,7 +1,7 @@
 // 견적 컨텍스트 드로어 — 마감재 작업 중 그 공정의 견적 정보를 우측에 펼침
 // 활성 spaceGroup이 바뀌면 자동으로 그 그룹의 견적 라인·비고 표시
 // 사용처: ProjectMaterials 페이지
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { simpleQuotesApi, formatWon, SIMPLE_QUOTE_STATUS_META } from '../api/simpleQuotes';
 
 // 가장 우선순위 높은 견적 1개 선택 — ACCEPTED > 가장 최근 updatedAt
@@ -122,16 +122,25 @@ export default function QuoteContextDrawer({ projectId, activeSpaceGroup, open, 
   // 사이드바에서 그룹이 바뀌면 사용자 직접 선택은 초기화 (자동 매칭 다시)
   useEffect(() => { setSelectedGroup(null); }, [activeSpaceGroup]);
 
+  // 드로어 외부 클릭 시 자동 닫힘 — 클릭은 그대로 진행되어 그 셀이 활성화됨
+  const drawerRef = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    function handler(e) {
+      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
+        onClose?.();
+      }
+    }
+    // mousedown으로 빠르게 (click보다 먼저 발화) — 단 stopPropagation X
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <>
-      {/* 오버레이 — 모바일에선 탭 외부 클릭으로 닫기 */}
-      <div
-        className="fixed inset-0 bg-black/20 z-40 sm:hidden"
-        onClick={onClose}
-      />
-      <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-white shadow-2xl z-50 flex flex-col border-l">
+      <aside ref={drawerRef} className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-white shadow-2xl z-50 flex flex-col border-l">
         {/* 헤더 */}
         <header className="px-4 py-3 border-b bg-navy-800 text-white flex items-center justify-between">
           <div>

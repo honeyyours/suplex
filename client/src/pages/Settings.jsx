@@ -56,7 +56,9 @@ export default function Settings() {
 
       <CompanyInfoSection company={company} onSaved={setCompany} canEdit={isOwner} />
 
-      <FeatureTogglesSection company={company} onSaved={setCompany} canEdit={isOwner} />
+      {/* 지출 숨김 토글 — 베타엔 숨김. 정식 출시 시 권한 시스템(Feature Flag · 직책 디폴트 권한)에 흡수 예정.
+          코드는 보존 (FeatureTogglesSection 함수 + companyApi.patch hideExpenses 그대로). */}
+      {/* <FeatureTogglesSection company={company} onSaved={setCompany} canEdit={isOwner} /> */}
 
       <QuoteRatesSection company={company} onSaved={setCompany} canEdit={isOwner} />
 

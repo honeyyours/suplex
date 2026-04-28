@@ -2,7 +2,7 @@
 // 컬럼: 항목 / 품명·브랜드 / 수량 / 비고. 그룹(spaceGroup)별 묶음.
 // 기존 마감재 페이지(formKey/customSpec/사이드바/마스터 시드 등)는 라우트에서 숨김.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
@@ -564,7 +564,14 @@ export default function ProjectMaterialsSimple() {
             ? '아직 등록된 마감재가 없습니다. [+ 새 그룹 추가]로 시작하거나, 견적 탭에서 [📦 마감재로 보내기]를 사용하세요.'
             : `총 ${grouped.length}개 그룹 / ${items.length}개 항목`}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Link
+            to={`/projects/${projectId}/materials-advanced`}
+            className="text-xs text-gray-400 hover:text-navy-700 hover:underline mr-1"
+            title="고급 마감재 페이지 (사이드바·formKey·이력·다크모드 등 정밀 편집)"
+          >
+            🔧 고급 마감재 →
+          </Link>
           <button
             onClick={() => { setQuoteDrawerGroup(null); setQuoteDrawerOpen(true); }}
             title="현재 프로젝트 견적의 공정별 금액·비고 보기"
@@ -776,6 +783,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // 그룹 카드
 // ============================================
 function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote }) {
+  const [collapsed, setCollapsed] = useState(false);
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -795,9 +803,15 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
 
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
-      <div className={`flex items-center justify-between gap-3 px-4 py-2.5 border-b ${headerBg}`}>
+      <div className={`flex items-center justify-between gap-3 px-4 py-2.5 ${collapsed ? '' : 'border-b'} ${headerBg}`}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`${accentText} font-bold flex-shrink-0`}>▸</span>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            title={collapsed ? '펼치기' : '접기'}
+            className={`${accentText} font-bold flex-shrink-0 hover:bg-white/60 rounded w-5 h-5 flex items-center justify-center text-sm leading-none`}
+          >
+            {collapsed ? '▸' : '▾'}
+          </button>
           <button
             onClick={onRenameGroup}
             className={`text-base font-bold ${titleText} hover:underline truncate text-left`}
@@ -867,13 +881,15 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        {isAppliance ? (
-          <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
-        ) : (
-          <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
-        )}
-      </div>
+      {!collapsed && (
+        <div className="overflow-x-auto">
+          {isAppliance ? (
+            <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
+          ) : (
+            <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
