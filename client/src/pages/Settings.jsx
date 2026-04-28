@@ -988,16 +988,38 @@ function PhaseDeadlineRulesSection() {
       alert('저장 실패: ' + (e.response?.data?.error || e.message));
     }
   }
-  async function update(rule, patch) {
+  // optimistic active 토글
+  async function toggleActive(rule) {
+    const next = !rule.active;
+    setRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, active: next } : r));
     try {
-      await phaseDeadlinesApi.update(rule.id, patch);
-      reload();
-    } catch (e) { alert('변경 실패: ' + (e.response?.data?.error || e.message)); }
+      await phaseDeadlinesApi.update(rule.id, { active: next });
+    } catch (e) {
+      setRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, active: rule.active } : r));
+      alert('변경 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+  // optimistic 일수 변경
+  async function updateDays(rule, daysBefore) {
+    if (!Number.isFinite(daysBefore) || daysBefore === rule.daysBefore) return;
+    setRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, daysBefore } : r));
+    try {
+      await phaseDeadlinesApi.update(rule.id, { daysBefore });
+    } catch (e) {
+      setRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, daysBefore: rule.daysBefore } : r));
+      alert('변경 실패: ' + (e.response?.data?.error || e.message));
+    }
   }
   async function remove(id) {
     if (!confirm('이 룰을 삭제할까요? 표준 기본값으로 돌아갑니다.')) return;
-    await phaseDeadlinesApi.remove(id);
-    reload();
+    const snapshot = rules;
+    setRules((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await phaseDeadlinesApi.remove(id);
+    } catch (e) {
+      setRules(snapshot);
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
   }
   async function seedAll() {
     if (!confirm('표준 D-N 룰 전체를 회사 룰로 가져옵니다 (기존 룰은 그대로 유지/덮어쓰기). 계속할까요?')) return;
@@ -1029,7 +1051,7 @@ function PhaseDeadlineRulesSection() {
             <tr>
               <th className="text-left px-2 py-1.5 w-1/3">공정명</th>
               <th className="text-right px-2 py-1.5 w-24">D-N (일)</th>
-              <th className="text-center px-2 py-1.5 w-20">상태</th>
+              <th className="text-center px-2 py-1.5 w-20">활성</th>
               <th className="text-left px-2 py-1.5">기본값</th>
               <th className="px-2 py-1.5 w-16"></th>
             </tr>
@@ -1042,16 +1064,13 @@ function PhaseDeadlineRulesSection() {
                   <input
                     type="number"
                     defaultValue={r.daysBefore}
-                    onBlur={(e) => {
-                      const v = Number(e.target.value);
-                      if (Number.isFinite(v) && v !== r.daysBefore) update(r, { daysBefore: v });
-                    }}
+                    onBlur={(e) => updateDays(r, Number(e.target.value))}
                     className="w-16 text-right px-2 py-0.5 border rounded"
                   />
                 </td>
                 <td className="px-2 py-1.5 text-center">
                   <button
-                    onClick={() => update(r, { active: !r.active })}
+                    onClick={() => toggleActive(r)}
                     className={`text-xs sm:text-[10px] px-2 py-0.5 rounded ${r.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
                   >
                     {r.active ? '활성' : '비활성'}
@@ -1224,8 +1243,11 @@ function PhaseAdvicesSection() {
                 <td className="px-2 py-1.5 text-gray-500">{a.category || '—'}</td>
                 <td className="px-2 py-1.5 text-center">{a.requiresPhoto ? '📷' : '—'}</td>
                 <td className="px-2 py-1.5 text-center">
-                  <button onClick={() => toggleActive(a)} className="text-gray-500 hover:text-navy-700">
-                    {a.active ? '✓' : '✕'}
+                  <button
+                    onClick={() => toggleActive(a)}
+                    className={`text-xs sm:text-[10px] px-2 py-0.5 rounded ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                  >
+                    {a.active ? '활성' : '비활성'}
                   </button>
                 </td>
                 <td className="px-2 py-1.5 text-right">
