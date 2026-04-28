@@ -99,7 +99,14 @@ router.post('/login', async (req, res, next) => {
     const data = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({
       where: { email: data.email },
-      include: { memberships: { include: { company: true } } },
+      include: {
+        memberships: {
+          include: {
+            // 명시 select — phaseLabels 같이 prod에 미반영된 컬럼이 있을 때 fallback 안전
+            company: { select: { id: true, name: true, hideExpenses: true } },
+          },
+        },
+      },
     });
     if (!user) return res.status(401).json({ error: '이메일 또는 비밀번호가 올바르지 않습니다' });
 

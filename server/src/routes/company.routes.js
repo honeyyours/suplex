@@ -15,8 +15,10 @@ const RATE_KEYS = [
 // GET /api/company  — 내 회사 정보 + 견적 비율
 router.get('/', async (req, res, next) => {
   try {
+    // omit phaseLabels — prod에 컬럼 미반영된 환경 안전 (마이그레이션 후 omit 제거 가능)
     const company = await prisma.company.findUnique({
       where: { id: req.user.companyId },
+      omit: { phaseLabels: true },
     });
     if (!company) return res.status(404).json({ error: 'Company not found' });
     res.json({ company });
