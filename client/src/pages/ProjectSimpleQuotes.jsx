@@ -528,15 +528,18 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           <button
             onClick={async () => {
               if (sending) return;
-              if (!confirm('이 견적의 공정들을 마감재 탭의 그룹으로 추가합니다. 계속할까요?\n(이미 같은 이름의 그룹이 있으면 자동 스킵됩니다)')) return;
+              if (!confirm('이 견적의 공정들을 마감재 탭의 빈 그룹으로 추가합니다. 계속할까요?\n(이미 항목이 있는 그룹은 자동 스킵)')) return;
               setSending(true);
               try {
                 const res = await simpleQuotesApi.sendToMaterials(projectId, quoteId);
-                const msg = res.added > 0
-                  ? `✅ ${res.added}개 그룹 추가 / ${res.skipped}개 중복 스킵 (총 ${res.total}개 공정).\n\n각 그룹에 (미정) 항목이 자동 생성되었습니다. 마감재 탭에서 채워나가세요.`
+                const newCount = res.addedNames?.length || 0;
+                const msg = newCount > 0
+                  ? `✅ ${newCount}개 새 그룹 / ${res.skipped}개 중복 스킵 (총 ${res.total}개 공정).\n\n빈 그룹으로 추가되었습니다. 마감재 탭에서 직접 항목을 추가하세요.`
                   : `이미 모든 공정(${res.total}개)이 마감재 그룹으로 등록되어 있습니다.`;
                 if (confirm(`${msg}\n\n지금 마감재 탭으로 이동할까요?`)) {
-                  navigate(`/projects/${projectId}/materials`);
+                  navigate(`/projects/${projectId}/materials`, {
+                    state: { addedEmptyGroups: res.addedNames || [] },
+                  });
                 }
               } catch (e) {
                 alert('마감재 추가 실패: ' + (e.response?.data?.error || e.message));

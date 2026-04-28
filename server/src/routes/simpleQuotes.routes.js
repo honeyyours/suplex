@@ -328,13 +328,13 @@ const linesSchema = z.object({
 });
 
 // ============================================
-// 견적의 공정(라인) → 마감재 탭의 그룹(spaceGroup)으로 자동 변환
+// 견적의 공정(라인) → 마감재 탭의 그룹(spaceGroup) 후보 산출 (생성 X)
 //   POST /:id/send-to-materials
-// 동작:
-//  - 견적의 isGroup=false 라인의 itemName을 spaceGroup 후보로 모음 (중복 제거, 공백 제외)
-//  - 같은 프로젝트 마감재의 기존 spaceGroup과 비교 → 새 그룹만 추가
-//  - 각 새 그룹마다 placeholder Material 1개 생성 (itemName="(미정)")
-//    → 그래야 마감재 탭 사이드바에 그룹이 노출됨
+// 정책 (2026-04-28):
+//  - 더 이상 placeholder Material 자동 생성 안 함. 사용자가 마감재 탭에서 수동으로 1개씩 추가.
+//  - 응답: 추가할 그룹 이름 배열만 반환 → 클라이언트가 빈 그룹(emptyGroups) 상태로 노출.
+//  - 견적 공정 후보: 표준 25개 매핑 시 표준 라벨, 매핑 실패는 원본 텍스트 보존.
+//    (사용자 정책: '기타'로 강제 흡수 X)
 // ============================================
 router.post('/:id/send-to-materials', async (req, res, next) => {
   try {
@@ -348,8 +348,6 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     });
     if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
-    // 견적 공정 후보 — 표준 25개에 매핑되면 표준 라벨, 매핑 실패는 원본 텍스트 보존
-    // (사용자 정책: '기타'로 강제 흡수하지 말고 자유 키워드로 그대로 마감재 spaceGroup으로 사용)
     const seen = new Set();
     const candidates = [];
     for (const l of quote.lines) {
@@ -357,7 +355,6 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
       const raw = String(l.itemName || '').trim();
       if (!raw) continue;
       const normalized = normalizePhase(raw);
-      // 표준 매핑 성공 → 표준 라벨 / 매핑 실패(=OTHER) → 원본 raw 보존
       const finalKey = normalized.key === 'OTHER' ? raw : normalized.label;
       if (seen.has(finalKey)) continue;
       seen.add(finalKey);
@@ -367,7 +364,7 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
       return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });
     }
 
-    // 기존 spaceGroup 목록
+    // 기존 spaceGroup (Material row 기준) — 항목이 1개 이상 있는 그룹만 "이미 있는" 것으로 본다.
     const existing = await prisma.material.findMany({
       where: { projectId },
       select: { spaceGroup: true },
@@ -376,52 +373,13 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     const existingSet = new Set(existing.map((m) => m.spaceGroup));
 
     const toAdd = candidates.filter((g) => !existingSet.has(g));
-    if (toAdd.length === 0) {
-      return res.json({ added: 0, skipped: candidates.length, total: candidates.length });
-    }
-
-    // placeholder Material 1개씩 (디자이너가 클릭해서 채움)
-    const created = await prisma.$transaction(async (tx) => {
-      let baseOrder = 0;
-      const lastOrder = await tx.material.findFirst({
-        where: { projectId },
-        orderBy: { orderIndex: 'desc' },
-        select: { orderIndex: true },
-      });
-      baseOrder = lastOrder ? lastOrder.orderIndex + 1 : 0;
-
-      const rows = toAdd.map((g, i) => ({
-        projectId,
-        kind: 'FINISH',
-        spaceGroup: g,
-        itemName: '(미정)',
-        orderIndex: baseOrder + i,
-      }));
-      const c = await tx.material.createMany({ data: rows });
-
-      // 이력 — 어떤 견적에서 왔는지 기록
-      const inserted = await tx.material.findMany({
-        where: { projectId },
-        orderBy: { createdAt: 'desc' },
-        take: rows.length,
-      });
-      await tx.materialHistory.createMany({
-        data: inserted.map((m) => ({
-          materialId: m.id,
-          changedById: req.user.id,
-          field: '__created__',
-          oldValue: null,
-          newValue: `(견적→마감재) "${quote.title}" / 공정 "${m.spaceGroup}"`,
-        })),
-      });
-      return c.count;
-    });
 
     res.json({
-      added: created,
-      skipped: candidates.length - toAdd.length,
+      added: 0, // 자동 생성 X — 빈 그룹은 클라이언트 emptyGroups로 노출
       total: candidates.length,
+      skipped: candidates.length - toAdd.length,
       addedNames: toAdd,
+      quoteTitle: quote.title,
     });
   } catch (e) { next(e); }
 });

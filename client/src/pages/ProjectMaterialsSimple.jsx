@@ -2,12 +2,11 @@
 // 컬럼: 항목 / 품명·브랜드 / 수량 / 비고. 그룹(spaceGroup)별 묶음.
 // 기존 마감재 페이지(formKey/customSpec/사이드바/마스터 시드 등)는 라우트에서 숨김.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
 import MaterialImportModal from '../components/MaterialImportModal';
-import MaterialLinkModal from '../components/MaterialLinkModal';
 import { OtherBadge } from '../components/PhaseSelect';
 import { normalizePhase, isOther } from '../utils/phases';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
@@ -16,6 +15,7 @@ const SAVE_DELAY = 1000;
 
 export default function ProjectMaterialsSimple() {
   const { id: projectId } = useParams();
+  const location = useLocation();
   const [items, setItems] = useState([]); // 행 단위 로컬 상태 (서버 Material 매핑)
   const [loading, setLoading] = useState(true);
   const [savingMap, setSavingMap] = useState({}); // {id: true} - 저장 중 표시
@@ -27,8 +27,26 @@ export default function ProjectMaterialsSimple() {
   const [emptyGroups, setEmptyGroups] = useState([]);
   // 공정별 불러오기 모달 — { spaceGroup, kind } 또는 null
   const [importTarget, setImportTarget] = useState(null);
-  // 거실 동일 링크 모달 — 현재 item 객체 또는 null
-  const [linkTarget, setLinkTarget] = useState(null);
+
+  // 견적 → 마감재 보내기에서 넘어온 빈 그룹 자동 노출
+  useEffect(() => {
+    const incoming = location.state?.addedEmptyGroups;
+    if (Array.isArray(incoming) && incoming.length > 0) {
+      setEmptyGroups((prev) => {
+        const have = new Set([
+          ...prev.map((g) => g.name),
+          ...items.map((it) => it.spaceGroup),
+        ]);
+        const fresh = incoming
+          .filter((name) => !have.has(name))
+          .map((name) => ({ name, kind: 'FINISH' }));
+        return fresh.length > 0 ? [...prev, ...fresh] : prev;
+      });
+      // state는 한 번만 — 같은 페이지 내 새로고침 시 다시 추가되지 않도록 cleanup
+      window.history.replaceState({}, '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, items.length]);
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -618,8 +636,6 @@ export default function ProjectMaterialsSimple() {
           onCellKeyDown={handleCellKeyDown}
           onShowQuote={() => { setQuoteDrawerGroup(g.name); setQuoteDrawerOpen(true); }}
           onShowImport={() => setImportTarget({ spaceGroup: g.name, kind: g.kind })}
-          onShowLink={(item) => setLinkTarget(item)}
-          allItems={items}
         />
       ))}
 
@@ -662,21 +678,6 @@ export default function ProjectMaterialsSimple() {
         />
       )}
 
-      {linkTarget && (
-        <MaterialLinkModal
-          items={items}
-          currentItem={linkTarget}
-          onSelect={async (sourceId) => {
-            await patchItem(linkTarget.id, { inheritFromMaterialId: sourceId });
-            setLinkTarget(null);
-          }}
-          onClear={async () => {
-            await patchItem(linkTarget.id, { inheritFromMaterialId: null });
-            setLinkTarget(null);
-          }}
-          onClose={() => setLinkTarget(null)}
-        />
-      )}
     </div>
   );
 }
@@ -819,7 +820,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport, onShowLink, allItems }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport }) {
   const { displayPhase } = usePhaseLabels();
   const [collapsed, setCollapsed] = useState(false);
   const isAppliance = group.kind === 'APPLIANCE';
@@ -934,7 +935,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           {isAppliance ? (
             <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
           ) : (
-            <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} onShowLink={onShowLink} allItems={allItems} />
+            <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
           )}
         </div>
       )}
@@ -945,7 +946,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
 // ============================================
 // 마감재 테이블 (4컬럼)
 // ============================================
-function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed, onShowLink, allItems }) {
+function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
@@ -971,13 +972,11 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
           <ItemRow
             key={it.id}
             item={it}
-            sourceItem={it.inheritFromMaterialId ? allItems?.find((x) => x.id === it.inheritFromMaterialId) : null}
             saving={!!savingMap[it.id]}
             onChange={(patch) => onItemPatch(it.id, patch)}
             onRemove={() => onItemRemove(it.id)}
             onCellKeyDown={onCellKeyDown}
             onToggle={() => onToggleConfirmed(it.id)}
-            onShowLink={() => onShowLink?.(it)}
           />
         ))}
         {group.items.length === 0 && (
@@ -1150,25 +1149,18 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
   );
 }
 
-function ItemRow({ item, sourceItem, saving, onChange, onRemove, onCellKeyDown, onToggle, onShowLink }) {
+function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) {
   const locked = !!item.locked;
-  const isLinked = !!item.inheritFromMaterialId;
-  // 참조 중이면 sourceItem 데이터로 표시 (없으면 fallback to item — 원본 삭제됐을 가능성)
-  const display = isLinked && sourceItem ? sourceItem : item;
-  const cellsDisabled = locked || isLinked;
   const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 ${
-    cellsDisabled ? 'bg-transparent text-gray-600 cursor-default' : ''
+    locked ? 'bg-transparent text-gray-600 cursor-default' : ''
   }`;
   const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
   const cellAttrs = (col) => ({
     'data-mat-cell': `${item.id}-${col}`,
     onKeyDown: kd(col),
-    disabled: cellsDisabled,
-    readOnly: isLinked, // 참조 중이면 read-only
+    disabled: locked,
   });
-  const rowCls = isLinked
-    ? 'bg-sky-50 hover:bg-sky-100/60'
-    : (locked ? 'bg-gray-50/50' : 'hover:bg-gray-50');
+  const rowCls = locked ? 'bg-gray-50/50' : 'hover:bg-gray-50';
   return (
     <tr className={rowCls}>
       <td className="px-2 py-1.5 text-center">
@@ -1177,21 +1169,16 @@ function ItemRow({ item, sourceItem, saving, onChange, onRemove, onCellKeyDown, 
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('itemName')}
-          value={display.itemName || ''}
+          value={item.itemName || ''}
           onChange={(e) => onChange({ itemName: e.target.value })}
           className={inputCls}
           placeholder="예: 콘센트"
         />
-        {isLinked && (
-          <div className="text-[10px] text-sky-700 mt-0.5 truncate">
-            🔗 {sourceItem ? `${sourceItem.spaceGroup} 동일` : '(원본 항목 없음)'}
-          </div>
-        )}
       </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('brand')}
-          value={display.brand || ''}
+          value={item.brand || ''}
           onChange={(e) => onChange({ brand: e.target.value })}
           className={inputCls}
           placeholder="예: 르그랑 / 무광 블랙 / 9미리"
@@ -1209,7 +1196,7 @@ function ItemRow({ item, sourceItem, saving, onChange, onRemove, onCellKeyDown, 
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('memo')}
-          value={display.memo || ''}
+          value={item.memo || ''}
           onChange={(e) => onChange({ memo: e.target.value })}
           className={inputCls}
           placeholder="설명/색상/위치 등"
@@ -1219,24 +1206,14 @@ function ItemRow({ item, sourceItem, saving, onChange, onRemove, onCellKeyDown, 
         {saving ? (
           <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
         ) : (
-          <>
-            {!locked && onShowLink && (
-              <button
-                onClick={onShowLink}
-                tabIndex={-1}
-                title={isLinked ? '🔗 다른 항목으로 변경 / 끊기' : '🔗 다른 항목과 동일하게 시공'}
-                className={`text-sm mr-1 ${isLinked ? 'text-sky-600 hover:text-sky-800' : 'text-gray-300 hover:text-sky-600'}`}
-              >🔗</button>
-            )}
-            {!locked && (
-              <button
-                onClick={onRemove}
-                tabIndex={-1}
-                className="text-gray-300 hover:text-rose-500 text-sm"
-                title="삭제"
-              >✕</button>
-            )}
-          </>
+          !locked && (
+            <button
+              onClick={onRemove}
+              tabIndex={-1}
+              className="text-gray-300 hover:text-rose-500 text-sm"
+              title="삭제"
+            >✕</button>
+          )
         )}
       </td>
     </tr>
