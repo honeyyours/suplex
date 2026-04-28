@@ -8,7 +8,12 @@ function authRequired(req, res, next) {
 
   try {
     const payload = jwt.verify(token, env.jwt.secret);
-    req.user = { id: payload.sub, companyId: payload.companyId, role: payload.role };
+    req.user = {
+      id: payload.sub,
+      companyId: payload.companyId || null,
+      role: payload.role || null,
+      isSuperAdmin: !!payload.isSuperAdmin,
+    };
     next();
   } catch (e) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -25,4 +30,10 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { authRequired, requireRole };
+function requireSuperAdmin(req, res, next) {
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  if (!req.user.isSuperAdmin) return res.status(403).json({ error: 'Super admin only' });
+  next();
+}
+
+module.exports = { authRequired, requireRole, requireSuperAdmin };

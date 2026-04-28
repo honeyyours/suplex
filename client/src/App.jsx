@@ -7,6 +7,7 @@ import { F } from './utils/features';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import InviteAccept from './pages/InviteAccept';
+import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import TeamManagement from './pages/TeamManagement';
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/ai-assistant" element={<FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate>} />
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin" element={<Admin />} />
 
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/new" element={<NewProject />} />

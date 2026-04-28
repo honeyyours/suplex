@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { F, canAccess } from '../utils/features';
@@ -18,8 +18,24 @@ const NAV = [
 export default function Layout() {
   const { auth, memberships, switchCompany } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
-  const navItems = NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
-  const hasMultipleCompanies = (memberships?.length || 0) >= 2;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAdmin = !!auth?.isSuperAdmin;
+  const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+
+  // 어드민이 일반 페이지 접근 시 /admin으로 자동 이동 (회사 컨텍스트 없을 수 있어서)
+  // 일반 사용자가 /admin 접근 시 홈으로 자동 이동
+  useEffect(() => {
+    if (!auth) return;
+    if (isAdmin && !isAdminRoute) {
+      navigate('/admin', { replace: true });
+    } else if (!isAdmin && isAdminRoute) {
+      navigate('/', { replace: true });
+    }
+  }, [auth, isAdmin, isAdminRoute, navigate]);
+
+  const navItems = isAdmin ? [] : NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
+  const hasMultipleCompanies = !isAdmin && (memberships?.length || 0) >= 2;
 
   // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
   useEffect(() => {
@@ -56,7 +72,9 @@ export default function Layout() {
               {isDark ? '☀️' : '🌙'}
             </button>
             <span className="hidden sm:inline">
-              {hasMultipleCompanies ? (
+              {isAdmin ? (
+                <span className="text-violet-200">🛡️ 시스템 관리자</span>
+              ) : hasMultipleCompanies ? (
                 <CompanySwitcher
                   current={auth?.company}
                   memberships={memberships}

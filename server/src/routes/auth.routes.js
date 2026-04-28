@@ -95,10 +95,19 @@ router.post('/login', async (req, res, next) => {
     if (!ok) return res.status(401).json({ error: '이메일 또는 비밀번호가 올바르지 않습니다' });
 
     const membership = user.memberships[0];
-    if (!membership) return res.status(403).json({ error: '소속된 회사가 없습니다' });
+
+    // 일반 사용자는 회사 멤버십 필요. 슈퍼 어드민은 회사 없이도 로그인 OK.
+    if (!membership && !user.isSuperAdmin) {
+      return res.status(403).json({ error: '소속된 회사가 없습니다' });
+    }
 
     const token = jwt.sign(
-      { sub: user.id, companyId: membership.companyId, role: membership.role },
+      {
+        sub: user.id,
+        companyId: membership?.companyId || null,
+        role: membership?.role || null,
+        isSuperAdmin: user.isSuperAdmin,
+      },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
@@ -106,8 +115,11 @@ router.post('/login', async (req, res, next) => {
     res.json({
       token,
       user: { id: user.id, email: user.email, name: user.name },
-      company: { id: membership.company.id, name: membership.company.name, hideExpenses: membership.company.hideExpenses },
-      role: membership.role,
+      company: membership
+        ? { id: membership.company.id, name: membership.company.name, hideExpenses: membership.company.hideExpenses }
+        : null,
+      role: membership?.role || null,
+      isSuperAdmin: user.isSuperAdmin,
     });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -136,14 +148,14 @@ router.get('/me', authRequired, async (req, res, next) => {
     if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, phone: user.phone },
+      user: { id: user.id, email: user.email, name: user.name, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
       memberships: user.memberships.map((m) => ({
         companyId: m.companyId,
         companyName: m.company.name,
         hideExpenses: m.company.hideExpenses,
         role: m.role,
       })),
-      current: { companyId: req.user.companyId, role: req.user.role },
+      current: { companyId: req.user.companyId, role: req.user.role, isSuperAdmin: !!req.user.isSuperAdmin },
     });
   } catch (e) { next(e); }
 });
