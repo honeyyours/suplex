@@ -7,6 +7,7 @@ import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
 import MaterialImportModal from '../components/MaterialImportModal';
+import MaterialLinkModal from '../components/MaterialLinkModal';
 import { OtherBadge } from '../components/PhaseSelect';
 import { normalizePhase, isOther } from '../utils/phases';
 
@@ -25,6 +26,8 @@ export default function ProjectMaterialsSimple() {
   const [emptyGroups, setEmptyGroups] = useState([]);
   // 공정별 불러오기 모달 — { spaceGroup, kind } 또는 null
   const [importTarget, setImportTarget] = useState(null);
+  // 거실 동일 링크 모달 — 현재 item 객체 또는 null
+  const [linkTarget, setLinkTarget] = useState(null);
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -614,6 +617,8 @@ export default function ProjectMaterialsSimple() {
           onCellKeyDown={handleCellKeyDown}
           onShowQuote={() => { setQuoteDrawerGroup(g.name); setQuoteDrawerOpen(true); }}
           onShowImport={() => setImportTarget({ spaceGroup: g.name, kind: g.kind })}
+          onShowLink={(item) => setLinkTarget(item)}
+          allItems={items}
         />
       ))}
 
@@ -653,6 +658,22 @@ export default function ProjectMaterialsSimple() {
           kind={importTarget.kind}
           onClose={() => setImportTarget(null)}
           onImported={() => { setImportTarget(null); reload(); }}
+        />
+      )}
+
+      {linkTarget && (
+        <MaterialLinkModal
+          items={items}
+          currentItem={linkTarget}
+          onSelect={async (sourceId) => {
+            await patchItem(linkTarget.id, { inheritFromMaterialId: sourceId });
+            setLinkTarget(null);
+          }}
+          onClear={async () => {
+            await patchItem(linkTarget.id, { inheritFromMaterialId: null });
+            setLinkTarget(null);
+          }}
+          onClose={() => setLinkTarget(null)}
         />
       )}
     </div>
@@ -797,7 +818,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport }) {
+function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport, onShowLink, allItems }) {
   const [collapsed, setCollapsed] = useState(false);
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
@@ -911,7 +932,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           {isAppliance ? (
             <ApplianceTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} />
           ) : (
-            <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} />
+            <FinishTable group={group} savingMap={savingMap} onItemPatch={onItemPatch} onItemRemove={onItemRemove} onCellKeyDown={onCellKeyDown} onToggleConfirmed={onToggleConfirmed} onShowLink={onShowLink} allItems={allItems} />
           )}
         </div>
       )}
@@ -922,7 +943,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
 // ============================================
 // 마감재 테이블 (4컬럼)
 // ============================================
-function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed }) {
+function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDown, onToggleConfirmed, onShowLink, allItems }) {
   return (
     <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
       <colgroup>
@@ -948,11 +969,13 @@ function FinishTable({ group, savingMap, onItemPatch, onItemRemove, onCellKeyDow
           <ItemRow
             key={it.id}
             item={it}
+            sourceItem={it.inheritFromMaterialId ? allItems?.find((x) => x.id === it.inheritFromMaterialId) : null}
             saving={!!savingMap[it.id]}
             onChange={(patch) => onItemPatch(it.id, patch)}
             onRemove={() => onItemRemove(it.id)}
             onCellKeyDown={onCellKeyDown}
             onToggle={() => onToggleConfirmed(it.id)}
+            onShowLink={() => onShowLink?.(it)}
           />
         ))}
         {group.items.length === 0 && (
@@ -1125,29 +1148,48 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
   );
 }
 
-function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) {
+function ItemRow({ item, sourceItem, saving, onChange, onRemove, onCellKeyDown, onToggle, onShowLink }) {
   const locked = !!item.locked;
-  const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 ${locked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`;
+  const isLinked = !!item.inheritFromMaterialId;
+  // 참조 중이면 sourceItem 데이터로 표시 (없으면 fallback to item — 원본 삭제됐을 가능성)
+  const display = isLinked && sourceItem ? sourceItem : item;
+  const cellsDisabled = locked || isLinked;
+  const inputCls = `w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 ${
+    cellsDisabled ? 'bg-transparent text-gray-600 cursor-default' : ''
+  }`;
   const kd = (col) => (e) => onCellKeyDown?.(e, item.id, col);
-  const cellAttrs = (col) => ({ 'data-mat-cell': `${item.id}-${col}`, onKeyDown: kd(col), disabled: locked });
+  const cellAttrs = (col) => ({
+    'data-mat-cell': `${item.id}-${col}`,
+    onKeyDown: kd(col),
+    disabled: cellsDisabled,
+    readOnly: isLinked, // 참조 중이면 read-only
+  });
+  const rowCls = isLinked
+    ? 'bg-sky-50 hover:bg-sky-100/60'
+    : (locked ? 'bg-gray-50/50' : 'hover:bg-gray-50');
   return (
-    <tr className={locked ? 'bg-gray-50/50' : 'hover:bg-gray-50'}>
+    <tr className={rowCls}>
       <td className="px-2 py-1.5 text-center">
         <ConfirmCheckbox item={item} onToggle={onToggle} />
       </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('itemName')}
-          value={item.itemName}
+          value={display.itemName || ''}
           onChange={(e) => onChange({ itemName: e.target.value })}
           className={inputCls}
           placeholder="예: 콘센트"
         />
+        {isLinked && (
+          <div className="text-[10px] text-sky-700 mt-0.5 truncate">
+            🔗 {sourceItem ? `${sourceItem.spaceGroup} 동일` : '(원본 항목 없음)'}
+          </div>
+        )}
       </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('brand')}
-          value={item.brand}
+          value={display.brand || ''}
           onChange={(e) => onChange({ brand: e.target.value })}
           className={inputCls}
           placeholder="예: 르그랑 / 무광 블랙 / 9미리"
@@ -1156,33 +1198,43 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) 
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('quantityText')}
-          value={item.quantityText}
+          value={item.quantityText || ''}
           onChange={(e) => onChange({ quantityText: e.target.value })}
-          className={inputCls}
+          className={inputCls.replace(/cursor-default/, '')}
           placeholder="예: 12개"
         />
       </td>
       <td className="px-2 py-1.5">
         <input
           {...cellAttrs('memo')}
-          value={item.memo}
+          value={display.memo || ''}
           onChange={(e) => onChange({ memo: e.target.value })}
           className={inputCls}
           placeholder="설명/색상/위치 등"
         />
       </td>
-      <td className="px-1 text-right">
+      <td className="px-1 text-right whitespace-nowrap">
         {saving ? (
           <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : locked ? null : (
-          <button
-            onClick={onRemove}
-            tabIndex={-1}
-            className="text-gray-300 hover:text-rose-500 text-sm"
-            title="삭제"
-          >
-            ✕
-          </button>
+        ) : (
+          <>
+            {!locked && onShowLink && (
+              <button
+                onClick={onShowLink}
+                tabIndex={-1}
+                title={isLinked ? '🔗 다른 항목으로 변경 / 끊기' : '🔗 다른 항목과 동일하게 시공'}
+                className={`text-sm mr-1 ${isLinked ? 'text-sky-600 hover:text-sky-800' : 'text-gray-300 hover:text-sky-600'}`}
+              >🔗</button>
+            )}
+            {!locked && (
+              <button
+                onClick={onRemove}
+                tabIndex={-1}
+                className="text-gray-300 hover:text-rose-500 text-sm"
+                title="삭제"
+              >✕</button>
+            )}
+          </>
         )}
       </td>
     </tr>

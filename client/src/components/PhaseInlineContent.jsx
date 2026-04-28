@@ -1,13 +1,18 @@
 import { categoryClass } from '../utils/date';
+import { isOther } from '../utils/phases';
 
 // 일정 텍스트 표시 — 공정 chip은 항상 좌측 prefix.
 // 매칭된 키워드(phaseKeyword 또는 phase 이름 자체)는 본문에서 제거하고 양옆 공백 정리.
-// 매칭 못 찾으면 chip 만 prefix로 두고 본문은 원문 그대로.
+// 정책 (2026-04-28):
+//   - phase가 '기타'이거나 매칭 없음 → chip 미표시, 자유 텍스트 그대로 (단순 메모)
+//   - 모바일: chip만 표시 (잔여 텍스트 hidden). 셀 탭/클릭 시 상세 모달에서 전체 확인
+//   - 웹: chip + 잔여 텍스트 같이
 export default function PhaseInlineContent({ entry, textClassName = '', chipClassName = '' }) {
   const text = entry.content || '';
   const phase = entry.category;
 
-  if (!phase) {
+  // phase 매칭 없음 또는 '기타' → 자유 텍스트로 처리
+  if (!phase || isOther(phase)) {
     return <span className={`truncate ${textClassName}`}>{text}</span>;
   }
 
@@ -40,7 +45,8 @@ export default function PhaseInlineContent({ entry, textClassName = '', chipClas
       <span className={`inline-block text-[9px] sm:text-[10px] px-1 py-0.5 rounded ${catColor} ${chipClassName}`}>
         {phase}
       </span>
-      {remainder && <span className={`truncate ${textClassName}`}>{remainder}</span>}
+      {/* 잔여 텍스트는 웹에서만 표시 (모바일은 chip만 — 좁은 셀 가독성) */}
+      {remainder && <span className={`hidden sm:inline truncate ${textClassName}`}>{remainder}</span>}
     </>
   );
 }
