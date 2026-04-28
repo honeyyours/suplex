@@ -2,6 +2,8 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 
 const router = express.Router();
 router.use(authRequired);
@@ -19,6 +21,9 @@ router.use(async (req, res, next) => {
     next();
   } catch (e) { next(e); }
 });
+
+// 역할 가드: OWNER만
+router.use(requireFeature(F.EXPENSES_VIEW));
 
 // GET /api/expense-rules
 router.get('/', async (req, res, next) => {

@@ -1,6 +1,8 @@
 // AI비서용 read-only 쿼리 도구 모음
 // Claude한테 JSON Schema로 노출하고, 실행은 회사ID로 강제 필터링.
+// role 기반 도구 필터: BILLING_AI_TOOLS는 OWNER만 노출/실행 가능 (Feature Flag 패턴)
 const prisma = require('../config/prisma');
+const { BILLING_AI_TOOLS } = require('./features');
 
 const WORK_TYPES = [
   'START', 'DEMOLITION', 'PLUMBING', 'GAS', 'ELECTRIC', 'FIRE',
@@ -677,33 +679,30 @@ const TOOLS = {
   get_pnl_summary,
 };
 
-// 지출관리 토글 ON일 때 차단되는 도구 (지출/계정/PnL 모두)
-const EXPENSE_TOOLS = new Set([
-  'list_expenses', 'sum_expenses', 'list_account_codes', 'get_pnl_summary',
-]);
+// 회계 도구 = 회사 hideExpenses ON 또는 role !== OWNER 시 차단
+// 정의는 services/features.js의 BILLING_AI_TOOLS (list_expenses / sum_expenses /
+// list_account_codes / get_pnl_summary / get_project_summary)
+function isBlockedTool(name, ctx) {
+  if (!BILLING_AI_TOOLS.has(name)) return false;
+  if (ctx?.hideExpenses) return true;
+  if (ctx?.role !== 'OWNER') return true;
+  return false;
+}
 
 function getToolSchemas(opts = {}) {
   return Object.values(TOOLS)
-    .filter((t) => !(opts.hideExpenses && EXPENSE_TOOLS.has(t.schema.name)))
+    .filter((t) => !isBlockedTool(t.schema.name, opts))
     .map((t) => t.schema);
 }
 
 async function executeTool(name, args, ctx) {
-  if (ctx?.hideExpenses && EXPENSE_TOOLS.has(name)) {
-    return { error: '지출관리 기능이 비활성화되어 있어 이 도구는 사용할 수 없습니다' };
+  if (isBlockedTool(name, ctx)) {
+    return { error: '이 도구는 OWNER(대표) 권한이 필요합니다 (회계·지출 정보)' };
   }
   const tool = TOOLS[name];
   if (!tool) return { error: `Unknown tool: ${name}` };
   try {
-    // get_project_summary는 지출 정보 포함 → hideExpenses 시 지출 필드 마스킹
-    const result = await tool.run(ctx, args || {});
-    if (ctx?.hideExpenses && name === 'get_project_summary' && result && !result.error) {
-      delete result.totalExpense;
-      delete result.profit;
-      delete result.margin;
-      delete result.expenseCount;
-    }
-    return result;
+    return await tool.run(ctx, args || {});
   } catch (e) {
     console.error(`[aiTools] ${name} error:`, e);
     return { error: e.message || 'Internal error' };

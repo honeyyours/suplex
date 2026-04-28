@@ -2,12 +2,14 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 const { classifyOne } = require('../services/autoClassify');
 
 const router = express.Router();
 router.use(authRequired);
 
-// 회사 설정으로 지출관리 비활성화된 경우 차단
+// 회사 설정으로 지출관리 비활성화된 경우 차단 (회사 단위 hideExpenses 토글)
 router.use(async (req, res, next) => {
   try {
     const company = await prisma.company.findUnique({
@@ -20,6 +22,9 @@ router.use(async (req, res, next) => {
     next();
   } catch (e) { next(e); }
 });
+
+// 역할 가드: OWNER만 접근 가능 (DESIGNER/FIELD 차단)
+router.use(requireFeature(F.EXPENSES_VIEW));
 
 const TYPES = ['EXPENSE', 'INCOME', 'TRANSFER'];
 const PAYMENT_METHODS = ['CASH', 'CARD', 'BANK_TRANSFER', 'OTHER'];

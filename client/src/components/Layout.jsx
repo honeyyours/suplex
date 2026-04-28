@@ -2,14 +2,15 @@ import { useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { F, canAccess } from '../utils/features';
 
 const NAV = [
   { to: '/', label: '홈', exact: true },
   { to: '/schedule', label: '일정' },
   { to: '/projects', label: '프로젝트' },
   { to: '/orders', label: '발주' },
-  { to: '/expenses', label: '지출관리', expense: true },
-  { to: '/ai-assistant', label: 'AI비서', expense: true },
+  { to: '/expenses', label: '지출관리', feature: F.EXPENSES_VIEW },
+  { to: '/ai-assistant', label: 'AI비서', feature: F.AI_ASSISTANT },
   { to: '/team', label: '팀관리' },
   { to: '/settings', label: '설정' },
 ];
@@ -17,8 +18,7 @@ const NAV = [
 export default function Layout() {
   const { auth } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
-  const hideExpenses = !!auth?.company?.hideExpenses;
-  const navItems = NAV.filter((n) => !(hideExpenses && n.expense));
+  const navItems = NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
 
   // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
   useEffect(() => {

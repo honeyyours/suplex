@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import ExpensesGate from './components/ExpensesGate';
+import FeatureGate from './components/FeatureGate';
+import { F } from './utils/features';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -44,9 +45,9 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
-        <Route path="/expenses" element={<ExpensesGate><Expenses /></ExpensesGate>} />
+        <Route path="/expenses" element={<FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate>} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/ai-assistant" element={<ExpensesGate><AIAssistant /></ExpensesGate>} />
+        <Route path="/ai-assistant" element={<FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate>} />
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/settings" element={<Settings />} />
 
@@ -64,7 +65,7 @@ export default function App() {
           <Route path="memo" element={<ProjectMemo />} />
           <Route path="checklist" element={<ProjectChecklist />} />
           <Route path="reports" element={<ProjectReports />} />
-          <Route path="expenses" element={<ExpensesGate redirectTo="schedule"><ProjectExpenses /></ExpensesGate>} />
+          <Route path="expenses" element={<FeatureGate feature={F.EXPENSES_VIEW} redirectTo="schedule"><ProjectExpenses /></FeatureGate>} />
         </Route>
       </Route>
 

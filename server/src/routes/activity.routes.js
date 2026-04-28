@@ -23,6 +23,8 @@ router.get('/', async (req, res, next) => {
       select: { hideExpenses: true },
     });
     const hideExpenses = !!company?.hideExpenses;
+    // 베타: OWNER만 지출 활동 조회 (Feature Flag F.EXPENSES_VIEW)
+    const canSeeExpenses = !hideExpenses && req.user.role === 'OWNER';
 
     const [
       scheduleChanges,
@@ -45,12 +47,12 @@ router.get('/', async (req, res, next) => {
         orderBy: { createdAt: 'desc' },
         take: limit,
       }),
-      hideExpenses ? Promise.resolve([]) : prisma.expense.findMany({
+      canSeeExpenses ? prisma.expense.findMany({
         where: { companyId, createdAt: { gte: since } },
         include: { project: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },
         take: limit,
-      }),
+      }) : Promise.resolve([]),
       prisma.projectChecklist.findMany({
         where: {
           ...projectScope,

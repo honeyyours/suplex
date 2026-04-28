@@ -62,15 +62,28 @@ router.post('/chat', async (req, res, next) => {
     });
     const hideExpenses = !!company?.hideExpenses;
 
-    const ctx = { companyId: req.user.companyId, userId: req.user.id, hideExpenses };
-    const tools = getToolSchemas({ hideExpenses });
+    const role = req.user.role;
+    const ctx = {
+      companyId: req.user.companyId,
+      userId: req.user.id,
+      role,
+      hideExpenses,
+    };
+    const tools = getToolSchemas({ hideExpenses, role });
 
     // 시스템에 오늘 날짜 동적 주입 (시간 변환 도움)
     const todayKR = new Date().toLocaleDateString('ko-KR', {
       year: 'numeric', month: '2-digit', day: '2-digit',
     });
     const todayISO = new Date().toISOString().slice(0, 10);
-    const system = `${SYSTEM_PROMPT}\n\n오늘 날짜: ${todayKR} (ISO: ${todayISO})`;
+
+    // 역할 안내: OWNER 외에는 회계 도구가 도구 목록에서 제외되므로,
+    // 사용자가 회계/지출 질문을 했을 때 거절 사유를 명확히 답하도록 시스템에 알림.
+    const roleNote = role === 'OWNER'
+      ? '사용자 역할: OWNER (대표) — 모든 도구 사용 가능.'
+      : `사용자 역할: ${role} — 지출·매출·회계·계정과목·프로젝트 손익(PnL) 도구는 이 사용자에게 제공되지 않았어. 사용자가 그쪽 질문을 하면 "회계 정보는 대표(OWNER) 권한 사용자만 조회할 수 있어요"라고 정중히 안내하고, 가능한 마감재·일정·체크리스트·발주·견적·프로젝트 기본 정보 쪽 질문으로 안내해.`;
+
+    const system = `${SYSTEM_PROMPT}\n\n오늘 날짜: ${todayKR} (ISO: ${todayISO})\n${roleNote}`;
 
     // 메시지 변환 (text 단일 블록)
     const messages = data.messages.map((m) => ({
