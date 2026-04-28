@@ -1,7 +1,7 @@
 """
 Suplex 소개서 → PPTX 변환기
 - 입력: 본 스크립트 안의 콘텐츠 (소개서.md 기반)
-- 출력: splex/docs/sales/소개서.pptx
+- 출력: suplex/docs/sales/소개서.pptx
 - 22 슬라이드, 16:9, 한국어 (맑은 고딕)
 """
 from pptx import Presentation
@@ -639,7 +639,7 @@ def main():
     s_cta(prs, TOTAL)                                                        # 21
     s_closing(prs, TOTAL)                                                    # 22
 
-    out = r"C:\Users\1988k\projects\splex\docs\sales\소개서.pptx"
+    out = r"C:\Users\1988k\projects\suplex\docs\sales\소개서.pptx"
     prs.save(out)
     print(f"OK: {out}")
     print(f"Slides: {len(prs.slides)}")

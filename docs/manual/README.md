@@ -180,7 +180,7 @@ Suplex를 도입한 인테리어 업체 직원이 이 매뉴얼만 보고 — **
 ## 9. 파일 구조
 
 ```
-splex/docs/manual/
+suplex/docs/manual/
 ├── README.md                  ← 본 계획서
 ├── CHANGELOG.md               ← 버전별 변경 이력
 ├── 00-quick-start.md          ← Quick Start Guide (A)
@@ -233,7 +233,7 @@ splex/docs/manual/
 
 | # | 결정 항목 | 답 |
 |---|---|---|
-| 1 | 파일 위치 | `splex/docs/manual/` (모노레포 안) |
+| 1 | 파일 위치 | `suplex/docs/manual/` (모노레포 안) |
 | 2 | 독자 호칭 | "사용자" 통일 |
 | 3 | 시범 고객 | 베타 단계에서 1~2곳 확보 (대표님 직접 섭외) |
 | 4 | 시각자료 | Mermaid + 스크린샷으로 시작, 정식판에서 일러스트 추가 |

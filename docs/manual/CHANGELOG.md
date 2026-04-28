@@ -59,7 +59,7 @@
 ## [v0.1] — 2026-04-26
 
 ### 추가
-- 매뉴얼 디렉토리 구조 (`splex/docs/manual/`) 신설
+- 매뉴얼 디렉토리 구조 (`suplex/docs/manual/`) 신설
 - `README.md`: 매뉴얼 제작 계획서 작성. 4종 문서 라인업, 12챕터 목차, 8개 Playbook 카탈로그, 시각자료 표준, 작업 단계, 운영 원칙
 - `CHANGELOG.md`: 본 변경 이력 문서
 - `glossary.md`: 핵심 용어 정의 (다른 챕터의 참조 표준)
@@ -67,7 +67,7 @@
 - `playbooks/01-30py-apartment-full.md`: 30평 아파트 전면 리모델링 시나리오. 모든 핵심 기능이 등장하는 통합 Playbook
 
 ### 결정사항 (계획 단계 합의)
-- 파일 위치: `splex/docs/manual/` (모노레포 내부)
+- 파일 위치: `suplex/docs/manual/` (모노레포 내부)
 - 독자 호칭: 통일된 "사용자"
 - 시각자료: Mermaid + 스크린샷 → 정식판에서 일러스트 추가
 - 첫 작성 시나리오: Playbook #1 (30평 아파트)

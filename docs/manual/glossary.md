@@ -169,7 +169,7 @@ Suplex 개발 로드맵에서 일정 탭이 신설되는 단계. v0.5 매뉴얼 
 Software as a Service. Suplex는 인테리어 회사용 B2B SaaS다.
 
 **Suplex (구 SPLEX)**
-이 SaaS의 정식 명칭. 2026-04-23 SPLEX → Suplex로 리네이밍. 폴더명 등 일부 코드는 여전히 splex로 남아있다.
+이 SaaS의 정식 명칭. 2026-04-23 SPLEX → Suplex로 리네이밍, 2026-04-28 폴더명도 splex → suplex로 정리 완료. 단 `splex_token` 같은 일부 LEGACY 식별자는 호환성을 위해 의도적으로 보존됨.
 
 ---
 
