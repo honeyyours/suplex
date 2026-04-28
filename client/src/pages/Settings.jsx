@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
@@ -1161,6 +1161,15 @@ function PhaseAdvicesSection() {
     reload();
   }
 
+  // datalist 자동완성 — 표준 5개 + 회사가 만든 커스텀 카테고리 합산
+  const categoryOptions = useMemo(() => {
+    const set = new Set(ADVICE_CATEGORIES);
+    for (const a of advices) {
+      if (a.category && a.category.trim()) set.add(a.category.trim());
+    }
+    return Array.from(set).sort((x, y) => x.localeCompare(y, 'ko'));
+  }, [advices]);
+
   return (
     <Section title="공정 어드바이스 (체크리스트 자동 생성)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
@@ -1214,62 +1223,75 @@ function PhaseAdvicesSection() {
               <tr><td colSpan={7} className="text-center py-4 text-gray-400">등록된 어드바이스가 없습니다.</td></tr>
             )}
           </tbody>
+          {/* 입력 영역 — 표 안에 통합되어 헤더/본문과 같은 칼럼 너비 자동 공유 */}
+          <tfoot className="border-t-2 bg-gray-50/50">
+            <tr>
+              <td className="px-2 py-2 align-top">
+                <select
+                  value={draft.phase}
+                  onChange={(e) => setDraft({ ...draft, phase: e.target.value })}
+                  className="w-full text-xs px-1 py-1 border rounded focus:border-navy-700 outline-none bg-white"
+                >
+                  <option value="">— 선택 —</option>
+                  {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
+                    <option key={p.key} value={p.label}>{displayPhase(p.label)}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-1 py-2 align-top">
+                <input
+                  type="number"
+                  value={draft.daysBefore}
+                  onChange={(e) => setDraft({ ...draft, daysBefore: e.target.value })}
+                  className="w-full text-xs text-right px-1 py-1 border rounded focus:border-navy-700 outline-none"
+                />
+              </td>
+              <td className="px-2 py-2 align-top">
+                <input
+                  type="text"
+                  value={draft.title}
+                  onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') add(); }}
+                  placeholder="예: 보양 관련 관리실 문의"
+                  className="w-full text-xs px-2 py-1 border rounded focus:border-navy-700 outline-none"
+                />
+              </td>
+              <td className="px-2 py-2 align-top">
+                <input
+                  list="advice-categories"
+                  value={draft.category}
+                  onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                  placeholder="자유 입력"
+                  title="자유 입력 가능 — 자주 쓰는 5개 + 회사 기존 카테고리 자동완성 제안"
+                  className="w-full text-xs px-2 py-1 border rounded focus:border-navy-700 outline-none"
+                />
+                <datalist id="advice-categories">
+                  {categoryOptions.map((c) => <option key={c} value={c} />)}
+                </datalist>
+              </td>
+              <td className="px-2 py-2 align-top text-center">
+                <input
+                  type="checkbox"
+                  checked={draft.requiresPhoto}
+                  onChange={(e) => setDraft({ ...draft, requiresPhoto: e.target.checked })}
+                  title="사진 첨부 필수 (시공 사진 증거)"
+                  className="w-4 h-4 accent-navy-700"
+                />
+              </td>
+              <td className="px-2 py-2 align-top text-center text-[10px] text-gray-400">기본<br/>활성</td>
+              <td className="px-2 py-2 align-top text-right">
+                <button
+                  onClick={add}
+                  disabled={!draft.phase || !draft.title.trim()}
+                  className="text-xs px-3 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-40 whitespace-nowrap"
+                >+ 추가</button>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
-
-      <div className="mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end border-t pt-3">
-        <div className="md:col-span-2">
-          <label className="block text-xs text-gray-500 mb-1">공정</label>
-          <select
-            value={draft.phase}
-            onChange={(e) => setDraft({ ...draft, phase: e.target.value })}
-            className="w-full text-sm px-2 py-1.5 border rounded focus:border-navy-700 outline-none bg-white"
-          >
-            <option value="">— 선택 —</option>
-            {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
-              <option key={p.key} value={p.label}>{displayPhase(p.label)}</option>
-            ))}
-          </select>
-        </div>
-        <FormField
-          label="D-N (일)"
-          type="number"
-          value={draft.daysBefore}
-          onChange={(v) => setDraft({ ...draft, daysBefore: v })}
-        />
-        <div className="md:col-span-1">
-          <label className="block text-xs text-gray-500 mb-1">카테고리</label>
-          <input
-            list="advice-categories"
-            value={draft.category}
-            onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-            placeholder="예: 사전 준비"
-            className="w-full text-sm px-2 py-1.5 border rounded focus:border-navy-700 outline-none"
-          />
-          <datalist id="advice-categories">
-            {ADVICE_CATEGORIES.map((c) => <option key={c} value={c} />)}
-          </datalist>
-        </div>
-        <div className="md:col-span-2 flex gap-2 items-end">
-          <FormField
-            label="제목 (예: 보양 관련 관리실 문의)"
-            value={draft.title}
-            onChange={(v) => setDraft({ ...draft, title: v })}
-          />
-          <button
-            onClick={add}
-            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 whitespace-nowrap"
-          >+ 추가</button>
-        </div>
-        <label className="flex items-center gap-2 text-sm md:col-span-6">
-          <input
-            type="checkbox"
-            checked={draft.requiresPhoto}
-            onChange={(e) => setDraft({ ...draft, requiresPhoto: e.target.checked })}
-            className="w-4 h-4 accent-navy-700"
-          />
-          📷 사진 첨부 필수 (시공 사진 증거용 — D-N=0과 함께 쓰면 옛 체크리스트 템플릿 역할)
-        </label>
+      <div className="mt-2 text-[11px] text-gray-400">
+        💡 카테고리는 자유 입력입니다. 자주 쓰는 5개와 회사에서 이미 등록한 카테고리가 자동완성 제안으로 노출돼요.
       </div>
     </Section>
   );
