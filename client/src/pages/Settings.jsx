@@ -822,13 +822,6 @@ function PhaseKeywordsSection() {
             </button>
           );
         })}
-        <button
-          onClick={() => setNewPhaseModal(true)}
-          className="text-xs px-2.5 py-1 rounded border border-dashed border-navy-400 text-navy-700 hover:bg-navy-50"
-          title="새 공정 추가"
-        >
-          + 새 공정
-        </button>
       </div>
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
@@ -872,50 +865,7 @@ function PhaseKeywordsSection() {
           onClick={add}
           className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
         >추가</button>
-        <button
-          onClick={removeActivePhase}
-          className="text-sm px-3 py-1.5 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
-          title={`"${activePhase}" 공정 자체를 삭제 (키워드/D-N/어드바이스 일괄 제거)`}
-        >🗑 공정 삭제</button>
       </div>
-
-      {newPhaseModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setNewPhaseModal(false)}>
-          <div className="bg-white rounded-lg max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b font-bold text-navy-800">새 공정 추가</div>
-            <div className="p-4 space-y-3">
-              <p className="text-xs text-gray-500">
-                공정명과 자동 인식할 첫 키워드를 입력해주세요. 공정 추가 후 일정 입력에서 자동 인식되며,
-                공정 칩·발주 D-N·어드바이스 등 모든 곳에 즉시 반영됩니다.
-              </p>
-              <div>
-                <label className="block text-xs text-gray-500 mb-0.5">공정명 (예: 조경)</label>
-                <input
-                  autoFocus
-                  value={newPhase.name}
-                  onChange={(e) => setNewPhase({ ...newPhase, name: e.target.value })}
-                  placeholder="예: 조경, 가구, 가전"
-                  className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-0.5">첫 키워드 (예: 조경 또는 식재)</label>
-                <input
-                  value={newPhase.keyword}
-                  onChange={(e) => setNewPhase({ ...newPhase, keyword: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && addNewPhase()}
-                  placeholder="이 키워드가 일정 내용에 들어가면 새 공정으로 자동 분류됩니다"
-                  className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
-                />
-              </div>
-            </div>
-            <div className="px-4 py-3 border-t flex justify-end gap-2">
-              <button onClick={() => setNewPhaseModal(false)} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">취소</button>
-              <button onClick={addNewPhase} className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800">추가</button>
-            </div>
-          </div>
-        </div>
-      )}
     </Section>
   );
 }

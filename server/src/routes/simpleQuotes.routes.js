@@ -348,18 +348,20 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     });
     if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
-    // 견적 공정 후보 — 표준 25개로 정규화하여 spaceGroup 키 통일
-    // (자유 텍스트 라인이 있어도 표준에 흡수, 견적 ↔ 마감재 매칭 정확)
+    // 견적 공정 후보 — 표준 25개에 매핑되면 표준 라벨, 매핑 실패는 원본 텍스트 보존
+    // (사용자 정책: '기타'로 강제 흡수하지 말고 자유 키워드로 그대로 마감재 spaceGroup으로 사용)
     const seen = new Set();
     const candidates = [];
     for (const l of quote.lines) {
       if (l.isGroup) continue;
       const raw = String(l.itemName || '').trim();
       if (!raw) continue;
-      const normalized = normalizePhase(raw).label; // 표준 25개 또는 '기타'
-      if (seen.has(normalized)) continue;
-      seen.add(normalized);
-      candidates.push(normalized);
+      const normalized = normalizePhase(raw);
+      // 표준 매핑 성공 → 표준 라벨 / 매핑 실패(=OTHER) → 원본 raw 보존
+      const finalKey = normalized.key === 'OTHER' ? raw : normalized.label;
+      if (seen.has(finalKey)) continue;
+      seen.add(finalKey);
+      candidates.push(finalKey);
     }
     if (candidates.length === 0) {
       return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });

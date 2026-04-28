@@ -5,18 +5,16 @@ import { formatDateDot } from '../utils/date';
 import { normalizePhase, isOther } from '../utils/phases';
 
 // 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
+// 표준 매핑된 경우만 표시 (예: "벽지" → "도배"). OTHER는 자유 텍스트로 처리되니 표시 X.
 function PhasePreviewBadge({ text }) {
   if (!text || !text.trim()) return null;
   const phase = normalizePhase(text);
-  if (phase.label === text.trim()) return null; // 입력 = 표준 라벨이면 표시 X (깨끗)
+  if (phase.label === text.trim()) return null; // 입력 = 표준 라벨이면 표시 X
+  if (isOther(phase.label)) return null; // 자유 텍스트 그대로 — 미리보기 표시 X
   return (
     <span
       title={`견적-마감재 매칭 키: "${phase.label}"`}
-      className={`text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap ${
-        isOther(phase.label)
-          ? 'bg-amber-50 text-amber-700 border-amber-200'
-          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      }`}
+      className="text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200"
     >
       → {phase.label}
     </span>

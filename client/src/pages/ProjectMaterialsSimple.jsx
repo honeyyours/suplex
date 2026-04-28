@@ -19,6 +19,9 @@ export default function ProjectMaterialsSimple() {
   const [applianceSearchGroup, setApplianceSearchGroup] = useState(null); // 가전 검색 모달 대상 그룹
   const [quoteDrawerOpen, setQuoteDrawerOpen] = useState(false);
   const [quoteDrawerGroup, setQuoteDrawerGroup] = useState(null); // 드로어 활성 spaceGroup
+  // 빈 그룹 — 그룹은 추가됐지만 아직 항목이 없는 상태 (Material row 0개)
+  // 새로고침 시 사라짐 (사용자가 첫 항목 빨리 입력해야 함). [{name, kind}]
+  const [emptyGroups, setEmptyGroups] = useState([]);
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -232,10 +235,13 @@ export default function ProjectMaterialsSimple() {
 
   // ========== 항목 추가/삭제 ==========
   async function addItem(spaceGroup, focusCol = 'itemName', kindHint = null) {
-    // 그룹 안 첫 항목의 kind를 따라감 (없으면 kindHint, 그것도 없으면 FINISH)
+    // 그룹 안 첫 항목의 kind를 따라감 (items 또는 emptyGroups, 없으면 FINISH)
     const groupKind = kindHint
       || items.find((x) => x.spaceGroup === spaceGroup)?.kind
+      || emptyGroups.find((g) => g.name === spaceGroup)?.kind
       || 'FINISH';
+    // 첫 항목 추가 시 빈 그룹 목록에서 제거
+    setEmptyGroups((prev) => prev.filter((g) => g.name !== spaceGroup));
     try {
       const { material } = await materialsApi.create(projectId, {
         kind: groupKind,
@@ -461,25 +467,25 @@ export default function ProjectMaterialsSimple() {
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    // 마감재(FINISH)만 자동 정규화. 가전·가구는 공간명이라 그대로.
+    // 마감재(FINISH): 표준 매핑되면 표준 라벨로 confirm, 매핑 실패는 원본 자유 텍스트 그대로
+    // 가전·가구: 공간명이라 정규화 X.
     let finalName = trimmed;
     if (kind === 'FINISH') {
       const phase = normalizePhase(trimmed);
-      finalName = phase.label;
-      if (finalName !== trimmed) {
-        const msg = isOther(finalName)
-          ? `"${trimmed}"는 표준 공정에 없어 "${finalName}"으로 저장됩니다.\n` +
-            `· 통합 기능(D-N 룰·자동 발주·AI비서 통합 답변)이 작동하지 않습니다.\n계속하시겠어요?`
-          : `"${trimmed}" → 표준 공정 "${finalName}"으로 자동 저장됩니다.\n계속하시겠어요?`;
-        if (!confirm(msg)) return;
+      if (phase.key !== 'OTHER' && phase.label !== trimmed) {
+        // 표준 매핑 발견 — 사용자 확인
+        if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다.\n계속하시겠어요?`)) return;
+        finalName = phase.label;
       }
+      // OTHER로 떨어지면 원본 그대로 (자유 키워드 보존)
     }
 
     if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다.');
       return;
     }
-    await addItem(finalName, 'itemName', kind);
+    // 빈 그룹으로 추가 — Material 자동 생성 X. 사용자가 "+ 항목" 클릭으로 첫 항목 추가.
+    setEmptyGroups((prev) => [...prev, { name: finalName, kind }]);
   }
 
   async function renameGroup(from) {
@@ -488,17 +494,14 @@ export default function ProjectMaterialsSimple() {
     const trimmed = next.trim();
     if (!trimmed || trimmed === from) return;
 
-    // 같은 정규화 흐름 (마감재만, 가전 그룹은 그대로)
+    // 같은 정규화 흐름 (마감재만, 가전 그룹은 그대로). OTHER는 원본 보존.
     const fromGroup = grouped.find((g) => g.name === from);
     let finalName = trimmed;
     if (fromGroup?.kind === 'FINISH') {
       const phase = normalizePhase(trimmed);
-      finalName = phase.label;
-      if (finalName !== trimmed) {
-        const msg = isOther(finalName)
-          ? `"${trimmed}"는 표준 공정에 없어 "${finalName}"으로 저장됩니다. 계속하시겠어요?`
-          : `"${trimmed}" → 표준 공정 "${finalName}"으로 자동 저장됩니다. 계속하시겠어요?`;
-        if (!confirm(msg)) return;
+      if (phase.key !== 'OTHER' && phase.label !== trimmed) {
+        if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다. 계속하시겠어요?`)) return;
+        finalName = phase.label;
       }
     }
 
@@ -537,11 +540,9 @@ export default function ProjectMaterialsSimple() {
       }
       map.get(g).push(it);
     }
-    return order.map((g) => {
+    const list = order.map((g) => {
       const arr = map.get(g).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-      // 그룹 kind = 첫 항목의 kind (정상적으로는 그룹 안 모두 동일)
       const kind = arr[0]?.kind || 'FINISH';
-      // 미정 + 데드라인 임박 — 그룹의 deadline은 첫 항목 기준 (모두 같은 spaceGroup이라 동일)
       const undecidedItems = arr.filter((it) => !it.locked && (it.status === 'UNDECIDED' || it.status === 'REVIEWING'));
       const minDays = undecidedItems
         .map((it) => it.daysToDeadline)
@@ -549,7 +550,14 @@ export default function ProjectMaterialsSimple() {
         .reduce((min, d) => (min == null || d < min ? d : min), null);
       return { name: g, kind, items: arr, undecidedCount: undecidedItems.length, minDaysToDeadline: minDays };
     });
-  }, [items]);
+    // 빈 그룹 추가 (Material row 없는 그룹)
+    for (const eg of emptyGroups) {
+      if (!list.find((g) => g.name === eg.name)) {
+        list.push({ name: eg.name, kind: eg.kind, items: [], undecidedCount: 0, minDaysToDeadline: null });
+      }
+    }
+    return list;
+  }, [items, emptyGroups]);
   const groupNames = grouped.map((g) => g.name);
 
   if (loading) {
