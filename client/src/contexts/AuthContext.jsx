@@ -123,6 +123,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(LEGACY_TOKEN_KEY);
     localStorage.removeItem(LEGACY_USER_KEY);
+    localStorage.removeItem(IMPERSONATE_BACKUP_KEY); // 사칭 중 로그아웃 시 백업 토큰도 정리
     setAuth(null);
   }
 

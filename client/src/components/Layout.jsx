@@ -16,7 +16,7 @@ const NAV = [
 ];
 
 export default function Layout() {
-  const { auth, memberships, switchCompany, exitImpersonate } = useAuth();
+  const { auth, memberships, switchCompany, exitImpersonate, logout } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -106,6 +106,13 @@ export default function Layout() {
               )}
               {' · '}{auth?.user?.name}
             </span>
+            <button
+              onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
+              title="로그아웃"
+              className="text-xs text-navy-100 hover:text-white px-2 py-1 rounded hover:bg-navy-700/60 transition"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
         <nav className="sm:hidden flex gap-1 px-4 pb-2 overflow-x-auto">
