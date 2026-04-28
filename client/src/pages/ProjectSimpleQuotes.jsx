@@ -684,40 +684,41 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             label={
               <span className="flex items-center gap-2">
                 부가세
-                <input
-                  type="number"
-                  step="0.01"
-                  value={quote.vatRate}
-                  onChange={(e) => {
-                    const newRate = Number(e.target.value) || 0;
-                    const oldRate = Number(quote.vatRate) || 0;
-                    const patch = { vatRate: newRate };
-                    const VAT_NOTE = '※ 현금영수증 및 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.';
-                    const footer = quote.footerNotes || '';
+                <label className="flex items-center gap-1 text-xs cursor-pointer select-none ml-1">
+                  <input
+                    type="checkbox"
+                    checked={Number(quote.vatRate) > 0}
+                    onChange={(e) => {
+                      const newRate = e.target.checked ? 10 : 0;
+                      const oldRate = Number(quote.vatRate) || 0;
+                      const patch = { vatRate: newRate };
+                      const VAT_NOTE = '※ 현금영수증 및 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.';
+                      const footer = quote.footerNotes || '';
 
-                    // 0 → 양수: 푸터에서 "부가세" 단어가 포함된 줄 자동 제거
-                    if (oldRate === 0 && newRate > 0) {
-                      const cleaned = footer
-                        .split('\n')
-                        .filter((line) => !/부가세/.test(line))
-                        .join('\n')
-                        .trim();
-                      if (cleaned !== footer) patch.footerNotes = cleaned;
-                    }
-                    // 양수 → 0: 푸터에 "부가세" 줄이 없으면 표준 안내문 자동 추가 (복원)
-                    if (oldRate > 0 && newRate === 0) {
-                      const hasVatNote = footer.split('\n').some((line) => /부가세/.test(line));
-                      if (!hasVatNote) {
-                        patch.footerNotes = footer.trim()
-                          ? `${footer.trim()}\n${VAT_NOTE}`
-                          : VAT_NOTE;
+                      // 0 → 양수(10): 푸터에서 "부가세" 줄 자동 제거
+                      if (oldRate === 0 && newRate > 0) {
+                        const cleaned = footer
+                          .split('\n')
+                          .filter((line) => !/부가세/.test(line))
+                          .join('\n')
+                          .trim();
+                        if (cleaned !== footer) patch.footerNotes = cleaned;
                       }
-                    }
-                    scheduleHeaderSave(patch);
-                  }}
-                  className="w-14 px-1 py-0.5 border rounded text-right text-xs"
-                />
-                <span className="text-xs text-gray-400">%</span>
+                      // 양수 → 0: 푸터에 "부가세" 줄이 없으면 표준 안내문 자동 추가
+                      if (oldRate > 0 && newRate === 0) {
+                        const hasVatNote = footer.split('\n').some((line) => /부가세/.test(line));
+                        if (!hasVatNote) {
+                          patch.footerNotes = footer.trim()
+                            ? `${footer.trim()}\n${VAT_NOTE}`
+                            : VAT_NOTE;
+                        }
+                      }
+                      scheduleHeaderSave(patch);
+                    }}
+                    className="w-3.5 h-3.5"
+                  />
+                  <span className="text-gray-600">10% 포함</span>
+                </label>
               </span>
             }
             value={liveVat}
