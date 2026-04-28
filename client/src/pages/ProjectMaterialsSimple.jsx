@@ -6,6 +6,8 @@ import { useParams } from 'react-router-dom';
 import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
+import { OtherBadge } from '../components/PhaseSelect';
+import { normalizePhase, isOther } from '../utils/phases';
 
 const SAVE_DELAY = 1000;
 
@@ -448,19 +450,36 @@ export default function ProjectMaterialsSimple() {
   }
 
   // ========== 그룹 추가/이름 변경/삭제 ==========
+  // 마감재의 spaceGroup은 표준 공정 25개로 자동 흡수 (closed 척추 정책).
+  // 가전·가구는 spaceGroup이 공간(거실/주방 등)이라 정규화 X.
   async function addGroup(kind = 'FINISH') {
     const placeholder = kind === 'APPLIANCE'
       ? '예: 주방, 거실, 욕실, 다용도실'
-      : '예: 목공, 도배, 화장실';
+      : '예: 목공, 도배, 화장실 (표준 25개로 자동 흡수)';
     const name = prompt(`새 ${kind === 'APPLIANCE' ? '가전·가구' : '마감재'} 그룹 이름을 입력하세요 (${placeholder})`);
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (groupNames.includes(trimmed)) {
+
+    // 마감재(FINISH)만 자동 정규화. 가전·가구는 공간명이라 그대로.
+    let finalName = trimmed;
+    if (kind === 'FINISH') {
+      const phase = normalizePhase(trimmed);
+      finalName = phase.label;
+      if (finalName !== trimmed) {
+        const msg = isOther(finalName)
+          ? `"${trimmed}"는 표준 공정에 없어 "${finalName}"으로 저장됩니다.\n` +
+            `· 통합 기능(D-N 룰·자동 발주·AI비서 통합 답변)이 작동하지 않습니다.\n계속하시겠어요?`
+          : `"${trimmed}" → 표준 공정 "${finalName}"으로 자동 저장됩니다.\n계속하시겠어요?`;
+        if (!confirm(msg)) return;
+      }
+    }
+
+    if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다.');
       return;
     }
-    await addItem(trimmed, 'itemName', kind);
+    await addItem(finalName, 'itemName', kind);
   }
 
   async function renameGroup(from) {
@@ -468,13 +487,29 @@ export default function ProjectMaterialsSimple() {
     if (next == null) return;
     const trimmed = next.trim();
     if (!trimmed || trimmed === from) return;
-    if (groupNames.includes(trimmed)) {
+
+    // 같은 정규화 흐름 (마감재만, 가전 그룹은 그대로)
+    const fromGroup = grouped.find((g) => g.name === from);
+    let finalName = trimmed;
+    if (fromGroup?.kind === 'FINISH') {
+      const phase = normalizePhase(trimmed);
+      finalName = phase.label;
+      if (finalName !== trimmed) {
+        const msg = isOther(finalName)
+          ? `"${trimmed}"는 표준 공정에 없어 "${finalName}"으로 저장됩니다. 계속하시겠어요?`
+          : `"${trimmed}" → 표준 공정 "${finalName}"으로 자동 저장됩니다. 계속하시겠어요?`;
+        if (!confirm(msg)) return;
+      }
+    }
+
+    if (finalName === from) return;
+    if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다. 다른 이름을 사용하세요.');
       return;
     }
     try {
-      await materialsApi.renameGroup(projectId, from, trimmed);
-      setItems((prev) => prev.map((it) => (it.spaceGroup === from ? { ...it, spaceGroup: trimmed } : it)));
+      await materialsApi.renameGroup(projectId, from, finalName);
+      setItems((prev) => prev.map((it) => (it.spaceGroup === from ? { ...it, spaceGroup: finalName } : it)));
     } catch (e) {
       alert('이름 변경 실패: ' + (e.response?.data?.error || e.message));
     }
@@ -770,6 +805,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
           >
             {group.name}
           </button>
+          {!isAppliance && <OtherBadge phase={group.name} />}
           {/* 확정 카운트는 마감재에만 표시 (가전은 발주 안 함) */}
           {!isAppliance && (
             <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
