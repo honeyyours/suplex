@@ -31,6 +31,10 @@ export const simpleQuotesApi = {
   // 견적 공정 → 마감재 그룹으로 자동 추가 (placeholder Material 1개씩, 중복 spaceGroup 자동 스킵)
   sendToMaterials: (projectId, id) =>
     api.post(`/projects/${projectId}/simple-quotes/${id}/send-to-materials`).then((r) => r.data),
+
+  // 견적 확정 — 프로젝트.contractAmount + contractVatRate 자동 채움
+  confirm: (projectId, id) =>
+    api.post(`/projects/${projectId}/simple-quotes/${id}/confirm`).then((r) => r.data),
 };
 
 export const SIMPLE_QUOTE_STATUS_META = {

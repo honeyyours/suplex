@@ -618,7 +618,7 @@ function LineRow({ line, onPatch, onRemove }) {
       <td className="px-1 py-1"><CellMoney value={line.expenseUnitPrice} onSave={(v) => onPatch(line.id, { expenseUnitPrice: v })} /></td>
       <td className="px-1 py-1 text-right tabular-nums text-gray-600">{formatWon(line.expenseCost)}</td>
       <td className="px-1 py-1 text-right tabular-nums text-navy-800 font-medium">{formatWon(Number(line.materialCost) + Number(line.laborCost) + Number(line.expenseCost))}</td>
-      <td className="px-1 py-1"><CellText value={line.notes || ''} onSave={(v) => onPatch(line.id, { notes: v || null })} /></td>
+      <td className="px-1 py-1 align-top"><CellText value={line.notes || ''} multiline onSave={(v) => onPatch(line.id, { notes: v || null })} /></td>
       <td className="px-1 py-1 text-center">
         <button onClick={() => onRemove(line.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
       </td>
@@ -732,9 +732,25 @@ function CostStatementEditor({ quote, onPatch }) {
 // ============================================
 // 셀 컴포넌트들
 // ============================================
-function CellText({ value, onSave, className = '' }) {
+function CellText({ value, onSave, className = '', multiline = false }) {
   const [v, setV] = useState(value || '');
   useEffect(() => { setV(value || ''); }, [value]);
+  if (multiline) {
+    return (
+      <textarea
+        value={v}
+        onChange={(e) => {
+          setV(e.target.value);
+          e.target.style.height = 'auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }}
+        onBlur={() => { if (v !== (value || '')) onSave(v); }}
+        ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+        rows={1}
+        className={`w-full text-xs px-1.5 py-1 border border-transparent hover:border-gray-200 focus:border-navy-700 rounded outline-none resize-none overflow-hidden leading-snug ${className}`}
+      />
+    );
+  }
   return (
     <input
       type="text"

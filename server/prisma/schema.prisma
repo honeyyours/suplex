@@ -201,7 +201,8 @@ model Project {
   customerName    String // 고객명
   customerPhone   String?
   siteAddress     String // 현장 주소
-  contractAmount  Decimal?      @db.Decimal(14, 2) // 계약 금액
+  contractAmount  Decimal?      @db.Decimal(14, 2) // 계약 금액 (부가세 포함 총액)
+  contractVatRate Decimal?      @db.Decimal(5, 2) // 부가세율 (예: 10 = 10% 포함, null/0 = 별도. 견적 확정 시 자동)
   startDate       DateTime? // 착공일
   expectedEndDate DateTime? // 준공 예정일
   actualEndDate   DateTime? // 실제 준공일

@@ -34,6 +34,7 @@ const createSchema = z.object({
   customerPhone: z.string().optional().nullable(),
   siteAddress: z.string().min(1),
   contractAmount: z.number().optional().nullable(),
+  contractVatRate: z.number().min(0).max(100).optional().nullable(),
   // 시작일/마감일 — 프로젝트 캘린더의 범위. 필수
   startDate: z.string().min(1, '시작일은 필수입니다'),
   expectedEndDate: z.string().min(1, '마감일은 필수입니다'),
@@ -56,6 +57,7 @@ router.post('/', async (req, res, next) => {
         customerPhone: data.customerPhone || null,
         siteAddress: data.siteAddress.trim(),
         contractAmount: data.contractAmount ?? null,
+        contractVatRate: data.contractVatRate ?? null,
         startDate: new Date(data.startDate),
         expectedEndDate: new Date(data.expectedEndDate),
         doorPassword: data.doorPassword || null,
@@ -386,6 +388,7 @@ const updateSchema = z.object({
   customerPhone: z.string().optional().nullable(),
   siteAddress: z.string().min(1).optional(),
   contractAmount: z.number().optional().nullable(),
+  contractVatRate: z.number().min(0).max(100).optional().nullable(),
   // 수정 시에도 빈 값 허용 X (요구사항: 시작/마감은 항상 존재)
   startDate: z.string().min(1).optional(),
   expectedEndDate: z.string().min(1).optional(),
@@ -419,6 +422,7 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.customerPhone !== undefined && { customerPhone: data.customerPhone || null }),
         ...(data.siteAddress !== undefined && { siteAddress: data.siteAddress.trim() }),
         ...(data.contractAmount !== undefined && { contractAmount: data.contractAmount }),
+        ...(data.contractVatRate !== undefined && { contractVatRate: data.contractVatRate }),
         ...(data.startDate !== undefined && {
           startDate: new Date(data.startDate),
         }),

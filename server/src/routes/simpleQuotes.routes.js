@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { audit } = require('../services/audit');
 
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
@@ -696,6 +697,55 @@ router.put('/:id/lines', async (req, res, next) => {
       include: { lines: { orderBy: { orderIndex: 'asc' } } },
     });
     res.json({ quote: full });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// POST /:id/confirm — 견적 확정 + 프로젝트 contractAmount/contractVatRate 자동 채움
+// 다른 ACCEPTED 견적은 SUPERSEDED로 자동 변경 (한 시점 1개만 ACCEPTED)
+// ============================================
+router.post('/:id/confirm', async (req, res, next) => {
+  try {
+    const projectId = req.params.projectId;
+    const id = req.params.id;
+
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: '프로젝트를 찾을 수 없습니다' });
+
+    const quote = await prisma.simpleQuote.findFirst({
+      where: { id, projectId },
+      include: { lines: true },
+    });
+    if (!quote) return res.status(404).json({ error: '견적을 찾을 수 없습니다' });
+
+    const totals = computeTotals(quote.lines, quote);
+    const vatRate = Number(quote.vatRate) || 0;
+
+    await prisma.$transaction([
+      // 같은 프로젝트의 다른 ACCEPTED 견적은 SUPERSEDED로
+      prisma.simpleQuote.updateMany({
+        where: { projectId, status: 'ACCEPTED', id: { not: id } },
+        data: { status: 'SUPERSEDED' },
+      }),
+      prisma.simpleQuote.update({
+        where: { id },
+        data: { status: 'ACCEPTED', ...totals },
+      }),
+      prisma.project.update({
+        where: { id: projectId },
+        data: {
+          contractAmount: totals.total,
+          contractVatRate: vatRate > 0 ? vatRate : null,
+        },
+      }),
+    ]);
+
+    audit(req, 'quote.confirm', {
+      targetType: 'PROJECT', targetId: projectId,
+      metadata: { quoteId: id, total: totals.total, vatRate },
+    });
+
+    res.json({ ok: true, total: totals.total, vatRate, vatAmount: totals.vatAmount });
   } catch (e) { next(e); }
 });
 

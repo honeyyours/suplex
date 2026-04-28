@@ -6,6 +6,7 @@ const emptyForm = {
   customerPhone: '',
   siteAddress: '',
   contractAmount: '',
+  contractVatRate: '', // '', '0', '10' — 부가세율 (별도/포함)
   area: '',
   startDate: '',
   expectedEndDate: '',
@@ -30,6 +31,8 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
           siteAddress: initial.siteAddress || '',
           contractAmount:
             initial.contractAmount != null ? String(initial.contractAmount) : '',
+          contractVatRate:
+            initial.contractVatRate != null ? String(initial.contractVatRate) : '',
           area: initial.area != null ? String(initial.area) : '',
           startDate: toDateInput(initial.startDate),
           expectedEndDate: toDateInput(initial.expectedEndDate),
@@ -67,6 +70,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
         customerPhone: form.customerPhone.trim() || null,
         siteAddress: form.siteAddress.trim(),
         contractAmount: form.contractAmount ? Number(form.contractAmount) : null,
+        contractVatRate: form.contractVatRate !== '' ? Number(form.contractVatRate) : null,
         area: form.area ? Number(form.area) : null,
         startDate: form.startDate || null,
         expectedEndDate: form.expectedEndDate || null,
@@ -130,13 +134,39 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
           />
         </Field>
         <Field label="계약 금액 (원)">
-          <input
-            type="number"
-            value={form.contractAmount}
-            onChange={update('contractAmount')}
-            placeholder="50000000"
-            className="input"
-          />
+          <div className="space-y-1">
+            <div className="flex gap-1">
+              <input
+                type="number"
+                value={form.contractAmount}
+                onChange={update('contractAmount')}
+                placeholder="50000000"
+                className="input flex-1"
+              />
+              <select
+                value={form.contractVatRate}
+                onChange={update('contractVatRate')}
+                title="부가세 처리 방식"
+                className="input w-28 text-xs"
+              >
+                <option value="">부가세 별도</option>
+                <option value="10">10% 포함</option>
+              </select>
+            </div>
+            {form.contractAmount && Number(form.contractVatRate) > 0 && (() => {
+              const total = Number(form.contractAmount);
+              const rate = Number(form.contractVatRate) / 100;
+              const supply = Math.round(total / (1 + rate));
+              const vat = total - supply;
+              return (
+                <div className="text-xs text-gray-500 leading-relaxed">
+                  공급가액 <span className="text-gray-700 tabular-nums">{supply.toLocaleString('ko-KR')}원</span>
+                  {' · '}부가세 <span className="text-gray-700 tabular-nums">{vat.toLocaleString('ko-KR')}원</span>
+                  {' '}(자동 분리 표시)
+                </div>
+              );
+            })()}
+          </div>
         </Field>
         <Field label="면적 (평)">
           <input
