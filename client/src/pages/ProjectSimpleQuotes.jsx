@@ -469,29 +469,9 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
-          {quote.status !== 'ACCEPTED' && (
-            <button
-              onClick={async () => {
-                if (!confirm(`이 견적을 ✅ 확정하고 프로젝트 계약금액에 반영할까요?\n\n` +
-                  `· 같은 프로젝트의 다른 확정 견적은 자동으로 "이전 차수"로 변경됩니다.\n` +
-                  `· 프로젝트 계약금액 = 이 견적 총액 (부가세 포함 시 부가세도 같이 저장됩니다).`)) return;
-                try {
-                  const r = await simpleQuotesApi.confirm(projectId, quoteId);
-                  alert(`✅ 견적 확정 완료\n\n` +
-                    `· 계약금액: ${formatWon(r.total)}원\n` +
-                    `· 부가세율: ${r.vatRate > 0 ? r.vatRate + '% 포함' : '별도'}` +
-                    (r.vatRate > 0 ? `\n· 부가세: ${formatWon(r.vatAmount)}원` : ''));
-                  reload();
-                } catch (e) {
-                  alert('확정 실패: ' + (e.response?.data?.error || e.message));
-                }
-              }}
-              className="text-xs px-3 py-1 border border-emerald-300 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100"
-              title="견적을 확정하고 프로젝트 계약금액 자동 반영"
-            >
-              ✅ 확정
-            </button>
-          )}
+          <span className="text-[11px] text-gray-400" title="상태를 '수주 확정'으로 바꾸면 자동으로 프로젝트 계약금액에 반영됩니다">
+            💡 수주 확정 시 자동 반영
+          </span>
           <span className="text-xs text-gray-400">
             {savingLines || savingHeader ? '저장 중...' : '저장됨'}
           </span>

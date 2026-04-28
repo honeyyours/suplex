@@ -251,10 +251,38 @@ router.patch('/:id', async (req, res, next) => {
     const data = { ...input };
     if (input.quoteDate) data.quoteDate = new Date(input.quoteDate);
 
-    const updated = await prisma.$transaction(async (tx) => {
+    // status가 ACCEPTED로 전이되면 자동으로 "수주 확정" 처리:
+    //  - 같은 프로젝트의 다른 ACCEPTED 견적 → SUPERSEDED
+    //  - 프로젝트.contractAmount = 견적 총액, contractVatRate = 견적 vatRate
+    const becomingAccepted = input.status === 'ACCEPTED' && existing.status !== 'ACCEPTED';
+
+    await prisma.$transaction(async (tx) => {
       await tx.simpleQuote.update({ where: { id }, data });
-      return recomputeQuote(tx, id);
+      const recomputed = await recomputeQuote(tx, id);
+
+      if (becomingAccepted) {
+        await tx.simpleQuote.updateMany({
+          where: { projectId, status: 'ACCEPTED', id: { not: id } },
+          data: { status: 'SUPERSEDED' },
+        });
+        const fresh = await tx.simpleQuote.findUnique({ where: { id } });
+        const vatRate = Number(fresh.vatRate) || 0;
+        await tx.project.update({
+          where: { id: projectId },
+          data: {
+            contractAmount: recomputed.total,
+            contractVatRate: vatRate > 0 ? vatRate : null,
+          },
+        });
+      }
     });
+
+    if (becomingAccepted) {
+      audit(req, 'quote.confirm', {
+        targetType: 'PROJECT', targetId: projectId,
+        metadata: { quoteId: id, via: 'status-change' },
+      });
+    }
 
     const full = await prisma.simpleQuote.findUnique({
       where: { id },
