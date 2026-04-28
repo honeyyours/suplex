@@ -1,45 +1,26 @@
-// 회사가 사용 중인 공정(phase) 목록 — 빠른 추가 칩, popover, 드롭다운 등에서 사용.
-// 공정 마스터 = PhaseKeywordRule + PhaseDeadlineRule + PhaseAdvice union (회사가 명시적으로 등록한 것만).
-// DailyScheduleEntry.category는 사용 기록이지 마스터 데이터가 아니므로 제외 — 공정 삭제 시 칩에서도 사라져야 함.
-// 회사 마스터가 비어 있으면 신규 회사로 보고 기본 10개 fallback.
+// 표준 공정(척추) 25종 — 메모리 핵심결정 "표준 공정 라이브러리" 정책 (2026-04-28)
+// closed enum: 회사가 마음대로 추가 X. 자유 텍스트 입력은 normalizePhase로 25개에 흡수.
+// 매핑 실패 = OTHER(기타). 통합 기능(D-N 룰·자동 발주·AI비서 통합) 미작동.
 const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { invalidateCache } = require('../services/phaseDetect');
+const { STANDARD_PHASES, STANDARD_LABELS } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
 
-// 기본 10개 — date.js의 CATEGORIES와 순서·내용 일치 유지
-const DEFAULT_PHASES = [
-  '철거', '목공', '전기', '설비', '타일', '도배', '도장', '필름', '마루', '준공',
-];
-
-async function fetchCompanyPhases(companyId) {
-  const [keywordRules, deadlineRules, advices] = await Promise.all([
-    prisma.phaseKeywordRule.findMany({ where: { companyId }, select: { phase: true }, distinct: ['phase'] }),
-    prisma.phaseDeadlineRule.findMany({ where: { companyId }, select: { phase: true }, distinct: ['phase'] }),
-    prisma.phaseAdvice.findMany({ where: { companyId }, select: { phase: true }, distinct: ['phase'] }),
-  ]);
-  const set = new Set();
-  for (const r of keywordRules) if (r.phase) set.add(r.phase);
-  for (const r of deadlineRules) if (r.phase) set.add(r.phase);
-  for (const r of advices) if (r.phase) set.add(r.phase);
-  return set;
-}
-
-// GET /api/phases  →  { phases: ['철거', '목공', ..., '조경'(추가분)] }
+// GET /api/phases — 표준 25개를 시공 순서대로 반환 (회사가 추가 못 함)
 router.get('/', async (req, res, next) => {
   try {
-    const fromCompany = await fetchCompanyPhases(req.user.companyId);
-    if (fromCompany.size === 0) {
-      return res.json({ phases: DEFAULT_PHASES });
-    }
-    // 기본 10개 중 회사에 있는 것 → 원래 순서, 그 외 추가분 → 가나다순
-    const inDefaults = DEFAULT_PHASES.filter((p) => fromCompany.has(p));
-    const extras = [...fromCompany].filter((p) => !DEFAULT_PHASES.includes(p)).sort((a, b) => a.localeCompare(b, 'ko'));
-    res.json({ phases: [...inDefaults, ...extras] });
+    res.json({
+      phases: STANDARD_LABELS,
+      // 자세한 메타도 같이 (UI 드롭다운용)
+      detail: STANDARD_PHASES.map((p) => ({
+        key: p.key, label: p.label, order: p.order, hint: p.hint || null,
+      })),
+    });
   } catch (e) {
     next(e);
   }

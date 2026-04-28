@@ -4,6 +4,7 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { buildSeedRows } = require('../services/phaseKeywordSeed');
 const { invalidateCache } = require('../services/phaseDetect');
+const { normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
@@ -51,7 +52,8 @@ router.post('/seed', async (req, res, next) => {
 
 const upsertSchema = z.object({
   keyword: z.string().min(1),
-  phase: z.string().min(1),
+  // 표준 25개에 자동 흡수. 매핑 실패 시 '기타'로 저장 (closed 척추 정책)
+  phase: z.string().min(1).transform((v) => normalizePhase(v).label),
   active: z.boolean().optional(),
 });
 

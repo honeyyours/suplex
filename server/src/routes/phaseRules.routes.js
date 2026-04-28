@@ -5,6 +5,7 @@ const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { PHASE_DEADLINE_DAYS } = require('../services/phaseDeadlines');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
+const { normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
@@ -25,7 +26,8 @@ router.get('/deadlines', async (req, res, next) => {
 });
 
 const ruleSchema = z.object({
-  phase: z.string().trim().min(1).max(100),
+  // 표준 25개에 자동 흡수 (closed 척추 정책)
+  phase: z.string().trim().min(1).max(100).transform((v) => normalizePhase(v).label),
   daysBefore: z.number().int().min(0).max(60),
   active: z.boolean().optional(),
 });
@@ -108,7 +110,8 @@ router.get('/advices', async (req, res, next) => {
 });
 
 const adviceSchema = z.object({
-  phase: z.string().trim().min(1).max(100),
+  // 표준 25개에 자동 흡수 (closed 척추 정책)
+  phase: z.string().trim().min(1).max(100).transform((v) => normalizePhase(v).label),
   daysBefore: z.number().int().min(-30).max(60),
   title: z.string().trim().min(1).max(200),
   description: z.string().max(1000).optional().nullable(),
