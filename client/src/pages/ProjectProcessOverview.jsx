@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/simpleQuotes';
 import WorkContextDrawer from '../components/WorkContextDrawer';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 function fmtDate(iso) {
   if (!iso) return null;
@@ -127,6 +128,7 @@ export default function ProjectProcessOverview() {
 }
 
 function PhaseRow({ row, onClick }) {
+  const { displayPhase } = usePhaseLabels();
   const empty = row.empty;
   const matRate = pct(row.material.confirmed, row.material.total);
   return (
@@ -136,7 +138,7 @@ function PhaseRow({ row, onClick }) {
       {/* 공정 */}
       <td className="px-3 py-3 align-top">
         <span className={`font-semibold ${row.phase === '기타' ? 'text-amber-700' : 'text-navy-800'}`}>
-          {row.phase}
+          {displayPhase(row.phase)}
         </span>
       </td>
       {/* 견적 */}

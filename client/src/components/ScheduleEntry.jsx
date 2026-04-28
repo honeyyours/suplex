@@ -4,6 +4,7 @@ import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import ContextMenu from './ContextMenu';
 import PhaseInlineContent from './PhaseInlineContent';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfirm, showVendorButton = false }) {
   const [editing, setEditing] = useState(false);
@@ -200,6 +201,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
 function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
   const ref = useRef(null);
   const phases = useCompanyPhases();
+  const { displayPhase } = usePhaseLabels();
   useEffect(() => {
     function handleOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) onClose();
@@ -238,7 +240,7 @@ function CategoryPickerPopover({ x, y, current, onPick, onClose }) {
             key={c}
             onClick={() => onPick(c)}
             className={`text-[11px] py-1 rounded ${current === c ? 'ring-2 ring-navy-500' : ''} ${categoryClass(c)} hover:opacity-80`}
-          >{c}</button>
+          >{displayPhase(c)}</button>
         ))}
       </div>
     </div>

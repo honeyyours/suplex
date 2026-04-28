@@ -97,6 +97,18 @@ function normalizePhase(text) {
   return KEY_TO_PHASE.get('OTHER');
 }
 
+// 회사 phaseLabels JSON({ KEY: customLabel }) → { 표준라벨: 표시라벨 } map
+// 빈 customLabel/누락은 표준 라벨 그대로. 화이트리스트(25 키)만 적용.
+function resolvePhaseLabelMap(phaseLabelsJson) {
+  const out = {};
+  const labels = phaseLabelsJson && typeof phaseLabelsJson === 'object' ? phaseLabelsJson : {};
+  for (const p of STANDARD_PHASES) {
+    const custom = labels[p.key];
+    out[p.label] = (typeof custom === 'string' && custom.trim()) ? custom.trim() : p.label;
+  }
+  return out;
+}
+
 module.exports = {
   STANDARD_PHASES,
   STANDARD_LABELS,
@@ -104,4 +116,5 @@ module.exports = {
   KEY_TO_PHASE,
   BUILT_IN_ALIASES,
   normalizePhase,
+  resolvePhaseLabelMap,
 };

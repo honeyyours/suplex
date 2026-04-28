@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorAutocomplete from './VendorAutocomplete';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 export default function ScheduleAddForm({ onSubmit, onCancel }) {
   const [content, setContent] = useState('');
@@ -8,6 +9,7 @@ export default function ScheduleAddForm({ onSubmit, onCancel }) {
   const [vendor, setVendor] = useState({ vendorId: null, vendorName: '' });
   const ref = useRef(null);
   const phases = useCompanyPhases();
+  const { displayPhase } = usePhaseLabels();
 
   useEffect(() => { ref.current?.focus(); }, []);
 
@@ -34,7 +36,7 @@ export default function ScheduleAddForm({ onSubmit, onCancel }) {
       >
         <option value="">(공종 없음)</option>
         {phases.map((c) => (
-          <option key={c} value={c}>{c}</option>
+          <option key={c} value={c}>{displayPhase(c)}</option>
         ))}
       </select>
       <textarea

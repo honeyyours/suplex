@@ -3,6 +3,7 @@ import { categoryClass, fromDateKey } from '../utils/date';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import PhaseInlineContent from './PhaseInlineContent';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -28,6 +29,7 @@ export default function MobileScheduleSheet({
   const [content, setContent] = useState('');
   const [vendorMenu, setVendorMenu] = useState(null); // { x, y, entry } | null
   const phases = useCompanyPhases();
+  const { displayPhase } = usePhaseLabels();
 
   const date = fromDateKey(dateKey);
   const dateLabel = `${date.getMonth() + 1}/${date.getDate()} (${DAY_LABELS[date.getDay()]})`;
@@ -129,7 +131,7 @@ export default function MobileScheduleSheet({
                 onClick={() => quickAddCategory(c)}
                 className={`text-xs py-2 rounded font-medium ${categoryClass(c)}`}
               >
-                {c}
+                {displayPhase(c)}
               </button>
             ))}
           </div>

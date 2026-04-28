@@ -43,6 +43,11 @@ model Company {
   // 회사 단위 기능 토글
   hideExpenses Boolean @default(false) // true면 지출관리 진입점 모두 숨김 (네비/탭/AI비서 도구/홈 피드)
 
+  // 공정 라벨 alias — 25개 표준 phase key → 회사 표시명 매핑 (display only).
+  // 예: { "WATERPROOF": "방수공사", "INNER_DOOR": "현관중문" }
+  // 빈 값/누락 시 표준 라벨(services/phases.js) 사용. 매칭/그룹핑은 표준 라벨 기준 — alias는 표시 전용.
+  phaseLabels Json @default("{}")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

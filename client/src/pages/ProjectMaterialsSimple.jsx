@@ -10,6 +10,7 @@ import MaterialImportModal from '../components/MaterialImportModal';
 import MaterialLinkModal from '../components/MaterialLinkModal';
 import { OtherBadge } from '../components/PhaseSelect';
 import { normalizePhase, isOther } from '../utils/phases';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 const SAVE_DELAY = 1000;
 
@@ -819,6 +820,7 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // 그룹 카드
 // ============================================
 function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport, onShowLink, allItems }) {
+  const { displayPhase } = usePhaseLabels();
   const [collapsed, setCollapsed] = useState(false);
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
@@ -853,7 +855,7 @@ function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onA
             className={`text-base font-bold ${titleText} hover:underline truncate text-left`}
             title="그룹 이름 변경"
           >
-            {group.name}
+            {displayPhase(group.name)}
           </button>
           {!isAppliance && <OtherBadge phase={group.name} />}
           {/* 확정 카운트는 마감재에만 표시 (가전은 발주 안 함) */}

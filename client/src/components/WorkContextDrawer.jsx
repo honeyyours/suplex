@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { projectsApi } from '../api/projects';
 import { formatWon, SIMPLE_QUOTE_STATUS_META } from '../api/simpleQuotes';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 const STATUS_META = {
   UNDECIDED:      { label: '미정',     color: 'bg-gray-100 text-gray-600' },
@@ -26,6 +27,7 @@ function fmtDate(iso) {
 }
 
 export default function WorkContextDrawer({ projectId, phase, open, onClose }) {
+  const { displayPhase } = usePhaseLabels();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const drawerRef = useRef(null);
@@ -87,7 +89,7 @@ export default function WorkContextDrawer({ projectId, phase, open, onClose }) {
       <header className="px-4 py-3 border-b bg-navy-800 text-white flex items-center justify-between">
         <div>
           <div className="text-xs text-navy-100">🦴 공정 컨텍스트</div>
-          <div className="text-lg font-bold">{phase}</div>
+          <div className="text-lg font-bold">{displayPhase(phase)}</div>
         </div>
         <button onClick={onClose} className="text-navy-100 hover:text-white text-xl px-2">×</button>
       </header>

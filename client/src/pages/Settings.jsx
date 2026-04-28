@@ -12,7 +12,8 @@ import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
-import { normalizePhase, isOther } from '../utils/phases';
+import { normalizePhase, isOther, STANDARD_PHASES } from '../utils/phases';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 
 // phase 입력 시 표준 25개로 정규화 — 변환되거나 '기타'면 사용자 확인
 // 반환: 정규화된 라벨 또는 null(취소)
@@ -78,6 +79,8 @@ export default function Settings() {
       <QuoteRatesSection company={company} onSaved={setCompany} canEdit={isOwner} />
 
       <QuoteTemplatesSection />
+
+      <PhaseLabelsSection canEdit={isOwner} />
 
       <PhaseKeywordsSection />
 
@@ -685,6 +688,91 @@ function QuoteTemplatesSection() {
             + {WORK_TYPE_LABEL[activeType]} 항목 추가
           </button>
         </div>
+      )}
+    </Section>
+  );
+}
+
+function PhaseLabelsSection({ canEdit }) {
+  const { phaseLabels, save } = usePhaseLabels();
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft({ ...(phaseLabels || {}) });
+  }, [phaseLabels]);
+
+  const dirty = STANDARD_PHASES.some((p) => {
+    const a = (draft?.[p.key] || '').trim();
+    const b = (phaseLabels?.[p.key] || '').trim();
+    return a !== b;
+  });
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await save(draft);
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleReset() {
+    if (!confirm('표시 라벨을 모두 초기화할까요? (내부 표준 라벨로 되돌립니다)')) return;
+    setDraft({});
+  }
+
+  return (
+    <Section
+      title="공정 표시 라벨 (회사 커스터마이즈)"
+      collapsible
+      hint="표준 25개 공정의 화면 표시명만 회사 마음대로 바꿀 수 있어요. 매칭/그룹핑은 표준 라벨 기준으로 그대로 유지됩니다."
+    >
+      <div className="text-xs text-gray-500 mb-3 leading-relaxed">
+        💡 예: "마무리(점검, 실리콘)" → "마무리" / "창호·샷시" → "샷시" / "유리·거울" → "유리"<br />
+        💡 비워두면 표준 라벨이 표시됩니다. 자동 인식 키워드는 별도 섹션에서 관리하세요.
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => {
+          const value = draft?.[p.key] || '';
+          return (
+            <label key={p.key} className="flex items-center gap-2 text-sm">
+              <span className="w-32 shrink-0 text-gray-600 tabular-nums">
+                <span className="text-gray-400 text-[11px] mr-1">{String(p.order).padStart(2, '0')}</span>
+                {p.label}
+              </span>
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => setDraft((d) => ({ ...d, [p.key]: e.target.value }))}
+                placeholder={p.label}
+                disabled={!canEdit}
+                maxLength={30}
+                className="flex-1 text-sm px-2 py-1 border rounded focus:border-navy-700 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+              />
+            </label>
+          );
+        })}
+      </div>
+      {canEdit && (
+        <div className="flex items-center gap-2 mt-4">
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-40"
+          >{saving ? '저장 중...' : '저장'}</button>
+          <button
+            onClick={handleReset}
+            disabled={saving}
+            className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50 disabled:opacity-40"
+          >전체 초기화</button>
+          {dirty && <span className="text-xs text-amber-700">변경 사항이 있습니다</span>}
+        </div>
+      )}
+      {!canEdit && (
+        <div className="text-xs text-gray-400 mt-3">OWNER만 편집할 수 있습니다.</div>
       )}
     </Section>
   );

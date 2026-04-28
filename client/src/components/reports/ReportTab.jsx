@@ -12,6 +12,7 @@ import { projectsApi } from '../../api/projects';
 import { useAuth } from '../../contexts/AuthContext';
 import { relativeTime, toDateKey } from '../../utils/date';
 import { useCompanyPhases } from '../../hooks/useCompanyPhases';
+import { usePhaseLabels } from '../../contexts/PhaseLabelsContext';
 import PhotoUploader from '../PhotoUploader';
 import ImageLightbox from '../ImageLightbox';
 
@@ -201,6 +202,7 @@ async function downloadAllPhotos(photos, baseName) {
 // 카드
 // ============================================
 function ReportCard({ report, project, company, user, uploadProgress, onOpenLightbox, onDelete }) {
+  const { displayPhase } = usePhaseLabels();
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const photos = report.photos || [];
@@ -246,7 +248,7 @@ function ReportCard({ report, project, company, user, uploadProgress, onOpenLigh
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-              {report.category}
+              {displayPhase(report.category)}
             </span>
             <span className={`text-xs px-2 py-0.5 rounded font-semibold ${statusBg}`}>
               {status}
@@ -329,6 +331,7 @@ function ReportCard({ report, project, company, user, uploadProgress, onOpenLigh
 // ============================================
 function ReportFormModal({ projectId, onClose, onCreated }) {
   const phases = useCompanyPhases();
+  const { displayPhase } = usePhaseLabels();
   const [form, setForm] = useState({
     reportDate: toDateKey(new Date()),
     category: phases[0] || '목공',
@@ -376,7 +379,7 @@ function ReportFormModal({ projectId, onClose, onCreated }) {
             </L>
             <L label="공종">
               <select value={form.category} onChange={upd('category')} className="input">
-                {phases.map((c) => <option key={c} value={c}>{c}</option>)}
+                {phases.map((c) => <option key={c} value={c}>{displayPhase(c)}</option>)}
               </select>
             </L>
             <L label="진행률 (%)">
