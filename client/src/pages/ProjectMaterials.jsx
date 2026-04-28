@@ -8,6 +8,7 @@ import {
 import MaterialModal from '../components/MaterialModal';
 import InlineMaterialRow from '../components/InlineMaterialRow';
 import StatusPickerPopover from '../components/StatusPickerPopover';
+import QuoteContextDrawer from '../components/QuoteContextDrawer';
 
 // activeKey 형태: 'ALL' | 'FINISH:전체' | 'APPLIANCE:전체' | 'FINISH:거실' | 'APPLIANCE:주방' ...
 const ALL_KEY = 'ALL';
@@ -242,6 +243,17 @@ export default function ProjectMaterials() {
     if (prev) { setSelectedId(prev.id); setExpandedId(prev.id); }
   }
 
+  const [quoteDrawerOpen, setQuoteDrawerOpen] = useState(false);
+
+  // 활성 spaceGroup — 견적 컨텍스트 드로어 자동 매칭용
+  // activeKey: 'FINISH:거실' / 'APPLIANCE:주방' / 'ALL' / 'FINISH:전체' 등
+  const activeSpaceGroup = useMemo(() => {
+    if (activeKey === ALL_KEY) return null;
+    const [, group] = activeKey.split(':');
+    if (!group || group === '전체') return null;
+    return group;
+  }, [activeKey]);
+
   const { headerLabel, headerCrumb } = useMemo(() => {
     if (activeKey === ALL_KEY) return { headerLabel: '전체', headerCrumb: '전체 보기' };
     const [kind, group] = activeKey.split(':');
@@ -431,9 +443,6 @@ export default function ProjectMaterials() {
           {/* 헤더 */}
           <div className="flex items-end justify-between gap-3 flex-wrap pb-3 border-b mb-4">
             <div>
-              <div className="text-xs sm:text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-                {headerCrumb}
-              </div>
               <h3 className="text-lg font-semibold text-navy-800">{headerLabel}</h3>
               <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600">
                 <span>확정 {confirmed} / {denom}</span>
@@ -448,6 +457,15 @@ export default function ProjectMaterials() {
               </div>
             </div>
             <div className="flex gap-2 items-center">
+              {/* 견적 컨텍스트 드로어 토글 */}
+              <button
+                type="button"
+                onClick={() => setQuoteDrawerOpen(true)}
+                title="현재 공정의 견적 정보 보기 (금액·비고)"
+                className="text-xs px-2.5 py-1.5 border border-amber-300 text-amber-700 bg-amber-50 rounded hover:bg-amber-100 mr-1"
+              >
+                🪙 견적 보기
+              </button>
               {/* 보기/편집 모드 토글 */}
               <div className="inline-flex rounded-md border overflow-hidden text-xs mr-1">
                 <button
@@ -601,6 +619,13 @@ export default function ProjectMaterials() {
           onSaved={reload}
         />
       )}
+
+      <QuoteContextDrawer
+        projectId={id}
+        activeSpaceGroup={activeSpaceGroup}
+        open={quoteDrawerOpen}
+        onClose={() => setQuoteDrawerOpen(false)}
+      />
     </div>
   );
 }
