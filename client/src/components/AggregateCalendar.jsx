@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryClass,
+  toDateKey, calendarGrid, addMonths, formatMonthLabel,
 } from '../utils/date';
+import PhaseInlineContent from './PhaseInlineContent';
 
 const PROJECT_COLORS = [
   'bg-blue-100 text-blue-800',
@@ -151,12 +152,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded ${projColor}`}>
                           {e.project?.name}
                         </span>
-                        {e.category && (
-                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded ${categoryClass(e.category)}`}>
-                            {e.category}
-                          </span>
-                        )}
-                        <span className="truncate flex-1">{e.content}</span>
+                        <PhaseInlineContent entry={e} textClassName="flex-1" />
                         {e.confirmed && (
                           <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}
