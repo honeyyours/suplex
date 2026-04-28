@@ -582,6 +582,7 @@ router.post('/normalize-phases', async (req, res, next) => {
       report[area].totalChanged++;
     }
 
+    // 단순 update만 — unique 제약 없는 영역
     async function normalizeArea(area, modelName, where, getRaw, applyUpdate) {
       const rows = await prisma[modelName].findMany({ where });
       report[area].totalChecked = rows.length;
@@ -595,28 +596,65 @@ router.post('/normalize-phases', async (req, res, next) => {
       }
     }
 
+    // (companyId, phase) unique 영역 — 충돌 시 중복 row 삭제 (기존 표준 우선)
+    async function normalizeAreaWithUnique(area, modelName, where, getRaw, getCompanyId, applyUpdate, applyDelete) {
+      const rows = await prisma[modelName].findMany({ where });
+      report[area].totalChecked = rows.length;
+      for (const row of rows) {
+        const raw = getRaw(row);
+        if (!raw) continue;
+        const newVal = normalizePhase(raw).label;
+        if (newVal === raw) continue;
+
+        const conflict = await prisma[modelName].findFirst({
+          where: {
+            companyId: getCompanyId(row),
+            phase: newVal,
+            id: { not: row.id },
+          },
+        });
+        if (conflict) {
+          // 충돌 — 비표준 row 삭제 (기존 표준이 있으니 그것 유지)
+          bump(area, raw, `(중복 → 삭제: ${newVal} 이미 있음)`);
+          if (!dryRun) await applyDelete(row);
+          continue;
+        }
+        bump(area, raw, newVal);
+        if (!dryRun) await applyUpdate(row, newVal);
+      }
+    }
+
+    // PhaseKeywordRule — (companyId, keyword) unique. phase는 자유, 단순 update.
     await normalizeArea(
       'phaseKeywordRule', 'phaseKeywordRule', {},
       (r) => r.phase,
       (r, v) => prisma.phaseKeywordRule.update({ where: { id: r.id }, data: { phase: v } })
     );
-    await normalizeArea(
+
+    // PhaseDeadlineRule — (companyId, phase) UNIQUE. 충돌 처리 필요.
+    await normalizeAreaWithUnique(
       'phaseDeadlineRule', 'phaseDeadlineRule', {},
       (r) => r.phase,
-      (r, v) => prisma.phaseDeadlineRule.update({ where: { id: r.id }, data: { phase: v } })
+      (r) => r.companyId,
+      (r, v) => prisma.phaseDeadlineRule.update({ where: { id: r.id }, data: { phase: v } }),
+      (r) => prisma.phaseDeadlineRule.delete({ where: { id: r.id } })
     );
+
+    // PhaseAdvice — (companyId, phase) index만 (unique X). 단순 update.
     await normalizeArea(
       'phaseAdvice', 'phaseAdvice', {},
       (r) => r.phase,
       (r, v) => prisma.phaseAdvice.update({ where: { id: r.id }, data: { phase: v } })
     );
-    // 마감재 — FINISH만 (APPLIANCE는 spaceGroup이 공간명이라 정규화 X)
+
+    // 마감재 — FINISH만 (APPLIANCE는 spaceGroup이 공간명이라 정규화 X). unique 없음.
     await normalizeArea(
       'materialSpaceGroup', 'material', { kind: 'FINISH' },
       (r) => r.spaceGroup,
       (r, v) => prisma.material.update({ where: { id: r.id }, data: { spaceGroup: v } })
     );
-    // 간편 견적 그룹 헤더만 (isGroup=true). 평면 라인은 자재명이라 정규화 X
+
+    // 간편 견적 그룹 헤더만 (isGroup=true). 평면 라인은 자재명이라 정규화 X. unique 없음.
     await normalizeArea(
       'simpleQuoteGroup', 'simpleQuoteLine', { isGroup: true },
       (r) => r.itemName,
