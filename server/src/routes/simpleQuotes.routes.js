@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
+const { normalizePhase } = require('../services/phases');
 
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
@@ -347,16 +348,18 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     });
     if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
-    // 견적 공정 후보 (isGroup=false, itemName 비어있지 않음, 중복 제거, 입력 순서 유지)
+    // 견적 공정 후보 — 표준 25개로 정규화하여 spaceGroup 키 통일
+    // (자유 텍스트 라인이 있어도 표준에 흡수, 견적 ↔ 마감재 매칭 정확)
     const seen = new Set();
     const candidates = [];
     for (const l of quote.lines) {
       if (l.isGroup) continue;
-      const name = String(l.itemName || '').trim();
-      if (!name) continue;
-      if (seen.has(name)) continue;
-      seen.add(name);
-      candidates.push(name);
+      const raw = String(l.itemName || '').trim();
+      if (!raw) continue;
+      const normalized = normalizePhase(raw).label; // 표준 25개 또는 '기타'
+      if (seen.has(normalized)) continue;
+      seen.add(normalized);
+      candidates.push(normalized);
     }
     if (candidates.length === 0) {
       return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });

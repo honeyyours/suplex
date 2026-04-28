@@ -2,6 +2,26 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
 import { formatDateDot } from '../utils/date';
+import { normalizePhase, isOther } from '../utils/phases';
+
+// 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
+function PhasePreviewBadge({ text }) {
+  if (!text || !text.trim()) return null;
+  const phase = normalizePhase(text);
+  if (phase.label === text.trim()) return null; // 입력 = 표준 라벨이면 표시 X (깨끗)
+  return (
+    <span
+      title={`견적-마감재 매칭 키: "${phase.label}"`}
+      className={`text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap ${
+        isOther(phase.label)
+          ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      }`}
+    >
+      → {phase.label}
+    </span>
+  );
+}
 
 const SAVE_DELAY = 1000;
 
@@ -827,8 +847,9 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
               value={line.itemName}
               onChange={(e) => onChange({ itemName: e.target.value })}
               className="flex-1 px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 font-bold text-navy-800"
-              placeholder="그룹 이름 (예: 화장실 / 안방 / 가구)"
+              placeholder="그룹 이름 (예: 도배·타일·목공 — 표준 25개로 자동 흡수)"
             />
+            <PhasePreviewBadge text={line.itemName} />
           </div>
         </td>
         <td className="px-1">

@@ -534,6 +534,72 @@ function StatsTab() {
           </div>
         </>
       )}
+
+      <PhaseNormalizeAction />
+    </div>
+  );
+}
+
+function PhaseNormalizeAction() {
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState(null);
+
+  async function run(dryRun) {
+    if (!dryRun && !confirm(
+      '기존 phase 데이터를 표준 25개로 일괄 정규화합니다.\n\n' +
+      '대상: PhaseKeywordRule · PhaseDeadlineRule · PhaseAdvice 의 phase\n' +
+      '       Material(마감재).spaceGroup · SimpleQuoteLine(그룹 헤더).itemName\n\n' +
+      '되돌리기 어렵습니다. 계속하시겠어요?'
+    )) return;
+    setBusy(true);
+    try {
+      const r = await adminApi.normalizePhases(dryRun);
+      setReport(r);
+    } catch (e) {
+      alert('실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border p-5">
+      <div className="text-sm font-semibold text-navy-800 mb-1">🔧 운영 액션 — 기존 phase 데이터 정규화</div>
+      <div className="text-xs text-gray-500 mb-3">
+        표준 25개 closed enum 정책 적용 전에 입력된 자유 텍스트 데이터를 일괄로 표준 라벨로 변환.
+        먼저 미리보기(Dry Run)로 변환 결과 확인 후 실제 적용 권장.
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => run(true)}
+          disabled={busy}
+          className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50 disabled:opacity-50"
+        >🔍 미리보기 (Dry Run)</button>
+        <button
+          onClick={() => run(false)}
+          disabled={busy}
+          className="text-xs px-3 py-1.5 border border-rose-300 text-rose-700 bg-rose-50 rounded hover:bg-rose-100 disabled:opacity-50"
+        >✏️ 실제 적용</button>
+      </div>
+      {busy && <div className="text-xs text-gray-400 mt-2">처리 중...</div>}
+      {report && (
+        <div className="mt-3 space-y-2">
+          <div className="text-xs font-medium text-gray-700">
+            결과 ({report.dryRun ? '미리보기' : '✅ 적용 완료'}):
+          </div>
+          {Object.entries(report.report).map(([area, info]) => (
+            <div key={area} className="text-xs border rounded p-2 bg-gray-50">
+              <div className="font-medium text-gray-800">{area}</div>
+              <div className="text-gray-500">검사 {info.totalChecked}건 / 변경 {info.totalChanged}건</div>
+              {Object.entries(info.changes || {}).length > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  {Object.entries(info.changes).map(([change, count]) => (
+                    <div key={change} className="text-gray-600">· {change} <span className="text-gray-400">({count}건)</span></div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

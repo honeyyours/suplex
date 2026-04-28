@@ -12,6 +12,21 @@ import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import { RATE_META, WORK_TYPES, WORK_TYPE_LABEL, formatWon, parseWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
+import { normalizePhase, isOther } from '../utils/phases';
+
+// phase 입력 시 표준 25개로 정규화 — 변환되거나 '기타'면 사용자 확인
+// 반환: 정규화된 라벨 또는 null(취소)
+function confirmPhaseInput(raw) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return null;
+  const phase = normalizePhase(trimmed);
+  if (phase.label === trimmed) return phase.label;
+  const msg = isOther(phase.label)
+    ? `"${trimmed}"는 표준 25개 공정에 없어 "${phase.label}"으로 저장됩니다.\n` +
+      `· 통합 기능(D-N 룰·자동 발주·AI비서 통합 답변)이 작동하지 않습니다.\n계속하시겠어요?`
+    : `"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다. 계속하시겠어요?`;
+  return confirm(msg) ? phase.label : null;
+}
 
 export default function Settings() {
   const { auth, logout, updateMe, patchCompany } = useAuth();
@@ -695,12 +710,14 @@ function PhaseKeywordsSection() {
   useEffect(() => { reload(); }, []);
 
   async function addNewPhase() {
-    const name = newPhase.name.trim();
+    const rawName = newPhase.name.trim();
     const keyword = newPhase.keyword.trim();
-    if (!name || !keyword) {
+    if (!rawName || !keyword) {
       alert('공정명과 첫 키워드를 모두 입력해주세요.');
       return;
     }
+    const name = confirmPhaseInput(rawName);
+    if (!name) return;
     try {
       await phaseKeywordsApi.create({ phase: name, keyword });
       setNewPhaseModal(false);
@@ -923,9 +940,10 @@ function PhaseDeadlineRulesSection() {
   useEffect(() => { reload(); }, []);
 
   async function add() {
-    if (!draft.phase.trim()) return;
+    const phase = confirmPhaseInput(draft.phase);
+    if (!phase) return;
     try {
-      await phaseDeadlinesApi.upsert({ phase: draft.phase.trim(), daysBefore: Number(draft.daysBefore) });
+      await phaseDeadlinesApi.upsert({ phase, daysBefore: Number(draft.daysBefore) });
       setDraft({ phase: '', daysBefore: 3 });
       reload();
     } catch (e) {
@@ -1068,10 +1086,12 @@ function PhaseAdvicesSection() {
   useEffect(() => { reload(); }, []);
 
   async function add() {
-    if (!draft.phase.trim() || !draft.title.trim()) return;
+    if (!draft.title.trim()) return;
+    const phase = confirmPhaseInput(draft.phase);
+    if (!phase) return;
     try {
       await phaseAdvicesApi.create({
-        phase: draft.phase.trim(),
+        phase,
         daysBefore: Number(draft.daysBefore),
         title: draft.title.trim(),
         category: draft.category.trim() || null,

@@ -16,5 +16,7 @@ export const adminApi = {
   // 회사 백업은 다운로드라 별도 url 사용
   backupUrl: (companyId) => `/api/admin/companies/${companyId}/backup`,
   listAuditLogs: (params = {}) => api.get('/admin/audit-logs', { params }).then((r) => r.data),
+  normalizePhases: (dryRun = false) =>
+    api.post('/admin/normalize-phases', { dryRun }).then((r) => r.data),
 };
 

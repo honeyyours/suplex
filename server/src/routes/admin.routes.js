@@ -10,6 +10,7 @@ const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired, requireSuperAdmin } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
+const { normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
@@ -551,6 +552,84 @@ router.get('/audit-logs', async (req, res, next) => {
       })),
     });
   } catch (e) { next(e); }
+});
+
+// ============================================
+// POST /api/admin/normalize-phases — 기존 자유 텍스트 phase 데이터 일괄 정규화
+// 대상: PhaseKeywordRule, PhaseDeadlineRule, PhaseAdvice (.phase),
+//       Material(FINISH).spaceGroup, SimpleQuoteLine(isGroup=true).itemName
+// 결과: 변환 카운트 보고 (전후 값 + 영향 행 수)
+// dryRun=true면 변경 없이 미리보기만
+// ============================================
+const normalizeSchema = z.object({ dryRun: z.boolean().optional() });
+
+router.post('/normalize-phases', async (req, res, next) => {
+  try {
+    const data = normalizeSchema.parse(req.body || {});
+    const dryRun = !!data.dryRun;
+
+    const report = {
+      phaseKeywordRule:    { changes: {}, totalChecked: 0, totalChanged: 0 },
+      phaseDeadlineRule:   { changes: {}, totalChecked: 0, totalChanged: 0 },
+      phaseAdvice:         { changes: {}, totalChecked: 0, totalChanged: 0 },
+      materialSpaceGroup:  { changes: {}, totalChecked: 0, totalChanged: 0 },
+      simpleQuoteGroup:    { changes: {}, totalChecked: 0, totalChanged: 0 },
+    };
+
+    function bump(area, before, after) {
+      const k = `${before} → ${after}`;
+      report[area].changes[k] = (report[area].changes[k] || 0) + 1;
+      report[area].totalChanged++;
+    }
+
+    async function normalizeArea(area, modelName, where, getRaw, applyUpdate) {
+      const rows = await prisma[modelName].findMany({ where });
+      report[area].totalChecked = rows.length;
+      for (const row of rows) {
+        const raw = getRaw(row);
+        if (!raw) continue;
+        const newVal = normalizePhase(raw).label;
+        if (newVal === raw) continue;
+        bump(area, raw, newVal);
+        if (!dryRun) await applyUpdate(row, newVal);
+      }
+    }
+
+    await normalizeArea(
+      'phaseKeywordRule', 'phaseKeywordRule', {},
+      (r) => r.phase,
+      (r, v) => prisma.phaseKeywordRule.update({ where: { id: r.id }, data: { phase: v } })
+    );
+    await normalizeArea(
+      'phaseDeadlineRule', 'phaseDeadlineRule', {},
+      (r) => r.phase,
+      (r, v) => prisma.phaseDeadlineRule.update({ where: { id: r.id }, data: { phase: v } })
+    );
+    await normalizeArea(
+      'phaseAdvice', 'phaseAdvice', {},
+      (r) => r.phase,
+      (r, v) => prisma.phaseAdvice.update({ where: { id: r.id }, data: { phase: v } })
+    );
+    // 마감재 — FINISH만 (APPLIANCE는 spaceGroup이 공간명이라 정규화 X)
+    await normalizeArea(
+      'materialSpaceGroup', 'material', { kind: 'FINISH' },
+      (r) => r.spaceGroup,
+      (r, v) => prisma.material.update({ where: { id: r.id }, data: { spaceGroup: v } })
+    );
+    // 간편 견적 그룹 헤더만 (isGroup=true). 평면 라인은 자재명이라 정규화 X
+    await normalizeArea(
+      'simpleQuoteGroup', 'simpleQuoteLine', { isGroup: true },
+      (r) => r.itemName,
+      (r, v) => prisma.simpleQuoteLine.update({ where: { id: r.id }, data: { itemName: v } })
+    );
+
+    audit(req, 'admin.normalize-phases', { metadata: { dryRun, report } });
+
+    res.json({ ok: true, dryRun, report });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
 });
 
 module.exports = router;
