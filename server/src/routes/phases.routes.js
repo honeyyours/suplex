@@ -12,13 +12,27 @@ const router = express.Router();
 router.use(authRequired);
 
 // GET /api/phases — 표준 25개 + 회사 표시 라벨(alias). 회사가 추가 못 함.
-router.get('/', async (req, res, next) => {
+// phaseLabels 컬럼이 prod DB에 아직 없는 환경에서도 표준 25개는 반드시 반환되도록 graceful fallback.
+async function safeReadPhaseLabels(companyId) {
   try {
     const company = await prisma.company.findUnique({
-      where: { id: req.user.companyId },
+      where: { id: companyId },
       select: { phaseLabels: true },
     });
-    const labelMap = resolvePhaseLabelMap(company?.phaseLabels);
+    return company?.phaseLabels || {};
+  } catch (e) {
+    // P2022 (column does not exist) 또는 기타 — 마이그레이션 미적용 환경에서 안전하게 통과
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[phases] phaseLabels read failed (likely missing column):', e.code || e.message);
+    }
+    return {};
+  }
+}
+
+router.get('/', async (req, res, next) => {
+  try {
+    const phaseLabelsRaw = await safeReadPhaseLabels(req.user.companyId);
+    const labelMap = resolvePhaseLabelMap(phaseLabelsRaw);
     res.json({
       phases: STANDARD_LABELS,
       // 자세한 메타 + 회사 표시 라벨 (UI 드롭다운/표시용)
@@ -40,11 +54,8 @@ router.get('/', async (req, res, next) => {
 // GET /api/phases/labels — 회사 phase alias raw map (key → custom label, 비어있으면 미설정)
 router.get('/labels', async (req, res, next) => {
   try {
-    const company = await prisma.company.findUnique({
-      where: { id: req.user.companyId },
-      select: { phaseLabels: true },
-    });
-    res.json({ phaseLabels: company?.phaseLabels || {} });
+    const phaseLabels = await safeReadPhaseLabels(req.user.companyId);
+    res.json({ phaseLabels });
   } catch (e) {
     next(e);
   }
@@ -65,12 +76,22 @@ router.patch('/labels', requireRole('OWNER'), async (req, res, next) => {
       const trimmed = (value || '').trim();
       if (trimmed) cleaned[key] = trimmed;
     }
-    const company = await prisma.company.update({
-      where: { id: req.user.companyId },
-      data: { phaseLabels: cleaned },
-      select: { phaseLabels: true },
-    });
-    res.json({ phaseLabels: company.phaseLabels });
+    try {
+      const company = await prisma.company.update({
+        where: { id: req.user.companyId },
+        data: { phaseLabels: cleaned },
+        select: { phaseLabels: true },
+      });
+      res.json({ phaseLabels: company.phaseLabels });
+    } catch (e) {
+      // 컬럼 미존재 환경 — 마이그레이션 안내
+      if (e.code === 'P2022' || /phaseLabels/.test(e.message || '')) {
+        return res.status(503).json({
+          error: '서버 DB에 공정 라벨 컬럼이 아직 적용되지 않았습니다. 운영자가 마이그레이션 후 다시 시도해주세요.',
+        });
+      }
+      throw e;
+    }
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
