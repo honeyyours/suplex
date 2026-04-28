@@ -3,6 +3,7 @@ import { Link, useParams, useOutletContext, useNavigate } from 'react-router-dom
 import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
 import { formatDateDot } from '../utils/date';
 import { normalizePhase, isOther } from '../utils/phases';
+import NewQuoteWithPhasesModal from '../components/NewQuoteWithPhasesModal';
 
 // 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
 // 표준 매핑된 경우만 표시 (예: "벽지" → "도배"). OTHER는 자유 텍스트로 처리되니 표시 X.
@@ -30,6 +31,7 @@ export default function ProjectSimpleQuotes() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState(null);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   async function reload(selectId) {
     setLoading(true);
@@ -53,9 +55,25 @@ export default function ProjectSimpleQuotes() {
     /* eslint-disable-next-line */
   }, [projectId]);
 
-  async function handleCreate() {
+  async function handleCreateWithPhases(phaseLabels) {
     try {
       const { quote } = await simpleQuotesApi.create(projectId);
+      // 선택된 공종이 있으면 [그룹 헤더 + 빈 라인 1개]씩 일괄 생성
+      if (phaseLabels && phaseLabels.length > 0) {
+        const lines = [];
+        for (const label of phaseLabels) {
+          lines.push({
+            isGroup: true, isGroupEnd: false,
+            itemName: label, spec: '', quantity: 0, unit: '', unitPrice: 0, notes: '',
+          });
+          lines.push({
+            isGroup: false, isGroupEnd: false,
+            itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '',
+          });
+        }
+        await simpleQuotesApi.putLines(projectId, quote.id, lines);
+      }
+      setShowNewModal(false);
       await reload(quote.id);
     } catch (e) {
       alert('견적 생성 실패: ' + (e.response?.data?.error || e.message));
@@ -87,31 +105,40 @@ export default function ProjectSimpleQuotes() {
 
   if (quotes.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="text-sm text-gray-500 mb-4">아직 작성된 간편 견적이 없습니다.</div>
-        <button
-          onClick={handleCreate}
-          className="text-sm px-5 py-2.5 bg-navy-700 text-white rounded hover:bg-navy-800"
-        >
-          + 새 간편 견적 작성
-        </button>
-        <div className="mt-3 text-xs text-gray-400">
-          회사 설정의 정보가 자동으로 채워집니다.
+      <>
+        <div className="text-center py-16">
+          <div className="text-sm text-gray-500 mb-4">아직 작성된 간편 견적이 없습니다.</div>
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="text-sm px-5 py-2.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+          >
+            + 새 간편 견적 작성
+          </button>
+          <div className="mt-3 text-xs text-gray-400">
+            회사 설정의 정보가 자동으로 채워집니다.
+          </div>
+          <div className="mt-6 pt-4 border-t text-xs text-gray-400">
+            <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 hover:underline">
+              기존 상세 견적 시스템 보기 →
+            </Link>
+          </div>
         </div>
-        <div className="mt-6 pt-4 border-t text-xs text-gray-400">
-          <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 hover:underline">
-            기존 상세 견적 시스템 보기 →
-          </Link>
-        </div>
-      </div>
+        {showNewModal && (
+          <NewQuoteWithPhasesModal
+            onClose={() => setShowNewModal(false)}
+            onCreate={handleCreateWithPhases}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
       <aside>
         <button
-          onClick={handleCreate}
+          onClick={() => setShowNewModal(true)}
           className="w-full text-sm px-3 py-2 bg-navy-700 text-white rounded hover:bg-navy-800 mb-2"
         >
           + 새 견적
@@ -173,7 +200,14 @@ export default function ProjectSimpleQuotes() {
           />
         )}
       </div>
-    </div>
+      </div>
+      {showNewModal && (
+        <NewQuoteWithPhasesModal
+          onClose={() => setShowNewModal(false)}
+          onCreate={handleCreateWithPhases}
+        />
+      )}
+    </>
   );
 }
 
