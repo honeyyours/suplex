@@ -60,6 +60,8 @@ function buildPOFromMaterial(m) {
     unit: m.unit,
     unitPrice: m.unitPrice,
     totalPrice: m.totalPrice,
+    // 마감재 비고(색상·항목별 특이사항)는 발주처 안내에도 그대로 필요 — PO.notes로 전파
+    notes: m.memo || null,
   };
 }
 

@@ -376,9 +376,21 @@ function Section({ title, count, defaultOpen = true, children, extraAction = nul
   );
 }
 
+// 마감재 quantity·unit이 PO에 같이 넘어오는데 OrderRow는 unit만 보여줘서
+// 사용자가 수량을 못 보는 문제 → 표시 시점에 둘을 합쳐 한 자유 텍스트로 표현.
+function formatQtyUnit(q, u) {
+  const qNum = Number(q);
+  const hasQ = Number.isFinite(qNum) && qNum > 0;
+  const hasU = u && String(u).trim();
+  if (hasQ && hasU) return `${qNum}${u}`;
+  if (hasU) return String(u).trim();
+  if (hasQ) return String(qNum);
+  return '';
+}
+
 function OrderRow({ order, onChange, selected, onToggleSelect }) {
   const [draft, setDraft] = useState({
-    unit: order.unit ?? '',
+    unit: formatQtyUnit(order.quantity, order.unit),
     vendor: order.vendor ?? '',
   });
   const [busy, setBusy] = useState(false);
@@ -408,43 +420,50 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
   const hasMaterialChanged = order.materialChangedAt && order.status !== 'PENDING';
 
   return (
-    <div className="py-2 px-2 grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-2 text-sm hover:bg-gray-50 group items-center">
-      <input
-        type="checkbox"
-        checked={!!selected}
-        onChange={onToggleSelect}
-        className="w-4 h-4 accent-navy-700 cursor-pointer"
-        title="선택 복사 대상"
-      />
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          {hasMaterialChanged && (
-            <span
-              className="text-xs sm:text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 cursor-pointer"
-              title="마감재가 변경됨 — 클릭하여 확인"
-              onClick={async () => {
-                await purchaseOrdersApi.acknowledge(order.projectId, order.id);
-                onChange();
-              }}
-            >⚠️ 마감재 변경됨</span>
+    <div className="py-2 px-2 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-3 text-sm hover:bg-gray-50 group">
+      <div className="flex items-start gap-3 min-w-0 lg:flex-1 lg:max-w-[460px]">
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={onToggleSelect}
+          className="w-4 h-4 mt-0.5 accent-navy-700 cursor-pointer flex-shrink-0"
+          title="선택 복사 대상"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            {hasMaterialChanged && (
+              <span
+                className="text-xs sm:text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 cursor-pointer"
+                title="마감재가 변경됨 — 클릭하여 확인"
+                onClick={async () => {
+                  await purchaseOrdersApi.acknowledge(order.projectId, order.id);
+                  onChange();
+                }}
+              >⚠️ 마감재 변경됨</span>
+            )}
+            <span className="font-semibold text-gray-900 truncate">{order.itemName}</span>
+            {order.project && (
+              <Link
+                to={`/projects/${order.project.id}/materials`}
+                className="text-xs sm:text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              >{order.project.name}</Link>
+            )}
+            {order.deadline && order.daysToDeadline != null && (
+              <DeadlineChip days={order.daysToDeadline} deadline={order.deadline} />
+            )}
+          </div>
+          {order.spec && (
+            <div className="text-xs text-gray-500 truncate mt-0.5">{order.spec}</div>
           )}
-          <span className="font-semibold text-gray-900 truncate">{order.itemName}</span>
-          {order.project && (
-            <Link
-              to={`/projects/${order.project.id}/materials`}
-              className="text-xs sm:text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
-            >{order.project.name}</Link>
-          )}
-          {order.deadline && order.daysToDeadline != null && (
-            <DeadlineChip days={order.daysToDeadline} deadline={order.deadline} />
+          {order.notes && (
+            <div className="text-xs text-amber-700 truncate mt-0.5" title={order.notes}>
+              📝 {order.notes}
+            </div>
           )}
         </div>
-        {order.spec && (
-          <div className="text-xs text-gray-500 truncate mt-0.5">{order.spec}</div>
-        )}
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-1.5 lg:flex-shrink-0">
         <input
           value={draft.unit}
           onChange={(e) => setField('unit', e.target.value)}
@@ -457,7 +476,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           onChange={(e) => setField('vendor', e.target.value)}
           onBlur={save}
           placeholder="매입처"
-          className="w-28 text-sm px-2 py-1 border rounded"
+          className="w-44 text-sm px-2 py-1 border rounded"
         />
         <button
           onClick={remove}

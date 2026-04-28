@@ -127,27 +127,29 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
 
   // 4. 마감재 (FINISH) — spaceGroup이 표준 phase 라벨이어야 매칭됨.
   // 의도적으로 UNDECIDED 다수 + 임박 D-N 케이스 두어 리스크 배지 트리거.
+  // 수량/단위/비고를 채워 마감재 → 발주 자동 전파 흐름이 시연되도록.
+  // 컬럼: spaceGroup, itemName, brand, productName, status, quantity, unit, memo
   const materials = [
-    ['단열',       '단열재 PE보온재',           '한일이화',     'PE 30T',                          'UNDECIDED'],
-    ['전기',       '거실 매입등 LED',            '오스람',       'LED 20W 다운라이트 6인치',         'CONFIRMED'],
-    ['전기',       '침실 시스템에어컨 콘센트',   'LS산전',        null,                              'REVIEWING'],
-    ['목공',       '우물천장 자재',              'KCC',          '석고보드 9.5T + MDF 12T',          'CONFIRMED'],
-    ['목공',       '거실 아트월',                '자작합판',      null,                              'REVIEWING'],
-    ['타일',       '욕실 벽 타일',               '유로세라믹',    'TIMELESS WHITE 300x600',          'CONFIRMED'],
-    ['타일',       '욕실 바닥 타일',             '유로세라믹',    'TERRA GREY 300x300',              'CONFIRMED'],
-    ['타일',       '주방 타일',                  '동신타일',      'URBAN STONE BEIGE 600x600',       'UNDECIDED'],
-    ['욕실',       '양변기',                     '대림바스',      'DC-1700S',                        'CONFIRMED'],
-    ['욕실',       '세면대',                     '대림바스',      'C-7100SM',                        'CONFIRMED'],
-    ['욕실',       '샤워수전',                   '더죤',          'DJ-200CR',                        'CHANGED'],
-    ['욕실',       '욕실 거울',                  null,            '600x800 LED 매립형',              'UNDECIDED'],
-    ['도배',       '거실 실크벽지',              'LG하우시스',    'LX월 베니션 화이트',              'CONFIRMED'],
-    ['도배',       '침실 실크벽지',              '신한벽지',      null,                              'UNDECIDED'],
-    ['마루·장판',  '강마루',                     '동화자연마루',  '나투스진 카르마',                  'REUSED'],
+    ['단열',       '단열재 PE보온재',            '한일이화',     'PE 30T',                          'UNDECIDED', 32,  '평',    null],
+    ['전기',       '거실 매입등 LED',            '오스람',       'LED 20W 다운라이트 6인치',        'CONFIRMED', 12,  '개',    '3000K 전구색'],
+    ['전기',       '침실 시스템에어컨 콘센트',   'LS산전',        null,                              'REVIEWING', 3,   '구',    null],
+    ['목공',       '우물천장 자재',              'KCC',          '석고보드 9.5T + MDF 12T',         'CONFIRMED', 1,   '식',    '거실 우물천장 사이즈 2.4×3.6m 기준'],
+    ['목공',       '거실 아트월',                '자작합판',      null,                              'REVIEWING', 1,   '식',    '아트월 폭 3.6m, 우드 톤 샘플 확인 필요'],
+    ['타일',       '욕실 벽 타일',               '유로세라믹',    'TIMELESS WHITE 300x600',          'CONFIRMED', 24,  '박스',  '색상: 화이트 / 코너 마감재 별도 주문'],
+    ['타일',       '욕실 바닥 타일',             '유로세라믹',    'TERRA GREY 300x300',              'CONFIRMED', 16,  '박스',  '색상: 그레이 / 논슬립'],
+    ['타일',       '주방 타일',                  '동신타일',      'URBAN STONE BEIGE 600x600',       'UNDECIDED', 8,   '박스',  '색상 베이지/그레이 중 선택'],
+    ['욕실',       '양변기',                     '대림바스',      'DC-1700S',                        'CONFIRMED', 2,   '대',    '비데 일체형'],
+    ['욕실',       '세면대',                     '대림바스',      'C-7100SM',                        'CONFIRMED', 2,   '대',    '카운터 매립형'],
+    ['욕실',       '샤워수전',                   '더죤',          'DJ-200CR',                        'CHANGED',   2,   '셋트',  '크롬 → 매트블랙으로 변경'],
+    ['욕실',       '욕실 거울',                  null,            '600x800 LED 매립형',              'UNDECIDED', 2,   '개',    null],
+    ['도배',       '거실 실크벽지',              'LG하우시스',    'LX월 베니션 화이트',              'CONFIRMED', 14,  '롤',    '거실+주방 통일'],
+    ['도배',       '침실 실크벽지',              '신한벽지',      null,                              'UNDECIDED', 8,   '롤',    null],
+    ['마루·장판',  '강마루',                     '동화자연마루',  '나투스진 카르마',                  'REUSED',    32,  '평',    '마루 보양 시트 별도 / 기존 평탄도 확인'],
   ];
 
-  const materialIdByName = {};
+  const materialByName = {};
   let mOrder = 0;
-  for (const [spaceGroup, itemName, brand, productName, status] of materials) {
+  for (const [spaceGroup, itemName, brand, productName, status, quantity, unit, memo] of materials) {
     const m = await prisma.material.create({
       data: {
         projectId: project.id,
@@ -157,10 +159,13 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
         brand,
         productName,
         status,
+        quantity,
+        unit,
+        memo,
         orderIndex: mOrder++,
       },
     });
-    materialIdByName[itemName] = m.id;
+    materialByName[itemName] = m;
   }
 
   // 5. 일정 entries — category가 표준 phase 라벨이어야 공정 현황에서 잡힘.
@@ -227,8 +232,8 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
   ];
 
   for (const [matName, status, expectedDayOffset, receivedDayOffset, totalPrice, vendor, materialChanged] of orders) {
-    const materialId = materialIdByName[matName];
-    if (!materialId) continue;
+    const m = materialByName[matName];
+    if (!m) continue;
     const expectedDate = addDays(startDate, expectedDayOffset);
     const orderedAt =
       status === 'ORDERED' || status === 'RECEIVED'
@@ -236,16 +241,26 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
         : null;
     const receivedAt =
       status === 'RECEIVED' && receivedDayOffset != null ? addDays(startDate, receivedDayOffset) : null;
+
+    // 실제 운영의 마감재→발주 자동 흐름과 동일한 모양으로 시드 (materials.routes.js
+    // buildPOFromMaterial과 일관). spec은 brand/productName 합쳐 표시, 비고는 PO.notes로.
+    const specParts = [];
+    if (m.brand) specParts.push(m.brand);
+    if (m.productName) specParts.push(m.productName);
+    const spec = specParts.length ? specParts.join(' / ') : null;
+
     await prisma.purchaseOrder.create({
       data: {
         projectId: project.id,
-        materialId,
-        itemName: matName,
+        materialId: m.id,
+        itemName: `${m.spaceGroup} · ${m.itemName}`,
+        spec,
         vendor,
-        quantity: 1,
-        unit: '식',
+        quantity: m.quantity,
+        unit: m.unit,
         unitPrice: totalPrice,
         totalPrice,
+        notes: m.memo || null,
         status,
         expectedDate,
         orderedAt,
