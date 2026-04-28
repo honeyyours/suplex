@@ -97,7 +97,7 @@ router.get('/companies', async (req, res, next) => {
 });
 
 // ============================================
-// GET /api/admin/users — 모든 사용자 + 소속 회사
+// GET /api/admin/users — 모든 사용자 + 소속 회사 + 마지막 접속 + 30일 활동량
 // ============================================
 router.get('/users', async (req, res, next) => {
   try {
@@ -118,19 +118,39 @@ router.get('/users', async (req, res, next) => {
         },
       },
     });
-    res.json({
-      users: users.map((u) => ({
+
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // 사용자별 30일 활동량 (생성한 프로젝트·일정·보고 + 완료 체크리스트)
+    const enriched = await Promise.all(users.map(async (u) => {
+      const [projectCount, scheduleCount, reportCount, checklistDoneCount] = await Promise.all([
+        prisma.project.count({ where: { createdById: u.id, createdAt: { gte: monthAgo } } }),
+        prisma.dailyScheduleEntry.count({ where: { createdById: u.id, createdAt: { gte: monthAgo } } }),
+        prisma.dailyReport.count({ where: { authorId: u.id, createdAt: { gte: monthAgo } } }),
+        prisma.projectChecklist.count({ where: { completedById: u.id, completedAt: { gte: monthAgo } } }),
+      ]);
+      return {
         id: u.id,
         email: u.email,
         name: u.name,
         phone: u.phone,
         isSuperAdmin: u.isSuperAdmin,
         createdAt: u.createdAt,
+        lastSeenAt: u.lastSeenAt,
+        activity30d: {
+          projects: projectCount,
+          schedules: scheduleCount,
+          reports: reportCount,
+          checklistsDone: checklistDoneCount,
+          total: projectCount + scheduleCount + reportCount + checklistDoneCount,
+        },
         memberships: u.memberships.map((m) => ({
           companyId: m.companyId, companyName: m.company.name, role: m.role,
         })),
-      })),
-    });
+      };
+    }));
+
+    res.json({ users: enriched });
   } catch (e) { next(e); }
 });
 
@@ -239,45 +259,65 @@ router.patch('/users/:id', async (req, res, next) => {
 // ============================================
 router.get('/stats', async (req, res, next) => {
   try {
-    const [companyCount, userCount, projectCount, expenseCount] = await Promise.all([
+    const [companyCount, userCount, projectCount, scheduleCount] = await Promise.all([
       prisma.company.count(),
       prisma.user.count(),
       prisma.project.count(),
-      prisma.expense.count(),
+      prisma.dailyScheduleEntry.count(),
     ]);
 
     const since = new Date();
     since.setDate(since.getDate() - 30);
     since.setHours(0, 0, 0, 0);
 
-    const [recentUsers, recentCompanies, allRecentUsers, allRecentCompanies] = await Promise.all([
+    const [
+      recentUsers, recentCompanies, recentProjects, recentSchedules,
+      allRecentUsers, allRecentCompanies, allRecentProjects, allRecentSchedules,
+    ] = await Promise.all([
       prisma.user.count({ where: { createdAt: { gte: since } } }),
       prisma.company.count({ where: { createdAt: { gte: since } } }),
+      prisma.project.count({ where: { createdAt: { gte: since } } }),
+      prisma.dailyScheduleEntry.count({ where: { createdAt: { gte: since } } }),
       prisma.user.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
       prisma.company.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+      prisma.project.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
+      prisma.dailyScheduleEntry.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
     ]);
 
-    // 일별 카운트 (지난 30일)
+    // 일별 카운트 (지난 30일) — 4개 시리즈
     const dailyMap = {};
     for (let i = 0; i < 30; i++) {
       const d = new Date(since);
       d.setDate(d.getDate() + i);
       const k = d.toISOString().slice(0, 10);
-      dailyMap[k] = { date: k, users: 0, companies: 0 };
+      dailyMap[k] = { date: k, users: 0, companies: 0, projects: 0, schedules: 0 };
     }
-    for (const u of allRecentUsers) {
-      const k = new Date(u.createdAt).toISOString().slice(0, 10);
-      if (dailyMap[k]) dailyMap[k].users++;
+    function bump(items, key) {
+      for (const it of items) {
+        const k = new Date(it.createdAt).toISOString().slice(0, 10);
+        if (dailyMap[k]) dailyMap[k][key]++;
+      }
     }
-    for (const c of allRecentCompanies) {
-      const k = new Date(c.createdAt).toISOString().slice(0, 10);
-      if (dailyMap[k]) dailyMap[k].companies++;
-    }
+    bump(allRecentUsers, 'users');
+    bump(allRecentCompanies, 'companies');
+    bump(allRecentProjects, 'projects');
+    bump(allRecentSchedules, 'schedules');
     const daily = Object.values(dailyMap);
 
     res.json({
-      total: { companies: companyCount, users: userCount, projects: projectCount, expenses: expenseCount },
-      last30Days: { newUsers: recentUsers, newCompanies: recentCompanies, daily },
+      total: {
+        companies: companyCount,
+        users: userCount,
+        projects: projectCount,
+        schedules: scheduleCount,
+      },
+      last30Days: {
+        newUsers: recentUsers,
+        newCompanies: recentCompanies,
+        newProjects: recentProjects,
+        newSchedules: recentSchedules,
+        daily,
+      },
     });
   } catch (e) { next(e); }
 });

@@ -1,5 +1,25 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
+const prisma = require('../config/prisma');
+
+// lastSeenAt throttle (in-memory, 1분 단위)
+// 정확한 시각은 ±1분 정도 — 어드민 모니터링 용도엔 충분, DB 부하 1/N 절감
+const LAST_SEEN_THROTTLE_MS = 60 * 1000;
+const lastSeenCache = new Map();
+
+function maybeUpdateLastSeen(userId) {
+  const now = Date.now();
+  const prev = lastSeenCache.get(userId) || 0;
+  if (now - prev < LAST_SEEN_THROTTLE_MS) return;
+  lastSeenCache.set(userId, now);
+  // fire-and-forget — 응답 차단 X
+  prisma.user.update({
+    where: { id: userId },
+    data: { lastSeenAt: new Date(now) },
+  }).catch((e) => {
+    console.warn('[auth] lastSeenAt update failed', e?.message);
+  });
+}
 
 function authRequired(req, res, next) {
   const header = req.headers.authorization || '';
@@ -24,6 +44,12 @@ function authRequired(req, res, next) {
         error: '사칭(임시 접속) 모드에서는 데이터를 변경할 수 없습니다 (READ-ONLY)',
         impersonating: true,
       });
+    }
+
+    // 마지막 접속 시각 자동 갱신 (사칭 모드에선 어드민 본인이 아니라 대상 회사 OWNER 활동처럼
+    // 보일 수 있어 스킵 — originalAdminId가 있으면 사칭 토큰)
+    if (!req.user.impersonating) {
+      maybeUpdateLastSeen(req.user.id);
     }
     next();
   } catch (e) {

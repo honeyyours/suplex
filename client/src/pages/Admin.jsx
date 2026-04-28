@@ -19,6 +19,14 @@ function relativeTime(date) {
   return d.toLocaleDateString('ko-KR');
 }
 
+function lastSeenColor(date) {
+  const diff = Date.now() - new Date(date).getTime();
+  const days = diff / (24 * 60 * 60 * 1000);
+  if (days < 1) return 'text-emerald-700 font-medium';   // 24시간 이내 = 활성
+  if (days < 7) return 'text-gray-700';                  // 1주일 이내 = 정상
+  return 'text-gray-400';                                 // 1주일+ = 휴면
+}
+
 export default function Admin() {
   const { auth } = useAuth();
   const [tab, setTab] = useState('companies');
@@ -398,48 +406,69 @@ function UsersTab({ currentUserId }) {
               <th className="px-4 py-3 text-left">이름</th>
               <th className="px-4 py-3 text-left">이메일</th>
               <th className="px-4 py-3 text-left">소속</th>
+              <th className="px-4 py-3 text-left">마지막 접속</th>
+              <th className="px-4 py-3 text-right">30일 활동</th>
               <th className="px-4 py-3 text-left">가입일</th>
               <th className="px-4 py-3 text-right">관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">사용자가 없습니다</td></tr>
-            ) : users.map((u) => (
-              <tr key={u.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">
-                  {u.name}
-                  {u.isSuperAdmin && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-violet-100 text-violet-800 rounded border border-violet-200">🛡️ ADMIN</span>}
-                  {u.id === currentUserId && <span className="ml-2 text-xs text-gray-400">(나)</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">
-                  {u.memberships.length === 0 ? <span className="italic text-gray-400">— 회사 없음</span> :
-                    u.memberships.map((m) => (
-                      <div key={m.companyId}>{m.companyName} <span className="text-gray-400">· {ROLE_LABEL[m.role] || m.role}</span></div>
-                    ))}
-                </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
-                <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
-                  <button
-                    onClick={() => handleReset(u)}
-                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                  >🔒 비번 리셋</button>
-                  <button
-                    onClick={() => handleToggleAdmin(u)}
-                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                  >{u.isSuperAdmin ? '권한 회수' : '🛡️ 어드민 부여'}</button>
-                  {u.id !== currentUserId && (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">사용자가 없습니다</td></tr>
+            ) : users.map((u) => {
+              const a = u.activity30d || { total: 0 };
+              const tooltip = `프로젝트 ${a.projects || 0} · 일정 ${a.schedules || 0} · 보고 ${a.reports || 0} · 체크 ${a.checklistsDone || 0}`;
+              return (
+                <tr key={u.id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {u.name}
+                    {u.isSuperAdmin && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-violet-100 text-violet-800 rounded border border-violet-200">🛡️ ADMIN</span>}
+                    {u.id === currentUserId && <span className="ml-2 text-xs text-gray-400">(나)</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{u.email}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {u.memberships.length === 0 ? <span className="italic text-gray-400">— 회사 없음</span> :
+                      u.memberships.map((m) => (
+                        <div key={m.companyId}>{m.companyName} <span className="text-gray-400">· {ROLE_LABEL[m.role] || m.role}</span></div>
+                      ))}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {u.lastSeenAt ? (
+                      <span className={lastSeenColor(u.lastSeenAt)} title={new Date(u.lastSeenAt).toLocaleString('ko-KR')}>
+                        {relativeTime(u.lastSeenAt)}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 italic">미접속</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right text-xs" title={tooltip}>
+                    <span className={`tabular-nums font-semibold ${
+                      a.total > 10 ? 'text-emerald-700' :
+                      a.total > 0 ? 'text-gray-700' : 'text-gray-400'
+                    }`}>{a.total}</span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
+                  <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
                     <button
-                      onClick={() => handleDelete(u)}
-                      className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
-                    >🗑️ 삭제</button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                      onClick={() => handleReset(u)}
+                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                    >🔒 비번 리셋</button>
+                    <button
+                      onClick={() => handleToggleAdmin(u)}
+                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                    >{u.isSuperAdmin ? '권한 회수' : '🛡️ 어드민 부여'}</button>
+                    {u.id !== currentUserId && (
+                      <button
+                        onClick={() => handleDelete(u)}
+                        className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
+                      >🗑️ 삭제</button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -463,40 +492,62 @@ function StatsTab() {
 
   if (loading || !stats) return <div className="text-sm text-gray-400 py-8 text-center">로딩...</div>;
 
+  const t = stats.total;
+  const r = stats.last30Days;
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card label="전체 회사" value={stats.total.companies} />
-        <Card label="전체 사용자" value={stats.total.users} />
-        <Card label="전체 프로젝트" value={stats.total.projects} />
-        <Card label="전체 지출 거래" value={stats.total.expenses} />
-        <Card label="신규 사용자 (30일)" value={stats.last30Days.newUsers} accent />
-        <Card label="신규 회사 (30일)" value={stats.last30Days.newCompanies} accent />
+        <Card label="전체 회사" value={t.companies} />
+        <Card label="전체 사용자" value={t.users} />
+        <Card label="전체 프로젝트" value={t.projects} />
+        <Card label="전체 일정" value={t.schedules} />
+        <Card label="신규 회사 (30일)" value={r.newCompanies} accent />
+        <Card label="신규 사용자 (30일)" value={r.newUsers} accent />
+        <Card label="신규 프로젝트 (30일)" value={r.newProjects} accent />
+        <Card label="신규 일정 (30일)" value={r.newSchedules} accent />
       </div>
 
-      {stats.last30Days.daily && stats.last30Days.daily.length > 0 && (
-        <div className="bg-white rounded-xl border p-5">
-          <div className="text-sm font-semibold text-navy-800 mb-3">📈 일별 가입 추세 (지난 30일)</div>
-          <SignupChart daily={stats.last30Days.daily} />
-        </div>
+      {r.daily && r.daily.length > 0 && (
+        <>
+          <div className="bg-white rounded-xl border p-5">
+            <div className="text-sm font-semibold text-navy-800 mb-3">📈 신규 가입 추세 (지난 30일)</div>
+            <DailyChart
+              daily={r.daily}
+              series={[
+                { key: 'users', label: '신규 사용자', color: '#1e3a5f' },
+                { key: 'companies', label: '신규 회사', color: '#fbbf24' },
+              ]}
+            />
+          </div>
+          <div className="bg-white rounded-xl border p-5">
+            <div className="text-sm font-semibold text-navy-800 mb-3">🏗️ 신규 활동 추세 (지난 30일)</div>
+            <DailyChart
+              daily={r.daily}
+              series={[
+                { key: 'projects', label: '신규 프로젝트', color: '#0ea5e9' },
+                { key: 'schedules', label: '신규 일정', color: '#10b981' },
+              ]}
+            />
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function SignupChart({ daily }) {
-  const maxVal = Math.max(1, ...daily.map((d) => Math.max(d.users, d.companies)));
+function DailyChart({ daily, series }) {
+  const maxVal = Math.max(1, ...daily.flatMap((d) => series.map((s) => d[s.key] || 0)));
   const W = 800;
   const H = 200;
   const pad = 30;
   const innerW = W - pad * 2;
   const innerH = H - pad * 2;
-  const barWidth = innerW / daily.length / 2.5;
+  const barWidth = innerW / daily.length / (series.length + 0.5);
 
   return (
     <div className="overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 600 }}>
-        {/* y축 grid */}
         {[0, 0.25, 0.5, 0.75, 1].map((p) => {
           const y = pad + innerH * (1 - p);
           return (
@@ -508,40 +559,42 @@ function SignupChart({ daily }) {
             </g>
           );
         })}
-        {/* 막대 */}
         {daily.map((d, i) => {
           const x = pad + (innerW / daily.length) * i;
-          const userH = (d.users / maxVal) * innerH;
-          const companyH = (d.companies / maxVal) * innerH;
           return (
             <g key={d.date}>
-              <rect
-                x={x + 2} y={pad + innerH - userH} width={barWidth} height={userH}
-                fill="#1e3a5f" rx="1"
-              >
-                <title>{d.date}: 신규 사용자 {d.users}명</title>
-              </rect>
-              <rect
-                x={x + 2 + barWidth + 1} y={pad + innerH - companyH} width={barWidth} height={companyH}
-                fill="#fbbf24" rx="1"
-              >
-                <title>{d.date}: 신규 회사 {d.companies}곳</title>
-              </rect>
-              {/* x축 라벨 — 5일마다 */}
+              {series.map((s, idx) => {
+                const v = d[s.key] || 0;
+                const h = (v / maxVal) * innerH;
+                return (
+                  <rect
+                    key={s.key}
+                    x={x + 2 + idx * (barWidth + 1)}
+                    y={pad + innerH - h}
+                    width={barWidth}
+                    height={h}
+                    fill={s.color}
+                    rx="1"
+                  >
+                    <title>{d.date}: {s.label} {v}</title>
+                  </rect>
+                );
+              })}
               {i % 5 === 0 && (
-                <text x={x + barWidth} y={H - 8} textAnchor="middle" fontSize="9" fill="#6b7280">
+                <text x={x + barWidth * series.length / 2} y={H - 8} textAnchor="middle" fontSize="9" fill="#6b7280">
                   {d.date.slice(5)}
                 </text>
               )}
             </g>
           );
         })}
-        {/* 범례 */}
-        <g transform={`translate(${W - 200}, 8)`}>
-          <rect x="0" y="2" width="10" height="10" fill="#1e3a5f" rx="1" />
-          <text x="14" y="11" fontSize="10" fill="#374151">신규 사용자</text>
-          <rect x="80" y="2" width="10" height="10" fill="#fbbf24" rx="1" />
-          <text x="94" y="11" fontSize="10" fill="#374151">신규 회사</text>
+        <g transform={`translate(${W - 280}, 8)`}>
+          {series.map((s, idx) => (
+            <g key={s.key} transform={`translate(${idx * 110}, 0)`}>
+              <rect x="0" y="2" width="10" height="10" fill={s.color} rx="1" />
+              <text x="14" y="11" fontSize="10" fill="#374151">{s.label}</text>
+            </g>
+          ))}
         </g>
       </svg>
     </div>
