@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
+const { audit } = require('../services/audit');
 
 const router = express.Router();
 router.use(authRequired);
@@ -67,6 +68,11 @@ router.post('/members', requireRole('OWNER'), async (req, res, next) => {
         data: { userId: user.id, companyId: req.user.companyId, role: data.role },
       });
       return { user, membership };
+    });
+
+    audit(req, 'member.create', {
+      targetType: 'USER', targetId: result.user.id,
+      metadata: { email: result.user.email, role: data.role },
     });
 
     res.status(201).json({
@@ -143,6 +149,11 @@ router.patch('/members/:userId', requireRole('OWNER'), async (req, res, next) =>
       include: { user: { select: { id: true, email: true, name: true, phone: true, createdAt: true } } },
     });
 
+    audit(req, 'member.update', {
+      targetType: 'USER', targetId: userId,
+      metadata: { email: updated.user.email, changes: data },
+    });
+
     res.json({
       member: {
         membershipId: updated.id,
@@ -178,7 +189,14 @@ router.patch('/members/:userId/password', requireRole('OWNER'), async (req, res,
     if (!membership) return res.status(404).json({ error: '멤버를 찾을 수 없습니다' });
 
     const passwordHash = await bcrypt.hash(data.password, 10);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    // tokenVersion++ 로 그 사용자의 모든 기존 세션 강제 로그아웃
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
+
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    audit(req, 'member.password-reset', { targetType: 'USER', targetId: userId, metadata: { email: u?.email } });
 
     res.json({ ok: true });
   } catch (e) {
@@ -212,7 +230,20 @@ router.delete('/members/:userId', requireRole('OWNER'), async (req, res, next) =
       }
     }
 
-    await prisma.membership.delete({ where: { id: membership.id } });
+    const removedUser = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+
+    // 멤버십 삭제 + tokenVersion++ 로 즉시 모든 세션 강제 로그아웃
+    // (퇴사자가 현재 로그인 중이라도 다음 요청에서 401 → 자동 로그인 페이지로)
+    await prisma.$transaction([
+      prisma.membership.delete({ where: { id: membership.id } }),
+      prisma.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } }),
+    ]);
+
+    audit(req, 'member.remove', {
+      targetType: 'USER', targetId: userId,
+      metadata: { email: removedUser?.email, name: removedUser?.name, role: membership.role },
+    });
+
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

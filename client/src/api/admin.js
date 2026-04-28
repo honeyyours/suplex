@@ -15,5 +15,6 @@ export const adminApi = {
   cleanupInvitations: () => api.post('/admin/cleanup-invitations').then((r) => r.data),
   // 회사 백업은 다운로드라 별도 url 사용
   backupUrl: (companyId) => `/api/admin/companies/${companyId}/backup`,
+  listAuditLogs: (params = {}) => api.get('/admin/audit-logs', { params }).then((r) => r.data),
 };
 

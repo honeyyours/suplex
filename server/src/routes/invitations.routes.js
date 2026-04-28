@@ -9,6 +9,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired, requireRole } = require('../middlewares/auth');
+const { audit } = require('../services/audit');
 
 const router = express.Router();
 
@@ -85,6 +86,11 @@ router.post('/', authRequired, requireRole('OWNER'), async (req, res, next) => {
       },
     });
 
+    audit(req, 'invitation.create', {
+      targetType: 'INVITATION', targetId: inv.id,
+      metadata: { email, role: data.role },
+    });
+
     res.status(201).json({ invitation: sanitizeForSelf(inv) });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -116,6 +122,7 @@ router.delete('/:id', authRequired, requireRole('OWNER'), async (req, res, next)
       return res.status(400).json({ error: '이미 수락된 초대는 취소할 수 없습니다' });
     }
     await prisma.invitation.delete({ where: { id: inv.id } });
+    audit(req, 'invitation.cancel', { targetType: 'INVITATION', targetId: inv.id, metadata: { email: inv.email } });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -197,9 +204,15 @@ router.post('/accept', async (req, res, next) => {
     });
 
     const token = jwt.sign(
-      { sub: result.user.id, companyId: inv.companyId, role: inv.role },
+      { sub: result.user.id, companyId: inv.companyId, role: inv.role, tv: 0 },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
+    );
+
+    audit(
+      { user: { id: result.user.id, role: inv.role }, headers: req.headers, ip: req.ip },
+      'invitation.accept',
+      { companyId: inv.companyId, targetType: 'USER', targetId: result.user.id, metadata: { email: inv.email, role: inv.role } }
     );
 
     res.status(201).json({
@@ -235,7 +248,7 @@ router.post('/join', authRequired, async (req, res, next) => {
     // 로그인된 유저의 이메일과 초대 이메일 일치 검증 (보안: 다른 사람의 초대 가로채기 방지)
     const me = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, tokenVersion: true, isSuperAdmin: true },
     });
     if (!me) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
     if (me.email.toLowerCase() !== inv.email.toLowerCase()) {
@@ -264,14 +277,25 @@ router.post('/join', authRequired, async (req, res, next) => {
 
     // 새 회사 컨텍스트 토큰 발급 (자동 전환)
     const token = jwt.sign(
-      { sub: me.id, companyId: inv.companyId, role: inv.role },
+      {
+        sub: me.id,
+        companyId: inv.companyId,
+        role: inv.role,
+        isSuperAdmin: me.isSuperAdmin,
+        tv: me.tokenVersion || 0,
+      },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
 
+    audit(req, 'invitation.join', {
+      companyId: inv.companyId, targetType: 'USER', targetId: me.id,
+      metadata: { email: me.email, role: inv.role },
+    });
+
     res.status(201).json({
       token,
-      user: me,
+      user: { id: me.id, email: me.email, name: me.name },
       company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
       role: inv.role,
     });

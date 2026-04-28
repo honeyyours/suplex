@@ -9,6 +9,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired, requireSuperAdmin } = require('../middlewares/auth');
+const { audit } = require('../services/audit');
 
 const router = express.Router();
 router.use(authRequired);
@@ -173,12 +174,15 @@ router.delete('/users/:id', async (req, res, next) => {
     const ownedCompanyIds = user.memberships.filter((m) => m.role === 'OWNER').map((m) => m.companyId);
 
     await prisma.$transaction(async (tx) => {
-      // 사용자가 OWNER인 회사들 cascade 삭제 (모든 데이터 함께 삭제)
       if (ownedCompanyIds.length > 0) {
         await tx.company.deleteMany({ where: { id: { in: ownedCompanyIds } } });
       }
-      // 사용자 삭제 (남은 Membership cascade)
       await tx.user.delete({ where: { id: userId } });
+    });
+
+    audit(req, 'admin.user-delete', {
+      targetType: 'USER', targetId: userId,
+      metadata: { email: user.email, deletedCompanyIds, ownedCount: ownedCompanyIds.length },
     });
 
     res.json({ ok: true, deletedUserId: userId, deletedCompanyIds: ownedCompanyIds });
@@ -195,6 +199,10 @@ router.delete('/companies/:id', async (req, res, next) => {
     if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
 
     await prisma.company.delete({ where: { id: companyId } });
+    audit(req, 'admin.company-delete', {
+      targetType: 'COMPANY', targetId: companyId,
+      metadata: { companyName: company.name },
+    });
     res.json({ ok: true, deletedCompanyId: companyId });
   } catch (e) { next(e); }
 });
@@ -216,7 +224,13 @@ router.post('/users/:id/reset-password', async (req, res, next) => {
     for (let i = 0; i < 12; i++) temp += chars[bytes[i] % chars.length];
 
     const passwordHash = await bcrypt.hash(temp, 10);
-    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    // tokenVersion++ 로 그 사용자 모든 세션 강제 로그아웃 (임시비번으로 새로 로그인해야 함)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
+
+    audit(req, 'admin.password-reset', { targetType: 'USER', targetId: user.id, metadata: { email: user.email } });
 
     res.json({ ok: true, email: user.email, tempPassword: temp });
   } catch (e) { next(e); }
@@ -242,11 +256,15 @@ router.patch('/users/:id', async (req, res, next) => {
       }
     }
 
+    // isSuperAdmin 토글은 보안상 모든 세션 무효화 권장
     const updated = await prisma.user.update({
       where: { id: userId },
-      data,
+      data: { ...data, ...(data.isSuperAdmin !== undefined ? { tokenVersion: { increment: 1 } } : {}) },
       select: { id: true, email: true, name: true, isSuperAdmin: true },
     });
+
+    audit(req, 'admin.user-update', { targetType: 'USER', targetId: userId, metadata: data });
+
     res.json({ user: updated });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
@@ -347,6 +365,12 @@ router.post('/companies/:id/transfer-ownership', async (req, res, next) => {
         data: { role: 'OWNER' },
       });
     }
+
+    audit(req, 'admin.transfer-ownership', {
+      companyId, targetType: 'USER', targetId: data.userId,
+      metadata: { email: targetMembership.user.email },
+    });
+
     res.json({
       ok: true,
       newOwner: { userId: data.userId, email: targetMembership.user.email, name: targetMembership.user.name },
@@ -373,7 +397,7 @@ router.post('/companies/:id/impersonate', async (req, res, next) => {
 
     const me = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, tokenVersion: true },
     });
 
     const token = jwt.sign(
@@ -383,10 +407,16 @@ router.post('/companies/:id/impersonate', async (req, res, next) => {
         role: 'OWNER',
         impersonating: true,
         originalAdminId: me.id,
+        tv: me.tokenVersion || 0,
       },
       env.jwt.secret,
-      { expiresIn: '1h' } // 짧은 만료
+      { expiresIn: '1h' }
     );
+
+    audit(req, 'admin.impersonate-start', {
+      companyId, targetType: 'COMPANY', targetId: companyId,
+      metadata: { companyName: company.name },
+    });
 
     res.json({
       token,
@@ -410,6 +440,7 @@ router.post('/cleanup-invitations', async (req, res, next) => {
         expiresAt: { lt: new Date() },
       },
     });
+    audit(req, 'admin.cleanup-invitations', { metadata: { deletedCount: r.count } });
     res.json({ ok: true, deletedCount: r.count });
   } catch (e) { next(e); }
 });
@@ -468,6 +499,56 @@ router.get('/companies/:id/backup', async (req, res, next) => {
       company,
       memberships, vendors, projects, materialTemplates, accountCodes, expenseRules,
       phaseKeywords, phaseDeadlines, phaseAdvices, applianceSpecs,
+    });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// GET /api/admin/audit-logs — 감사 로그 조회
+// query: action / actorId / companyId / take(default 200)
+// ============================================
+router.get('/audit-logs', async (req, res, next) => {
+  try {
+    const where = {};
+    if (req.query.action) where.action = String(req.query.action);
+    if (req.query.actorId) where.actorId = String(req.query.actorId);
+    if (req.query.companyId) where.companyId = String(req.query.companyId);
+    const take = Math.min(500, Math.max(10, Number(req.query.take) || 200));
+
+    const logs = await prisma.auditLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+
+    // actor 정보 lookup (배치)
+    const actorIds = [...new Set(logs.map((l) => l.actorId).filter(Boolean))];
+    const actors = await prisma.user.findMany({
+      where: { id: { in: actorIds } },
+      select: { id: true, email: true, name: true },
+    });
+    const actorMap = new Map(actors.map((u) => [u.id, u]));
+
+    const companyIds = [...new Set(logs.map((l) => l.companyId).filter(Boolean))];
+    const companies = await prisma.company.findMany({
+      where: { id: { in: companyIds } },
+      select: { id: true, name: true },
+    });
+    const companyMap = new Map(companies.map((c) => [c.id, c]));
+
+    res.json({
+      logs: logs.map((l) => ({
+        id: l.id,
+        action: l.action,
+        actorType: l.actorType,
+        actor: actorMap.get(l.actorId) || { id: l.actorId, email: '(삭제됨)', name: '—' },
+        company: l.companyId ? (companyMap.get(l.companyId) || { id: l.companyId, name: '(삭제됨)' }) : null,
+        targetType: l.targetType,
+        targetId: l.targetId,
+        metadata: l.metadata,
+        ip: l.ip,
+        createdAt: l.createdAt,
+      })),
     });
   } catch (e) { next(e); }
 });

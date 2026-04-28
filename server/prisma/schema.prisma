@@ -70,6 +70,7 @@ model User {
   phone        String?
   isSuperAdmin Boolean   @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
   lastSeenAt   DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
+  tokenVersion Int       @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -114,6 +115,27 @@ model Membership {
 
   @@unique([userId, companyId])
   @@map("memberships")
+}
+
+// 감사 로그 — 어드민·OWNER의 주요 액션 추적 (베타 7-A)
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   // 액션 수행자 user id
+  actorType  String   // 'ADMIN' | 'OWNER' | 'DESIGNER' | 'FIELD'
+  companyId  String? // 회사 컨텍스트 (멤버 변경 등). 어드민 일부 액션은 null
+  action     String   // 예: 'member.remove', 'admin.user-delete', 'admin.impersonate-start'
+  targetType String? // 'USER' | 'COMPANY' | 'INVITATION' | null
+  targetId   String?
+  metadata   Json? // 변경 전후 값 등 부가 정보
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([companyId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Invitation {

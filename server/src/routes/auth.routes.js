@@ -5,6 +5,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired } = require('../middlewares/auth');
+const { audit } = require('../services/audit');
 
 const router = express.Router();
 
@@ -58,10 +59,17 @@ router.post('/signup', async (req, res, next) => {
     });
 
     const token = jwt.sign(
-      { sub: result.user.id, companyId: result.company.id, role: 'OWNER' },
+      { sub: result.user.id, companyId: result.company.id, role: 'OWNER', tv: 0 },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
+
+    audit({ user: { id: result.user.id, role: 'OWNER' }, headers: req.headers, ip: req.ip }, 'auth.signup', {
+      companyId: result.company.id,
+      targetType: 'COMPANY',
+      targetId: result.company.id,
+      metadata: { companyName: result.company.name },
+    });
 
     res.status(201).json({
       token,
@@ -107,9 +115,16 @@ router.post('/login', async (req, res, next) => {
         companyId: membership?.companyId || null,
         role: membership?.role || null,
         isSuperAdmin: user.isSuperAdmin,
+        tv: user.tokenVersion || 0,
       },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
+    );
+
+    audit(
+      { user: { id: user.id, isSuperAdmin: user.isSuperAdmin, role: membership?.role }, headers: req.headers, ip: req.ip },
+      'auth.login',
+      { companyId: membership?.companyId || null }
     );
 
     res.json({
@@ -177,11 +192,17 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, tokenVersion: true, isSuperAdmin: true },
     });
 
     const token = jwt.sign(
-      { sub: user.id, companyId: membership.companyId, role: membership.role },
+      {
+        sub: user.id,
+        companyId: membership.companyId,
+        role: membership.role,
+        isSuperAdmin: user.isSuperAdmin,
+        tv: user.tokenVersion || 0,
+      },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
@@ -245,9 +266,29 @@ router.post('/change-password', authRequired, async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(data.newPassword, 10);
-    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    // tokenVersion++ 로 모든 기존 세션 무효화. 본인은 응답으로 받은 새 토큰으로 자동 갱신.
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+      select: { id: true, tokenVersion: true, isSuperAdmin: true },
+    });
 
-    res.json({ ok: true });
+    // 본인 새 토큰 발급 — 현재 회사 컨텍스트 유지
+    const token = jwt.sign(
+      {
+        sub: updated.id,
+        companyId: req.user.companyId,
+        role: req.user.role,
+        isSuperAdmin: updated.isSuperAdmin,
+        tv: updated.tokenVersion,
+      },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn }
+    );
+
+    audit(req, 'auth.password-change', { targetType: 'USER', targetId: updated.id });
+
+    res.json({ ok: true, token });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });

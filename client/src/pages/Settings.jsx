@@ -1244,6 +1244,7 @@ function Row({ label, value, mono }) {
 }
 
 function ChangePasswordRow() {
+  const { changePassword } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
   const [busy, setBusy] = useState(false);
@@ -1267,11 +1268,8 @@ function ChangePasswordRow() {
     }
     setBusy(true);
     try {
-      await api.post('/auth/change-password', {
-        currentPassword: form.current,
-        newPassword: form.next,
-      });
-      alert('비밀번호가 변경되었습니다.');
+      await changePassword(form.current, form.next);
+      alert('비밀번호가 변경되었습니다. 다른 기기 세션은 모두 자동 로그아웃됩니다.');
       reset();
     } catch (e) {
       setErr(e.response?.data?.error || '변경 실패');

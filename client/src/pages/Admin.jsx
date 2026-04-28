@@ -46,11 +46,13 @@ export default function Admin() {
         <TabBtn active={tab === 'companies'} onClick={() => setTab('companies')}>🏢 회사</TabBtn>
         <TabBtn active={tab === 'users'} onClick={() => setTab('users')}>👥 사용자</TabBtn>
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
+        <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
       </div>
 
       {tab === 'companies' && <CompaniesTab />}
       {tab === 'users' && <UsersTab currentUserId={auth?.user?.id} />}
       {tab === 'stats' && <StatsTab />}
+      {tab === 'audit' && <AuditTab />}
     </div>
   );
 }
@@ -597,6 +599,142 @@ function DailyChart({ daily, series }) {
           ))}
         </g>
       </svg>
+    </div>
+  );
+}
+
+// ============================================================
+// 감사 로그 탭
+// ============================================================
+const ACTION_META = {
+  // auth
+  'auth.signup':              { label: '회원가입', icon: '✨', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'auth.login':               { label: '로그인',   icon: '🔓', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+  'auth.password-change':     { label: '비번 변경', icon: '🔒', color: 'bg-sky-50 text-sky-700 border-sky-200' },
+  // member (OWNER)
+  'member.create':            { label: '멤버 추가',     icon: '➕', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'member.update':            { label: '멤버 수정',     icon: '✏️', color: 'bg-sky-50 text-sky-700 border-sky-200' },
+  'member.remove':            { label: '멤버 제거',     icon: '➖', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'member.password-reset':    { label: '멤버 비번리셋', icon: '🔑', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  // invitation
+  'invitation.create':        { label: '초대 발송', icon: '✉️', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  'invitation.cancel':        { label: '초대 취소', icon: '✕',  color: 'bg-gray-50 text-gray-600 border-gray-200' },
+  'invitation.accept':        { label: '초대 수락(신규)', icon: '🤝', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'invitation.join':          { label: '초대 합류(기존)', icon: '🤝', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  // admin
+  'admin.user-delete':        { label: '어드민:사용자삭제', icon: '🗑️', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'admin.company-delete':     { label: '어드민:회사삭제',   icon: '🗑️', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'admin.password-reset':     { label: '어드민:비번리셋',   icon: '🔑', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  'admin.user-update':        { label: '어드민:사용자수정', icon: '✏️', color: 'bg-sky-50 text-sky-700 border-sky-200' },
+  'admin.transfer-ownership': { label: '어드민:OWNER변경',  icon: '👑', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  'admin.impersonate-start':  { label: '어드민:사칭시작',   icon: '🎭', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+  'admin.cleanup-invitations':{ label: '어드민:초대정리',   icon: '🧹', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+};
+
+function actionMeta(action) {
+  return ACTION_META[action] || { label: action, icon: '·', color: 'bg-gray-100 text-gray-600 border-gray-200' };
+}
+
+function AuditTab() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+
+  async function load() {
+    setLoading(true);
+    try {
+      const params = {};
+      if (actionFilter) params.action = actionFilter;
+      const { logs } = await adminApi.listAuditLogs(params);
+      setLogs(logs);
+    } catch (e) {
+      alert('로그 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [actionFilter]);
+
+  const filtered = filter
+    ? logs.filter((l) =>
+        l.actor.email?.includes(filter) ||
+        l.actor.name?.includes(filter) ||
+        l.company?.name?.includes(filter) ||
+        JSON.stringify(l.metadata || '').includes(filter)
+      )
+    : logs;
+
+  const allActions = Object.keys(ACTION_META);
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-white rounded-xl border p-3 flex flex-wrap gap-2 items-center">
+        <input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="이메일·이름·회사·메타 검색 (클라이언트 필터)"
+          className="flex-1 min-w-[200px] px-3 py-1.5 border rounded text-sm"
+        />
+        <select
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
+          className="px-3 py-1.5 border rounded text-sm"
+        >
+          <option value="">모든 액션</option>
+          {allActions.map((a) => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
+        </select>
+        <button onClick={load} className="text-xs px-3 py-1.5 border rounded">새로고침</button>
+        <span className="text-xs text-gray-400 ml-auto">{filtered.length}건 / 최대 200건</span>
+      </div>
+
+      <div className="bg-white rounded-xl border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <tr>
+              <th className="px-4 py-3 text-left">시각</th>
+              <th className="px-4 py-3 text-left">액션</th>
+              <th className="px-4 py-3 text-left">수행자</th>
+              <th className="px-4 py-3 text-left">회사</th>
+              <th className="px-4 py-3 text-left">대상·메타</th>
+              <th className="px-4 py-3 text-left">IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">로그가 없습니다</td></tr>
+            ) : filtered.map((l) => {
+              const meta = actionMeta(l.action);
+              return (
+                <tr key={l.id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap" title={new Date(l.createdAt).toLocaleString('ko-KR')}>
+                    {relativeTime(l.createdAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-block text-xs px-2 py-0.5 rounded border ${meta.color}`}>
+                      {meta.icon} {meta.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-700">
+                    <div className="font-medium">{l.actor.name}</div>
+                    <div className="text-gray-500">{l.actor.email}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600">{l.company?.name || <span className="text-gray-400 italic">—</span>}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 max-w-[300px]">
+                    {l.metadata ? (
+                      <span title={JSON.stringify(l.metadata, null, 2)} className="truncate inline-block max-w-[300px] align-bottom">
+                        {Object.entries(l.metadata).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ')}
+                      </span>
+                    ) : <span className="text-gray-400">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-400 font-mono">{l.ip || '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

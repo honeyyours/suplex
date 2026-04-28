@@ -133,13 +133,22 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  // 비번 변경 — 응답 새 토큰으로 자동 갱신 (서버 tokenVersion++ 후 발급)
+  async function changePassword(currentPassword, newPassword) {
+    const { data } = await api.post('/auth/change-password', { currentPassword, newPassword });
+    if (data.token) {
+      setAuth((prev) => prev ? { ...prev, token: data.token } : prev);
+    }
+    return data;
+  }
+
   // 회사 단위 설정(hideExpenses 등)을 즉시 반영
   function patchCompany(patch) {
     setAuth((prev) => prev ? { ...prev, company: { ...prev.company, ...patch } } : prev);
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );
