@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { fetchEarliestByCategory, findEarliestForGroup, buildDeadline, fetchCompanyDeadlineRules } = require('../services/phaseDeadlines');
+const { normalizePhase } = require('../services/phases');
 
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
@@ -500,52 +501,79 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/_import-suggestions', async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const phase = String(req.query.phase || '').trim();
-    if (!phase) return res.status(400).json({ error: 'phase required' });
+    const phaseRaw = String(req.query.phase || '').trim();
+    if (!phaseRaw) return res.status(400).json({ error: 'phase required' });
 
     const companyId = req.user.companyId;
-    // 회사 템플릿 — 정확 일치
-    const templates = await prisma.materialTemplate.findMany({
-      where: { companyId, spaceGroup: phase, active: true },
+    // 분류 키 — 클릭한 그룹의 표준 phaseKey. raw 자유 텍스트 → OTHER로 흡수.
+    // 매칭 정책: spaceGroup 정확 일치가 아닌 normalizePhase 결과 비교.
+    // 예) 클릭 "방수" → 다른 프로젝트의 "방수공사" raw도 같이 잡힘.
+    // 예) 클릭 "기타" or 비표준 자유텍스트 → 표준 25개 안에 매핑 안 되는 모든 raw 자료가 한 데 모임.
+    const targetKey = normalizePhase(phaseRaw).key;
+
+    // 회사 템플릿 — 일단 회사 active 전체 후보로 가져온 뒤 phaseKey로 필터
+    const templatesRaw = await prisma.materialTemplate.findMany({
+      where: { companyId, active: true },
       orderBy: [{ orderIndex: 'asc' }, { itemName: 'asc' }],
       select: {
         id: true, kind: true, spaceGroup: true, subgroup: true, itemName: true,
         formKey: true, defaultSiteNotes: true,
       },
     });
+    const templates = templatesRaw.filter((t) => normalizePhase(t.spaceGroup).key === targetKey);
 
-    // 다른 프로젝트의 마감재 — 회사의 다른 프로젝트, 같은 spaceGroup
-    // distinct itemName + brand + productName + modelCode + spec 조합
-    const otherMaterials = await prisma.material.findMany({
+    // 다른 프로젝트의 마감재 — 회사의 다른 프로젝트
+    // (성능: 회사가 사용 중인 spaceGroup distinct 조회 → targetKey에 매칭되는 spaceGroup만 IN 절로 limit)
+    const usedGroups = await prisma.material.findMany({
       where: {
         project: { companyId },
         projectId: { not: projectId },
-        spaceGroup: phase,
-        // 빈 itemName 제외
         itemName: { not: '' },
       },
-      orderBy: { updatedAt: 'desc' },
-      take: 200,
-      select: {
-        id: true, kind: true, spaceGroup: true, itemName: true,
-        brand: true, productName: true, modelCode: true, spec: true,
-        siteNotes: true, sourceUrl: true,
-        project: { select: { id: true, name: true } },
-      },
+      distinct: ['spaceGroup'],
+      select: { spaceGroup: true },
     });
+    const matchingGroups = usedGroups
+      .map((g) => g.spaceGroup)
+      .filter((g) => g && normalizePhase(g).key === targetKey);
 
-    // distinct: 같은 itemName+brand+productName+spec은 가장 최근 1건만
-    const seen = new Set();
+    let otherMaterials = [];
+    if (matchingGroups.length > 0) {
+      otherMaterials = await prisma.material.findMany({
+        where: {
+          project: { companyId },
+          projectId: { not: projectId },
+          spaceGroup: { in: matchingGroups },
+          itemName: { not: '' },
+        },
+        orderBy: [{ projectId: 'asc' }, { updatedAt: 'desc' }],
+        take: 500,
+        select: {
+          id: true, kind: true, spaceGroup: true, itemName: true,
+          brand: true, productName: true, modelCode: true, spec: true,
+          siteNotes: true, sourceUrl: true,
+          project: { select: { id: true, name: true } },
+        },
+      });
+    }
+
+    // distinct: 프로젝트 내부에서만 같은 itemName+brand+...은 가장 최근 1건.
+    // (프로젝트 간에는 dedup 안 함 — 같은 항목이 여러 프로젝트에 있으면 각각 한 번씩 노출)
+    const perProjectSeen = new Map(); // projectId → Set<key>
     const distinctMaterials = [];
     for (const m of otherMaterials) {
+      const pid = m.project?.id || m.projectId || '';
+      if (!perProjectSeen.has(pid)) perProjectSeen.set(pid, new Set());
+      const seenSet = perProjectSeen.get(pid);
       const key = [m.itemName, m.brand, m.productName, m.modelCode, m.spec].filter(Boolean).join('|');
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (seenSet.has(key)) continue;
+      seenSet.add(key);
       distinctMaterials.push(m);
     }
 
     res.json({
-      phase,
+      phase: phaseRaw,
+      phaseKey: targetKey,
       templates,
       otherProjectMaterials: distinctMaterials,
     });

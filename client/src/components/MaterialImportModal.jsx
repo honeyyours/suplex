@@ -1,6 +1,10 @@
 // 공정별 마감재 불러오기 모달
-// 두 가지 소스: (1) 회사 마스터 템플릿  (2) 다른 프로젝트의 같은 공정 마감재
-// 사용자가 체크박스로 다중 선택 → 일괄 불러오기
+// 두 가지 소스: (1) 회사 마스터 템플릿  (2) 다른 프로젝트의 같은 phaseKey 마감재
+// 매칭: 백엔드가 normalizePhase(spaceGroup).key === 클릭한 그룹의 phaseKey로 필터.
+// 즉 클릭이 "방수"여도 다른 프로젝트의 "방수공사"가 같이 잡힘.
+// "기타"/비표준 자유 텍스트는 OTHER 키로 통합 — 회사 전 비표준 자료가 한 데 모임.
+//
+// UI: 다른 프로젝트 탭은 프로젝트별 collapsible 섹션 + 헤더 체크박스로 통째 선택.
 import { useEffect, useMemo, useState } from 'react';
 import { materialsApi } from '../api/materials';
 
@@ -21,6 +25,19 @@ export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FIN
 
   const templates = data?.templates || [];
   const others = data?.otherProjectMaterials || [];
+  const phaseKey = data?.phaseKey;
+
+  // 다른 프로젝트 탭 — projectId로 group by, 프로젝트명 알파벳 정렬, 그룹 안은 updatedAt desc
+  const otherGroups = useMemo(() => {
+    const map = new Map();
+    for (const m of others) {
+      const pid = m.project?.id || '__unknown';
+      const pname = m.project?.name || '(이름 없음)';
+      if (!map.has(pid)) map.set(pid, { pid, pname, items: [] });
+      map.get(pid).items.push(m);
+    }
+    return Array.from(map.values()).sort((a, b) => a.pname.localeCompare(b.pname, 'ko'));
+  }, [others]);
 
   function keyOf(source, item) {
     return `${source}:${item.id}`;
@@ -34,15 +51,23 @@ export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FIN
       return next;
     });
   }
+  function setMany(keys, on) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (on) keys.forEach((k) => next.add(k));
+      else keys.forEach((k) => next.delete(k));
+      return next;
+    });
+  }
   function toggleAll(source, list) {
     const allKeys = list.map((it) => keyOf(source, it));
     const allOn = allKeys.every((k) => checked.has(k));
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (allOn) allKeys.forEach((k) => next.delete(k));
-      else allKeys.forEach((k) => next.add(k));
-      return next;
-    });
+    setMany(allKeys, !allOn);
+  }
+  function toggleProjectGroup(group) {
+    const keys = group.items.map((it) => keyOf('other', it));
+    const allOn = keys.every((k) => checked.has(k));
+    setMany(keys, !allOn);
   }
 
   const selectedItems = useMemo(() => {
@@ -98,6 +123,9 @@ export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FIN
             <div className="font-semibold text-navy-800">📋 불러오기 — {spaceGroup}</div>
             <div className="text-xs text-gray-500 mt-0.5">
               회사 템플릿 또는 다른 프로젝트의 마감재에서 필요한 항목만 체크해서 가져옵니다
+              {phaseKey === 'OTHER' && (
+                <span className="ml-1 text-amber-700">(표준 외 자유 분류 — 회사 전체 비표준 자료 통합)</span>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
@@ -126,6 +154,9 @@ export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FIN
                 <>
                   <div className="font-medium text-gray-800">{t.itemName}</div>
                   <div className="text-xs text-gray-500">
+                    {t.spaceGroup && t.spaceGroup !== spaceGroup && (
+                      <span className="mr-2 text-amber-700">[{t.spaceGroup}]</span>
+                    )}
                     {t.subgroup && <span className="mr-2">{t.subgroup}</span>}
                     {t.formKey && <span className="text-[10px] text-gray-400">[{t.formKey}]</span>}
                   </div>
@@ -138,27 +169,13 @@ export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FIN
             />
           )}
           {!loading && tab === 'others' && (
-            <ItemList
-              source="other"
-              list={others}
+            <OtherProjectsList
+              groups={otherGroups}
               checked={checked}
               keyOf={keyOf}
               onToggle={toggle}
-              onToggleAll={() => toggleAll('other', others)}
-              renderRow={(m) => (
-                <>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <div className="font-medium text-gray-800 truncate">{m.itemName}</div>
-                    <div className="text-[11px] text-gray-400 whitespace-nowrap">{m.project?.name}</div>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5 truncate">
-                    {[m.brand, m.productName, m.modelCode, m.spec].filter(Boolean).join(' · ')}
-                  </div>
-                  {m.siteNotes && (
-                    <div className="text-xs text-gray-500 mt-0.5 italic truncate">📝 {m.siteNotes}</div>
-                  )}
-                </>
-              )}
+              onToggleProjectGroup={toggleProjectGroup}
+              currentSpaceGroup={spaceGroup}
               emptyMsg={`다른 프로젝트의 "${spaceGroup}" 마감재가 없습니다.`}
             />
           )}
@@ -227,6 +244,104 @@ function ItemList({ source, list, checked, keyOf, onToggle, onToggleAll, renderR
           </label>
         );
       })}
+    </div>
+  );
+}
+
+function OtherProjectsList({ groups, checked, keyOf, onToggle, onToggleProjectGroup, currentSpaceGroup, emptyMsg }) {
+  if (groups.length === 0) {
+    return <div className="text-sm text-gray-400 py-8 text-center leading-relaxed">{emptyMsg}</div>;
+  }
+  return (
+    <div className="space-y-3">
+      {groups.map((g) => (
+        <ProjectGroupSection
+          key={g.pid}
+          group={g}
+          checked={checked}
+          keyOf={keyOf}
+          onToggle={onToggle}
+          onToggleProjectGroup={() => onToggleProjectGroup(g)}
+          currentSpaceGroup={currentSpaceGroup}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ProjectGroupSection({ group, checked, keyOf, onToggle, onToggleProjectGroup, currentSpaceGroup }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const allKeys = group.items.map((it) => keyOf('other', it));
+  const allOn = allKeys.every((k) => checked.has(k));
+  const someOn = !allOn && allKeys.some((k) => checked.has(k));
+  const selectedCount = allKeys.filter((k) => checked.has(k)).length;
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-2 bg-navy-50/50 px-3 py-2 border-b">
+        <div className="flex items-center gap-2 min-w-0">
+          <input
+            type="checkbox"
+            checked={allOn}
+            ref={(el) => { if (el) el.indeterminate = someOn; }}
+            onChange={onToggleProjectGroup}
+            title="이 프로젝트 통째 선택/해제"
+            className="cursor-pointer"
+          />
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="font-semibold text-navy-800 truncate hover:underline text-left text-sm"
+            title={collapsed ? '펼치기' : '접기'}
+          >
+            {collapsed ? '▸' : '▾'} {group.pname}
+          </button>
+          <span className="text-[11px] text-gray-500 tabular-nums whitespace-nowrap">
+            {selectedCount > 0 ? `${selectedCount}/` : ''}{group.items.length}개
+          </span>
+        </div>
+        <button
+          onClick={onToggleProjectGroup}
+          className="text-[11px] px-2 py-0.5 border border-navy-300 text-navy-700 rounded hover:bg-white"
+        >{allOn ? '해제' : '전체'}</button>
+      </div>
+      {!collapsed && (
+        <div className="divide-y">
+          {group.items.map((m) => {
+            const k = keyOf('other', m);
+            const on = checked.has(k);
+            const groupMismatch = m.spaceGroup && m.spaceGroup !== currentSpaceGroup;
+            return (
+              <label
+                key={k}
+                className={`flex items-start gap-2 px-3 py-2 cursor-pointer text-sm ${
+                  on ? 'bg-emerald-50' : 'hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => onToggle('other', m)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <div className="font-medium text-gray-800 truncate">{m.itemName}</div>
+                    {groupMismatch && (
+                      <span className="text-[10px] text-amber-700 whitespace-nowrap">[{m.spaceGroup}]</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 truncate">
+                    {[m.brand, m.productName, m.modelCode, m.spec].filter(Boolean).join(' · ') || <span className="text-gray-300">(상세 없음)</span>}
+                  </div>
+                  {m.siteNotes && (
+                    <div className="text-xs text-gray-500 mt-0.5 italic truncate">📝 {m.siteNotes}</div>
+                  )}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
