@@ -16,7 +16,7 @@ const NAV = [
 ];
 
 export default function Layout() {
-  const { auth, memberships, switchCompany, exitImpersonate, logout } = useAuth();
+  const { auth, memberships, isAuthChecked, switchCompany, exitImpersonate, logout } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,14 +26,16 @@ export default function Layout() {
 
   // 어드민이 일반 페이지 접근 시 /admin으로 자동 이동 (회사 컨텍스트 없을 수 있어서)
   // 일반 사용자가 /admin 접근 시 홈으로 자동 이동
+  // isAuthChecked가 true가 된 뒤에만 결정 — 새로고침 직후 isSuperAdmin이 아직
+  // 보강되지 않은 시점에 잘못 리다이렉트되는 것을 방지.
   useEffect(() => {
-    if (!auth) return;
+    if (!auth || !isAuthChecked) return;
     if (isAdmin && !isAdminRoute) {
       navigate('/admin', { replace: true });
     } else if (!isAdmin && isAdminRoute) {
       navigate('/', { replace: true });
     }
-  }, [auth, isAdmin, isAdminRoute, navigate]);
+  }, [auth, isAuthChecked, isAdmin, isAdminRoute, navigate]);
 
   const navItems = isAdmin ? [] : NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
   const hasMultipleCompanies = !isAdmin && (memberships?.length || 0) >= 2;

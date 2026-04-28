@@ -31,27 +31,45 @@ function readStored() {
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(readStored);
   const [memberships, setMemberships] = useState([]); // 다중 회사 전환용
+  // /auth/me 보강이 끝났는지. Layout 라우팅 가드는 이게 true일 때만 동작 —
+  // 구버전 클라이언트로 저장된 localStorage에 isSuperAdmin이 누락된 경우에도
+  // 깜빡임 없이 어드민 라우팅이 유지되도록.
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   useEffect(() => {
     if (auth) {
       localStorage.setItem(TOKEN_KEY, auth.token);
-      localStorage.setItem(
-        USER_KEY,
-        JSON.stringify({ user: auth.user, company: auth.company, role: auth.role })
-      );
+      // auth 전체를 보존(token 제외 — token은 별도 키). isSuperAdmin·impersonating
+      // 등 새로고침 후 라우팅에 필요한 플래그가 누락되지 않도록.
+      const { token, ...rest } = auth;
+      localStorage.setItem(USER_KEY, JSON.stringify(rest));
     }
   }, [auth]);
 
   // 로그인 상태가 바뀌면 멤버십 목록 다시 로드 (회사 전환 드롭다운에 사용)
+  // 동시에 isSuperAdmin 등 라우팅 핵심 플래그를 서버 진실로 보강.
   useEffect(() => {
     if (!auth?.token) {
       setMemberships([]);
+      setIsAuthChecked(true); // 비로그인은 즉시 결정
       return;
     }
     let alive = true;
     api.get('/auth/me').then((r) => {
-      if (alive) setMemberships(r.data?.memberships || []);
-    }).catch(() => { /* 401 등은 client.js interceptor가 처리 */ });
+      if (!alive) return;
+      setMemberships(r.data?.memberships || []);
+      // 서버 진실 기준으로 isSuperAdmin 보강 (구버전 localStorage 호환)
+      const serverIsSuper = !!r.data?.current?.isSuperAdmin;
+      setAuth((prev) => {
+        if (!prev) return prev;
+        if (!!prev.isSuperAdmin === serverIsSuper) return prev;
+        return { ...prev, isSuperAdmin: serverIsSuper };
+      });
+      setIsAuthChecked(true);
+    }).catch(() => {
+      // 401은 client.js interceptor가 처리 — 여기선 체크 완료로만 표시
+      if (alive) setIsAuthChecked(true);
+    });
     return () => { alive = false; };
   }, [auth?.token, auth?.company?.id]);
 
@@ -148,7 +166,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );
