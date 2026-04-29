@@ -42,13 +42,14 @@ router.get('/categories', async (req, res, next) => {
 });
 
 const createSchema = z.object({
-  name:      z.string().min(1),
-  category:  z.string().min(1),
-  contact:   z.string().optional().nullable(),
-  phone:     z.string().optional().nullable(),
-  unitPrice: z.number().nonnegative().optional().nullable(),
-  unit:      z.string().optional().nullable(),
-  memo:      z.string().optional().nullable(),
+  name:        z.string().min(1),
+  category:    z.string().min(1),
+  contact:     z.string().optional().nullable(),
+  phone:       z.string().optional().nullable(),
+  unitPrice:   z.number().nonnegative().optional().nullable(),
+  unit:        z.string().optional().nullable(),
+  bankAccount: z.string().optional().nullable(),
+  memo:        z.string().optional().nullable(),
 });
 
 router.post('/', requireRole('OWNER', 'DESIGNER'), async (req, res, next) => {
@@ -56,14 +57,15 @@ router.post('/', requireRole('OWNER', 'DESIGNER'), async (req, res, next) => {
     const data = createSchema.parse(req.body);
     const vendor = await prisma.vendor.create({
       data: {
-        companyId: req.user.companyId,
-        name:      data.name.trim(),
-        category:  data.category.trim(),
-        contact:   data.contact?.trim() || null,
-        phone:     data.phone?.trim() || null,
-        unitPrice: data.unitPrice ?? null,
-        unit:      data.unit?.trim() || null,
-        memo:      data.memo?.trim() || null,
+        companyId:   req.user.companyId,
+        name:        data.name.trim(),
+        category:    data.category.trim(),
+        contact:     data.contact?.trim() || null,
+        phone:       data.phone?.trim() || null,
+        unitPrice:   data.unitPrice ?? null,
+        unit:        data.unit?.trim() || null,
+        bankAccount: data.bankAccount?.trim() || null,
+        memo:        data.memo?.trim() || null,
       },
     });
     res.status(201).json({ vendor });
@@ -88,13 +90,14 @@ router.patch('/:id', requireRole('OWNER', 'DESIGNER'), async (req, res, next) =>
     if (!existing) return res.status(404).json({ error: '협력업체를 찾을 수 없습니다' });
 
     const updateData = {};
-    if (data.name      !== undefined) updateData.name      = data.name.trim();
-    if (data.category  !== undefined) updateData.category  = data.category.trim();
-    if (data.contact   !== undefined) updateData.contact   = data.contact?.trim() || null;
-    if (data.phone     !== undefined) updateData.phone     = data.phone?.trim() || null;
-    if (data.unitPrice !== undefined) updateData.unitPrice = data.unitPrice ?? null;
-    if (data.unit      !== undefined) updateData.unit      = data.unit?.trim() || null;
-    if (data.memo      !== undefined) updateData.memo      = data.memo?.trim() || null;
+    if (data.name        !== undefined) updateData.name        = data.name.trim();
+    if (data.category    !== undefined) updateData.category    = data.category.trim();
+    if (data.contact     !== undefined) updateData.contact     = data.contact?.trim() || null;
+    if (data.phone       !== undefined) updateData.phone       = data.phone?.trim() || null;
+    if (data.unitPrice   !== undefined) updateData.unitPrice   = data.unitPrice ?? null;
+    if (data.unit        !== undefined) updateData.unit        = data.unit?.trim() || null;
+    if (data.bankAccount !== undefined) updateData.bankAccount = data.bankAccount?.trim() || null;
+    if (data.memo        !== undefined) updateData.memo        = data.memo?.trim() || null;
 
     const vendor = await prisma.vendor.update({ where: { id }, data: updateData });
     res.json({ vendor });

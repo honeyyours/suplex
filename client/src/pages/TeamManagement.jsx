@@ -977,15 +977,16 @@ function VendorsSection({ isOwner, role }) {
               <th className="px-4 py-3 text-left">담당자</th>
               <th className="px-4 py-3 text-left">전화</th>
               <th className="px-4 py-3 text-right">단가</th>
+              <th className="px-4 py-3 text-left">계좌</th>
               <th className="px-4 py-3 text-left">메모</th>
               {canEdit && <th className="px-4 py-3 text-right">관리</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={canEdit ? 7 : 6} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+              <tr><td colSpan={canEdit ? 8 : 7} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
             ) : vendors.length === 0 ? (
-              <tr><td colSpan={canEdit ? 7 : 6} className="px-4 py-8 text-center text-gray-400">
+              <tr><td colSpan={canEdit ? 8 : 7} className="px-4 py-8 text-center text-gray-400">
                 협력업체가 없습니다. 위 "+ 협력업체 추가"로 첫 업체를 등록하세요.
               </td></tr>
             ) : (
@@ -1003,6 +1004,9 @@ function VendorsSection({ isOwner, role }) {
                     {v.unitPrice
                       ? `${Number(v.unitPrice).toLocaleString('ko-KR')}${v.unit ? ` / ${v.unit}` : ''}`
                       : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 text-xs max-w-[200px] truncate">
+                    {v.bankAccount || '-'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs max-w-[240px] truncate">
                     {v.memo || '-'}
@@ -1060,6 +1064,7 @@ function VendorModal({ vendor, existingCategories = [], onClose, onSaved }) {
     phone: vendor?.phone || '',
     unitPrice: vendor?.unitPrice != null ? String(vendor.unitPrice) : '',
     unit: vendor?.unit || '',
+    bankAccount: vendor?.bankAccount || '',
     memo: vendor?.memo || '',
   });
   const [busy, setBusy] = useState(false);
@@ -1076,6 +1081,7 @@ function VendorModal({ vendor, existingCategories = [], onClose, onSaved }) {
       phone: form.phone || null,
       unitPrice: form.unitPrice ? Number(form.unitPrice.replace(/[^\d.]/g, '')) : null,
       unit: form.unit || null,
+      bankAccount: form.bankAccount || null,
       memo: form.memo || null,
     };
     setBusy(true);
@@ -1144,6 +1150,16 @@ function VendorModal({ vendor, existingCategories = [], onClose, onSaved }) {
             className="w-full px-3 py-2 border rounded text-sm"
           />
         </Field>
+        <div className="col-span-2">
+          <Field label="계좌">
+            <input
+              value={form.bankAccount}
+              onChange={(e) => setForm({ ...form, bankAccount: e.target.value })}
+              placeholder='예: "국민 123-45-678901 김OO" — 인건비 정산 카톡 복사용'
+              className="w-full px-3 py-2 border rounded text-sm"
+            />
+          </Field>
+        </div>
         <div className="col-span-2">
           <Field label="메모">
             <textarea
