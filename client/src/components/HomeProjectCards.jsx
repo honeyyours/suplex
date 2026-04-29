@@ -11,6 +11,7 @@ const VARIANTS = {
     titleColor: 'text-navy-800',
     badge: { color: 'bg-sky-100 text-sky-700', label: '진행중' },
     emptyText: '진행중인 프로젝트가 없습니다',
+    getTo: (p) => `/schedule?tab=site&projectId=${p.id}`,
   },
   PLANNED: {
     title: '견적단계 프로젝트',
@@ -19,6 +20,7 @@ const VARIANTS = {
     titleColor: 'text-gray-700',
     badge: { color: 'bg-amber-100 text-amber-800', label: '예정' },
     emptyText: '예정 단계 프로젝트가 없습니다',
+    getTo: (p) => `/projects/${p.id}`,
   },
 };
 
@@ -54,7 +56,7 @@ export default function HomeProjectCards({ status }) {
           {projects.map((p) => (
             <Link
               key={p.id}
-              to={`/projects/${p.id}`}
+              to={v.getTo(p)}
               className={`block rounded-lg border p-3 transition ${v.cardBase}`}
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">
