@@ -8,6 +8,7 @@ const { F } = require('../services/features');
 const { PHASE_DEADLINE_DAYS } = require('../services/phaseDeadlines');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { normalizePhase } = require('../services/phases');
+const { resetBundleFromPreset, BUNDLES } = require('../services/phasePreset');
 
 const router = express.Router();
 router.use(authRequired);
@@ -245,6 +246,31 @@ router.post('/advices/bulk-delete', requireAdviceEdit, async (req, res, next) =>
       where: { id: { in: ids }, companyId: req.user.companyId, ruleType: { not: 'UNCONFIRMED_CHECK' } },
     });
     res.json({ ok: true, deleted: result.count });
+  } catch (e) { next(e); }
+});
+
+// 시스템 프리셋 리셋 — 4묶음 중 1개를 표준 회사 데이터로 갱신.
+// body: { bundle: 'phaseLabels' | 'phaseKeywordRules' | 'phaseDeadlineRules' | 'phaseAdvices' }
+// 권한: OWNER (어드바이스 편집 권한과 동일 가드)
+router.post('/preset/reset', requireAdviceEdit, async (req, res, next) => {
+  try {
+    const bundle = req.body?.bundle;
+    if (!BUNDLES.includes(bundle)) {
+      return res.status(400).json({ error: `bundle 은 ${BUNDLES.join(' / ')} 중 하나여야 합니다.` });
+    }
+    const result = await resetBundleFromPreset(prisma, {
+      targetCompanyId: req.user.companyId,
+      bundle,
+    });
+    if (!result.applied) {
+      const reason = result.reason === 'no-preset-source'
+        ? '아직 시스템 프리셋 표준 회사가 지정되지 않았습니다.'
+        : result.reason === 'same-company'
+        ? '본 회사가 표준 회사로 지정돼 있어 자기 자신을 리셋할 수 없습니다.'
+        : '리셋 적용 실패';
+      return res.status(409).json({ error: reason, reason: result.reason });
+    }
+    res.json({ ok: true, bundle, count: result.count });
   } catch (e) { next(e); }
 });
 

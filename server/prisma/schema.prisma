@@ -43,6 +43,11 @@ model Company {
   // 회사 단위 기능 토글
   hideExpenses Boolean @default(false) // true면 지출관리 진입점 모두 숨김 (네비/탭/AI비서 도구/홈 피드)
 
+  // 시스템 프리셋 표준 회사 플래그 — 한 번에 한 회사만 true.
+  // true면 신규 회사 가입 시 이 회사의 4묶음(phaseLabels·키워드·데드라인·어드바이스)을 snapshot 복사.
+  // 자세한 정책: 메모리 `수플렉스_설계_시스템프리셋.md`
+  isPhasePresetDefault Boolean @default(false)
+
   // 공정 라벨 alias — 25개 표준 phase key → 회사 표시명 매핑 (display only).
   // 예: { "WATERPROOF": "방수공사", "INNER_DOOR": "현관중문" }
   // 빈 값/누락 시 표준 라벨(services/phases.js) 사용. 매칭/그룹핑은 표준 라벨 기준 — alias는 표시 전용.
@@ -86,20 +91,20 @@ model User {
   scheduleTasks   ScheduleTask[]    @relation("TaskAssignee")
   dailyReports    DailyReport[]
 
-  createdChecklists      ProjectChecklist[]    @relation("ChecklistCreatedBy")
-  completedChecklists    ProjectChecklist[]    @relation("ChecklistCompletedBy")
-  createdScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
-  updatedScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
-  scheduleChanges        ScheduleChange[]
-  uploadedPhotos         ProjectPhoto[]
-  materialRequests       MaterialRequest[]
-  createdQuotes          Quote[]               @relation("QuoteCreatedBy")
-  createdExpenses        Expense[]             @relation("ExpenseCreatedBy")
-  createdAccountCodes    AccountCode[]         @relation("AccountCodeCreatedBy")
-  createdExpenseRules    ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
-  applianceCorrections   ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
-  updatedPhaseNotes      ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
-  updatedCompanyPhaseTips CompanyPhaseTip[]    @relation("CompanyPhaseTipUpdatedBy")
+  createdChecklists       ProjectChecklist[]    @relation("ChecklistCreatedBy")
+  completedChecklists     ProjectChecklist[]    @relation("ChecklistCompletedBy")
+  createdScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
+  updatedScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
+  scheduleChanges         ScheduleChange[]
+  uploadedPhotos          ProjectPhoto[]
+  materialRequests        MaterialRequest[]
+  createdQuotes           Quote[]               @relation("QuoteCreatedBy")
+  createdExpenses         Expense[]             @relation("ExpenseCreatedBy")
+  createdAccountCodes     AccountCode[]         @relation("AccountCodeCreatedBy")
+  createdExpenseRules     ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
+  applianceCorrections    ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
+  updatedPhaseNotes       ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
+  updatedCompanyPhaseTips CompanyPhaseTip[]     @relation("CompanyPhaseTipUpdatedBy")
 
   @@map("users")
 }

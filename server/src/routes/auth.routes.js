@@ -8,6 +8,7 @@ const { authRequired } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdvices');
+const { seedAllBundlesFromPresetIfAvailable } = require('../services/phasePreset');
 
 const router = express.Router();
 
@@ -74,10 +75,15 @@ router.post('/signup', async (req, res, next) => {
       await tx.membership.create({
         data: { userId: user.id, companyId: company.id, role: 'OWNER' },
       });
-      // 표준 25개 phase 기본 키워드 자동 시드 — 일정 자동 인식이 즉시 작동하도록
-      const seedRows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: company.id }));
-      await tx.phaseKeywordRule.createMany({ data: seedRows, skipDuplicates: true });
-      // 시스템 룰(미확정 알림 D-14/D-7) 자동 보장 — 사용자 액션 없이 항상 들어가 있도록
+      // 시스템 프리셋 표준 회사가 있으면 4묶음(라벨·키워드·데드라인·어드바이스) 그대로 복사.
+      // 없거나 자기 자신이 표준이면 코드 시드로 fallback.
+      const presetResult = await seedAllBundlesFromPresetIfAvailable(tx, { targetCompanyId: company.id });
+      if (!presetResult.applied) {
+        // 표준 25개 phase 기본 키워드 자동 시드 — 일정 자동 인식이 즉시 작동하도록
+        const seedRows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: company.id }));
+        await tx.phaseKeywordRule.createMany({ data: seedRows, skipDuplicates: true });
+      }
+      // 시스템 룰(미확정 알림 D-14/D-7) 자동 보장 — 프리셋 적용 여부와 무관하게 항상 시드
       await ensureSystemDefaultsForCompany(tx, company.id);
       return { user, company };
     });

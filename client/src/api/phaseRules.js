@@ -17,3 +17,9 @@ export const phaseAdvicesApi = {
   bulkDuplicate: (ids) => api.post('/phase-rules/advices/bulk-duplicate', { ids }).then((r) => r.data),
   bulkDelete: (ids) => api.post('/phase-rules/advices/bulk-delete', { ids }).then((r) => r.data),
 };
+
+// 시스템 프리셋 리셋 — 4묶음 중 1개를 표준 회사 데이터로 갱신.
+// bundle: 'phaseLabels' | 'phaseKeywordRules' | 'phaseDeadlineRules' | 'phaseAdvices'
+export const phasePresetApi = {
+  reset: (bundle) => api.post('/phase-rules/preset/reset', { bundle }).then((r) => r.data),
+};

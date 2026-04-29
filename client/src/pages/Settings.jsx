@@ -6,7 +6,7 @@ import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
-import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
+import { phaseDeadlinesApi, phaseAdvicesApi, phasePresetApi } from '../api/phaseRules';
 import { companyPhaseTipsApi, GENERAL_PHASE } from '../api/companyPhaseTips';
 import { hasFeature, F } from '../utils/features';
 import { applianceSpecsApi } from '../api/applianceSpecs';
@@ -699,6 +699,46 @@ function QuoteTemplatesSection() {
   );
 }
 
+// 시스템 프리셋 리셋 버튼 — 4묶음 각 섹션에 공통으로 사용.
+// 클릭 → 표준 회사 데이터로 해당 묶음만 갱신 → 페이지 새로고침으로 화면 반영.
+// (각 섹션의 reload 패턴이 달라 단순한 풀 리로드가 가장 안전·확실)
+const PRESET_BUNDLE_LABELS = {
+  phaseLabels: '공정 표시 라벨',
+  phaseKeywordRules: '공종 인식 키워드',
+  phaseDeadlineRules: '공정별 발주 데드라인',
+  phaseAdvices: '공정 어드바이스',
+};
+function PresetResetButton({ bundle }) {
+  const [busy, setBusy] = useState(false);
+  const label = PRESET_BUNDLE_LABELS[bundle] || bundle;
+  async function reset() {
+    if (!confirm(
+      `🌟 시스템 프리셋: "${label}"을 표준 회사 데이터로 리셋합니다.\n\n` +
+      `· 현재 회사의 ${label} 데이터는 모두 삭제 후 표준값으로 갱신됩니다\n` +
+      `· 다른 묶음(라벨·키워드·데드라인·어드바이스)은 영향 없습니다\n` +
+      `· 표준 회사가 지정돼 있어야 동작합니다\n\n` +
+      `계속하시겠습니까?`
+    )) return;
+    setBusy(true);
+    try {
+      const r = await phasePresetApi.reset(bundle);
+      alert(`✅ 리셋 완료 (${r.count}개 적용). 화면을 새로고침합니다.`);
+      window.location.reload();
+    } catch (e) {
+      alert('리셋 실패: ' + (e.response?.data?.error || e.message));
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      onClick={reset}
+      disabled={busy}
+      title={`시스템 프리셋 표준 회사의 ${label}로 리셋`}
+      className="text-xs px-3 py-1.5 border border-amber-300 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-40"
+    >🌟 프리셋 리셋</button>
+  );
+}
+
 function PhaseLabelsSection({ canEdit }) {
   const { phaseLabels, save } = usePhaseLabels();
   const [draft, setDraft] = useState({});
@@ -763,7 +803,7 @@ function PhaseLabelsSection({ canEdit }) {
         })}
       </div>
       {canEdit && (
-        <div className="flex items-center gap-2 mt-4">
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
@@ -774,6 +814,7 @@ function PhaseLabelsSection({ canEdit }) {
             disabled={saving}
             className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50 disabled:opacity-40"
           >전체 초기화</button>
+          <PresetResetButton bundle="phaseLabels" />
           {dirty && <span className="text-xs text-amber-700">변경 사항이 있습니다</span>}
         </div>
       )}
@@ -906,6 +947,7 @@ function PhaseKeywordsSection() {
         >
           📋 기본 시드 ({rules.length > 0 ? '재시드' : '추가'})
         </button>
+        <PresetResetButton bundle="phaseKeywordRules" />
       </div>
 
       <div className="flex flex-wrap gap-1 border-b mb-3 pb-2">
@@ -1037,13 +1079,14 @@ function PhaseDeadlineRulesSection() {
       <p className="text-xs text-gray-500 mb-3">
         자재가 공정 시작 며칠 전까지 도착해야 하는지. 회사 룰이 우선, 없으면 표준 기본값 적용.
       </p>
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap gap-2">
         <button
           onClick={seedAll}
           className="text-sm px-4 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
         >
           📋 표준 룰 일괄 적용
         </button>
+        <PresetResetButton bundle="phaseDeadlineRules" />
       </div>
 
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
@@ -1314,6 +1357,7 @@ function PhaseAdvicesSection() {
           onClick={seed}
           className="text-sm px-3 py-1.5 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
         >📋 표준 어드바이스 16개 시드 추가</button>
+        <PresetResetButton bundle="phaseAdvices" />
         {selectedCount > 0 && (
           <>
             <span className="text-xs text-gray-500 ml-2">선택 {selectedCount}개</span>

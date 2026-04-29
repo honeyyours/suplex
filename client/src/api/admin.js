@@ -20,5 +20,7 @@ export const adminApi = {
     api.post('/admin/normalize-phases', { dryRun }).then((r) => r.data),
   seedDemoProject: (companyId) =>
     api.post(`/admin/companies/${companyId}/seed-demo-project`).then((r) => r.data),
+  setPresetDefault: (companyId, isDefault) =>
+    api.post(`/admin/companies/${companyId}/preset-default`, { default: isDefault }).then((r) => r.data),
 };
 

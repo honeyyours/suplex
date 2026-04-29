@@ -152,6 +152,26 @@ function CompaniesTab() {
     }
   }
 
+  async function handleTogglePresetDefault(c) {
+    const target = !c.isPhasePresetDefault;
+    const msg = target
+      ? `🌟 "${c.name}"을 시스템 프리셋 표준 회사로 지정합니다.\n\n` +
+        `· 다른 모든 회사는 자동으로 표준 해제됩니다 (한 번에 1개만 가능)\n` +
+        `· 다음 가입자부터 이 회사의 4묶음(라벨·키워드·데드라인·어드바이스)을 복사받습니다\n` +
+        `· 기존 가입한 회사들엔 영향 없습니다 (snapshot 정책)\n\n` +
+        `계속하시겠습니까?`
+      : `🌟 "${c.name}"의 시스템 프리셋 표준 지정을 해제합니다.\n\n` +
+        `· 표준 회사가 없는 상태가 됩니다 (다음 가입자는 코드 기본 시드 사용)\n\n` +
+        `계속하시겠습니까?`;
+    if (!confirm(msg)) return;
+    try {
+      await adminApi.setPresetDefault(c.id, target);
+      load();
+    } catch (e) {
+      alert('지정 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   async function handleCleanupInvitations() {
     if (!confirm('만료된 초대 링크를 모두 삭제할까요?')) return;
     try {
@@ -228,6 +248,7 @@ function CompaniesTab() {
               <tr key={c.id} className={`border-t hover:bg-gray-50 ${c.isDormant ? 'opacity-70' : ''}`}>
                 <td className="px-4 py-3 font-medium text-gray-800">
                   {c.name}
+                  {c.isPhasePresetDefault && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded border border-amber-300">🌟 프리셋 표준</span>}
                   {c.isDormant && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-300">😴 휴면</span>}
                   {c.hideExpenses && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded border border-amber-200">지출숨김</span>}
                   <div className="text-[11px] text-gray-400 mt-0.5">
@@ -266,6 +287,15 @@ function CompaniesTab() {
                     title="시연용 데모 프로젝트 생성 (기존 데모는 삭제 후 재생성)"
                     className="text-xs px-2 py-1 border rounded hover:bg-emerald-50 text-emerald-700 border-emerald-300"
                   >🌱 데모</button>
+                  <button
+                    onClick={() => handleTogglePresetDefault(c)}
+                    title={c.isPhasePresetDefault ? '시스템 프리셋 표준 해제' : '시스템 프리셋 표준으로 지정 (다른 회사는 자동 해제)'}
+                    className={`text-xs px-2 py-1 border rounded ${
+                      c.isPhasePresetDefault
+                        ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
+                        : 'border-gray-300 text-gray-600 hover:bg-amber-50'
+                    }`}
+                  >🌟 표준</button>
                   <button
                     onClick={() => downloadBackup(c)}
                     title="회사 데이터 백업 (JSON)"

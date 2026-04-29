@@ -706,4 +706,51 @@ router.post('/normalize-phases', async (req, res, next) => {
   }
 });
 
+// ============================================
+// POST /api/admin/companies/:id/preset-default — 시스템 프리셋 표준 회사 지정/해제
+// body: { default: true | false }
+// 동작: default=true 면 해당 회사를 표준으로 + 다른 모든 회사 false 일괄 처리.
+//      default=false 면 해당 회사만 해제 (다른 회사 영향 X).
+// 기존 가입 회사 데이터엔 영향 없음 (snapshot 정책). 다음 가입자부터 새 표준 적용.
+// ============================================
+const presetDefaultSchema = z.object({ default: z.boolean() });
+
+router.post('/companies/:id/preset-default', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const data = presetDefaultSchema.parse(req.body);
+    const company = await prisma.company.findUnique({ where: { id }, select: { id: true, name: true } });
+    if (!company) return res.status(404).json({ error: 'Company not found' });
+
+    if (data.default) {
+      await prisma.$transaction([
+        prisma.company.updateMany({
+          where: { isPhasePresetDefault: true, id: { not: id } },
+          data: { isPhasePresetDefault: false },
+        }),
+        prisma.company.update({
+          where: { id },
+          data: { isPhasePresetDefault: true },
+        }),
+      ]);
+    } else {
+      await prisma.company.update({
+        where: { id },
+        data: { isPhasePresetDefault: false },
+      });
+    }
+
+    audit(req, 'admin.preset-default', {
+      targetType: 'COMPANY',
+      targetId: id,
+      metadata: { default: data.default, companyName: company.name },
+    });
+
+    res.json({ ok: true, id, default: data.default });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
 module.exports = router;
