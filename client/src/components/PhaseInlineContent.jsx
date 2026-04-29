@@ -20,15 +20,22 @@ export default function PhaseInlineContent({ entry, textClassName = '', chipClas
 
   const catColor = categoryClass(phase);
 
+  // 본문에서 제거할 substring 결정.
+  // phaseKeyword가 phase 라벨과 동일할 때만 제거 (chip과 중복되니까).
+  // 별칭 키워드(예: '욕실' phase에 '도기' 키워드 → 입력 "도기")는 본문에 그대로 남겨야
+  // chip "욕실" + 본문 "도기"로 보여 사용자 원본 의도가 보존됨.
   let start = -1;
   let len = 0;
-  if (entry.phaseKeyword) {
+  const keywordSameAsPhase =
+    entry.phaseKeyword && entry.phaseKeyword.toLowerCase() === phase.toLowerCase();
+  if (keywordSameAsPhase) {
     const idx = text.toLowerCase().indexOf(entry.phaseKeyword.toLowerCase());
     if (idx >= 0) {
       start = idx;
       len = entry.phaseKeyword.length;
     }
   }
+  // phase 라벨 자체가 본문에 있으면 chip과 중복이므로 제거 (별칭으로 매칭됐어도)
   if (start < 0) {
     const idx = text.toLowerCase().indexOf(phase.toLowerCase());
     if (idx >= 0) {
