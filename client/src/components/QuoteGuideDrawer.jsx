@@ -2,25 +2,26 @@
 // 회사 내부 가이드(🔒) + 견적상담 메모(📋)를 inline 편집 가능 카드로 표시.
 //
 // 등장 방식: WorkContextDrawer(공정상세)와 동일한 fixed right-side 패턴.
-// 차이: (1) 폭 더 작음 (320px), (2) 외부 클릭으로 닫히지 않음(작업 중 방해 X),
-//       (3) 모바일 미표시(xl 이상에서만), (4) PDF/프린트 비포함(.no-print).
-// 작업영역은 padding 안 줌 — 드로어가 그 위에 떠있음 (z-40, 우측 일부 가림 허용).
+// - 폭 사용자가 좌측 가장자리 drag로 조절 (280~720px, localStorage에 저장).
+// - 외부 클릭으로 닫히지 않음(작업 중 방해 X).
+// - 모바일 미표시(xl 이상에서만).
+// - PDF/프린트 비포함(.no-print).
+// - 작업영역 padding 안 줌 — 드로어가 위에 떠있음 (z-40, 우측 일부 가림 허용).
 //
 // 편집:
-//   - 회사 가이드(tips): SETTINGS_QUOTE_GUIDE 권한 보유자만 편집 (드로어에서 직접 작성)
+//   - 회사 가이드(tips): SETTINGS_QUOTE_GUIDE 권한 보유자만 편집
 //   - 견적상담 메모(notes): 회사 멤버 누구나 편집
 //   - 800ms debounce 자동 저장
-//
-// Props:
-//   - projectId: 프로젝트 ID
-//   - activePhase: 현재 포커스된 라인의 그룹 헤더 공정명, null이면 GENERAL 묶음만 표시
-//   - open: 드로어 표시 여부
-//   - onClose: ✕ 클릭 시
 import { useEffect, useRef, useState } from 'react';
 import { phaseNotesApi, GENERAL_PHASE as GENERAL_NOTE, ROLE_LABEL } from '../api/phaseNotes';
 import { companyPhaseTipsApi, GENERAL_PHASE as GENERAL_TIP } from '../api/companyPhaseTips';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
+
+const WIDTH_KEY = 'quoteGuideDrawerWidth';
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 720;
+const DEFAULT_WIDTH = 320;
 
 export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose }) {
   const { auth } = useAuth();
@@ -29,6 +30,37 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
   const [notes, setNotes] = useState([]);
   const [tips, setTips] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 사용자 조절 가능한 폭 (localStorage에 저장)
+  const [width, setWidth] = useState(() => {
+    const saved = parseInt(localStorage.getItem(WIDTH_KEY) || '', 10);
+    if (Number.isFinite(saved)) return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, saved));
+    return DEFAULT_WIDTH;
+  });
+  const widthRef = useRef(width);
+  widthRef.current = width;
+
+  function startResize(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = widthRef.current;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    function onMove(ev) {
+      // 드로어가 우측에 붙어있으니 startX보다 왼쪽으로 갈수록 폭 증가
+      const newW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (startX - ev.clientX)));
+      setWidth(newW);
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   async function reload() {
     const [n, t] = await Promise.all([
@@ -57,8 +89,16 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
 
   return (
     <aside
-      className="no-print hidden xl:flex fixed top-0 right-0 bottom-0 w-[320px] bg-white shadow-2xl z-40 flex-col border-l"
+      style={{ width: `${width}px` }}
+      className="no-print hidden xl:flex fixed top-0 right-0 bottom-0 bg-white shadow-2xl z-40 flex-col border-l"
     >
+      {/* Resize 핸들 — 좌측 가장자리 4px 영역 */}
+      <div
+        onMouseDown={startResize}
+        title="드래그하여 폭 조절"
+        className="absolute top-0 left-0 bottom-0 w-1 cursor-col-resize hover:bg-navy-300 active:bg-navy-500 transition-colors z-10"
+      />
+
       {/* 헤더 */}
       <div className="px-4 py-3 border-b bg-white flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -80,9 +120,10 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
           <div className="text-xs text-gray-400 py-6 text-center">불러오는 중…</div>
         ) : (
           <>
-            {/* 활성 공정 묶음 — 활성 공정 있을 때 상단 (현재 작업 컨텍스트가 가장 중요) */}
+            {/* 활성 공정 묶음 — 활성 공정 있을 때 상단 */}
             {activePhase && (
               <PhaseGroup
+                key={`phase-${activePhase}`}
                 title={`🔧 ${activePhase}`}
                 accent="navy"
                 tipBody={phaseTip?.body}
@@ -102,8 +143,9 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
               />
             )}
 
-            {/* GENERAL 묶음 — 항상 노출. 활성 공정 있으면 그 아래로 */}
+            {/* GENERAL 묶음 — 항상 노출 */}
             <PhaseGroup
+              key="phase-general"
               title="🌐 전체 공통"
               accent="amber"
               tipBody={generalTip?.body}
@@ -139,7 +181,6 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
   );
 }
 
-// 한 묶음(GENERAL 또는 활성 공정) — 회사 가이드 + 견적상담 카드 둘
 function PhaseGroup({
   title, accent,
   tipBody, tipUpdatedBy,
@@ -169,7 +210,6 @@ function PhaseGroup({
   );
 }
 
-// 인라인 편집 카드 — 800ms debounce 자동 저장. 비었으면 placeholder.
 function EditableCard({ kind, body, updatedBy, updatedAt, canEdit, onSave }) {
   const isTip = kind === 'tip';
   const cls = isTip
@@ -188,7 +228,6 @@ function EditableCard({ kind, body, updatedBy, updatedAt, canEdit, onSave }) {
   const [saving, setSaving] = useState(false);
   const timerRef = useRef(null);
 
-  // 외부 데이터 변경 시 동기화 (편집 중이 아닐 때만)
   useEffect(() => {
     if (!timerRef.current) setDraft(body || '');
     /* eslint-disable-next-line */

@@ -507,6 +507,14 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     return phase.label;
   }, [activeLineIdx, linesWithMeta]);
 
+  // 견적 처음 열 때 첫 그룹 헤더를 자동 활성으로 — 사용자가 셀 클릭 안 해도 가이드 표시
+  useEffect(() => {
+    if (activeLineIdx != null) return;
+    if (!linesWithMeta.length) return;
+    const firstGroup = linesWithMeta.findIndex((l) => l.isGroup && !l.isGroupEnd);
+    if (firstGroup >= 0) setActiveLineIdx(firstGroup);
+  }, [linesWithMeta, activeLineIdx]);
+
   if (loading || !quote) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
   }
@@ -668,6 +676,16 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               const cell = e.target.getAttribute?.('data-quote-cell');
               if (cell) {
                 const idx = parseInt(cell.split('-')[0], 10);
+                if (Number.isFinite(idx)) setActiveLineIdx(idx);
+              }
+            }}
+            onClickCapture={(e) => {
+              // input/textarea 직접 클릭이 아니어도(td/tr 빈 영역 클릭) 활성 라인 추적
+              const cell = e.target.getAttribute?.('data-quote-cell');
+              if (cell) return; // focus 핸들러가 처리
+              const row = e.target.closest?.('[data-row-idx]');
+              if (row) {
+                const idx = parseInt(row.getAttribute('data-row-idx'), 10);
                 if (Number.isFinite(idx)) setActiveLineIdx(idx);
               }
             }}
@@ -896,7 +914,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
   // ===== 그룹 종료 마커 (가는 구분선) =====
   if (line.isGroup && line.isGroupEnd) {
     return (
-      <tr className="bg-gray-50">
+      <tr className="bg-gray-50" data-row-idx={rowIdx}>
         <td colSpan={7} className="px-2 py-1">
           <div className="flex items-center gap-2 text-[11px] text-gray-400">
             <span className="flex-1 border-t border-dashed border-gray-300"></span>
@@ -921,7 +939,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
   // ===== 그룹 시작 헤더 =====
   if (line.isGroup) {
     return (
-      <tr className="bg-navy-50/40">
+      <tr className="bg-navy-50/40" data-row-idx={rowIdx}>
         <td colSpan={7} className="px-2 py-1.5">
           <div className="flex items-center gap-1">
             <span className="text-navy-600 font-bold text-base flex-shrink-0">▸</span>
@@ -951,7 +969,7 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
 
   // ===== 일반 라인 행 =====
   return (
-    <tr className={`hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''}`}>
+    <tr className={`hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''}`} data-row-idx={rowIdx}>
       <td className="px-2 py-1.5">
         <div className={`flex items-center gap-1.5 ${inGroup ? 'pl-3 border-l-2 border-navy-300' : ''}`}>
           <input
