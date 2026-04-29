@@ -31,6 +31,7 @@ const F = Object.freeze({
   SETTINGS_PHASE_KEYWORDS:  'settings.phase_keywords',  // 공종자동인식키워드
   SETTINGS_PHASE_DEADLINES: 'settings.phase_deadlines', // 공정별 발주데드라인
   SETTINGS_PHASE_ADVICE:    'settings.phase_advice',    // 공정어드바이스
+  SETTINGS_QUOTE_GUIDE:     'settings.quote_guide',     // 공정별 견적가이드 (회사 내부 메모)
 
   // AI비서
   AI_ASSISTANT:     'ai.assistant',         // 메뉴 자체 (모두)
@@ -51,6 +52,7 @@ const TOGGLEABLE_FEATURES = Object.freeze([
   'settings.phase_keywords',
   'settings.phase_deadlines',
   'settings.phase_advice',
+  'settings.quote_guide',
   'expenses.view',
   'expenses.edit',
 ]);
@@ -81,6 +83,7 @@ const DESIGNER_FEATURES = ALL_FEATURES.filter((f) => ![
   F.SETTINGS_PHASE_KEYWORDS,
   F.SETTINGS_PHASE_DEADLINES,
   F.SETTINGS_PHASE_ADVICE,
+  F.SETTINGS_QUOTE_GUIDE,
 ].includes(f));
 
 const FIELD_FEATURES = DESIGNER_FEATURES.filter((f) => ![
@@ -104,6 +107,7 @@ const STARTER_FEATURES = [
   F.EXPENSES_VIEW, F.EXPENSES_EDIT,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
+  F.SETTINGS_QUOTE_GUIDE,
   F.AI_ASSISTANT,
 ];
 

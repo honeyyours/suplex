@@ -22,6 +22,7 @@ export const F = Object.freeze({
   SETTINGS_PHASE_KEYWORDS:  'settings.phase_keywords',
   SETTINGS_PHASE_DEADLINES: 'settings.phase_deadlines',
   SETTINGS_PHASE_ADVICE:    'settings.phase_advice',
+  SETTINGS_QUOTE_GUIDE:     'settings.quote_guide',
 
   AI_ASSISTANT:     'ai.assistant',
   AI_BILLING_TOOLS: 'ai.billing_tools',
@@ -39,6 +40,7 @@ export const TOGGLEABLE_FEATURES = Object.freeze([
   F.SETTINGS_PHASE_KEYWORDS,
   F.SETTINGS_PHASE_DEADLINES,
   F.SETTINGS_PHASE_ADVICE,
+  F.SETTINGS_QUOTE_GUIDE,
   F.EXPENSES_VIEW,
   F.EXPENSES_EDIT,
 ]);
@@ -50,6 +52,7 @@ export const TOGGLE_FEATURE_META = Object.freeze({
   [F.SETTINGS_PHASE_KEYWORDS]:  { label: '공종자동인식키워드 수정', group: '회사 설정' },
   [F.SETTINGS_PHASE_DEADLINES]: { label: '공정별 발주데드라인 수정', group: '회사 설정' },
   [F.SETTINGS_PHASE_ADVICE]:    { label: '공정어드바이스 수정',     group: '회사 설정' },
+  [F.SETTINGS_QUOTE_GUIDE]:     { label: '공정별 견적가이드 수정',  group: '회사 설정' },
   [F.EXPENSES_VIEW]:            { label: '지출관리 보기',           group: '지출관리' },
   [F.EXPENSES_EDIT]:            { label: '지출관리 추가/수정',      group: '지출관리' },
 });
@@ -62,6 +65,7 @@ const DESIGNER_FEATURES = ALL.filter((f) => ![
   F.CORE_TEAM, F.EXPENSES_VIEW, F.EXPENSES_EDIT, F.AI_BILLING_TOOLS,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
+  F.SETTINGS_QUOTE_GUIDE,
 ].includes(f));
 
 const FIELD_FEATURES = DESIGNER_FEATURES.filter((f) => ![
@@ -81,6 +85,7 @@ const STARTER = [
   F.EXPENSES_VIEW, F.EXPENSES_EDIT,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
+  F.SETTINGS_QUOTE_GUIDE,
   F.AI_ASSISTANT,
 ];
 const PRO = [...STARTER, F.RECEIPT_OCR, F.NOTIFICATION_KAKAO];

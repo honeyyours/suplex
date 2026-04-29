@@ -7,6 +7,8 @@ import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
 import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { phaseDeadlinesApi, phaseAdvicesApi } from '../api/phaseRules';
+import { companyPhaseTipsApi, GENERAL_PHASE } from '../api/companyPhaseTips';
+import { hasFeature, F } from '../utils/features';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
@@ -89,6 +91,8 @@ export default function Settings() {
       <PhaseDeadlineRulesSection />
 
       <PhaseAdvicesSection />
+
+      <CompanyPhaseTipsSection auth={auth} />
 
       <ApplianceSpecsSection canEdit={isOwner} />
 
@@ -2191,6 +2195,183 @@ function ApplianceSpecModal({ spec, onClose, onSaved }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============================================
+// 회사 견적가이드 섹션 — 공정별 회사 내부 메모.
+// 견적 작성 화면 우측 드로어에서 자동 매칭 표시. 화면 전용, PDF/프린트에는 안 나감.
+// 권한: 보기는 회사 멤버 누구나, 편집은 SETTINGS_QUOTE_GUIDE 권한 보유자.
+// ============================================
+function CompanyPhaseTipsSection({ auth }) {
+  const canEdit = hasFeature(auth, F.SETTINGS_QUOTE_GUIDE);
+  const [tips, setTips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState('');
+
+  async function reload() {
+    setLoading(true);
+    try {
+      const { tips } = await companyPhaseTipsApi.list();
+      setTips(tips);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  // phase별 메모 dict (편집 중 임시 저장)
+  const tipMap = useMemo(() => {
+    const m = new Map();
+    for (const t of tips) m.set(t.phase, t);
+    return m;
+  }, [tips]);
+
+  // GENERAL은 항상 노출. 그 외는 메모 있는 공정만.
+  const standardLabels = STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => p.label);
+  const orderedPhases = [
+    GENERAL_PHASE,
+    ...standardLabels.filter((label) => tipMap.has(label)),
+  ];
+  const remainingPhases = standardLabels.filter((label) => !tipMap.has(label));
+
+  return (
+    <Section title="공정별 견적가이드 (회사 내부, PDF 비표시)" collapsible>
+      <p className="text-xs text-gray-500 mb-3">
+        견적 작성 시 우측 드로어에 자동으로 표시되는 회사 내부 메모입니다.
+        공정 셀이 활성화되면 그 공정의 가이드가 자동 매칭됩니다. <b>화면 전용 — 견적서 PDF에는 절대 나가지 않습니다.</b>
+      </p>
+
+      {!canEdit && (
+        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-3">
+          🔒 보기 전용입니다. 편집하려면 OWNER에게 "공정별 견적가이드 수정" 권한을 요청하세요.
+        </div>
+      )}
+
+      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+
+      <div className="space-y-3">
+        {orderedPhases.map((phase) => (
+          <PhaseTipCard
+            key={phase}
+            phase={phase}
+            tip={tipMap.get(phase)}
+            canEdit={canEdit}
+            onSaved={reload}
+          />
+        ))}
+      </div>
+
+      {canEdit && remainingPhases.length > 0 && (
+        <div className="mt-4 pt-3 border-t flex items-center gap-2">
+          <span className="text-xs text-gray-500">+ 공정 추가:</span>
+          <select
+            value={adding}
+            onChange={(e) => setAdding(e.target.value)}
+            className="text-sm px-2 py-1 border rounded bg-white"
+          >
+            <option value="">선택…</option>
+            {remainingPhases.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          <button
+            onClick={async () => {
+              if (!adding) return;
+              try {
+                // 빈 메모로 우선 등록(사용자가 텍스트 입력하면 자동 저장됨)
+                await companyPhaseTipsApi.upsert(adding, ' ');
+                setAdding('');
+                reload();
+              } catch (e) {
+                alert('추가 실패: ' + (e.response?.data?.error || e.message));
+              }
+            }}
+            disabled={!adding}
+            className="text-xs px-3 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+          >
+            추가
+          </button>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function PhaseTipCard({ phase, tip, canEdit, onSaved }) {
+  const isGeneral = phase === GENERAL_PHASE;
+  const [draft, setDraft] = useState(tip?.body || '');
+  const [saving, setSaving] = useState(false);
+  const timerRef = useRef(null);
+
+  // 외부 reload 시 동기화 (단, 사용자가 입력 중이면 덮어쓰지 않음)
+  useEffect(() => {
+    if (!timerRef.current) setDraft(tip?.body || '');
+    /* eslint-disable-next-line */
+  }, [tip?.body]);
+
+  function scheduleSave(value) {
+    setDraft(value);
+    if (!canEdit) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      timerRef.current = null;
+      setSaving(true);
+      try {
+        await companyPhaseTipsApi.upsert(phase, value);
+        onSaved?.();
+      } catch (e) {
+        alert('저장 실패: ' + (e.response?.data?.error || e.message));
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+  }
+
+  async function remove() {
+    if (!confirm(`"${isGeneral ? '전체 공통' : phase}" 메모를 삭제할까요?`)) return;
+    try {
+      await companyPhaseTipsApi.remove(phase);
+      onSaved?.();
+    } catch (e) {
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  return (
+    <div className={`border rounded-lg p-3 ${isGeneral ? 'bg-amber-50/30 border-amber-200' : 'bg-white'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-navy-800">
+          {isGeneral ? '🌐 전체 공통' : `🔧 ${phase}`}
+        </span>
+        <div className="flex items-center gap-2">
+          {saving && <span className="text-[11px] text-gray-400">저장 중…</span>}
+          {tip?.updatedBy && (
+            <span className="text-[11px] text-gray-400">
+              {tip.updatedBy.name} · {new Date(tip.updatedAt).toLocaleDateString('ko-KR')}
+            </span>
+          )}
+          {canEdit && tip && !isGeneral && (
+            <button
+              onClick={remove}
+              className="text-[11px] text-rose-500 hover:bg-rose-50 px-1.5 py-0.5 rounded"
+            >
+              삭제
+            </button>
+          )}
+        </div>
+      </div>
+      <textarea
+        value={draft}
+        onChange={(e) => scheduleSave(e.target.value)}
+        disabled={!canEdit}
+        rows={3}
+        placeholder={
+          isGeneral
+            ? '예: 모든 견적에 공통 적용되는 단가/유의사항…'
+            : `예: ${phase} 공정 견적 시 자주 빠지는 항목, 회사 단가 가이드…`
+        }
+        className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 resize-none disabled:bg-gray-50 disabled:text-gray-500"
+      />
     </div>
   );
 }

@@ -63,6 +63,7 @@ model Company {
   expenseCategoryRules   ExpenseCategoryRule[]
   phaseDeadlineRules     PhaseDeadlineRule[]
   phaseAdvices           PhaseAdvice[]
+  companyPhaseTips       CompanyPhaseTip[]
 
   @@map("companies")
 }
@@ -98,6 +99,7 @@ model User {
   createdExpenseRules    ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
   applianceCorrections   ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
   updatedPhaseNotes      ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
+  updatedCompanyPhaseTips CompanyPhaseTip[]    @relation("CompanyPhaseTipUpdatedBy")
 
   @@map("users")
 }
@@ -285,6 +287,26 @@ model ProjectPhaseNote {
   @@unique([projectId, phase])
   @@index([projectId])
   @@map("project_phase_notes")
+}
+
+// 회사 단위 견적 가이드 — 공정별 회사 내부 유의사항/메모.
+// 견적 작성 화면 우측 드로어에 표시(화면 전용, PDF/프린트 X).
+// (companyId, phase) unique. phase='GENERAL' = 전체 공통, 그 외 = 표준 25공정 라벨.
+model CompanyPhaseTip {
+  id          String   @id @default(cuid())
+  companyId   String
+  phase       String // 'GENERAL' 또는 표준 25공정 라벨
+  body        String   @default("")
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  updatedBy User?   @relation("CompanyPhaseTipUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([companyId, phase])
+  @@index([companyId])
+  @@map("company_phase_tips")
 }
 
 enum ChecklistCategory {

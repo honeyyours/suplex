@@ -4,6 +4,7 @@ import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '
 import { formatDateDot } from '../utils/date';
 import { normalizePhase, isOther } from '../utils/phases';
 import NewQuoteWithPhasesModal from '../components/NewQuoteWithPhasesModal';
+import QuoteGuideDrawer from '../components/QuoteGuideDrawer';
 
 // 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
 // 표준 매핑된 경우만 표시 (예: "벽지" → "도배"). OTHER는 자유 텍스트로 처리되니 표시 X.
@@ -236,6 +237,10 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [showImport, setShowImport] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [sending, setSending] = useState(false);
+  // 우측 견적 가이드 드로어 — 큰 화면에선 기본 열림, 사용자가 닫으면 세션 동안 유지
+  const [showGuide, setShowGuide] = useState(true);
+  // 활성 라인 인덱스 — 드로어가 그 라인의 그룹 헤더 공정을 자동 추적
+  const [activeLineIdx, setActiveLineIdx] = useState(null);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -471,22 +476,36 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
 
   // ⚠ 모든 hook은 early return 위에서 호출되어야 함 (React Hooks 순서 규칙)
   // 각 라인이 어느 그룹 안에 있는지 계산 — 위에서부터 순회하며 inGroup 상태 추적
+  // 동시에 각 라인이 속한 그룹 헤더의 itemName(공정명)도 같이 계산
   const linesWithMeta = useMemo(() => {
     let inGroup = false;
+    let groupHeaderName = null;
     return lines.map((l) => {
       if (l.isGroup && l.isGroupEnd) {
-        const meta = { ...l, _inGroup: false };
+        const meta = { ...l, _inGroup: false, _groupName: null };
         inGroup = false;
+        groupHeaderName = null;
         return meta;
       }
       if (l.isGroup) {
-        const meta = { ...l, _inGroup: false }; // 그룹 헤더 자체는 들여쓰지 않음
+        groupHeaderName = l.itemName || null;
+        const meta = { ...l, _inGroup: false, _groupName: groupHeaderName };
         inGroup = true;
         return meta;
       }
-      return { ...l, _inGroup: inGroup };
+      return { ...l, _inGroup: inGroup, _groupName: inGroup ? groupHeaderName : null };
     });
   }, [lines]);
+
+  // 활성 라인의 그룹 헤더 → 표준 공정 라벨 정규화. OTHER면 가이드 매칭 X.
+  const activePhase = useMemo(() => {
+    if (activeLineIdx == null) return null;
+    const meta = linesWithMeta[activeLineIdx];
+    if (!meta || !meta._groupName?.trim()) return null;
+    const phase = normalizePhase(meta._groupName);
+    if (isOther(phase.label)) return null;
+    return phase.label;
+  }, [activeLineIdx, linesWithMeta]);
 
   if (loading || !quote) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
@@ -503,7 +522,8 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const liveTotal = liveSubAfterDesign + liveVat;
 
   return (
-    <div className="space-y-4">
+    <div className={`grid grid-cols-1 ${showGuide ? 'xl:grid-cols-[1fr_320px]' : ''} gap-4`}>
+    <div className="space-y-4 min-w-0">
       {/* 헤더 액션 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -587,6 +607,15 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           >
             {sending ? '추가 중…' : '📦 마감재로 보내기'}
           </button>
+          {!showGuide && (
+            <button
+              onClick={() => setShowGuide(true)}
+              className="hidden xl:inline-block text-sm px-3 py-1.5 border border-navy-300 text-navy-700 rounded hover:bg-navy-50"
+              title="우측 견적 가이드 드로어 열기 (회사 내부 메모 + 견적상담)"
+            >
+              📖 가이드
+            </button>
+          )}
           <button
             onClick={() => setShowPrint(true)}
             className="text-sm px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
@@ -632,7 +661,18 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
       {/* 라인 테이블 */}
       <div className="bg-white border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+          <table
+            className="w-full text-sm"
+            style={{ tableLayout: 'fixed' }}
+            onFocusCapture={(e) => {
+              // 우측 가이드 드로어가 활성 라인의 그룹 헤더 공정을 자동 추적하도록
+              const cell = e.target.getAttribute?.('data-quote-cell');
+              if (cell) {
+                const idx = parseInt(cell.split('-')[0], 10);
+                if (Number.isFinite(idx)) setActiveLineIdx(idx);
+              }
+            }}
+          >
             <colgroup>
               <col style={{ width: '110px' }} />{/* 품명 */}
               <col style={{ width: '50px' }} />{/* 규격 */}
@@ -824,6 +864,17 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           onClose={() => setShowPrint(false)}
         />
       )}
+    </div>
+    {/* 우측 견적 가이드 드로어 — 큰 화면(xl)에서만 sticky로 옆 표시. 그 이하에서는 숨김 (토글 버튼으로 모바일 대응 추후) */}
+    {showGuide && (
+      <div className="hidden xl:block">
+        <QuoteGuideDrawer
+          projectId={projectId}
+          activePhase={activePhase}
+          onClose={() => setShowGuide(false)}
+        />
+      </div>
+    )}
     </div>
   );
 }
