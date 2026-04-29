@@ -1010,17 +1010,6 @@ function PhaseDeadlineRulesSection() {
       alert('변경 실패: ' + (e.response?.data?.error || e.message));
     }
   }
-  async function remove(id) {
-    if (!confirm('이 룰을 삭제할까요? 표준 기본값으로 돌아갑니다.')) return;
-    const snapshot = rules;
-    setRules((prev) => prev.filter((r) => r.id !== id));
-    try {
-      await phaseDeadlinesApi.remove(id);
-    } catch (e) {
-      setRules(snapshot);
-      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
-    }
-  }
   async function seedAll() {
     if (!confirm('표준 D-N 룰 전체를 회사 룰로 가져옵니다 (기존 룰은 그대로 유지/덮어쓰기). 계속할까요?')) return;
     await phaseDeadlinesApi.seedDefaults();
@@ -1052,8 +1041,7 @@ function PhaseDeadlineRulesSection() {
               <th className="text-left px-2 py-1.5 w-1/3">공정명</th>
               <th className="text-right px-2 py-1.5 w-24">D-N (일)</th>
               <th className="text-left px-2 py-1.5">기본값</th>
-              <th className="text-center px-2 py-1.5 w-20">활성</th>
-              <th className="px-2 py-1.5 w-16"></th>
+              <th className="text-center px-2 py-1.5 w-24">활성</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -1079,23 +1067,20 @@ function PhaseDeadlineRulesSection() {
                     {r.active ? '활성' : '비활성'}
                   </button>
                 </td>
-                <td className="px-2 py-1.5 text-right">
-                  <button onClick={() => remove(r.id)} className="text-rose-500 hover:underline">삭제</button>
-                </td>
               </tr>
             ))}
-            {/* 표준값 중 회사 룰에 없는 것 — 흐리게 표시 */}
+            {/* 표준값 중 회사 룰에 없는 것 — 흐리게 표시. 클릭 시 회사 룰로 가져옴 */}
             {Object.entries(defaults).filter(([phase]) => !ruleMap.has(phase)).map(([phase, days]) => (
               <tr key={phase} className="opacity-50 hover:opacity-100">
                 <td className="px-2 py-1.5 text-gray-600">{phase}</td>
                 <td className="px-2 py-1.5 text-right text-gray-400">D-{days}</td>
                 <td className="px-2 py-1.5 text-gray-400">D-{days}</td>
-                <td className="px-2 py-1.5 text-center text-gray-400 text-xs sm:text-[10px]">표준값</td>
-                <td className="px-2 py-1.5 text-right">
+                <td className="px-2 py-1.5 text-center">
                   <button
                     onClick={() => phaseDeadlinesApi.upsert({ phase, daysBefore: days }).then(reload)}
-                    className="text-xs text-navy-700 hover:underline"
-                  >커스텀</button>
+                    className="text-xs sm:text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-navy-100 hover:text-navy-700 whitespace-nowrap"
+                    title="이 표준값을 회사 룰로 가져와서 활성/비활성 관리"
+                  >+ 회사 룰</button>
                 </td>
               </tr>
             ))}
