@@ -776,12 +776,13 @@ const EDITORIAL_CSS = `
   color: var(--c-primary); letter-spacing: 0.5em; }
 .qpt-edit__total-meta { font-size: var(--fs-xs); font-weight: 700; color: var(--c-gray);
   letter-spacing: 0.3em; }
-.qpt-edit__total-amount { font-size: var(--fs-display); font-weight: 200; color: var(--c-primary);
-  line-height: 1; letter-spacing: -0.02em; margin: 0; }
-.qpt-edit__total-amount .currency { font-size: var(--fs-xl); font-weight: 300;
-  color: var(--c-primary); margin-right: 8px; vertical-align: 18px; }
+.qpt-edit__total-amount { font-size: 52px; font-weight: 200; color: var(--c-primary);
+  line-height: 1; letter-spacing: -0.02em; margin: 0;
+  white-space: nowrap; }
+.qpt-edit__total-amount .currency { font-size: 22px; font-weight: 300;
+  color: var(--c-primary); margin-right: 8px; vertical-align: 13px; }
 .qpt-edit__total-amount .amount-num { letter-spacing: -0.02em; }
-.qpt-edit__total-amount .unit { font-size: var(--fs-xl); font-weight: 300;
+.qpt-edit__total-amount .unit { font-size: 22px; font-weight: 300;
   color: var(--c-primary); margin-left: 6px; }
 
 /* 4. 섹션 타이틀 */
