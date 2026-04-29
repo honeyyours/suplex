@@ -73,7 +73,7 @@ export default function ExtractModal({ projectId, project, onClose }) {
         className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
       >
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-navy-800">현장 일정 복사</h2>
+          <h2 className="text-lg font-bold text-navy-800">일정 복사</h2>
           <p className="text-xs text-gray-500 mt-0.5">공종 키워드로 일정 검색 후 현장정보와 함께 복사 (협력업체 카톡 공유용)</p>
         </div>
 

@@ -95,7 +95,7 @@ export default function ProjectDetail() {
   const menuItems = [
     { icon: '✏️', label: '수정', onClick: () => setEditing(true) },
     { icon: '📝', label: '변동 로그', onClick: () => setShowChanges(true) },
-    { icon: '📋', label: '현장 일정 복사', onClick: () => setShowExtract(true) },
+    { icon: '📋', label: '일정 복사', onClick: () => setShowExtract(true) },
     { divider: true },
     { icon: '💾', label: 'JSON 내보내기', onClick: handleExport },
     { icon: '📥', label: 'JSON 복원', onClick: triggerImport },
@@ -122,6 +122,7 @@ export default function ProjectDetail() {
           <NavLink to="checklist" className={tab}>체크리스트</NavLink>
           <NavLink to="reports" className={tab}>현장 보고</NavLink>
           {!hideExpenses && <NavLink to="expenses" className={tab}>지출</NavLink>}
+          <NavLink to="tools" className={tab}>편의기능</NavLink>
           <NavLink to="memo" className={tab}>메모</NavLink>
         </div>
         <div className="p-1 sm:p-5">

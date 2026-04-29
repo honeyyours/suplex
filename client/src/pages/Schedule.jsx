@@ -34,7 +34,7 @@ export default function Schedule() {
     setSearchParams(next, { replace: true });
   };
 
-  // 전체 탭 일정 추출 — 모달에서 키워드/기간 선택 후 fetch + 클립보드 복사
+  // 전체 탭 일정 복사 — 모달에서 키워드/기간 선택 후 fetch + 클립보드 복사
   const [extractAllOpen, setExtractAllOpen] = useState(false);
   async function runExtractAll({ keyword, start, end }) {
     try {
@@ -49,7 +49,7 @@ export default function Schedule() {
       alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
       setExtractAllOpen(false);
     } catch (e) {
-      alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
+      alert('일정 복사 실패: ' + (e.response?.data?.error || e.message));
     }
   }
 
@@ -86,7 +86,7 @@ export default function Schedule() {
                   className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
                   title="키워드/기간 선택 후 카톡 형식으로 클립보드 복사"
                 >
-                  일정 추출
+                  일정 복사
                 </button>
               </div>
               <AggregateCalendar />
@@ -131,7 +131,7 @@ function FilterableProjectCalendar({ status }) {
     setSearchParams(next, { replace: true });
   };
 
-  // 전체(현재 status 필터 통과한 모든 프로젝트) 일정 추출
+  // 전체(현재 status 필터 통과한 모든 프로젝트) 일정 복사
   const [extractScopedOpen, setExtractScopedOpen] = useState(false);
   async function runExtractScoped({ keyword, start, end }) {
     try {
@@ -146,11 +146,11 @@ function FilterableProjectCalendar({ status }) {
       alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
       setExtractScopedOpen(false);
     } catch (e) {
-      alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
+      alert('일정 복사 실패: ' + (e.response?.data?.error || e.message));
     }
   }
 
-  // 한 프로젝트 일정 추출 — 모달에서 키워드/기간 선택
+  // 한 프로젝트 일정 복사 — 모달에서 키워드/기간 선택
   const [extractProjectModal, setExtractProjectModal] = useState(null); // {project, defaultStart, defaultEnd}
   function openProjectExtract(project) {
     const start = project.startDate ? isoDate(project.startDate) : isoDate(new Date());
@@ -173,7 +173,7 @@ function FilterableProjectCalendar({ status }) {
       alert(`${filtered.length}개 일정이 클립보드에 복사되었습니다.\n카톡으로 붙여넣어 전달하세요.`);
       setExtractProjectModal(null);
     } catch (e) {
-      alert('일정 추출 실패: ' + (e.response?.data?.error || e.message));
+      alert('일정 복사 실패: ' + (e.response?.data?.error || e.message));
     }
   }
 
@@ -264,7 +264,7 @@ function FilterableProjectCalendar({ status }) {
                   className="text-xs px-2.5 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                   title="키워드/기간 선택 후 카톡 형식으로 클립보드 복사"
                 >
-                  일정 추출
+                  일정 복사
                 </button>
                 <Link
                   to={`/projects/${selectedProject.id}`}
@@ -283,9 +283,9 @@ function FilterableProjectCalendar({ status }) {
             <button
               onClick={() => setExtractScopedOpen(true)}
               className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
-              title={`현재 ${status === 'IN_PROGRESS' ? '진행중' : '예정'} 프로젝트 ${projects.length}개의 일정 추출`}
+              title={`현재 ${status === 'IN_PROGRESS' ? '진행중' : '예정'} 프로젝트 ${projects.length}개의 일정 복사`}
             >
-              일정 추출
+              일정 복사
             </button>
           </div>
           <AggregateCalendar projectIds={filterIds} />
@@ -366,7 +366,7 @@ function ChipButton({ active, onClick, title, children }) {
 }
 
 // ============================================
-// 일정 추출 — 카톡 친화 형식 (자재 발주와 동일 패턴)
+// 일정 복사 — 카톡 친화 형식 (자재 발주와 동일 패턴)
 // ============================================
 function monthStart(d) {
   const t = d instanceof Date ? d : new Date(d);
@@ -446,7 +446,7 @@ function ExtractScheduleModal({ scope, projectName, defaultStart, defaultEnd, on
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="border-b px-4 py-3 flex items-center justify-between">
           <div className="font-bold text-navy-800">
-            일정 추출
+            일정 복사
             {scope === 'project' && projectName && (
               <span className="text-xs font-normal text-gray-500 ml-2">— {projectName}</span>
             )}

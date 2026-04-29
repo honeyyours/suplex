@@ -30,6 +30,7 @@ import ProjectExpenses from './pages/ProjectExpenses';
 import ProjectMemo from './pages/ProjectMemo';
 import ProjectQuoteConsultations from './pages/ProjectQuoteConsultations';
 import ProjectProcessOverview from './pages/ProjectProcessOverview';
+import ProjectUtilities from './pages/ProjectUtilities';
 
 export default function App() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="checklist" element={<ProjectChecklist />} />
           <Route path="reports" element={<ProjectReports />} />
           <Route path="expenses" element={<FeatureGate feature={F.EXPENSES_VIEW} redirectTo="schedule"><ProjectExpenses /></FeatureGate>} />
+          <Route path="tools" element={<ProjectUtilities />} />
         </Route>
       </Route>
 
