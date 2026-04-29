@@ -522,8 +522,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const liveTotal = liveSubAfterDesign + liveVat;
 
   return (
-    <div className={`grid grid-cols-1 ${showGuide ? 'xl:grid-cols-[1fr_320px]' : ''} gap-4`}>
-    <div className="space-y-4 min-w-0">
+    <div className={`space-y-4 ${showGuide ? 'xl:pr-[340px]' : ''} transition-[padding] duration-200`}>
       {/* 헤더 액션 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -864,17 +863,15 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           onClose={() => setShowPrint(false)}
         />
       )}
-    </div>
-    {/* 우측 견적 가이드 드로어 — 큰 화면(xl)에서만 sticky로 옆 표시. 그 이하에서는 숨김 (토글 버튼으로 모바일 대응 추후) */}
-    {showGuide && (
-      <div className="hidden xl:block">
-        <QuoteGuideDrawer
-          projectId={projectId}
-          activePhase={activePhase}
-          onClose={() => setShowGuide(false)}
-        />
-      </div>
-    )}
+
+      {/* 우측 견적 가이드 드로어 — fixed right, xl 이상에서만 표시.
+          작업영역은 위 div의 xl:pr-[340px]로 자리를 비움. */}
+      <QuoteGuideDrawer
+        projectId={projectId}
+        activePhase={activePhase}
+        open={showGuide}
+        onClose={() => setShowGuide(false)}
+      />
     </div>
   );
 }
