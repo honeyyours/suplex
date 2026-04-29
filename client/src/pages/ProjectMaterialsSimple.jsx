@@ -487,33 +487,38 @@ export default function ProjectMaterialsSimple() {
   // 마감재의 spaceGroup은 표준 공정 25개로 자동 흡수 (closed 척추 정책).
   // 가전·가구는 spaceGroup이 공간(거실/주방 등)이라 정규화 X.
   async function addGroup(kind = 'FINISH') {
-    const placeholder = kind === 'APPLIANCE'
-      ? '예: 주방, 거실, 욕실, 다용도실'
-      : '예: 목공, 도배, 화장실 (표준 25개로 자동 흡수)';
-    const name = prompt(`새 ${kind === 'APPLIANCE' ? '가전·가구' : '마감재'} 그룹 이름을 입력하세요 (${placeholder})`);
+    // 가전·가구 — prompt 없이 자동 이름으로 즉시 추가. 사용자는 그룹 헤더 이름 클릭으로 rename
+    if (kind === 'APPLIANCE') {
+      const base = '가전·가구';
+      const taken = new Set([...groupNames, ...emptyGroups.map((g) => g.name)]);
+      let finalName = base;
+      let n = 2;
+      while (taken.has(finalName)) finalName = `${base} ${n++}`;
+      setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'APPLIANCE' }]);
+      return;
+    }
+
+    // 마감재 — 표준 25개 정규화 + 사용자 확인 흐름 유지
+    const name = prompt(`새 마감재 그룹 이름을 입력하세요 (예: 목공, 도배, 화장실 — 표준 25개로 자동 흡수)`);
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    // 마감재(FINISH): 표준 매핑되면 표준 라벨로 confirm, 매핑 실패는 원본 자유 텍스트 그대로
-    // 가전·가구: 공간명이라 정규화 X.
     let finalName = trimmed;
-    if (kind === 'FINISH') {
-      const phase = normalizePhase(trimmed);
-      if (phase.key !== 'OTHER' && phase.label !== trimmed) {
-        // 표준 매핑 발견 — 사용자 확인
-        if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다.\n계속하시겠어요?`)) return;
-        finalName = phase.label;
-      }
-      // OTHER로 떨어지면 원본 그대로 (자유 키워드 보존)
+    const phase = normalizePhase(trimmed);
+    if (phase.key !== 'OTHER' && phase.label !== trimmed) {
+      // 표준 매핑 발견 — 사용자 확인
+      if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다.\n계속하시겠어요?`)) return;
+      finalName = phase.label;
     }
+    // OTHER로 떨어지면 원본 그대로 (자유 키워드 보존)
 
     if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다.');
       return;
     }
     // 빈 그룹으로 추가 — Material 자동 생성 X. 사용자가 "+ 항목" 클릭으로 첫 항목 추가.
-    setEmptyGroups((prev) => [...prev, { name: finalName, kind }]);
+    setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'FINISH' }]);
   }
 
   async function renameGroup(from) {
