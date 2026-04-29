@@ -1,34 +1,39 @@
-// 견적상담 — 프로젝트 안의 통화·미팅·카톡 기록 카드 타임라인
-// 카드 1개 = 1번의 접촉. 시간 역순 (최신 위). 새 상담 모달 + 인라인 편집 + 삭제.
-import { useEffect, useMemo, useState } from 'react';
+// 견적상담 — 공정별 참조 메모 + 기본 메모.
+// 좌측: 공정 체크박스 (견적서 NewQuoteWithPhasesModal 패턴)
+// 우측: 기본 메모(항상) + 체크된 공정의 메모 카드. textarea blur 자동저장.
+// 마지막 수정자 이름·직책·시각 자동 표시.
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import {
-  quoteConsultationsApi,
-  CHANNELS,
-  REACTIONS,
-  TOPIC_SUGGESTIONS,
-  channelMeta,
-  reactionMeta,
-} from '../api/quoteConsultations';
+import { STANDARD_PHASES } from '../utils/phases';
+import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
+import { phaseNotesApi, GENERAL_PHASE, ROLE_LABEL } from '../api/phaseNotes';
+
+const SELECTABLE_PHASES = STANDARD_PHASES.filter((p) => p.key !== 'OTHER');
 
 export default function ProjectQuoteConsultations() {
   const { project } = useOutletContext();
   const projectId = project?.id;
+  const { displayPhase } = usePhaseLabels();
 
-  const [items, setItems] = useState([]);
+  const [notesByPhase, setNotesByPhase] = useState({}); // { [phase]: note }
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [filterChannel, setFilterChannel] = useState('');
-  const [search, setSearch] = useState('');
+  // 좌측 체크 — 메모 있는 공정 자동 ON. 사용자가 추가로 체크/해제 가능.
+  // 메모가 비면 자동으로 false 되도록 reload 시 sync.
+  const [checked, setChecked] = useState({});
 
   async function reload() {
     setLoading(true);
     try {
-      const { items } = await quoteConsultationsApi.list(projectId);
-      setItems(items);
-    } catch (e) {
-      console.warn('견적상담 로드 실패', e);
+      const { notes } = await phaseNotesApi.list(projectId);
+      const map = {};
+      const ck = {};
+      for (const n of notes) {
+        map[n.phase] = n;
+        if (n.phase !== GENERAL_PHASE) ck[n.phase] = true;
+      }
+      setNotesByPhase(map);
+      // 사용자가 펼쳐둔 체크 상태는 유지하되, 메모 있는 건 강제 ON
+      setChecked((prev) => ({ ...prev, ...ck }));
     } finally {
       setLoading(false);
     }
@@ -38,359 +43,214 @@ export default function ProjectQuoteConsultations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  async function handleRemove(item) {
-    if (!confirm(`${formatDateTime(item.occurredAt)} 상담 기록을 삭제할까요?`)) return;
-    const snapshot = items;
-    setItems((prev) => prev.filter((x) => x.id !== item.id));
-    try {
-      await quoteConsultationsApi.remove(projectId, item.id);
-    } catch (e) {
-      setItems(snapshot);
-      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
-    }
-  }
-
-  // 필터링
-  const filtered = useMemo(() => {
-    let list = items;
-    if (filterChannel) list = list.filter((x) => x.channel === filterChannel);
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter((x) =>
-        (x.body || '').toLowerCase().includes(q) ||
-        (x.topic || '').toLowerCase().includes(q) ||
-        (x.nextAction || '').toLowerCase().includes(q) ||
-        (x.attendee || '').toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [items, filterChannel, search]);
-
-  return (
-    <div className="space-y-4">
-      {/* 헤더: 추가 버튼 + 검색·필터 */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => setShowAdd(true)}
-          className="px-3 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800"
-        >
-          + 새 상담
-        </button>
-        <div className="text-sm text-gray-500 ml-2">총 {items.length}건</div>
-        <div className="flex-1" />
-        <select
-          value={filterChannel}
-          onChange={(e) => setFilterChannel(e.target.value)}
-          className="text-sm px-2 py-1.5 border rounded"
-        >
-          <option value="">전체 채널</option>
-          {CHANNELS.map((c) => (
-            <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
-          ))}
-        </select>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="본문·주제·다음액션 검색"
-          className="text-sm px-3 py-1.5 border rounded w-56 max-w-full"
-        />
-      </div>
-
-      {/* 카드 타임라인 */}
-      {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">불러오는 중...</div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-gray-50 border border-dashed rounded-xl p-8 text-center text-sm text-gray-500">
-          {items.length === 0
-            ? '아직 견적상담 기록이 없습니다. 통화·미팅 후 [+ 새 상담]으로 빠르게 기록하세요.'
-            : '조건에 맞는 기록이 없습니다.'}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((item) => (
-            <ConsultationCard
-              key={item.id}
-              item={item}
-              onEdit={() => setEditing(item)}
-              onRemove={() => handleRemove(item)}
-            />
-          ))}
-        </div>
-      )}
-
-      {showAdd && (
-        <ConsultationModal
-          projectId={projectId}
-          onClose={() => setShowAdd(false)}
-          onSaved={() => { setShowAdd(false); reload(); }}
-        />
-      )}
-      {editing && (
-        <ConsultationModal
-          projectId={projectId}
-          existing={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); reload(); }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ============================================
-// 카드
-// ============================================
-function ConsultationCard({ item, onEdit, onRemove }) {
-  const ch = channelMeta(item.channel);
-  const re = reactionMeta(item.reaction);
-  return (
-    <div className="bg-white border rounded-xl p-4 hover:shadow-sm transition">
-      {/* 메타 헤더 */}
-      <div className="flex items-center gap-2 text-sm text-gray-700 mb-2 flex-wrap">
-        <span className="font-medium">{ch.icon} {formatDateTime(item.occurredAt)}</span>
-        <span className="text-gray-400">·</span>
-        <span className="text-gray-500">{item.author?.name || '—'}</span>
-        {item.topic && (
-          <>
-            <span className="text-gray-400">·</span>
-            <span className="text-navy-700 font-medium">{item.topic}</span>
-          </>
-        )}
-        {re && (
-          <span className={`text-xs px-1.5 py-0.5 rounded border ${re.color}`}>{re.label}</span>
-        )}
-        {item.quoteRound != null && (
-          <span className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
-            {item.quoteRound}차 견적
-          </span>
-        )}
-        {item.attendee && (
-          <span className="text-xs text-gray-500">응대: {item.attendee}</span>
-        )}
-        <div className="flex-1" />
-        <button onClick={onEdit} className="text-xs text-gray-500 hover:text-navy-700">수정</button>
-        <button onClick={onRemove} className="text-xs text-rose-500 hover:underline">삭제</button>
-      </div>
-
-      {/* 본문 */}
-      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{item.body}</div>
-
-      {/* 다음 액션 */}
-      {item.nextAction && (
-        <div className="mt-3 pt-3 border-t border-dashed text-sm">
-          <span className="text-gray-500 mr-1">👉 다음:</span>
-          <span className="text-navy-800">{item.nextAction}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================
-// 새/수정 모달
-// ============================================
-function ConsultationModal({ projectId, existing, onClose, onSaved }) {
-  const isEdit = !!existing;
-  const [form, setForm] = useState({
-    occurredAt: existing?.occurredAt ? toLocalDateTimeInput(existing.occurredAt) : toLocalDateTimeInput(new Date()),
-    channel: existing?.channel || 'PHONE',
-    topic: existing?.topic || '',
-    body: existing?.body || '',
-    nextAction: existing?.nextAction || '',
-    attendee: existing?.attendee || '',
-    reaction: existing?.reaction || '',
-    quoteRound: existing?.quoteRound != null ? String(existing.quoteRound) : '',
-  });
-  const [busy, setBusy] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(
-    !!(existing?.attendee || existing?.reaction || existing?.quoteRound != null)
-  );
-  const [err, setErr] = useState('');
-
-  async function submit() {
-    setErr('');
-    if (!form.body.trim()) {
-      setErr('본문을 입력해주세요');
-      return;
-    }
-    setBusy(true);
-    try {
-      const payload = {
-        occurredAt: new Date(form.occurredAt).toISOString(),
-        channel: form.channel,
-        topic: form.topic.trim() || null,
-        body: form.body.trim(),
-        nextAction: form.nextAction.trim() || null,
-        attendee: form.attendee.trim() || null,
-        reaction: form.reaction || null,
-        quoteRound: form.quoteRound ? Number(form.quoteRound) : null,
-      };
-      if (isEdit) {
-        await quoteConsultationsApi.update(projectId, existing.id, payload);
-      } else {
-        await quoteConsultationsApi.create(projectId, payload);
+  function toggleCheck(label) {
+    setChecked((prev) => {
+      const wasChecked = !!prev[label];
+      const hasNote = !!(notesByPhase[label]?.body?.trim());
+      if (wasChecked && hasNote) {
+        // 체크 해제하려는데 메모가 있음 — confirm
+        if (!confirm(`'${displayPhase(label)}' 메모를 삭제할까요?`)) return prev;
+        phaseNotesApi.remove(projectId, label).then(() => {
+          setNotesByPhase((m) => {
+            const { [label]: _, ...rest } = m;
+            return rest;
+          });
+        }).catch(() => {});
       }
-      onSaved();
-    } catch (e) {
-      setErr(e.response?.data?.error || '저장 실패');
-    } finally {
-      setBusy(false);
+      return { ...prev, [label]: !wasChecked };
+    });
+  }
+
+  // 메모 저장 (blur 또는 외부 호출). body가 빈 문자열이면 서버에서 자동 삭제.
+  async function saveNote(phase, body) {
+    const data = await phaseNotesApi.upsert(projectId, phase, body);
+    if (data.deleted) {
+      setNotesByPhase((m) => {
+        const { [phase]: _, ...rest } = m;
+        return rest;
+      });
+      if (phase !== GENERAL_PHASE) {
+        setChecked((c) => ({ ...c, [phase]: false }));
+      }
+    } else if (data.note) {
+      setNotesByPhase((m) => ({ ...m, [phase]: data.note }));
     }
   }
 
+  // 우측에 표시할 공정 = 체크된 + 메모 있는
+  const visiblePhases = useMemo(() => {
+    return SELECTABLE_PHASES.filter((p) => checked[p.label] || notesByPhase[p.label]);
+  }, [checked, notesByPhase]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <div className="px-5 py-4 border-b flex items-center justify-between">
-          <div className="font-semibold text-navy-800">{isEdit ? '견적상담 수정' : '+ 새 견적상담'}</div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
+      {/* 좌측 — 공정 체크박스 (견적서 모달 패턴) */}
+      <aside className="md:border-r md:pr-4">
+        <div className="text-xs font-medium text-gray-700 mb-1">공정 선택</div>
+        <div className="text-[11px] text-gray-500 mb-3">
+          체크하면 우측에 메모 입력란이 추가됩니다.
         </div>
-        <div className="p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Field label="일시 *">
-              <input
-                type="datetime-local"
-                value={form.occurredAt}
-                onChange={(e) => setForm({ ...form, occurredAt: e.target.value })}
-                className="w-full px-3 py-2 border rounded text-sm"
-              />
-            </Field>
-            <Field label="채널 *">
-              <select
-                value={form.channel}
-                onChange={(e) => setForm({ ...form, channel: e.target.value })}
-                className="w-full px-3 py-2 border rounded text-sm"
+        <div className="grid grid-cols-2 md:grid-cols-1 gap-1">
+          {SELECTABLE_PHASES.map((p) => {
+            const isChecked = !!checked[p.label] || !!notesByPhase[p.label];
+            const hasContent = !!(notesByPhase[p.label]?.body?.trim());
+            return (
+              <button
+                key={p.key}
+                onClick={() => toggleCheck(p.label)}
+                className={`text-left text-sm px-2.5 py-1.5 rounded border transition flex items-center gap-2 ${
+                  isChecked
+                    ? 'border-navy-700 bg-navy-50 text-navy-800'
+                    : 'border-gray-200 hover:border-navy-400 hover:bg-gray-50'
+                }`}
+                title={p.hint || ''}
               >
-                {CHANNELS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="주제">
-              <input
-                list="topic-suggestions"
-                value={form.topic}
-                onChange={(e) => setForm({ ...form, topic: e.target.value })}
-                placeholder="자유 입력 또는 선택"
-                className="w-full px-3 py-2 border rounded text-sm"
-              />
-              <datalist id="topic-suggestions">
-                {TOPIC_SUGGESTIONS.map((t) => <option key={t} value={t} />)}
-              </datalist>
-            </Field>
-          </div>
-
-          <Field label="본문 *">
-            <textarea
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-              rows={6}
-              autoFocus
-              placeholder={'예: "총 견적 6,800만원 부담스럽다고 함. 거실 마루는 예전 거 그대로 쓰겠다고 3,500 줄여달라고 하심"'}
-              className="w-full px-3 py-2 border rounded text-sm leading-relaxed"
-            />
-          </Field>
-
-          <Field label="다음 액션">
-            <input
-              value={form.nextAction}
-              onChange={(e) => setForm({ ...form, nextAction: e.target.value })}
-              placeholder="예: 재견적 4/30까지 / 답방 5/2 14:00"
-              className="w-full px-3 py-2 border rounded text-sm"
-            />
-          </Field>
-
-          {/* 펼치기 — 추가 정보 */}
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-xs text-gray-500 hover:text-navy-700"
-          >
-            {showAdvanced ? '▼' : '▶'} 추가 정보 (응대 고객·반응·연관 견적)
-          </button>
-          {showAdvanced && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <Field label="응대 고객">
-                <input
-                  value={form.attendee}
-                  onChange={(e) => setForm({ ...form, attendee: e.target.value })}
-                  placeholder="예: 부인 / 남편"
-                  className="w-full px-3 py-2 border rounded text-sm"
-                />
-              </Field>
-              <Field label="고객 반응">
-                <select
-                  value={form.reaction}
-                  onChange={(e) => setForm({ ...form, reaction: e.target.value })}
-                  className="w-full px-3 py-2 border rounded text-sm"
+                <span
+                  className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-bold flex-shrink-0 ${
+                    isChecked ? 'bg-navy-700 text-white' : 'border border-gray-300'
+                  }`}
                 >
-                  <option value="">—</option>
-                  {REACTIONS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="견적 라운드">
-                <input
-                  type="number"
-                  min="1"
-                  value={form.quoteRound}
-                  onChange={(e) => setForm({ ...form, quoteRound: e.target.value })}
-                  placeholder="1, 2, 3..."
-                  className="w-full px-3 py-2 border rounded text-sm"
-                />
-              </Field>
-            </div>
-          )}
+                  {isChecked ? '✓' : ''}
+                </span>
+                <span className="truncate flex-1">{displayPhase(p.label)}</span>
+                {hasContent && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="메모 있음" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
 
-          {err && <p className="text-sm text-rose-600">{err}</p>}
-        </div>
-        <div className="px-5 py-4 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm border rounded">취소</button>
-          <button
-            onClick={submit}
-            disabled={busy}
-            className="px-4 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
-          >
-            {busy ? '저장중...' : (isEdit ? '저장' : '추가')}
-          </button>
-        </div>
-      </div>
+      {/* 우측 — 메모 카드들 */}
+      <main className="space-y-3">
+        {/* 기본 메모 (항상 표시) */}
+        <NoteCard
+          phase={GENERAL_PHASE}
+          phaseLabel="🗂️ 기본 메모"
+          subtitle="공정과 무관한 정보 — 가족 구성·할머니 동거·예산·주의사항 등"
+          note={notesByPhase[GENERAL_PHASE]}
+          onSave={(body) => saveNote(GENERAL_PHASE, body)}
+          isGeneral
+        />
+
+        {loading ? (
+          <div className="text-sm text-gray-400 py-8 text-center">불러오는 중...</div>
+        ) : visiblePhases.length === 0 ? (
+          <div className="bg-gray-50 border border-dashed rounded-xl p-8 text-center text-sm text-gray-500">
+            좌측에서 공정을 체크하면 메모 입력란이 여기에 나타납니다.
+          </div>
+        ) : (
+          visiblePhases.map((p) => (
+            <NoteCard
+              key={p.key}
+              phase={p.label}
+              phaseLabel={displayPhase(p.label)}
+              note={notesByPhase[p.label]}
+              onSave={(body) => saveNote(p.label, body)}
+            />
+          ))
+        )}
+      </main>
     </div>
   );
 }
 
 // ============================================
-// Helpers
+// 메모 카드 — textarea + blur 자동저장 + 마지막 수정자 표시
 // ============================================
-function Field({ label, children }) {
+function NoteCard({ phase, phaseLabel, subtitle, note, onSave, isGeneral }) {
+  const initialBody = note?.body || '';
+  const [body, setBody] = useState(initialBody);
+  const [savedBody, setSavedBody] = useState(initialBody);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+  const taRef = useRef(null);
+
+  // 외부에서 note 갱신되면 (다른 사용자 편집·optimistic 등) 동기화 — 단, 사용자가 편집 중이면 보존
+  useEffect(() => {
+    const incoming = note?.body || '';
+    if (incoming !== savedBody && document.activeElement !== taRef.current) {
+      setBody(incoming);
+      setSavedBody(incoming);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note?.body, note?.updatedAt]);
+
+  async function commit() {
+    if (saving) return;
+    if (body === savedBody) return; // 변경 없음
+    setSaving(true);
+    setErr('');
+    try {
+      await onSave(body);
+      setSavedBody(body);
+    } catch (e) {
+      setErr(e?.response?.data?.error || '저장 실패');
+      setBody(savedBody); // 롤백
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const updatedBy = note?.updatedBy;
+  const updatedAt = note?.updatedAt;
+
   return (
-    <label className="block">
-      <div className="text-xs text-gray-600 mb-1">{label}</div>
-      {children}
-    </label>
+    <div className={`bg-white border rounded-xl p-4 ${isGeneral ? 'border-amber-200 bg-amber-50/30' : ''}`}>
+      <div className="flex items-baseline justify-between gap-2 mb-2 flex-wrap">
+        <div>
+          <div className="font-semibold text-navy-800 text-sm">{phaseLabel}</div>
+          {subtitle && <div className="text-[11px] text-gray-500 mt-0.5">{subtitle}</div>}
+        </div>
+        <div className="text-[11px] text-gray-400 flex items-center gap-2 flex-wrap">
+          {saving && <span className="text-navy-600">저장 중…</span>}
+          {!saving && body !== savedBody && <span className="text-amber-600">미저장</span>}
+          {updatedBy && updatedAt && (
+            <span>
+              {updatedBy.name}
+              {updatedBy.role && (
+                <span className="ml-1 text-gray-400">({ROLE_LABEL[updatedBy.role] || updatedBy.role})</span>
+              )}
+              <span className="mx-1">·</span>
+              {formatRelative(updatedAt)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <textarea
+        ref={taRef}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        onBlur={commit}
+        rows={isGeneral ? 4 : 3}
+        placeholder={isGeneral
+          ? '예: 30평 / 부부+자녀1 + 할머니 동거 / 모던톤 선호 / 6월 시공 / 예산 6,000만원'
+          : '대화 중 나온 내용을 적어두세요. 견적 작성 시 이 메모를 보고 입력합니다.'}
+        className="w-full px-3 py-2 text-sm border rounded focus:border-navy-700 outline-none resize-y leading-relaxed"
+      />
+      {err && <div className="text-xs text-rose-600 mt-1">{err}</div>}
+    </div>
   );
 }
 
-function formatDateTime(value) {
+function formatRelative(value) {
   if (!value) return '';
   const d = new Date(value);
+  const now = new Date();
+  const diffMs = now - d;
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return '방금';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}일 전`;
   const m = d.getMonth() + 1;
-  const day = d.getDate();
+  const dd = d.getDate();
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${m}/${day} ${hh}:${mm}`;
-}
-
-function toLocalDateTimeInput(value) {
-  const d = new Date(value);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  return `${m}/${dd} ${hh}:${mm}`;
 }
