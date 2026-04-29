@@ -366,6 +366,14 @@ projectRouter.post('/:id/toggle-confirm', async (req, res, next) => {
           confirmedAt: newConfirmed ? new Date() : null,
         },
       });
+      // 시스템 룰이 만든 미확정 알림 체크리스트 자동 isDone (확정 시 목적 달성).
+      // 다시 미확정 처리하면 isDone 도 풀어 줌.
+      await tx.projectChecklist.updateMany({
+        where: { projectId, linkedScheduleId: id, isDone: !newConfirmed },
+        data: newConfirmed
+          ? { isDone: true, completedAt: new Date(), completedById: req.user.id }
+          : { isDone: false, completedAt: null, completedById: null },
+      });
       await recordChange(tx, {
         projectId,
         date: existing.date,

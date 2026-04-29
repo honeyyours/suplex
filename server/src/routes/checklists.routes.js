@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { syncSystemAdvicesForProject } = require('../services/systemAdvicesSync');
 // (deprecated — ChecklistTemplate 폐기, from-templates 라우트도 함께 제거)
 
 const router = express.Router({ mergeParams: true });
@@ -59,6 +60,18 @@ router.get('/', async (req, res, next) => {
     const { projectId } = req.params;
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    // 시스템 룰(미확정 알림 등) lazy 동기화 — 진입 시 누락분만 INSERT.
+    // 실패해도 메인 응답은 막지 않음.
+    try {
+      await syncSystemAdvicesForProject(prisma, {
+        projectId,
+        companyId: req.user.companyId,
+        userId: req.user.id,
+      });
+    } catch (syncErr) {
+      console.error('[systemAdvicesSync] failed', syncErr);
+    }
 
     const items = await prisma.projectChecklist.findMany({
       where: { projectId },

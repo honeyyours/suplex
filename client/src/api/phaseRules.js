@@ -14,4 +14,6 @@ export const phaseAdvicesApi = {
   update: (id, payload) => api.patch(`/phase-rules/advices/${id}`, payload).then((r) => r.data),
   remove: (id) => api.delete(`/phase-rules/advices/${id}`).then((r) => r.data),
   seedStandard: () => api.post('/phase-rules/advices/seed-standard').then((r) => r.data),
+  bulkDuplicate: (ids) => api.post('/phase-rules/advices/bulk-duplicate', { ids }).then((r) => r.data),
+  bulkDelete: (ids) => api.post('/phase-rules/advices/bulk-delete', { ids }).then((r) => r.data),
 };

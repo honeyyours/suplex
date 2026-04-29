@@ -68,8 +68,8 @@ model Company {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String
   name         String
   phone        String?
@@ -145,10 +145,10 @@ model UserPermission {
 // 감사 로그 — 어드민·OWNER의 주요 액션 추적 (베타 7-A)
 model AuditLog {
   id         String   @id @default(cuid())
-  actorId    String   // 액션 수행자 user id
-  actorType  String   // 'ADMIN' | 'OWNER' | 'DESIGNER' | 'FIELD'
+  actorId    String // 액션 수행자 user id
+  actorType  String // 'ADMIN' | 'OWNER' | 'DESIGNER' | 'FIELD'
   companyId  String? // 회사 컨텍스트 (멤버 변경 등). 어드민 일부 액션은 null
-  action     String   // 예: 'member.remove', 'admin.user-delete', 'admin.impersonate-start'
+  action     String // 예: 'member.remove', 'admin.user-delete', 'admin.impersonate-start'
   targetType String? // 'USER' | 'COMPANY' | 'INVITATION' | null
   targetId   String?
   metadata   Json? // 변경 전후 값 등 부가 정보
@@ -219,26 +219,29 @@ enum ProjectStatus {
 }
 
 model Project {
-  id              String        @id @default(cuid())
-  companyId       String
-  createdById     String
-  name            String // 프로젝트명 (예: 삼성동 OO아파트)
-  customerName    String // 고객명
-  customerPhone   String?
-  siteAddress     String // 현장 주소
-  contractAmount  Decimal?      @db.Decimal(14, 2) // 계약 금액 (부가세 포함 총액)
-  contractVatRate Decimal?      @db.Decimal(5, 2) // 부가세율 (예: 10 = 10% 포함, null/0 = 별도. 견적 확정 시 자동)
-  startDate       DateTime? // 착공일
-  expectedEndDate DateTime? // 준공 예정일
-  actualEndDate   DateTime? // 실제 준공일
-  status          ProjectStatus @default(PLANNED)
-  doorPassword    String? // 출입번호
-  siteNotes       String? // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
-  area            Decimal?      @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
-  siteCode        String? // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
-  memo            String? // 기타 메모
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                   String        @id @default(cuid())
+  companyId            String
+  createdById          String
+  name                 String // 프로젝트명 (예: 삼성동 OO아파트)
+  customerName         String // 고객명
+  customerPhone        String?
+  siteAddress          String // 현장 주소
+  contractAmount       Decimal?      @db.Decimal(14, 2) // 계약 금액 (부가세 포함 총액)
+  contractVatRate      Decimal?      @db.Decimal(5, 2) // 부가세율 (예: 10 = 10% 포함, null/0 = 별도. 견적 확정 시 자동)
+  startDate            DateTime? // 착공일
+  expectedEndDate      DateTime? // 준공 예정일
+  actualEndDate        DateTime? // 실제 준공일
+  status               ProjectStatus @default(PLANNED)
+  doorPassword         String? // 출입번호
+  siteNotes            String? // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
+  area                 Decimal?      @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
+  siteCode             String? // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
+  // 견적상담·CRM 메타 (2026-04-29 추가)
+  acquisitionSource    String? // 견적 요청 경로 (네이버 검색·블로그·인스타·카페·당근·소개·광고 등)
+  consultationAttendee String? // 응대 고객 (부부 중 누구·할머니·대리인 등)
+  memo                 String? // 기타 메모
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdBy            User                 @relation("ProjectCreatedBy", fields: [createdById], references: [id])
@@ -270,7 +273,7 @@ model Project {
 model ProjectPhaseNote {
   id          String   @id @default(cuid())
   projectId   String
-  phase       String   // 'GENERAL' 또는 표준 25공정 라벨
+  phase       String // 'GENERAL' 또는 표준 25공정 라벨
   body        String   @default("")
   updatedById String?
   createdAt   DateTime @default(now())
@@ -306,6 +309,9 @@ model ProjectChecklist {
   completedById    String?
   createdById      String?
   orderIndex       Int               @default(0)
+  // 시스템 룰(미확정 알림 등)이 특정 일정을 위해 생성한 항목이면 그 일정의 id.
+  // 일정이 confirmed=true 가 되면 이 체크리스트도 자동 isDone 처리.
+  linkedScheduleId String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -314,6 +320,7 @@ model ProjectChecklist {
   completedBy User?   @relation("ChecklistCompletedBy", fields: [completedById], references: [id])
 
   @@index([projectId, isDone])
+  @@index([linkedScheduleId])
   @@map("project_checklists")
 }
 
@@ -1116,7 +1123,7 @@ model SimpleQuoteLine {
   // isGroup=true 인 라인 중 isGroupEnd=true → 그룹 종료 마커 (UI: 가는 구분선)
   isGroupEnd Boolean @default(false)
 
-  itemName  String  // 품명 (= 공정명/그룹명)
+  itemName  String // 품명 (= 공정명/그룹명)
   spec      String? // 규격 (보통 비움)
   quantity  Decimal @default(1) @db.Decimal(10, 2)
   unit      String? // "식" / "m²" / "개" 등
@@ -1138,8 +1145,8 @@ model ProjectMemo {
   id         String   @id @default(cuid())
   projectId  String
   title      String?
-  content    String   // 메모 본문 (자유 형식, 줄바꿈은 사용자 입력 그대로)
-  tag        String?  // 분류 — 일반/회고/AS/피드백 (자유 문자열, null 허용). AI 어드바이스 입력 신호로 사용.
+  content    String // 메모 본문 (자유 형식, 줄바꿈은 사용자 입력 그대로)
+  tag        String? // 분류 — 일반/회고/AS/피드백 (자유 문자열, null 허용). AI 어드바이스 입력 신호로 사용.
   pinned     Boolean  @default(false)
   orderIndex Int      @default(0)
   createdAt  DateTime @default(now())
@@ -1160,8 +1167,8 @@ model ProjectMemo {
 model PhaseDeadlineRule {
   id         String   @id @default(cuid())
   companyId  String
-  phase      String   // 공정명 (정확 일치 + 부분 매칭 폴백)
-  daysBefore Int      // 발주 데드라인 = 일정 시작일 - daysBefore
+  phase      String // 공정명 (정확 일치 + 부분 매칭 폴백)
+  daysBefore Int // 발주 데드라인 = 일정 시작일 - daysBefore
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -1179,11 +1186,14 @@ model PhaseDeadlineRule {
 model PhaseAdvice {
   id            String   @id @default(cuid())
   companyId     String
-  phase         String   // 공정명 (entry.category 와 매칭)
-  daysBefore    Int      // 일정 시작 며칠 전 (음수면 시작 후, 0이면 시작 당일 = 옛 ChecklistTemplate)
-  title         String   // 체크리스트 제목 (예: "보양 관련 관리실 문의")
-  description   String?  // 상세 설명
-  category      String?  // 안전 / 자재 / 관리실 협의 / 사전 준비 등
+  phase         String // 공정명 (entry.category 와 매칭). ruleType=UNCONFIRMED_CHECK 면 "시스템" 메타 라벨.
+  // STANDARD = 일정 등록 시 (시작일 - daysBefore) 체크리스트 생성.
+  // UNCONFIRMED_CHECK = 오늘로부터 daysBefore 일 후 일정 중 confirmed=false 항목마다 체크리스트 생성.
+  ruleType      String   @default("STANDARD")
+  daysBefore    Int // 일정 시작 며칠 전 (음수면 시작 후, 0이면 시작 당일 = 옛 ChecklistTemplate)
+  title         String // 체크리스트 제목 (예: "보양 관련 관리실 문의")
+  description   String? // 상세 설명
+  category      String? // 안전 / 자재 / 관리실 협의 / 사전 준비 등
   requiresPhoto Boolean  @default(false) // 사진 첨부 필수 — 시공 사진 증거용 (옛 ChecklistTemplate.requiresPhoto)
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -1192,6 +1202,7 @@ model PhaseAdvice {
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId, phase])
+  @@index([companyId, ruleType])
   @@map("phase_advices")
 }
 
@@ -1202,11 +1213,11 @@ model PhaseAdvice {
 // ============================================
 model ApplianceSpec {
   id           String   @id @default(cuid())
-  category     String   // REFRIGERATOR | KIMCHI_REFRIGERATOR | DISHWASHER | WASHING_MACHINE | DRYER | OVEN | COOKTOP | AIR_CONDITIONER | ROBOT_VACUUM
-  brand        String   // "LG" | "삼성" | ...
+  category     String // REFRIGERATOR | KIMCHI_REFRIGERATOR | DISHWASHER | WASHING_MACHINE | DRYER | OVEN | COOKTOP | AIR_CONDITIONER | ROBOT_VACUUM
+  brand        String // "LG" | "삼성" | ...
   modelCode    String   @unique // 정확 모델코드 (예: S634S30Q)
   modelAliases String[] @default([]) // 별칭/약어 검색용
-  productName  String   // "디오스 양문형 800L"
+  productName  String // "디오스 양문형 800L"
 
   // 외형 치수 (mm)
   widthMm  Int
@@ -1227,9 +1238,9 @@ model ApplianceSpec {
   discontinued Boolean @default(false)
 
   // 검증 메타 (가드레일)
-  sources        Json   @default("[]") // [{tier, url, scrapedAt, value}]
-  consensusCount Int    @default(0) // 일치하는 출처 수
-  verifyStatus   String @default("PENDING") // VERIFIED | PENDING | DISPUTED | USER_CORRECTED
+  sources        Json      @default("[]") // [{tier, url, scrapedAt, value}]
+  consensusCount Int       @default(0) // 일치하는 출처 수
+  verifyStatus   String    @default("PENDING") // VERIFIED | PENDING | DISPUTED | USER_CORRECTED
   lastVerifiedAt DateTime?
   correctedById  String?
   correctedAt    DateTime?
