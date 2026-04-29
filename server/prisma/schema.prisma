@@ -221,10 +221,12 @@ model Vendor {
   category    String // 공종 (전기, 설비, 타일 등)
   contact     String? // 담당자
   phone       String?
-  unitPrice   Decimal? @db.Decimal(12, 2)
-  unit        String? // 단위 (m², 개, 일 등)
-  bankAccount String? // 계좌 (한 줄 자유 입력 — 예: "국민 123-45-678901 김OO". 인건비 정산 카톡 복사용)
-  memo        String?
+  unitPrice        Decimal? @db.Decimal(12, 2)
+  unit             String? // 단위 (m², 개, 일 등)
+  bankAccount      String? // 계좌 (한 줄 자유 입력 — 예: "국민 123-45-678901 김OO". 인건비 정산 카톡 복사용)
+  defaultMeal      Decimal? @db.Decimal(12, 2) // 인건비 정산 디폴트 식비 (1일 단위)
+  defaultTransport Decimal? @db.Decimal(12, 2) // 인건비 정산 디폴트 교통비 (1일 단위)
+  memo             String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

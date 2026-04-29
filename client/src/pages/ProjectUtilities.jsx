@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 import ExtractModal from '../components/ExtractModal';
+import LaborSettlementModal from '../components/LaborSettlementModal';
 
 export default function ProjectUtilities() {
   const { id } = useParams();
   const { project } = useOutletContext();
   const [showExtract, setShowExtract] = useState(false);
+  const [showSettlement, setShowSettlement] = useState(false);
 
   const tools = [
     {
@@ -20,8 +22,9 @@ export default function ProjectUtilities() {
     {
       icon: '💰',
       title: '인건비 정산',
-      desc: '협력업체 작업자별 [일수×단가 + 식비 + 교통비] 자동 합산 → [작업자·계좌·금액·날짜] 카톡 텍스트 1초 복사. 사장님이 직접 송금하는 워크플로우 직격.',
-      ready: false,
+      desc: '공종 → 작업자 선택 → [일수 × 일당 + 식비 + 교통비] 자동 합산 → [이름·계좌·금액] 카톡 텍스트 복사. 일당·식비·교통비는 변경 시 자동 저장되어 다음 정산 시 자동 채워집니다.',
+      action: () => setShowSettlement(true),
+      ready: true,
     },
     {
       icon: '📢',
@@ -78,6 +81,13 @@ export default function ProjectUtilities() {
           projectId={id}
           project={project}
           onClose={() => setShowExtract(false)}
+        />
+      )}
+
+      {showSettlement && (
+        <LaborSettlementModal
+          project={project}
+          onClose={() => setShowSettlement(false)}
         />
       )}
     </div>
