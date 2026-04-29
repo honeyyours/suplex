@@ -522,7 +522,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const liveTotal = liveSubAfterDesign + liveVat;
 
   return (
-    <div className={`space-y-4 ${showGuide ? 'xl:pr-[340px]' : ''} transition-[padding] duration-200`}>
+    <div className="space-y-4">
       {/* 헤더 액션 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
