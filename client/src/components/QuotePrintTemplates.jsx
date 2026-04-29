@@ -577,11 +577,289 @@ const SIDEBAR_CSS = `
 `;
 
 // ============================================
+// 에디토리얼 — 견적서_v3_에디토리얼.html 기반
+// (아이보리 배경 + 가는 라인 위계 + hero 합계 + 콜로폰 회사정보)
+// ============================================
+function EditorialTemplate({ quote, lines, totals }) {
+  const rows = buildPrintRows(lines);
+  const designFeeOn = Number(quote.designFeeRate) > 0;
+  const round = Number(quote.roundAdjustment) || 0;
+  const vatOn = Number(quote.vatRate) > 0;
+  const docNo = quote.quoteDate ? formatDateDot(quote.quoteDate).replace(/\./g, ' ·') : '';
+
+  return (
+    <>
+      <style>{EDITORIAL_CSS}</style>
+      <article className="qpt-edit">
+        <div className="qpt-edit__top-strip">
+          <span className="qpt-edit__company-en">{quote.supplierName || '—'}</span>
+          {docNo && <span className="qpt-edit__doc-no">№ {docNo}</span>}
+        </div>
+
+        <header className="qpt-edit__header">
+          <h1 className="qpt-edit__title">Estimate.</h1>
+          <p className="qpt-edit__title-sub">견 적 서</p>
+        </header>
+
+        <section className="qpt-edit__info">
+          <div className="qpt-edit__info-block">
+            <span className="qpt-edit__info-label">CLIENT</span>
+            <p className="qpt-edit__info-value">{quote.clientName || '—'} <small>귀하</small></p>
+          </div>
+          <div className="qpt-edit__info-block">
+            <span className="qpt-edit__info-label">DATE</span>
+            <p className="qpt-edit__info-value">{quote.quoteDate ? formatDateDot(quote.quoteDate) : ''}</p>
+          </div>
+          <div className="qpt-edit__info-block">
+            <span className="qpt-edit__info-label">PROJECT</span>
+            <p className="qpt-edit__info-value">{quote.projectName || ''}</p>
+          </div>
+        </section>
+
+        <section className="qpt-edit__total">
+          <div className="qpt-edit__total-header">
+            <span className="qpt-edit__total-label">TOTAL AMOUNT</span>
+            <span className="qpt-edit__total-meta">{vatOn ? `VAT 포함 (${Number(quote.vatRate)}%)` : 'VAT 별도'}</span>
+          </div>
+          <p className="qpt-edit__total-amount">
+            <span className="currency">₩</span>
+            <span className="amount-num">{formatWon(totals.total)}</span>
+            <span className="unit">원</span>
+          </p>
+        </section>
+
+        <section className="qpt-edit__items-section">
+          <h2 className="qpt-edit__section-title">SCOPE OF WORK</h2>
+          <table className="qpt-edit__items">
+            <thead>
+              <tr>
+                <th className="col-no">NO</th>
+                <th className="col-category">항목</th>
+                <th className="col-detail">시공내용</th>
+                <th className="col-amount">금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr><td className="qpt-edit__empty" colSpan={4}>—</td></tr>
+              ) : rows.map((r) => (
+                <tr key={r.no}>
+                  <td className="col-no">{r.no}</td>
+                  <td className="col-category">{r.category}</td>
+                  <td className="col-detail">{r.detail}</td>
+                  <td className="col-amount">{r.amount > 0 ? formatWon(r.amount) : '―'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="qpt-edit__sum-section">
+          <table className="qpt-edit__sum">
+            <tbody>
+              <tr><th>합  계</th><td>{formatWon(totals.subtotal)} <span className="unit">원</span></td></tr>
+              {designFeeOn && (
+                <tr><th>설계 및 감리비 ({Number(quote.designFeeRate)}%)</th><td>{formatWon(totals.designFeeAmount)} <span className="unit">원</span></td></tr>
+              )}
+              {round !== 0 && (
+                <tr><th>단수조정</th><td>{round < 0 ? '-' : ''}{formatWon(Math.abs(round))} <span className="unit">원</span></td></tr>
+              )}
+              <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
+              <tr className="qpt-edit__sum--total">
+                <th>총  금  액</th>
+                <td>{formatWon(totals.total)} <span className="unit">원</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section className="qpt-edit__notes">
+          {quote.footerNotes ? (
+            <p className="qpt-edit__notes-custom">{quote.footerNotes}</p>
+          ) : (
+            <>
+              <p>본 견적서는 <strong>가견적서</strong>이며, 실제 디자인 계약 내용에 따라 금액이 달라질 수 있습니다.</p>
+              <p>현금영수증 및 세금계산서 발행 시 부가세(10%)는 별도이며, 견적 외 공사는 추가금이 발생됩니다.</p>
+            </>
+          )}
+        </section>
+
+        <footer className="qpt-edit__company">
+          {quote.supplierName && (
+            <p className="qpt-edit__company-name">{quote.supplierName}</p>
+          )}
+          <div className="qpt-edit__company-details">
+            {quote.supplierOwner && (
+              <span className="info-row"><span className="info-row__label">CEO</span><span className="info-row__value">{quote.supplierOwner}</span></span>
+            )}
+            {quote.supplierRegNo && (
+              <span className="info-row"><span className="info-row__label">REG.</span><span className="info-row__value">{quote.supplierRegNo}</span></span>
+            )}
+            {quote.supplierTel && (
+              <span className="info-row"><span className="info-row__label">TEL.</span><span className="info-row__value">{quote.supplierTel}</span></span>
+            )}
+            {quote.supplierEmail && (
+              <span className="info-row"><span className="info-row__label">MAIL</span><span className="info-row__value">{quote.supplierEmail}</span></span>
+            )}
+            {quote.supplierAddress && (
+              <span className="info-row"><span className="info-row__label">ADDR.</span><span className="info-row__value">{quote.supplierAddress}</span></span>
+            )}
+          </div>
+        </footer>
+      </article>
+    </>
+  );
+}
+
+const EDITORIAL_CSS = `
+.qpt-edit, .qpt-edit * { box-sizing: border-box; }
+.qpt-edit {
+  --c-primary: #1A1A1A;
+  --c-accent: #8B7355;
+  --c-light: #F0EBE2;
+  --c-border: #D8D2C4;
+  --c-gray: #999999;
+  --c-text: #1A1A1A;
+  --c-bg: #FAF8F3;
+  --fs-xs: 10px; --fs-sm: 11px; --fs-base: 13px; --fs-md: 14px;
+  --fs-lg: 17px; --fs-xl: 28px; --fs-display: 64px; --fs-title: 56px;
+
+  font-family: 'Pretendard', 'Malgun Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--fs-base);
+  color: var(--c-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 16mm 22mm 14mm;
+  background: var(--c-bg);
+  display: flex;
+  flex-direction: column;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* 0. 상단 스트립 */
+.qpt-edit__top-strip { display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 10px; border-bottom: 1px solid var(--c-border); margin-bottom: 26px; }
+.qpt-edit__company-en { font-size: var(--fs-xs); font-weight: 700; color: var(--c-primary);
+  letter-spacing: 0.4em; text-transform: uppercase; }
+.qpt-edit__doc-no { font-size: var(--fs-xs); font-weight: 400; color: var(--c-gray);
+  letter-spacing: 0.3em; }
+
+/* 1. 메인 타이틀 */
+.qpt-edit__header { margin-bottom: 26px; }
+.qpt-edit__title { font-size: var(--fs-title); font-weight: 200; color: var(--c-primary);
+  line-height: 0.95; letter-spacing: -0.02em; margin: 0 0 10px; }
+.qpt-edit__title-sub { font-size: var(--fs-xs); font-weight: 700; color: var(--c-primary);
+  letter-spacing: 0.5em; padding-left: 0.5em; margin: 0; }
+
+/* 2. 발주처/일자/프로젝트 가로 3분할 */
+.qpt-edit__info { display: flex; border-top: 1px solid var(--c-primary);
+  border-bottom: 1px solid var(--c-border); padding: 14px 0; margin-bottom: 26px; }
+.qpt-edit__info-block { flex: 1; padding-right: 16px; }
+.qpt-edit__info-block + .qpt-edit__info-block { padding-left: 16px;
+  border-left: 1px solid var(--c-border); }
+.qpt-edit__info-label { display: block; font-size: var(--fs-xs); font-weight: 700;
+  color: var(--c-gray); letter-spacing: 0.3em; margin-bottom: 6px; }
+.qpt-edit__info-value { font-size: var(--fs-md); font-weight: 500; color: var(--c-primary);
+  margin: 0; }
+.qpt-edit__info-value small { font-size: var(--fs-sm); font-weight: 400; color: var(--c-gray); }
+
+/* 3. 합계 hero */
+.qpt-edit__total { margin-bottom: 26px; padding: 14px 0 18px; }
+.qpt-edit__total-header { display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px; }
+.qpt-edit__total-label { display: block; font-size: var(--fs-xs); font-weight: 700;
+  color: var(--c-primary); letter-spacing: 0.5em; }
+.qpt-edit__total-meta { font-size: var(--fs-xs); font-weight: 700; color: var(--c-gray);
+  letter-spacing: 0.3em; }
+.qpt-edit__total-amount { font-size: var(--fs-display); font-weight: 200; color: var(--c-primary);
+  line-height: 1; letter-spacing: -0.02em; margin: 0; }
+.qpt-edit__total-amount .currency { font-size: var(--fs-xl); font-weight: 300;
+  color: var(--c-primary); margin-right: 8px; vertical-align: 18px; }
+.qpt-edit__total-amount .amount-num { letter-spacing: -0.02em; }
+.qpt-edit__total-amount .unit { font-size: var(--fs-xl); font-weight: 300;
+  color: var(--c-primary); margin-left: 6px; }
+
+/* 4. 섹션 타이틀 */
+.qpt-edit__section-title { font-size: var(--fs-xs); font-weight: 700; color: var(--c-primary);
+  letter-spacing: 0.5em; padding-bottom: 10px; border-bottom: 1px solid var(--c-primary);
+  margin: 0 0 4px; }
+
+/* 5. 공사 내역 표 (미니멀) */
+.qpt-edit__items-section { margin-bottom: 18px; }
+.qpt-edit__items { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
+.qpt-edit__items thead th { font-size: var(--fs-xs); font-weight: 400; color: var(--c-gray);
+  letter-spacing: 0.25em; padding: 10px 6px 7px; text-align: left;
+  border-bottom: 1px solid var(--c-border); }
+.qpt-edit__items thead .col-amount { text-align: right; }
+.qpt-edit__items tbody td { padding: 8px 6px; border-bottom: 1px solid var(--c-border);
+  vertical-align: top; line-height: 1.5; }
+.qpt-edit__items tbody tr:last-child td { border-bottom: 1px solid var(--c-primary); }
+/* 컬럼 너비 공통 + 색·정렬은 tbody 만 (헤더는 위 thead th 규칙으로 통일) */
+.qpt-edit__items .col-no { width: 7%; }
+.qpt-edit__items .col-category { width: 16%; }
+.qpt-edit__items .col-detail { width: 64%; }
+.qpt-edit__items .col-amount { width: 13%; }
+.qpt-edit__items tbody td.col-no { color: var(--c-gray); font-size: var(--fs-xs); padding-top: 10px; }
+.qpt-edit__items tbody td.col-category { font-weight: 700; color: var(--c-primary); }
+.qpt-edit__items tbody td.col-detail { color: var(--c-text); }
+.qpt-edit__items tbody td.col-amount { text-align: right; color: var(--c-gray); padding-top: 10px; }
+.qpt-edit__empty { text-align: center; color: var(--c-gray); padding: 24px; }
+
+/* 6. 합계 산출 — 우측 50%, 박스 X */
+.qpt-edit__sum-section { display: flex; justify-content: flex-end; margin-bottom: 26px; }
+.qpt-edit__sum { width: 50%; border-collapse: collapse; font-size: var(--fs-base); }
+.qpt-edit__sum th, .qpt-edit__sum td { padding: 8px 0;
+  border-bottom: 1px solid var(--c-border); }
+.qpt-edit__sum th { text-align: right; font-weight: 400; color: var(--c-gray); width: 65%;
+  padding-right: 16px; }
+.qpt-edit__sum td { text-align: right; color: var(--c-text); }
+.qpt-edit__sum td .unit { color: var(--c-gray); font-size: var(--fs-xs); margin-left: 6px;
+  letter-spacing: 0.1em; }
+.qpt-edit__sum--total th, .qpt-edit__sum--total td { color: var(--c-primary); font-weight: 700;
+  font-size: var(--fs-lg); border-top: 1px solid var(--c-primary); border-bottom: none;
+  padding-top: 12px; letter-spacing: 0.05em; }
+.qpt-edit__sum--total td .unit { color: var(--c-primary); font-weight: 400;
+  font-size: var(--fs-sm); }
+
+/* 7. 안내문 */
+.qpt-edit__notes { font-size: var(--fs-xs); color: var(--c-gray); line-height: 1.8;
+  margin-bottom: 18px; }
+.qpt-edit__notes p { margin: 0; }
+.qpt-edit__notes p::before { content: "—"; color: var(--c-accent); font-weight: 700;
+  margin-right: 8px; letter-spacing: 0; }
+.qpt-edit__notes-custom { white-space: pre-line; }
+.qpt-edit__notes-custom::before { content: ""; margin-right: 0; }
+.qpt-edit__notes strong { color: var(--c-primary); font-weight: 700; }
+
+/* 8. 콜로폰 회사정보 (페이지 하단) */
+.qpt-edit__company { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--c-border); }
+.qpt-edit__company-name { font-size: var(--fs-sm); font-weight: 700; color: var(--c-primary);
+  letter-spacing: 0.2em; margin: 0 0 6px; text-transform: uppercase; }
+.qpt-edit__company-details { font-size: var(--fs-xs); color: var(--c-gray); line-height: 1.8; }
+.qpt-edit__company-details .info-row { display: inline; }
+.qpt-edit__company-details .info-row__label { color: var(--c-primary); font-weight: 700;
+  letter-spacing: 0.15em; margin-right: 6px; }
+.qpt-edit__company-details .info-row__value { margin-right: 16px; }
+
+/* 인쇄 */
+@page { size: A4; margin: 0; }
+@media print {
+  .qpt-edit { width: 100%; min-height: auto; margin: 0; }
+}
+`;
+
+// ============================================
 // Registry — 양식 추가는 이 배열에 push 만
 // ============================================
 export const QUOTE_PRINT_TEMPLATES = [
-  { key: 'classic', label: '클래식 (네이비/풀테두리)', Component: ClassicTemplate },
-  { key: 'sidebar', label: '사이드바 (다크/미니멀)', Component: SidebarTemplate },
+  { key: 'classic',   label: '클래식 (네이비/풀테두리)',   Component: ClassicTemplate },
+  { key: 'sidebar',   label: '사이드바 (다크/미니멀)',     Component: SidebarTemplate },
+  { key: 'editorial', label: '에디토리얼 (아이보리/hero)', Component: EditorialTemplate },
 ];
 
 export const DEFAULT_TEMPLATE_KEY = 'classic';
