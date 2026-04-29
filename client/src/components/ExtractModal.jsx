@@ -8,6 +8,7 @@ export default function ExtractModal({ projectId, project, onClose }) {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
 
   async function run() {
     if (!keyword.trim()) { setErr('키워드를 입력하세요'); return; }
@@ -25,31 +26,41 @@ export default function ExtractModal({ projectId, project, onClose }) {
     }
   }
 
-  function copy() {
-    if (!results?.entries?.length) return;
-    // [일정] 먼저 → [현장정보] 헤더 뒤에. 단일 프로젝트 모드일 때만 헤더 노출.
-    const scheduleLines = results.entries.map((e) => {
-      const date = e.date.slice(0, 10);
-      const proj = !project && e.project?.name ? `${e.project.name} - ` : '';
-      return `<${date}> ${proj}${e.content}`;
-    });
+  // 일정 결과 또는 현장정보 둘 중 하나라도 있으면 복사 가능
+  const hasSchedule = results?.entries?.length > 0;
+  const canCopy = hasSchedule || !!project;
 
+  async function copy() {
+    if (!canCopy) return;
     const parts = [];
-    parts.push('[일정]');
-    parts.push(...scheduleLines);
 
-    if (project) {
-      const info = [];
-      info.push('');
-      info.push(`[${project.name}]`);
-      if (project.siteAddress) info.push(`주소: ${project.siteAddress}`);
-      if (project.customerPhone) info.push(`연락처: ${project.customerPhone}`);
-      if (project.doorPassword) info.push(`출입번호: ${project.doorPassword}`);
-      if (project.siteNotes) info.push(`현장정보: ${project.siteNotes}`);
-      parts.push(...info);
+    // 검색 결과 있을 때만 [일정] 섹션 노출. 단순 현장정보 복사 케이스엔 생략.
+    if (hasSchedule) {
+      const scheduleLines = results.entries.map((e) => {
+        const date = e.date.slice(0, 10);
+        const proj = !project && e.project?.name ? `${e.project.name} - ` : '';
+        return `<${date}> ${proj}${e.content}`;
+      });
+      parts.push('[일정]');
+      parts.push(...scheduleLines);
     }
 
-    navigator.clipboard.writeText(parts.join('\n'));
+    if (project) {
+      if (parts.length > 0) parts.push('');
+      parts.push(`[${project.name}]`);
+      if (project.siteAddress) parts.push(`주소: ${project.siteAddress}`);
+      if (project.customerPhone) parts.push(`연락처: ${project.customerPhone}`);
+      if (project.doorPassword) parts.push(`출입번호: ${project.doorPassword}`);
+      if (project.siteNotes) parts.push(`현장정보: ${project.siteNotes}`);
+    }
+
+    try {
+      await navigator.clipboard.writeText(parts.join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      alert('복사 실패: ' + (e?.message || ''));
+    }
   }
 
   return (
@@ -138,12 +149,18 @@ export default function ExtractModal({ projectId, project, onClose }) {
             {results && `${results.entries.length}건`}
           </div>
           <div className="flex gap-2">
-            {results?.entries?.length > 0 && (
+            {canCopy && (
               <button
                 onClick={copy}
-                className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50"
+                className={`px-3 py-1.5 text-sm rounded transition ${
+                  copied
+                    ? 'bg-emerald-600 text-white'
+                    : 'border hover:bg-gray-50'
+                }`}
               >
-                📋 복사
+                {copied
+                  ? '✓ 복사됨'
+                  : (hasSchedule ? '📋 일정 + 현장정보 복사' : '📋 현장정보만 복사')}
               </button>
             )}
             <button
