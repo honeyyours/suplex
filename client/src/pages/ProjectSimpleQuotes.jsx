@@ -419,6 +419,67 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     });
   }
 
+  // 그룹 통째 이동 — 헤더~종료마커(또는 다음 그룹 시작 직전)까지 한 묶음으로 위/아래 그룹과 swap.
+  // 사이에 그룹 밖 자유 라인이 있어도 그건 자리에 남고 그룹만 교환됨.
+  // activeLineIdx는 _key 기반으로 재추적 (단순·안전).
+  function moveGroup(headerIdx, dir) {
+    const activeKey = activeLineIdx != null ? lines[activeLineIdx]?._key : null;
+    setLines((prev) => {
+      const ranges = computeGroupRanges(prev);
+      const myIdx = ranges.findIndex((r) => r.start === headerIdx);
+      if (myIdx < 0) return prev;
+      const targetIdx = myIdx + dir;
+      if (targetIdx < 0 || targetIdx >= ranges.length) return prev;
+      const me = ranges[myIdx];
+      const target = ranges[targetIdx];
+      const meBlock = prev.slice(me.start, me.end + 1);
+      const targetBlock = prev.slice(target.start, target.end + 1);
+      let next;
+      if (dir === -1) {
+        next = [
+          ...prev.slice(0, target.start),
+          ...meBlock,
+          ...prev.slice(target.end + 1, me.start),
+          ...targetBlock,
+          ...prev.slice(me.end + 1),
+        ];
+      } else {
+        next = [
+          ...prev.slice(0, me.start),
+          ...targetBlock,
+          ...prev.slice(me.end + 1, target.start),
+          ...meBlock,
+          ...prev.slice(target.end + 1),
+        ];
+      }
+      scheduleLineSave(next);
+      // 활성 라인 _key가 새 배열에서 어느 idx로 갔는지 다시 계산
+      if (activeKey) {
+        const newIdx = next.findIndex((l) => l._key === activeKey);
+        if (newIdx >= 0) setActiveLineIdx(newIdx);
+      }
+      return next;
+    });
+  }
+
+  // 그룹 헤더 idx → 그 그룹의 [start, end] 범위. end는 isGroupEnd 마커 포함 또는 다음 그룹 헤더 직전.
+  function computeGroupRanges(arr) {
+    const ranges = [];
+    for (let i = 0; i < arr.length; i++) {
+      const l = arr[i];
+      if (l.isGroup && !l.isGroupEnd) {
+        let endIdx = arr.length - 1;
+        for (let j = i + 1; j < arr.length; j++) {
+          if (arr[j].isGroup && arr[j].isGroupEnd) { endIdx = j; break; }
+          if (arr[j].isGroup && !arr[j].isGroupEnd) { endIdx = j - 1; break; }
+        }
+        ranges.push({ start: i, end: endIdx });
+        i = endIdx;
+      }
+    }
+    return ranges;
+  }
+
   // ========== 키보드 네비게이션 ==========
   // Enter: 같은 컬럼 아래 행, 마지막이면 새 행 자동 추가
   // ↑/↓: 같은 컬럼 위/아래 행 (마지막에서 ↓는 무시 — 새 행 추가 X)
@@ -739,19 +800,34 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               </tr>
             </thead>
             <tbody className="divide-y">
-              {linesWithMeta.map((l, idx) => (
-                <LineRow
-                  key={l._key}
-                  line={l}
-                  rowIdx={idx}
-                  inGroup={l._inGroup}
-                  onChange={(patch) => patchLine(idx, patch)}
-                  onRemove={() => removeLine(idx)}
-                  onMoveUp={idx > 0 ? () => moveLine(idx, -1) : null}
-                  onMoveDown={idx < lines.length - 1 ? () => moveLine(idx, +1) : null}
-                  onCellKeyDown={handleCellKeyDown}
-                />
-              ))}
+              {linesWithMeta.map((l, idx) => {
+                const isGroupHeader = l.isGroup && !l.isGroupEnd;
+                let onUp = null, onDown = null;
+                if (isGroupHeader) {
+                  // 그룹 헤더: 그룹 통째 이동 — 위/아래에 다른 그룹이 있을 때만 활성화
+                  const ranges = computeGroupRanges(lines);
+                  const myIdx = ranges.findIndex((r) => r.start === idx);
+                  if (myIdx > 0) onUp = () => moveGroup(idx, -1);
+                  if (myIdx >= 0 && myIdx < ranges.length - 1) onDown = () => moveGroup(idx, +1);
+                } else if (!l.isGroupEnd) {
+                  // 일반 라인: 한 칸씩 이동
+                  if (idx > 0) onUp = () => moveLine(idx, -1);
+                  if (idx < lines.length - 1) onDown = () => moveLine(idx, +1);
+                }
+                return (
+                  <LineRow
+                    key={l._key}
+                    line={l}
+                    rowIdx={idx}
+                    inGroup={l._inGroup}
+                    onChange={(patch) => patchLine(idx, patch)}
+                    onRemove={() => removeLine(idx)}
+                    onMoveUp={onUp}
+                    onMoveDown={onDown}
+                    onCellKeyDown={handleCellKeyDown}
+                  />
+                );
+              })}
               {lines.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center py-6 text-gray-400 text-sm">
@@ -982,14 +1058,28 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
           </div>
         </td>
         <td className="px-1">
-          <button
-            onClick={onRemove}
-            tabIndex={-1}
-            className="text-gray-300 hover:text-rose-500 text-sm"
-            title="그룹 삭제"
-          >
-            ✕
-          </button>
+          <div className="flex flex-col items-center gap-0.5">
+            <button
+              onClick={onMoveUp}
+              disabled={!onMoveUp}
+              tabIndex={-1}
+              className="text-gray-400 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
+              title="그룹 통째로 위로"
+            >▲</button>
+            <button
+              onClick={onMoveDown}
+              disabled={!onMoveDown}
+              tabIndex={-1}
+              className="text-gray-400 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
+              title="그룹 통째로 아래로"
+            >▼</button>
+            <button
+              onClick={onRemove}
+              tabIndex={-1}
+              className="text-gray-300 hover:text-rose-500 text-sm leading-none mt-0.5"
+              title="그룹 삭제"
+            >✕</button>
+          </div>
         </td>
       </tr>
     );
