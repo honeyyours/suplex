@@ -43,12 +43,14 @@ export default function Admin() {
       </div>
 
       <div className="border-b flex gap-1">
+        <TabBtn active={tab === 'pending'} onClick={() => setTab('pending')}>⏳ 베타 신청</TabBtn>
         <TabBtn active={tab === 'companies'} onClick={() => setTab('companies')}>🏢 회사</TabBtn>
         <TabBtn active={tab === 'users'} onClick={() => setTab('users')}>👥 사용자</TabBtn>
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
         <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
       </div>
 
+      {tab === 'pending' && <PendingApprovalsTab />}
       {tab === 'companies' && <CompaniesTab />}
       {tab === 'users' && <UsersTab currentUserId={auth?.user?.id} />}
       {tab === 'stats' && <StatsTab />}
@@ -860,6 +862,116 @@ function AuditTab() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 베타 신청 — 승인 대기/거절 회사 관리
+// ============================================================
+function PendingApprovalsTab() {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { companies } = await adminApi.listPendingCompanies();
+      setCompanies(companies);
+    } catch (e) {
+      alert('목록 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function approve(c) {
+    if (!confirm(`회사 "${c.name}"을 승인하시겠습니까?\n승인 후 즉시 사용 가능 상태가 됩니다.`)) return;
+    try {
+      await adminApi.approveCompany(c.id);
+      await load();
+    } catch (e) {
+      alert('승인 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function reject(c) {
+    if (!confirm(`회사 "${c.name}"을 거절하시겠습니까?\n사용자에게는 "승인 대기 중"으로 동일하게 표시됩니다 (거절 사유 비공개 정책).`)) return;
+    try {
+      await adminApi.rejectCompany(c.id);
+      await load();
+    } catch (e) {
+      alert('거절 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  if (loading) return <div className="text-sm text-gray-400">불러오는 중…</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed">
+        💡 신규 가입 회사는 <b>승인 대기(PENDING)</b> 상태로 들어옵니다. 승인하면 즉시 사용 가능합니다.<br/>
+        거절(REJECTED)은 사용자 화면에는 PENDING과 동일하게 "승인 대기 중"으로 표시됩니다 (거절 사유 비공개).
+      </div>
+
+      {companies.length === 0 ? (
+        <div className="text-center py-12 text-sm text-gray-400 border border-dashed rounded">
+          승인 대기 또는 거절 상태의 회사가 없습니다.
+        </div>
+      ) : (
+        <div className="bg-white border rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500">
+              <tr>
+                <th className="text-left px-3 py-2">회사명</th>
+                <th className="text-left px-3 py-2">상태</th>
+                <th className="text-left px-3 py-2">대표 정보</th>
+                <th className="text-left px-3 py-2">가입일</th>
+                <th className="text-right px-3 py-2 w-48">액션</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {companies.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2">
+                    <div className="font-medium text-navy-800">{c.name}</div>
+                    <div className="text-[11px] text-gray-400">멤버 {c.memberCount}명</div>
+                  </td>
+                  <td className="px-3 py-2">
+                    {c.approvalStatus === 'PENDING' ? (
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">⏳ 대기</span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">✕ 거절</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {c.owners.map((o) => (
+                      <div key={o.userId} className="text-gray-700">
+                        <b>{o.name || '-'}</b> · {o.email}
+                        {o.phone && <span className="text-gray-400"> · {o.phone}</span>}
+                      </div>
+                    ))}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-gray-500 tabular-nums">
+                    {new Date(c.createdAt).toLocaleDateString('ko-KR')}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => approve(c)}
+                      className="text-xs px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 mr-1"
+                    >승인</button>
+                    {c.approvalStatus === 'PENDING' && (
+                      <button
+                        onClick={() => reject(c)}
+                        className="text-xs px-3 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
+                      >거절</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

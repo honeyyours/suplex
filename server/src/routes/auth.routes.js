@@ -197,7 +197,7 @@ router.get('/me', authRequired, async (req, res, next) => {
       where: { id: req.user.id },
       include: {
         memberships: {
-          include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+          include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true } } },
         },
       },
     });
@@ -206,6 +206,7 @@ router.get('/me', authRequired, async (req, res, next) => {
     // 현재 회사 멤버십 권한 — 클라이언트 hasFeature 즉시 판정용
     const currentMembership = user.memberships.find((m) => m.companyId === req.user.companyId);
     const permissions = currentMembership ? await loadPermissionMap(currentMembership.id) : {};
+    const currentCompany = currentMembership?.company;
 
     res.json({
       user: { id: user.id, email: user.email, name: user.name, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
@@ -213,9 +214,16 @@ router.get('/me', authRequired, async (req, res, next) => {
         companyId: m.companyId,
         companyName: m.company.name,
         hideExpenses: m.company.hideExpenses,
+        approvalStatus: m.company.approvalStatus,
         role: m.role,
       })),
-      current: { companyId: req.user.companyId, role: req.user.role, isSuperAdmin: !!req.user.isSuperAdmin },
+      current: {
+        companyId: req.user.companyId,
+        role: req.user.role,
+        isSuperAdmin: !!req.user.isSuperAdmin,
+        // 베타 진입 통제 — APPROVED 외에는 프론트에서 PendingApprovalPage로 redirect
+        approvalStatus: currentCompany?.approvalStatus || null,
+      },
       permissions,
     });
   } catch (e) { next(e); }

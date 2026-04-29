@@ -1,4 +1,5 @@
 const express = require('express');
+const { authRequired, requireApprovedCompany } = require('../middlewares/auth');
 const authRoutes = require('./auth.routes');
 const projectRoutes = require('./projects.routes');
 const schedules = require('./schedules.routes');
@@ -39,6 +40,19 @@ router.get('/health', (req, res) => {
 });
 
 router.use('/auth', authRoutes);
+
+// 베타 진입 통제 — /auth, /admin, /backup 외 모든 라우트는 회사 APPROVED일 때만 통과.
+// authRequired는 각 하위 라우터가 이미 호출하므로(req.user 채움), 여기선 가드만 추가.
+router.use((req, res, next) => {
+  // /admin, /backup은 별도 라우터에서 super admin 체크. 여기선 통과.
+  if (req.path.startsWith('/admin') || req.path.startsWith('/backup')) return next();
+  // 그 외는 인증 + 승인 가드 적용
+  authRequired(req, res, (err) => {
+    if (err || res.headersSent) return;
+    requireApprovedCompany(req, res, next);
+  });
+});
+
 router.use('/projects', projectRoutes);
 
 // 프로젝트-스코프

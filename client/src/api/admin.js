@@ -22,5 +22,9 @@ export const adminApi = {
     api.post(`/admin/companies/${companyId}/seed-demo-project`).then((r) => r.data),
   setPresetDefault: (companyId, isDefault) =>
     api.post(`/admin/companies/${companyId}/preset-default`, { default: isDefault }).then((r) => r.data),
+  // 베타 진입 통제 — 승인 대기 회사
+  listPendingCompanies: () => api.get('/admin/companies/pending').then((r) => r.data),
+  approveCompany: (id) => api.post(`/admin/companies/${id}/approve`).then((r) => r.data),
+  rejectCompany: (id) => api.post(`/admin/companies/${id}/reject`).then((r) => r.data),
 };
 

@@ -77,6 +77,7 @@ router.get('/companies', async (req, res, next) => {
         id: c.id,
         name: c.name,
         hideExpenses: c.hideExpenses,
+        approvalStatus: c.approvalStatus,
         createdAt: c.createdAt,
         memberCount: c._count.memberships,
         projectCount: c._count.projects,
@@ -751,6 +752,76 @@ router.post('/companies/:id/preset-default', async (req, res, next) => {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
   }
+});
+
+// ============================================
+// 베타 진입 통제 — 회사 승인/거절
+// ============================================
+
+// GET /api/admin/companies/pending — 승인 대기 회사 목록 (PENDING + REJECTED 같이 노출)
+router.get('/companies/pending', async (req, res, next) => {
+  try {
+    const companies = await prisma.company.findMany({
+      where: { approvalStatus: { in: ['PENDING', 'REJECTED'] } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { memberships: true } },
+        memberships: {
+          where: { role: 'OWNER' },
+          include: { user: { select: { id: true, email: true, name: true, phone: true, createdAt: true } } },
+        },
+      },
+    });
+    res.json({
+      companies: companies.map((c) => ({
+        id: c.id,
+        name: c.name,
+        approvalStatus: c.approvalStatus,
+        createdAt: c.createdAt,
+        memberCount: c._count.memberships,
+        owners: c.memberships.map((m) => ({
+          userId: m.user.id,
+          email: m.user.email,
+          name: m.user.name,
+          phone: m.user.phone,
+          joinedAt: m.user.createdAt,
+        })),
+      })),
+    });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/companies/:id/approve — 회사 승인
+router.post('/companies/:id/approve', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const company = await prisma.company.findUnique({ where: { id }, select: { id: true, name: true, approvalStatus: true } });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+    if (company.approvalStatus === 'APPROVED') {
+      return res.json({ ok: true, alreadyApproved: true });
+    }
+    await prisma.company.update({ where: { id }, data: { approvalStatus: 'APPROVED' } });
+    audit(req, 'company.approve', {
+      targetType: 'COMPANY', targetId: id,
+      metadata: { name: company.name, prevStatus: company.approvalStatus },
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/companies/:id/reject — 회사 거절 (사용자에게는 PENDING과 동일하게 표시)
+router.post('/companies/:id/reject', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const company = await prisma.company.findUnique({ where: { id }, select: { id: true, name: true, approvalStatus: true } });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+    await prisma.company.update({ where: { id }, data: { approvalStatus: 'REJECTED' } });
+    audit(req, 'company.reject', {
+      targetType: 'COMPANY', targetId: id,
+      metadata: { name: company.name, prevStatus: company.approvalStatus },
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

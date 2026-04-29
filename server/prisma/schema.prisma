@@ -43,6 +43,11 @@ model Company {
   // 회사 단위 기능 토글
   hideExpenses Boolean @default(false) // true면 지출관리 진입점 모두 숨김 (네비/탭/AI비서 도구/홈 피드)
 
+  // 베타 진입 통제 — 신규 가입 회사는 PENDING으로 생성, 슈퍼어드민이 콘솔에서 승인해야 사용 가능.
+  // 거절(REJECTED)도 사용자에게는 PENDING과 동일하게 "승인 대기 중"으로 표시 (정책: 거절 사유 미공개).
+  // SUSPENDED는 운영 중 임시 차단(베타 종료 등) 용.
+  approvalStatus CompanyApprovalStatus @default(PENDING)
+
   // 시스템 프리셋 표준 회사 플래그 — 한 번에 한 회사만 true.
   // true면 신규 회사 가입 시 이 회사의 4묶음(phaseLabels·키워드·데드라인·어드바이스)을 snapshot 복사.
   // 자세한 정책: 메모리 `수플렉스_설계_시스템프리셋.md`
@@ -113,6 +118,14 @@ enum Role {
   OWNER // 대표 - 전체 권한
   DESIGNER // 디자인팀 - 마감재/견적
   FIELD // 현장팀 - 현장보고/공정
+}
+
+// 베타 진입 통제 — Company.approvalStatus
+enum CompanyApprovalStatus {
+  PENDING // 가입 직후, 슈퍼어드민 승인 대기
+  APPROVED // 승인됨, 정상 사용
+  REJECTED // 거절됨 (사용자에게는 PENDING과 동일 메시지 표시)
+  SUSPENDED // 운영 중 임시 차단 (베타 종료, 정책 위반 등)
 }
 
 // 사용자 ↔ 회사 다대다 (+ 역할)
