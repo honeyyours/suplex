@@ -120,52 +120,51 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
           <div className="text-xs text-gray-400 py-6 text-center">불러오는 중…</div>
         ) : (
           <>
-            {/* 활성 공정 묶음 — 활성 공정 있을 때 상단 */}
-            {activePhase && (
-              <PhaseGroup
-                key={`phase-${activePhase}`}
-                title={`🔧 ${activePhase}`}
-                accent="navy"
-                tipBody={phaseTip?.body}
-                tipUpdatedBy={phaseTip?.updatedBy}
-                noteBody={phaseNote?.body}
-                noteUpdatedBy={phaseNote?.updatedBy}
-                noteUpdatedAt={phaseNote?.updatedAt}
-                canEditTips={canEditTips}
-                onSaveTip={async (body) => {
-                  await companyPhaseTipsApi.upsert(activePhase, body);
-                  await reload();
-                }}
-                onSaveNote={async (body) => {
-                  await phaseNotesApi.upsert(projectId, activePhase, body);
+            {/* 🌐 전체 공통 — 상단 고정. 회사 내부 가이드만 (견적상담 메모는 공정별만 의미 있음) */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-semibold tracking-wider text-amber-700">🌐 전체 공통</div>
+              <EditableCard
+                key="general-tip"
+                kind="tip"
+                body={generalTip?.body}
+                updatedBy={generalTip?.updatedBy}
+                canEdit={canEditTips}
+                onSave={async (body) => {
+                  await companyPhaseTipsApi.upsert(GENERAL_TIP, body);
                   await reload();
                 }}
               />
-            )}
+            </div>
 
-            {/* GENERAL 묶음 — 항상 노출 */}
-            <PhaseGroup
-              key="phase-general"
-              title="🌐 전체 공통"
-              accent="amber"
-              tipBody={generalTip?.body}
-              tipUpdatedBy={generalTip?.updatedBy}
-              noteBody={generalNote?.body}
-              noteUpdatedBy={generalNote?.updatedBy}
-              noteUpdatedAt={generalNote?.updatedAt}
-              canEditTips={canEditTips}
-              onSaveTip={async (body) => {
-                await companyPhaseTipsApi.upsert(GENERAL_TIP, body);
-                await reload();
-              }}
-              onSaveNote={async (body) => {
-                await phaseNotesApi.upsert(projectId, GENERAL_NOTE, body);
-                await reload();
-              }}
-            />
-
-            {!activePhase && (
-              <div className="text-[11px] text-gray-400 text-center pt-2 leading-relaxed">
+            {/* 활성 공정 — 라벨 없음(헤더에 이미 phase 표시), 회사 가이드 + 견적상담 메모 */}
+            {activePhase ? (
+              <div className="space-y-2 pt-3 border-t">
+                <EditableCard
+                  key={`phase-tip-${activePhase}`}
+                  kind="tip"
+                  body={phaseTip?.body}
+                  updatedBy={phaseTip?.updatedBy}
+                  canEdit={canEditTips}
+                  onSave={async (body) => {
+                    await companyPhaseTipsApi.upsert(activePhase, body);
+                    await reload();
+                  }}
+                />
+                <EditableCard
+                  key={`phase-note-${activePhase}`}
+                  kind="note"
+                  body={phaseNote?.body}
+                  updatedBy={phaseNote?.updatedBy}
+                  updatedAt={phaseNote?.updatedAt}
+                  canEdit={true}
+                  onSave={async (body) => {
+                    await phaseNotesApi.upsert(projectId, activePhase, body);
+                    await reload();
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="text-[11px] text-gray-400 text-center pt-3 border-t leading-relaxed">
                 견적 행을 클릭하면<br/>그 공정의 가이드가 자동으로 표시됩니다.
               </div>
             )}
@@ -181,35 +180,6 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
   );
 }
 
-function PhaseGroup({
-  title, accent,
-  tipBody, tipUpdatedBy,
-  noteBody, noteUpdatedBy, noteUpdatedAt,
-  canEditTips, onSaveTip, onSaveNote,
-}) {
-  const accentClass = accent === 'navy' ? 'text-navy-700' : 'text-amber-700';
-  return (
-    <div className="space-y-2">
-      <div className={`text-[10px] font-semibold tracking-wider ${accentClass}`}>{title}</div>
-      <EditableCard
-        kind="tip"
-        body={tipBody}
-        updatedBy={tipUpdatedBy}
-        canEdit={canEditTips}
-        onSave={onSaveTip}
-      />
-      <EditableCard
-        kind="note"
-        body={noteBody}
-        updatedBy={noteUpdatedBy}
-        updatedAt={noteUpdatedAt}
-        canEdit={true}
-        onSave={onSaveNote}
-      />
-    </div>
-  );
-}
-
 function EditableCard({ kind, body, updatedBy, updatedAt, canEdit, onSave }) {
   const isTip = kind === 'tip';
   const cls = isTip
@@ -217,7 +187,7 @@ function EditableCard({ kind, body, updatedBy, updatedAt, canEdit, onSave }) {
     : 'bg-sky-50 border-sky-200';
   const labelCls = isTip ? 'text-amber-800' : 'text-sky-800';
   const stampCls = isTip ? 'text-amber-700/70' : 'text-sky-700/70';
-  const label = isTip ? '🔒 회사 내부 가이드' : '📋 견적상담 메모';
+  const label = isTip ? '📌 회사 내부 가이드' : '📋 견적상담 메모';
   const placeholder = isTip
     ? (canEdit
         ? '회사 단가, 자주 빠지는 항목 등 내부 메모…'
