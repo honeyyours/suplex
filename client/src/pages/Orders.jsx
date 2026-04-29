@@ -13,6 +13,12 @@ export default function Orders({ lockedProjectId = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // 프로젝트 detail 안에서는 lockedProjectId가 강제됨 (셀렉트 숨김)
   const projectIdFilter = lockedProjectId || searchParams.get('projectId') || '';
+  // 요약 카드 클릭 시 해당 항목만 보기 (null = 전체)
+  // 'pendingModels' | 'urgent' | 'PENDING' | 'ORDERED' | 'RECEIVED' | 'CANCELLED'
+  const [activeFilter, setActiveFilter] = useState(null);
+  function toggleFilter(key) {
+    setActiveFilter((prev) => (prev === key ? null : key));
+  }
   // 선택 복사 — Set으로 ID 관리
   const [selectedIds, setSelectedIds] = useState(new Set());
   function toggleSelect(id) {
@@ -92,6 +98,13 @@ export default function Orders({ lockedProjectId = null }) {
     return m;
   }, [orders]);
 
+  // 임박: 데드라인 7일 이내 + 아직 진행중(PENDING/ORDERED)인 항목
+  const urgentOrders = useMemo(() =>
+    orders.filter((o) =>
+      o.daysToDeadline != null && o.daysToDeadline <= 7 && (o.status === 'PENDING' || o.status === 'ORDERED')
+    ),
+  [orders]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3 flex-wrap">
@@ -165,19 +178,53 @@ export default function Orders({ lockedProjectId = null }) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <SummaryCard label="⚠️ 모델 확인" count={summary.pendingModels} tone="amber" highlight />
-          <SummaryCard label="🔥 임박 (D-7 이내)" count={summary.urgent || 0} tone="red" highlight />
-          <SummaryCard label="⏳ 발주 대기" count={summary.pending} tone="amber" />
-          <SummaryCard label="📦 발주됨" count={summary.ordered} tone="sky" />
-          <SummaryCard label="✅ 수령" count={summary.received} tone="emerald" />
-          <SummaryCard label="⊘ 취소" count={summary.cancelled} tone="gray" />
+        <div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
+            <SummaryCard
+              label="모델 확인" icon="⚠️" count={summary.pendingModels} tone="amber" highlight
+              active={activeFilter === 'pendingModels'}
+              onClick={() => toggleFilter('pendingModels')}
+            />
+            <SummaryCard
+              label="임박" subLabel="D-7 이내" icon="🔥" count={urgentOrders.length} tone="red" highlight
+              active={activeFilter === 'urgent'}
+              onClick={() => toggleFilter('urgent')}
+            />
+            <SummaryCard
+              label="발주 대기" icon="⏳" count={summary.pending} tone="amber"
+              active={activeFilter === 'PENDING'}
+              onClick={() => toggleFilter('PENDING')}
+            />
+            <SummaryCard
+              label="발주됨" icon="📦" count={summary.ordered} tone="sky"
+              active={activeFilter === 'ORDERED'}
+              onClick={() => toggleFilter('ORDERED')}
+            />
+            <SummaryCard
+              label="수령" icon="✅" count={summary.received} tone="emerald"
+              active={activeFilter === 'RECEIVED'}
+              onClick={() => toggleFilter('RECEIVED')}
+            />
+            <SummaryCard
+              label="취소" icon="⊘" count={summary.cancelled} tone="gray"
+              active={activeFilter === 'CANCELLED'}
+              onClick={() => toggleFilter('CANCELLED')}
+            />
+          </div>
+          {activeFilter && (
+            <button
+              onClick={() => setActiveFilter(null)}
+              className="mt-2 text-xs text-navy-700 hover:underline"
+            >
+              ✕ 전체 보기로 돌아가기
+            </button>
+          )}
         </div>
       )}
 
-      {/* 모델 확인 필요 섹션 */}
-      {pendingModels.length > 0 && (
-        <Section title="⚠️ 모델 확인 필요" defaultOpen={false} count={pendingModels.length}>
+      {/* 모델 확인 필요 섹션 — activeFilter 없거나 'pendingModels'일 때 */}
+      {pendingModels.length > 0 && (!activeFilter || activeFilter === 'pendingModels') && (
+        <Section title="⚠️ 모델 확인 필요" defaultOpen={activeFilter === 'pendingModels'} count={pendingModels.length}>
           <p className="text-xs text-gray-500 mb-2">
             마감재 모델이 미정이라 아직 발주에 들어오지 못한 항목들. 마감재 탭에서 모델을 확정하세요.
           </p>
@@ -199,18 +246,40 @@ export default function Orders({ lockedProjectId = null }) {
         </Section>
       )}
 
-      {/* 발주 status별 섹션 */}
-      {STATUS_KEYS.map((s) => {
+      {/* 임박 섹션 — activeFilter === 'urgent'일 때만 */}
+      {activeFilter === 'urgent' && (
+        <Section title="🔥 임박 (D-7 이내)" defaultOpen={true} count={urgentOrders.length}>
+          {urgentOrders.length === 0 ? (
+            <div className="text-center py-6 text-xs text-gray-400">임박한 발주 항목이 없습니다</div>
+          ) : (
+            <div className="divide-y">
+              {urgentOrders.map((o) => (
+                <OrderRow
+                  key={o.id}
+                  order={o}
+                  onChange={reload}
+                  selected={selectedIds.has(o.id)}
+                  onToggleSelect={() => toggleSelect(o.id)}
+                />
+              ))}
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* 발주 status별 섹션 — activeFilter 없거나 해당 status일 때 */}
+      {activeFilter !== 'pendingModels' && activeFilter !== 'urgent' && STATUS_KEYS.map((s) => {
+        if (activeFilter && activeFilter !== s) return null;
         const list = groups[s] || [];
-        if (list.length === 0 && s === 'CANCELLED') return null;
+        if (list.length === 0 && s === 'CANCELLED' && !activeFilter) return null;
         const meta = PO_STATUS_META[s];
         const allSelected = list.length > 0 && list.every((o) => selectedIds.has(o.id));
         return (
           <Section
-            key={s}
+            key={`${s}-${activeFilter || 'all'}`}
             title={`${meta.icon} ${meta.label}`}
             count={list.length}
-            defaultOpen={s === 'PENDING'}
+            defaultOpen={s === 'PENDING' || activeFilter === s}
             extraAction={list.length > 0 ? (
               <button
                 onClick={(e) => {
@@ -343,20 +412,35 @@ function formatItemLine(o) {
   return o.spec ? `${main} (${o.spec})` : main;
 }
 
-function SummaryCard({ label, count, tone, highlight }) {
+function SummaryCard({ label, subLabel, icon, count, tone, highlight, active, onClick }) {
   const toneClass = {
-    amber: 'bg-amber-50 text-amber-800',
-    red: 'bg-rose-50 text-rose-800',
-    sky: 'bg-sky-50 text-sky-800',
-    emerald: 'bg-emerald-50 text-emerald-800',
-    gray: 'bg-gray-50 text-gray-700',
-  }[tone] || 'bg-gray-50 text-gray-700';
-  const ringClass = tone === 'red' ? 'ring-rose-400' : 'ring-amber-400';
+    amber: 'bg-amber-50 text-amber-800 hover:bg-amber-100',
+    red: 'bg-rose-50 text-rose-800 hover:bg-rose-100',
+    sky: 'bg-sky-50 text-sky-800 hover:bg-sky-100',
+    emerald: 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100',
+    gray: 'bg-gray-50 text-gray-700 hover:bg-gray-100',
+  }[tone] || 'bg-gray-50 text-gray-700 hover:bg-gray-100';
+  const activeRing = active ? 'ring-2 ring-navy-700 ring-offset-1' : '';
+  const highlightRing = !active && highlight && count > 0
+    ? `ring-1 ${tone === 'red' ? 'ring-rose-400' : 'ring-amber-400'}`
+    : '';
   return (
-    <div className={`border rounded-md px-2.5 py-1.5 flex items-center justify-between ${toneClass} ${highlight && count > 0 ? `ring-1 ${ringClass}` : ''}`}>
-      <span className="text-[11px] font-medium truncate">{label}</span>
-      <span className="text-sm font-bold tabular-nums ml-2">{count}</span>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left border rounded-md transition
+        flex flex-col sm:flex-row sm:items-center sm:justify-between
+        px-2 py-2 sm:px-2.5 sm:py-1.5
+        gap-0.5 sm:gap-2
+        ${toneClass} ${activeRing} ${highlightRing}`}
+      title={subLabel ? `${label} (${subLabel})` : label}
+    >
+      <span className="flex items-center gap-1 min-w-0 w-full sm:w-auto">
+        <span className="text-sm sm:text-xs flex-shrink-0">{icon}</span>
+        <span className="text-[11px] sm:text-[11px] font-medium truncate">{label}</span>
+      </span>
+      <span className="text-base sm:text-sm font-bold tabular-nums sm:ml-2 self-end sm:self-auto">{count}</span>
+    </button>
   );
 }
 
