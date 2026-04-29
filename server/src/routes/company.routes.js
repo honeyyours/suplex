@@ -13,12 +13,37 @@ const RATE_KEYS = [
 ];
 
 // GET /api/company  — 내 회사 정보 + 견적 비율
+// 명시 select로 phaseLabels 제외 (별도 라우트 GET /api/phases/labels에서 관리).
+// omit 옵션은 일부 Railway 빌드 환경에서 인식 안 되는 이슈가 있어 select로 교체 (2026-04-29).
 router.get('/', async (req, res, next) => {
   try {
-    // omit phaseLabels — prod에 컬럼 미반영된 환경 안전 (마이그레이션 후 omit 제거 가능)
     const company = await prisma.company.findUnique({
       where: { id: req.user.companyId },
-      omit: { phaseLabels: true },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        email: true,
+        bizNumber: true,
+        representative: true,
+        logoUrl: true,
+        hideExpenses: true,
+        rateIndirectMaterial: true,
+        rateIndirectLabor: true,
+        rateIndustrialAcc: true,
+        rateEmployment: true,
+        rateRetirement: true,
+        rateSafety: true,
+        rateOtherExpense: true,
+        rateMisc: true,
+        rateGeneralAdmin: true,
+        rateSupervision: true,
+        rateDesign: true,
+        rateVat: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     if (!company) return res.status(404).json({ error: 'Company not found' });
     res.json({ company });
