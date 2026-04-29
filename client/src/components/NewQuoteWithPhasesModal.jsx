@@ -1,17 +1,38 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { STANDARD_PHASES } from '../utils/phases';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
+import { phaseNotesApi, GENERAL_PHASE } from '../api/phaseNotes';
 
 // 새 간편 견적 생성 모달.
 // 표준 공종(척추)을 체크 → 클릭 순서대로 견적 그룹으로 만들어 생성.
 // '기타'는 자유 텍스트 그룹용이라 여기서 노출 X (필요 시 빈 견적에서 직접 그룹 추가).
+// projectId 받으면 견적상담에서 메모 있는 공정을 자동 사전체크 (STANDARD_PHASES 정렬 순).
 const SELECTABLE_PHASES = STANDARD_PHASES.filter((p) => p.key !== 'OTHER');
 
-export default function NewQuoteWithPhasesModal({ onClose, onCreate }) {
+export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }) {
   const { displayPhase } = usePhaseLabels();
   // 클릭 순서 보존이 핵심 — Set 대신 배열로 phase.label을 순서대로 쌓는다.
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [prefillCount, setPrefillCount] = useState(0); // 견적상담에서 자동 사전체크된 개수
+
+  // 견적상담 메모 있는 공정 자동 사전체크 — 표준 공종 순서대로
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    phaseNotesApi.list(projectId).then(({ notes }) => {
+      if (cancelled) return;
+      const phaseSet = new Set(
+        (notes || []).filter((n) => n.phase !== GENERAL_PHASE).map((n) => n.phase)
+      );
+      if (phaseSet.size === 0) return;
+      // 표준 공종 정의 순서대로 정렬해서 사전체크 (사용자가 우측에서 ▲▼로 재정렬 가능)
+      const ordered = SELECTABLE_PHASES.filter((p) => phaseSet.has(p.label)).map((p) => p.label);
+      setSelectedLabels(ordered);
+      setPrefillCount(ordered.length);
+    }).catch(() => { /* 견적상담 비어있어도 무시 */ });
+    return () => { cancelled = true; };
+  }, [projectId]);
 
   const selectedSet = useMemo(() => new Set(selectedLabels), [selectedLabels]);
 
@@ -55,6 +76,11 @@ export default function NewQuoteWithPhasesModal({ onClose, onCreate }) {
             <div className="font-bold text-navy-800">새 견적 — 공종 선택</div>
             <div className="text-[11px] text-gray-500 mt-0.5">
               체크한 순서대로 견적서에 그룹으로 들어갑니다. 우측에서 순서를 바꾸거나 빼낼 수 있습니다.
+              {prefillCount > 0 && (
+                <span className="ml-2 text-emerald-700">
+                  · 💡 견적상담의 {prefillCount}개 공종이 자동 선택되었습니다
+                </span>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>

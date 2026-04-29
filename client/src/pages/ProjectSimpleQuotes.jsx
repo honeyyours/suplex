@@ -126,6 +126,7 @@ export default function ProjectSimpleQuotes() {
         </div>
         {showNewModal && (
           <NewQuoteWithPhasesModal
+            projectId={projectId}
             onClose={() => setShowNewModal(false)}
             onCreate={handleCreateWithPhases}
           />
@@ -204,6 +205,7 @@ export default function ProjectSimpleQuotes() {
       </div>
       {showNewModal && (
         <NewQuoteWithPhasesModal
+          projectId={projectId}
           onClose={() => setShowNewModal(false)}
           onCreate={handleCreateWithPhases}
         />
@@ -397,6 +399,23 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
       const next = prev.filter((_, i) => i !== idx);
       scheduleLineSave(next);
       return next;
+    });
+  }
+
+  // 라인 순서 바꾸기 — 한 칸씩 위/아래. 활성 라인이 함께 이동하도록 activeLineIdx도 동기화.
+  function moveLine(idx, dir) {
+    const target = idx + dir;
+    setLines((prev) => {
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      scheduleLineSave(next);
+      return next;
+    });
+    setActiveLineIdx((cur) => {
+      if (cur === idx) return target;
+      if (cur === target) return idx;
+      return cur;
     });
   }
 
@@ -728,6 +747,8 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                   inGroup={l._inGroup}
                   onChange={(patch) => patchLine(idx, patch)}
                   onRemove={() => removeLine(idx)}
+                  onMoveUp={idx > 0 ? () => moveLine(idx, -1) : null}
+                  onMoveDown={idx < lines.length - 1 ? () => moveLine(idx, +1) : null}
                   onCellKeyDown={handleCellKeyDown}
                 />
               ))}
@@ -904,7 +925,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
 // ============================================
 // 라인 행
 // ============================================
-function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
+function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDown, onCellKeyDown }) {
   const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
 
   // 0일 때 빈칸으로 보이게 — type="number" value={0} 일 때 사용자가 새 값을 치면 leading 0 문제 발생
@@ -1044,15 +1065,29 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown }) {
           placeholder="설명/규격/색상 등 (Enter 줄바꿈)"
         />
       </td>
-      <td className="px-1">
-        <button
-          onClick={onRemove}
-          tabIndex={-1}
-          className="text-gray-300 hover:text-rose-500 text-sm"
-          title="삭제"
-        >
-          ✕
-        </button>
+      <td className="px-1 align-top">
+        <div className="flex flex-col items-center gap-0.5">
+          <button
+            onClick={onMoveUp}
+            disabled={!onMoveUp}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
+            title="위로"
+          >▲</button>
+          <button
+            onClick={onMoveDown}
+            disabled={!onMoveDown}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
+            title="아래로"
+          >▼</button>
+          <button
+            onClick={onRemove}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-rose-500 text-sm leading-none mt-0.5"
+            title="삭제"
+          >✕</button>
+        </div>
       </td>
     </tr>
   );
