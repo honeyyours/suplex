@@ -132,6 +132,10 @@ router.delete('/:id', authRequired, requireRole('OWNER'), async (req, res, next)
 // =========================================
 
 // GET /api/invitations/by-token/:token — 회원가입 페이지에서 환영 정보 표시
+// userExists / hasOtherMemberships 플래그로 클라이언트가 3-way 분기:
+//   userExists=false                          → 신규 가입 화면
+//   userExists=true  & hasOtherMemberships=false → 좀비 케이스(비번 검증 후 합류)
+//   userExists=true  & hasOtherMemberships=true  → "로그인 후 다시 클릭" 안내
 router.get('/by-token/:token', async (req, res, next) => {
   try {
     const inv = await prisma.invitation.findUnique({
@@ -145,20 +149,33 @@ router.get('/by-token/:token', async (req, res, next) => {
     if (inv.expiresAt < new Date()) {
       return res.status(410).json({ error: '만료된 초대 링크입니다 (7일 경과). 대표님께 새 초대를 요청해주세요.' });
     }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: inv.email },
+      select: { id: true, _count: { select: { memberships: true } } },
+    });
+    const userExists = !!existingUser;
+    const hasOtherMemberships = userExists && existingUser._count.memberships > 0;
+
     res.json({
       companyName: inv.company.name,
       email: inv.email,
       role: inv.role,
       expiresAt: inv.expiresAt,
+      userExists,
+      hasOtherMemberships,
     });
   } catch (e) { next(e); }
 });
 
-// POST /api/invitations/accept — 신규 가입 + 회사 합류
+// POST /api/invitations/accept — 신규 가입 OR 좀비 사용자(멤버십 0개) 합류
+//   1) User 없음            → 새로 가입 + 회사 합류 (name·password 필요)
+//   2) User 있음 + 멤버십 0개 → 비밀번호 검증 후 멤버십만 추가 (좀비 복구. name 무시)
+//   3) User 있음 + 멤버십≥1개 → 로그인 후 /join 흐름으로 안내 (현재 동작 유지)
 const acceptSchema = z.object({
   token: z.string().min(1),
-  name: z.string().min(1).max(100),
-  password: z.string().min(8),
+  name: z.string().max(100).optional(), // 좀비 케이스엔 무시 (기존 user.name 유지)
+  password: z.string().min(1), // 신규=새 비번(8자+), 좀비=기존 비번 검증
   phone: z.string().max(40).optional().nullable(),
 });
 
@@ -174,53 +191,109 @@ router.post('/accept', async (req, res, next) => {
     if (inv.acceptedAt) return res.status(410).json({ error: '이미 사용된 초대 링크입니다' });
     if (inv.expiresAt < new Date()) return res.status(410).json({ error: '만료된 초대 링크입니다' });
 
-    // 이미 가입된 이메일 — /join 흐름으로 안내 (로그인 후 합류)
-    const existingUser = await prisma.user.findUnique({ where: { email: inv.email } });
-    if (existingUser) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: inv.email },
+      include: { _count: { select: { memberships: true } } },
+    });
+
+    let resultUser;
+    let auditAction;
+
+    if (existingUser && existingUser._count.memberships > 0) {
+      // 다른 회사 멤버십 보유 — /join 흐름으로 (로그인 후 합류)
       return res.status(409).json({
         error: '이미 가입된 이메일입니다. 로그인 후 초대 링크를 다시 클릭해 합류해주세요.',
         code: 'EXISTING_USER',
       });
     }
 
-    const passwordHash = await bcrypt.hash(data.password, 10);
-    const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email: inv.email,
-          passwordHash,
-          name: data.name.trim(),
-          phone: data.phone?.trim() || null,
-        },
-      });
-      const membership = await tx.membership.create({
-        data: { userId: user.id, companyId: inv.companyId, role: inv.role },
-      });
-      await tx.invitation.update({
-        where: { id: inv.id },
-        data: { acceptedAt: new Date() },
-      });
-      return { user, membership };
-    });
+    if (existingUser) {
+      // 좀비 케이스 — 멤버십 0개 (회사 삭제 등으로 모든 멤버십이 cascade로 사라진 상태).
+      // 본인 비번 검증으로 신원 확인 후 멤버십만 추가 (User·name·passwordHash 그대로).
+      const ok = await bcrypt.compare(data.password, existingUser.passwordHash);
+      if (!ok) {
+        return res.status(401).json({ error: '비밀번호가 올바르지 않습니다' });
+      }
 
+      await prisma.$transaction(async (tx) => {
+        await tx.membership.create({
+          data: { userId: existingUser.id, companyId: inv.companyId, role: inv.role },
+        });
+        await tx.invitation.update({
+          where: { id: inv.id },
+          data: { acceptedAt: new Date() },
+        });
+        // phone이 비어있고 사용자가 추가로 입력했으면 보강 (선택)
+        if (data.phone?.trim() && !existingUser.phone) {
+          await tx.user.update({
+            where: { id: existingUser.id },
+            data: { phone: data.phone.trim() },
+          });
+        }
+      });
+      resultUser = existingUser;
+      auditAction = 'invitation.accept-recover'; // 좀비 복구 케이스
+    } else {
+      // 신규 가입 + 합류
+      if (!data.name?.trim()) {
+        return res.status(400).json({ error: '이름을 입력해주세요' });
+      }
+      if (data.password.length < 8) {
+        return res.status(400).json({ error: '비밀번호는 8자 이상이어야 합니다' });
+      }
+
+      const passwordHash = await bcrypt.hash(data.password, 10);
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email: inv.email,
+            passwordHash,
+            name: data.name.trim(),
+            phone: data.phone?.trim() || null,
+          },
+        });
+        await tx.membership.create({
+          data: { userId: user.id, companyId: inv.companyId, role: inv.role },
+        });
+        await tx.invitation.update({
+          where: { id: inv.id },
+          data: { acceptedAt: new Date() },
+        });
+        return user;
+      });
+      resultUser = result;
+      auditAction = 'invitation.accept';
+    }
+
+    // 토큰 발급 (좀비 복구 케이스도 본인 tokenVersion 유지)
+    const fresh = await prisma.user.findUnique({
+      where: { id: resultUser.id },
+      select: { tokenVersion: true, isSuperAdmin: true },
+    });
     const token = jwt.sign(
-      { sub: result.user.id, companyId: inv.companyId, role: inv.role, tv: 0 },
+      {
+        sub: resultUser.id,
+        companyId: inv.companyId,
+        role: inv.role,
+        isSuperAdmin: fresh?.isSuperAdmin || false,
+        tv: fresh?.tokenVersion || 0,
+      },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
 
     audit(
-      { user: { id: result.user.id, role: inv.role }, headers: req.headers, ip: req.ip },
-      'invitation.accept',
-      { companyId: inv.companyId, targetType: 'USER', targetId: result.user.id, metadata: { email: inv.email, role: inv.role } }
+      { user: { id: resultUser.id, role: inv.role }, headers: req.headers, ip: req.ip },
+      auditAction,
+      { companyId: inv.companyId, targetType: 'USER', targetId: resultUser.id, metadata: { email: inv.email, role: inv.role } }
     );
 
     res.status(201).json({
       token,
-      user: { id: result.user.id, email: result.user.email, name: result.user.name },
+      user: { id: resultUser.id, email: resultUser.email, name: resultUser.name },
       company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
       role: inv.role,
-      permissions: {}, // 신규 가입 — 명시 토글 없음, ROLE_DEFAULTS 따름
+      permissions: {}, // 신규 가입·좀비 복구 — 명시 토글 없음, ROLE_DEFAULTS 따름
     });
   } catch (e) {
     if (e.name === 'ZodError') {

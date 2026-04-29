@@ -25,33 +25,6 @@ export default function InviteAccept() {
     return () => { alive = false; };
   }, [token]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitErr('');
-    if (form.password.length < 8) {
-      setSubmitErr('비밀번호는 8자 이상이어야 합니다');
-      return;
-    }
-    if (!form.name.trim()) {
-      setSubmitErr('이름을 입력해주세요');
-      return;
-    }
-    setBusy(true);
-    try {
-      await acceptInvite({
-        token,
-        name: form.name.trim(),
-        password: form.password,
-        phone: form.phone.trim() || null,
-      });
-      navigate('/');
-    } catch (e) {
-      setSubmitErr(e.response?.data?.error || '가입 실패');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   // 이미 로그인된 상태로 초대 링크 들어옴 — 이메일 일치 시 합류 흐름
   if (auth) {
     return <LoggedInJoinFlow info={info} loadErr={loadErr} auth={auth} token={token} joinByInvite={joinByInvite} logout={logout} navigate={navigate} />;
@@ -75,16 +48,86 @@ export default function InviteAccept() {
 
   const roleLabel = ROLE_META[info.role]?.label || info.role;
 
+  // 사용자 상태 3-way 분기
+  // (a) userExists=true & hasOtherMemberships=true  → 로그인 후 다시 클릭
+  // (b) userExists=true & hasOtherMemberships=false → 좀비 복구 (비번 검증 후 합류)
+  // (c) userExists=false                            → 신규 가입 (현재 흐름)
+  if (info.userExists && info.hasOtherMemberships) {
+    return (
+      <Wrap>
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2">🔑</div>
+          <h1 className="text-2xl font-bold text-navy-800 mb-1">로그인 후 다시 클릭해주세요</h1>
+          <p className="text-sm text-gray-500">
+            <b>{info.email}</b>은 이미 다른 회사에 가입되어 있습니다.
+          </p>
+        </div>
+        <div className="bg-gray-50 border rounded p-4 mb-4 text-sm text-gray-700 leading-relaxed">
+          로그인하시면 같은 계정으로 <b>{info.companyName}</b>에도 합류할 수 있습니다 (다중 회사 소속). 로그인 후 이 초대 링크를 다시 클릭하시면 합류 확인 화면이 뜹니다.
+        </div>
+        <Link
+          to="/login"
+          className="block w-full text-center bg-navy-700 hover:bg-navy-800 text-white font-medium py-2.5 rounded-md"
+        >
+          로그인하러 가기
+        </Link>
+        <p className="text-xs text-gray-400 mt-4 text-center">
+          이 초대 링크는 7일간 유효하며, 한 번 사용 후 자동으로 만료됩니다.
+        </p>
+      </Wrap>
+    );
+  }
+
+  const isRecover = info.userExists && !info.hasOtherMemberships;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitErr('');
+    if (!form.password) {
+      setSubmitErr('비밀번호를 입력해주세요');
+      return;
+    }
+    if (!isRecover && form.password.length < 8) {
+      setSubmitErr('비밀번호는 8자 이상이어야 합니다');
+      return;
+    }
+    if (!isRecover && !form.name.trim()) {
+      setSubmitErr('이름을 입력해주세요');
+      return;
+    }
+    setBusy(true);
+    try {
+      await acceptInvite({
+        token,
+        // 좀비 복구는 name 무시 (기존 user.name 유지)
+        ...(isRecover ? {} : { name: form.name.trim() }),
+        password: form.password,
+        phone: form.phone.trim() || null,
+      });
+      navigate('/');
+    } catch (e) {
+      setSubmitErr(e.response?.data?.error || (isRecover ? '합류 실패' : '가입 실패'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Wrap>
       <div className="text-center mb-6">
-        <div className="text-4xl mb-2">👋</div>
+        <div className="text-4xl mb-2">{isRecover ? '🔓' : '👋'}</div>
         <h1 className="text-2xl font-bold text-navy-800 mb-1">
-          <span className="text-navy-700">{info.companyName}</span>에 합류하세요
+          <span className="text-navy-700">{info.companyName}</span>
+          {isRecover ? '에 다시 합류하세요' : '에 합류하세요'}
         </h1>
         <p className="text-sm text-gray-500">
           <b>{roleLabel}</b> 역할로 초대받으셨습니다.
         </p>
+        {isRecover && (
+          <div className="mt-3 bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800 leading-relaxed">
+            기존에 가입한 적 있는 계정입니다. <b>본인 확인을 위해 가입 시 사용한 비밀번호</b>를 입력해주세요. 합류 후 같은 계정으로 사용하시면 됩니다.
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -95,33 +138,38 @@ export default function InviteAccept() {
             className="w-full border rounded-md px-3 py-2 bg-gray-50 text-gray-500"
           />
         </Field>
-        <Field label="이름 *">
-          <input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-            autoFocus
-            required
-          />
-        </Field>
-        <Field label="비밀번호 (8자 이상) *">
+        {!isRecover && (
+          <Field label="이름 *">
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
+              autoFocus
+              required
+            />
+          </Field>
+        )}
+        <Field label={isRecover ? '비밀번호 *' : '비밀번호 (8자 이상) *'}>
           <input
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-            minLength={8}
+            minLength={isRecover ? 1 : 8}
+            autoFocus={isRecover}
             required
           />
         </Field>
-        <Field label="연락처 (선택)">
-          <input
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="010-1234-5678"
-            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-          />
-        </Field>
+        {!isRecover && (
+          <Field label="연락처 (선택)">
+            <input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="010-1234-5678"
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
+            />
+          </Field>
+        )}
 
         {submitErr && <p className="text-sm text-rose-600">{submitErr}</p>}
         <button
@@ -129,7 +177,9 @@ export default function InviteAccept() {
           disabled={busy}
           className="w-full bg-navy-700 hover:bg-navy-800 text-white font-medium py-2.5 rounded-md disabled:opacity-60"
         >
-          {busy ? '가입 중...' : '가입하고 합류하기'}
+          {busy
+            ? (isRecover ? '합류 중...' : '가입 중...')
+            : (isRecover ? '합류하기' : '가입하고 합류하기')}
         </button>
       </form>
 
