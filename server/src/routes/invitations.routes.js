@@ -220,6 +220,7 @@ router.post('/accept', async (req, res, next) => {
       user: { id: result.user.id, email: result.user.email, name: result.user.name },
       company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
       role: inv.role,
+      permissions: {}, // 신규 가입 — 명시 토글 없음, ROLE_DEFAULTS 따름
     });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -298,6 +299,7 @@ router.post('/join', authRequired, async (req, res, next) => {
       user: { id: me.id, email: me.email, name: me.name },
       company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
       role: inv.role,
+      permissions: {}, // 새 회사 합류 — 명시 토글 없음
     });
   } catch (e) {
     if (e.name === 'ZodError') {

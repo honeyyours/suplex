@@ -2,9 +2,14 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 
 const router = express.Router();
 router.use(authRequired);
+
+// 쓰기 가드: 견적템플릿 수정 권한 필요 (OWNER 기본 ON, DESIGNER/FIELD 기본 OFF, OWNER가 직원별 토글 가능)
+const requireEdit = requireFeature(F.SETTINGS_QUOTE_TEMPLATES);
 
 const WORK_TYPES = [
   'START', 'DEMOLITION', 'PLUMBING', 'GAS', 'ELECTRIC', 'FIRE',
@@ -117,7 +122,7 @@ function buildSeedRows() {
 }
 
 // POST /api/quote-templates/bulk  — items 배열 일괄 추가 (CSV 가져오기에서 사용)
-router.post('/bulk', async (req, res, next) => {
+router.post('/bulk', requireEdit, async (req, res, next) => {
   try {
     const items = Array.isArray(req.body?.items) ? req.body.items : [];
     if (items.length === 0) return res.status(400).json({ error: 'items 배열 필요' });
@@ -145,7 +150,7 @@ router.post('/bulk', async (req, res, next) => {
 });
 
 // POST /api/quote-templates/seed  — PDF 양식 기준 기본 템플릿 일괄 시드
-router.post('/seed', async (req, res, next) => {
+router.post('/seed', requireEdit, async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
     const existing = await prisma.quoteLineItemTemplate.count({ where: { companyId } });
@@ -192,7 +197,7 @@ const createSchema = z.object({
   orderIndex: z.number().int().optional(),
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', requireEdit, async (req, res, next) => {
   try {
     const data = createSchema.parse(req.body);
     const tpl = await prisma.quoteLineItemTemplate.create({
@@ -221,7 +226,7 @@ router.post('/', async (req, res, next) => {
 
 const updateSchema = createSchema.partial();
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireEdit, async (req, res, next) => {
   try {
     const data = updateSchema.parse(req.body);
     const existing = await prisma.quoteLineItemTemplate.findFirst({
@@ -254,7 +259,7 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireEdit, async (req, res, next) => {
   try {
     const existing = await prisma.quoteLineItemTemplate.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },

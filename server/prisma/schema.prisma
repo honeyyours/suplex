@@ -115,11 +115,30 @@ model Membership {
   role      Role
   createdAt DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  permissions UserPermission[]
 
   @@unique([userId, companyId])
   @@map("memberships")
+}
+
+// 멤버십별 추가 권한 — 역할 디폴트(ROLE_DEFAULTS)를 덮어쓰는 명시 토글.
+// granted=true 면 ROLE_DEFAULTS와 무관하게 ON, granted=false 면 명시 OFF.
+// 미존재 = ROLE_DEFAULTS 따름.
+model UserPermission {
+  id           String   @id @default(cuid())
+  membershipId String
+  feature      String // F.* 식별자 문자열 (예: 'settings.quote_templates')
+  granted      Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, feature])
+  @@index([membershipId])
+  @@map("user_permissions")
 }
 
 // 감사 로그 — 어드민·OWNER의 주요 액션 추적 (베타 7-A)

@@ -8,6 +8,10 @@ export const teamApi = {
   resetPassword: (userId, password) =>
     api.patch(`/team/members/${userId}/password`, { password }).then((r) => r.data),
   remove: (userId) => api.delete(`/team/members/${userId}`).then((r) => r.data),
+  getPermissions: (userId) =>
+    api.get(`/team/members/${userId}/permissions`).then((r) => r.data),
+  updatePermissions: (userId, permissions) =>
+    api.put(`/team/members/${userId}/permissions`, { permissions }).then((r) => r.data),
 };
 
 export const ROLE_META = {

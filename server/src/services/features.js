@@ -24,6 +24,13 @@ const F = Object.freeze({
   EXPENSES_VIEW:    'expenses.view',
   EXPENSES_EDIT:    'expenses.edit',
 
+  // 회사 설정 — 마스터 데이터 수정 권한 (OWNER 한정, OWNER가 직원별로 추가 부여 가능)
+  SETTINGS_QUOTE_TEMPLATES: 'settings.quote_templates', // 견적항목 템플릿
+  SETTINGS_PHASE_LABELS:    'settings.phase_labels',    // 공정표시라벨
+  SETTINGS_PHASE_KEYWORDS:  'settings.phase_keywords',  // 공종자동인식키워드
+  SETTINGS_PHASE_DEADLINES: 'settings.phase_deadlines', // 공정별 발주데드라인
+  SETTINGS_PHASE_ADVICE:    'settings.phase_advice',    // 공정어드바이스
+
   // AI비서
   AI_ASSISTANT:     'ai.assistant',         // 메뉴 자체 (모두)
   AI_BILLING_TOOLS: 'ai.billing_tools',     // 회계 도구 (OWNER + ENTERPRISE)
@@ -34,6 +41,18 @@ const F = Object.freeze({
   RECEIPT_OCR:      'receipt.ocr',
   NOTIFICATION_KAKAO: 'notification.kakao',
 });
+
+// 멤버 편집 모달에서 OWNER가 직원별로 토글 가능한 식별자 (베타 7개)
+// UI는 이 화이트리스트에 있는 것만 노출. 그 외 식별자는 ROLE_DEFAULTS만 따름.
+const TOGGLEABLE_FEATURES = Object.freeze([
+  'settings.quote_templates',
+  'settings.phase_labels',
+  'settings.phase_keywords',
+  'settings.phase_deadlines',
+  'settings.phase_advice',
+  'expenses.view',
+  'expenses.edit',
+]);
 
 // 회계 도구 식별자(AI비서 도구 이름 → feature 매핑에 사용)
 const BILLING_AI_TOOLS = new Set([
@@ -56,6 +75,11 @@ const DESIGNER_FEATURES = ALL_FEATURES.filter((f) => ![
   F.EXPENSES_VIEW,
   F.EXPENSES_EDIT,
   F.AI_BILLING_TOOLS,
+  F.SETTINGS_QUOTE_TEMPLATES,
+  F.SETTINGS_PHASE_LABELS,
+  F.SETTINGS_PHASE_KEYWORDS,
+  F.SETTINGS_PHASE_DEADLINES,
+  F.SETTINGS_PHASE_ADVICE,
 ].includes(f));
 
 const FIELD_FEATURES = DESIGNER_FEATURES.filter((f) => ![
@@ -76,6 +100,8 @@ const STARTER_FEATURES = [
   F.CORE_PROJECTS, F.CORE_SCHEDULE, F.CORE_MATERIALS, F.CORE_CHECKLIST,
   F.CORE_REPORTS, F.CORE_MEMO, F.CORE_ORDERS, F.CORE_QUOTES, F.CORE_TEAM,
   F.EXPENSES_VIEW, F.EXPENSES_EDIT,
+  F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
+  F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
   F.AI_ASSISTANT,
 ];
 
@@ -101,25 +127,32 @@ const PLAN_FEATURES = Object.freeze({
 // ============================================
 // 통합 판정
 // ============================================
-function hasFeature({ role, plan } = {}, feature) {
-  const roleAllow = ROLE_DEFAULTS[role]?.includes(feature) ?? false;
+// permissions: { [feature: string]: boolean } — UserPermission 명시값 (granted=true/false).
+//   미존재 시 ROLE_DEFAULTS 따름. OWNER는 토글 무시 (항상 ROLE_DEFAULTS).
+// PLAN_FEATURES 잠금은 어떤 경우에도 우회 불가.
+function hasFeature({ role, plan, permissions } = {}, feature) {
   // 베타: plan 미설정 = ENTERPRISE 가정
   const effectivePlan = plan || 'ENTERPRISE';
   const planAllow = PLAN_FEATURES[effectivePlan]?.includes(feature) ?? false;
-  return roleAllow && planAllow;
+  if (!planAllow) return false;
+
+  // OWNER는 명시 토글 무시 — 항상 ROLE_DEFAULTS (사고 방지: OWNER 권한 회수 X)
+  if (role !== 'OWNER' && permissions && Object.prototype.hasOwnProperty.call(permissions, feature)) {
+    return permissions[feature] === true;
+  }
+
+  return ROLE_DEFAULTS[role]?.includes(feature) ?? false;
 }
 
-function listFeatures({ role, plan } = {}) {
-  const effectivePlan = plan || 'ENTERPRISE';
-  const roleSet = new Set(ROLE_DEFAULTS[role] || []);
-  const planSet = new Set(PLAN_FEATURES[effectivePlan] || []);
-  return ALL_FEATURES.filter((f) => roleSet.has(f) && planSet.has(f));
+function listFeatures({ role, plan, permissions } = {}) {
+  return ALL_FEATURES.filter((f) => hasFeature({ role, plan, permissions }, f));
 }
 
 module.exports = {
   F,
   ROLE_DEFAULTS,
   PLAN_FEATURES,
+  TOGGLEABLE_FEATURES,
   BILLING_AI_TOOLS,
   hasFeature,
   listFeatures,

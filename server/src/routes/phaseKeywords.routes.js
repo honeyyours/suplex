@@ -2,12 +2,16 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 const { buildSeedRows } = require('../services/phaseKeywordSeed');
 const { invalidateCache } = require('../services/phaseDetect');
 const { normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
+
+const requireEdit = requireFeature(F.SETTINGS_PHASE_KEYWORDS);
 
 // GET /api/phase-keywords?phase=철거
 router.get('/', async (req, res, next) => {
@@ -25,7 +29,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/phase-keywords/seed
-router.post('/seed', async (req, res, next) => {
+router.post('/seed', requireEdit, async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
     const existing = await prisma.phaseKeywordRule.count({ where: { companyId } });
@@ -58,7 +62,7 @@ const upsertSchema = z.object({
 });
 
 // POST /api/phase-keywords
-router.post('/', async (req, res, next) => {
+router.post('/', requireEdit, async (req, res, next) => {
   try {
     const data = upsertSchema.parse(req.body);
     const rule = await prisma.phaseKeywordRule.create({
@@ -83,7 +87,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // PATCH /api/phase-keywords/:id
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireEdit, async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.phaseKeywordRule.findFirst({
@@ -114,7 +118,7 @@ router.patch('/:id', async (req, res, next) => {
 });
 
 // DELETE /api/phase-keywords/:id
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireEdit, async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.phaseKeywordRule.findFirst({

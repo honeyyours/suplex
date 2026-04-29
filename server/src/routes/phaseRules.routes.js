@@ -3,12 +3,17 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 const { PHASE_DEADLINE_DAYS } = require('../services/phaseDeadlines');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { normalizePhase } = require('../services/phases');
 
 const router = express.Router();
 router.use(authRequired);
+
+const requireDeadlinesEdit = requireFeature(F.SETTINGS_PHASE_DEADLINES);
+const requireAdviceEdit = requireFeature(F.SETTINGS_PHASE_ADVICE);
 
 // ============================================
 // D-N 룰 (PhaseDeadlineRule)
@@ -32,7 +37,7 @@ const ruleSchema = z.object({
   active: z.boolean().optional(),
 });
 
-router.post('/deadlines', async (req, res, next) => {
+router.post('/deadlines', requireDeadlinesEdit, async (req, res, next) => {
   try {
     const data = ruleSchema.parse(req.body);
     const rule = await prisma.phaseDeadlineRule.upsert({
@@ -47,7 +52,7 @@ router.post('/deadlines', async (req, res, next) => {
   }
 });
 
-router.patch('/deadlines/:id', async (req, res, next) => {
+router.patch('/deadlines/:id', requireDeadlinesEdit, async (req, res, next) => {
   try {
     const existing = await prisma.phaseDeadlineRule.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
@@ -62,7 +67,7 @@ router.patch('/deadlines/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/deadlines/:id', async (req, res, next) => {
+router.delete('/deadlines/:id', requireDeadlinesEdit, async (req, res, next) => {
   try {
     const existing = await prisma.phaseDeadlineRule.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
@@ -74,7 +79,7 @@ router.delete('/deadlines/:id', async (req, res, next) => {
 });
 
 // 표준값을 회사 룰로 일괄 시드 (덮어쓰기)
-router.post('/deadlines/seed-defaults', async (req, res, next) => {
+router.post('/deadlines/seed-defaults', requireDeadlinesEdit, async (req, res, next) => {
   try {
     const data = Object.entries(PHASE_DEADLINE_DAYS).map(([phase, daysBefore]) => ({
       companyId: req.user.companyId,
@@ -120,7 +125,7 @@ const adviceSchema = z.object({
   active: z.boolean().optional(),
 });
 
-router.post('/advices', async (req, res, next) => {
+router.post('/advices', requireAdviceEdit, async (req, res, next) => {
   try {
     const data = adviceSchema.parse(req.body);
     const advice = await prisma.phaseAdvice.create({
@@ -142,7 +147,7 @@ router.post('/advices', async (req, res, next) => {
   }
 });
 
-router.patch('/advices/:id', async (req, res, next) => {
+router.patch('/advices/:id', requireAdviceEdit, async (req, res, next) => {
   try {
     const existing = await prisma.phaseAdvice.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
@@ -157,7 +162,7 @@ router.patch('/advices/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/advices/:id', async (req, res, next) => {
+router.delete('/advices/:id', requireAdviceEdit, async (req, res, next) => {
   try {
     const existing = await prisma.phaseAdvice.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
@@ -168,7 +173,7 @@ router.delete('/advices/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/advices/seed-standard', async (req, res, next) => {
+router.post('/advices/seed-standard', requireAdviceEdit, async (req, res, next) => {
   try {
     let created = 0;
     let skipped = 0;

@@ -4,11 +4,13 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
+const { TOGGLEABLE_FEATURES } = require('../services/features');
 
 const router = express.Router();
 router.use(authRequired);
 
 const ROLES = ['OWNER', 'DESIGNER', 'FIELD'];
+const TOGGLEABLE_SET = new Set(TOGGLEABLE_FEATURES);
 
 // GET /api/team/members  — 내 회사 멤버 목록
 router.get('/members', async (req, res, next) => {
@@ -199,6 +201,122 @@ router.patch('/members/:userId/password', requireRole('OWNER'), async (req, res,
     audit(req, 'member.password-reset', { targetType: 'USER', targetId: userId, metadata: { email: u?.email } });
 
     res.json({ ok: true });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
+// ============================================
+// 멤버 권한 토글 (OWNER 전용)
+// ROLE_DEFAULTS 디폴트를 덮어쓰는 명시 토글. OWNER 멤버는 토글 불가 (모든 권한 항상 ON).
+// ============================================
+
+// GET /api/team/members/:userId/permissions
+// 응답: { role, permissions: {feature: bool}, toggleable: [feature...] }
+router.get('/members/:userId/permissions', requireRole('OWNER'), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const membership = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId, companyId: req.user.companyId } },
+      include: { permissions: { select: { feature: true, granted: true } } },
+    });
+    if (!membership) return res.status(404).json({ error: '멤버를 찾을 수 없습니다' });
+
+    const map = {};
+    for (const p of membership.permissions) {
+      if (TOGGLEABLE_SET.has(p.feature)) map[p.feature] = p.granted;
+    }
+    res.json({ role: membership.role, permissions: map, toggleable: TOGGLEABLE_FEATURES });
+  } catch (e) { next(e); }
+});
+
+// PUT /api/team/members/:userId/permissions
+// body: { permissions: { [feature]: true | false | null } }
+//   true  → 명시 ON (역할 디폴트 덮어씀)
+//   false → 명시 OFF (역할 디폴트 덮어씀)
+//   null  → 명시 토글 해제 (역할 디폴트로 복귀)
+const permissionsSchema = z.object({
+  permissions: z.record(z.string(), z.boolean().nullable()),
+});
+
+router.put('/members/:userId/permissions', requireRole('OWNER'), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const data = permissionsSchema.parse(req.body || {});
+
+    const membership = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId, companyId: req.user.companyId } },
+    });
+    if (!membership) return res.status(404).json({ error: '멤버를 찾을 수 없습니다' });
+
+    if (membership.role === 'OWNER') {
+      return res.status(400).json({ error: 'OWNER 권한은 토글할 수 없습니다 (모든 권한 항상 ON)' });
+    }
+
+    // 기존값 (audit metadata diff용)
+    const existing = await prisma.userPermission.findMany({
+      where: { membershipId: membership.id },
+      select: { feature: true, granted: true },
+    });
+    const before = {};
+    for (const p of existing) before[p.feature] = p.granted;
+
+    // 화이트리스트 외 식별자 무시
+    const upserts = [];
+    const deletes = [];
+    for (const [feature, value] of Object.entries(data.permissions)) {
+      if (!TOGGLEABLE_SET.has(feature)) continue;
+      if (value === null) {
+        deletes.push(feature); // 명시 토글 해제 (역할 디폴트로 복귀)
+      } else {
+        upserts.push({ feature, granted: value });
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const u of upserts) {
+        await tx.userPermission.upsert({
+          where: { membershipId_feature: { membershipId: membership.id, feature: u.feature } },
+          create: { membershipId: membership.id, feature: u.feature, granted: u.granted },
+          update: { granted: u.granted },
+        });
+      }
+      if (deletes.length > 0) {
+        await tx.userPermission.deleteMany({
+          where: { membershipId: membership.id, feature: { in: deletes } },
+        });
+      }
+    });
+
+    const fresh = await prisma.userPermission.findMany({
+      where: { membershipId: membership.id },
+      select: { feature: true, granted: true },
+    });
+    const after = {};
+    for (const p of fresh) {
+      if (TOGGLEABLE_SET.has(p.feature)) after[p.feature] = p.granted;
+    }
+
+    // 변경 추출 — feature별로 grant/revoke audit log row 1줄씩 기록
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    for (const f of allKeys) {
+      const fromVal = before[f];
+      const toVal = after[f];
+      if (fromVal === toVal) continue;
+      const action = toVal === true ? 'member.permission_grant'
+                    : toVal === false ? 'member.permission_revoke'
+                    : 'member.permission_reset'; // null = 디폴트 복귀
+      audit(req, action, {
+        targetType: 'USER', targetId: userId,
+        metadata: { email: u?.email, role: membership.role, feature: f, from: fromVal ?? null, to: toVal ?? null },
+      });
+    }
+
+    res.json({ role: membership.role, permissions: after, toggleable: TOGGLEABLE_FEATURES });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });

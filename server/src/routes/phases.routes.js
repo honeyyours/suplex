@@ -4,7 +4,9 @@
 const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
-const { authRequired, requireRole } = require('../middlewares/auth');
+const { authRequired } = require('../middlewares/auth');
+const { requireFeature } = require('../middlewares/requireFeature');
+const { F } = require('../services/features');
 const { invalidateCache } = require('../services/phaseDetect');
 const { STANDARD_PHASES, STANDARD_LABELS, resolvePhaseLabelMap } = require('../services/phases');
 
@@ -67,7 +69,7 @@ const STANDARD_KEYS = new Set(STANDARD_PHASES.map((p) => p.key));
 const labelsSchema = z.object({
   phaseLabels: z.record(z.string(), z.string().nullable()).default({}),
 });
-router.patch('/labels', requireRole('OWNER'), async (req, res, next) => {
+router.patch('/labels', requireFeature(F.SETTINGS_PHASE_LABELS), async (req, res, next) => {
   try {
     const { phaseLabels } = labelsSchema.parse(req.body || {});
     const cleaned = {};

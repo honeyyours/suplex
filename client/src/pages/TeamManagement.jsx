@@ -4,6 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
 import { invitationsApi } from '../api/invitations';
 import { vendorsApi } from '../api/vendors';
+import {
+  TOGGLEABLE_FEATURES,
+  TOGGLE_FEATURE_META,
+  ROLE_DEFAULTS,
+} from '../utils/features';
 
 export default function TeamManagement() {
   const { auth } = useAuth();
@@ -323,10 +328,94 @@ function EditMemberModal({ member, isSelf, onClose, onSaved }) {
   });
   const [busy, setBusy] = useState(false);
 
+  // 권한 토글 — OWNER 멤버는 토글 불가 (모든 권한 항상 ON)
+  const canTogglePerms = member.role !== 'OWNER';
+  // 서버에서 받은 명시 토글값 { feature: bool } (저장된 UserPermission)
+  const [serverPerms, setServerPerms] = useState({});
+  // UI 변경값 — { feature: bool | null } (null = 명시 해제 / 디폴트 복귀)
+  const [pendingPerms, setPendingPerms] = useState({});
+  const [permsLoading, setPermsLoading] = useState(canTogglePerms);
+
+  useEffect(() => {
+    if (!canTogglePerms) return;
+    let alive = true;
+    teamApi.getPermissions(member.userId)
+      .then(({ permissions }) => {
+        if (!alive) return;
+        setServerPerms(permissions || {});
+        setPermsLoading(false);
+      })
+      .catch(() => { if (alive) setPermsLoading(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member.userId]);
+
+  // 현재 effective 체크 상태 (UI에 보여줄 값)
+  function isChecked(feature) {
+    // pending 값이 명시되어 있으면 그게 우선
+    if (Object.prototype.hasOwnProperty.call(pendingPerms, feature)) {
+      const v = pendingPerms[feature];
+      if (v === null) return ROLE_DEFAULTS[form.role].includes(feature);
+      return v;
+    }
+    // 서버 명시값이 있으면 그것
+    if (Object.prototype.hasOwnProperty.call(serverPerms, feature)) {
+      return serverPerms[feature];
+    }
+    // 그 외 = 역할 디폴트
+    return ROLE_DEFAULTS[form.role].includes(feature);
+  }
+
+  // 명시 토글 상태 (디폴트와 다름 표시용): 'grant' | 'revoke' | null
+  function explicitState(feature) {
+    const roleDefault = ROLE_DEFAULTS[form.role].includes(feature);
+    let value;
+    if (Object.prototype.hasOwnProperty.call(pendingPerms, feature)) {
+      value = pendingPerms[feature];
+      if (value === null) return null; // 명시 해제 예정
+    } else if (Object.prototype.hasOwnProperty.call(serverPerms, feature)) {
+      value = serverPerms[feature];
+    } else {
+      return null;
+    }
+    if (value === roleDefault) return null;
+    return value ? 'grant' : 'revoke';
+  }
+
+  function toggleFeature(feature) {
+    const current = isChecked(feature);
+    const next = !current;
+    const roleDefault = ROLE_DEFAULTS[form.role].includes(feature);
+    setPendingPerms((prev) => ({
+      ...prev,
+      // 디폴트와 같으면 명시 해제(null), 다르면 명시 토글(true/false)
+      [feature]: next === roleDefault ? null : next,
+    }));
+  }
+
+  // 그룹별로 묶기 ('회사 설정' / '지출관리')
+  const grouped = useMemo(() => {
+    const g = {};
+    for (const f of TOGGLEABLE_FEATURES) {
+      const meta = TOGGLE_FEATURE_META[f] || { label: f, group: '기타' };
+      if (!g[meta.group]) g[meta.group] = [];
+      g[meta.group].push({ feature: f, label: meta.label });
+    }
+    return g;
+  }, []);
+
   async function submit() {
     setBusy(true);
     try {
+      // 1) 이름·전화·역할 업데이트
       await teamApi.update(member.userId, form);
+
+      // 2) 권한 변경 사항이 있으면 PUT
+      if (canTogglePerms && Object.keys(pendingPerms).length > 0) {
+        // null = 명시 해제 (서버 deleteMany), true/false = 명시 토글 (서버 upsert)
+        await teamApi.updatePermissions(member.userId, pendingPerms);
+      }
+
       onSaved();
     } catch (e) {
       alert('저장 실패: ' + (e.response?.data?.error || e.message));
@@ -374,6 +463,67 @@ function EditMemberModal({ member, isSelf, onClose, onSaved }) {
             <div className="text-xs text-gray-400 mt-1">본인 역할은 변경할 수 없습니다</div>
           )}
         </Field>
+
+        {/* ============================================
+            추가 권한 — OWNER가 직원별로 직접 ON/OFF 가능
+            ============================================ */}
+        <div className="pt-3 mt-3 border-t">
+          <div className="text-sm font-semibold text-navy-800 mb-1">추가 권한</div>
+          {!canTogglePerms ? (
+            <div className="text-xs text-gray-500 bg-gray-50 border rounded p-2 leading-relaxed">
+              대표(OWNER)는 모든 권한을 자동으로 갖습니다. 권한을 회수하려면 먼저 역할을
+              디자이너/현장팀으로 변경해주세요.
+            </div>
+          ) : permsLoading ? (
+            <div className="text-xs text-gray-400 py-2">권한 정보 로딩...</div>
+          ) : (
+            <div className="space-y-3">
+              <div className="text-xs text-gray-500">
+                역할 기본값과 다른 항목만 직접 부여/회수로 표시됩니다. 다시 클릭하면 기본값으로
+                돌아갑니다.
+              </div>
+              {Object.entries(grouped).map(([groupName, items]) => (
+                <div key={groupName}>
+                  <div className="text-xs font-medium text-gray-600 mb-1">{groupName}</div>
+                  <div className="border rounded divide-y">
+                    {items.map(({ feature, label }) => {
+                      const checked = isChecked(feature);
+                      const roleDefault = ROLE_DEFAULTS[form.role].includes(feature);
+                      const ex = explicitState(feature);
+                      return (
+                        <label
+                          key={feature}
+                          className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleFeature(feature)}
+                            className="h-4 w-4"
+                          />
+                          <span className="flex-1">{label}</span>
+                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                            기본: {roleDefault ? 'ON' : 'OFF'}
+                          </span>
+                          {ex === 'grant' && (
+                            <span className="text-xs px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 whitespace-nowrap">
+                              직접 부여
+                            </span>
+                          )}
+                          {ex === 'revoke' && (
+                            <span className="text-xs px-1.5 py-0.5 rounded border bg-rose-50 text-rose-700 border-rose-200 whitespace-nowrap">
+                              직접 회수
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <button onClick={onClose} className="px-4 py-2 text-sm border rounded">취소</button>

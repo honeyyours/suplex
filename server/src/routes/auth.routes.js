@@ -10,6 +10,23 @@ const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseK
 
 const router = express.Router();
 
+// 멤버십의 UserPermission을 { feature: bool } 맵으로 (graceful fallback: 테이블 미존재 환경 OK).
+async function loadPermissionMap(membershipId) {
+  if (!membershipId) return {};
+  try {
+    const rows = await prisma.userPermission.findMany({
+      where: { membershipId },
+      select: { feature: true, granted: true },
+    });
+    const map = {};
+    for (const r of rows) map[r.feature] = r.granted;
+    return map;
+  } catch (e) {
+    // user_permissions 테이블 미존재(prod 마이그 미적용) — 빈 맵 폴백
+    return {};
+  }
+}
+
 const signupSchema = z.object({
   // 개인 정보 (단계 1)
   email: z.string().email(),
@@ -80,6 +97,7 @@ router.post('/signup', async (req, res, next) => {
       user: { id: result.user.id, email: result.user.email, name: result.user.name },
       company: { id: result.company.id, name: result.company.name, hideExpenses: result.company.hideExpenses },
       role: 'OWNER',
+      permissions: {}, // OWNER는 토글 무시 — 항상 ROLE_DEFAULTS
     });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -138,6 +156,8 @@ router.post('/login', async (req, res, next) => {
       { companyId: membership?.companyId || null }
     );
 
+    const permissions = membership ? await loadPermissionMap(membership.id) : {};
+
     res.json({
       token,
       user: { id: user.id, email: user.email, name: user.name },
@@ -146,6 +166,7 @@ router.post('/login', async (req, res, next) => {
         : null,
       role: membership?.role || null,
       isSuperAdmin: user.isSuperAdmin,
+      permissions,
     });
   } catch (e) {
     if (e.name === 'ZodError') {
@@ -173,6 +194,10 @@ router.get('/me', authRequired, async (req, res, next) => {
     });
     if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
 
+    // 현재 회사 멤버십 권한 — 클라이언트 hasFeature 즉시 판정용
+    const currentMembership = user.memberships.find((m) => m.companyId === req.user.companyId);
+    const permissions = currentMembership ? await loadPermissionMap(currentMembership.id) : {};
+
     res.json({
       user: { id: user.id, email: user.email, name: user.name, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
       memberships: user.memberships.map((m) => ({
@@ -182,6 +207,7 @@ router.get('/me', authRequired, async (req, res, next) => {
         role: m.role,
       })),
       current: { companyId: req.user.companyId, role: req.user.role, isSuperAdmin: !!req.user.isSuperAdmin },
+      permissions,
     });
   } catch (e) { next(e); }
 });
@@ -218,6 +244,8 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
       { expiresIn: env.jwt.expiresIn }
     );
 
+    const permissions = await loadPermissionMap(membership.id);
+
     res.json({
       token,
       user,
@@ -227,6 +255,7 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
         hideExpenses: membership.company.hideExpenses,
       },
       role: membership.role,
+      permissions,
     });
   } catch (e) {
     if (e.name === 'ZodError') {
