@@ -270,12 +270,17 @@ const CLASSIC_CSS = `
   vertical-align: middle; }
 .qpt-classic__items tbody tr:nth-child(even) td { background: var(--c-alt);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.qpt-classic__items .col-no { width: 7%; text-align: center; color: var(--c-gray); }
-.qpt-classic__items .col-category { width: 13%; text-align: center; font-weight: 700;
-  color: var(--c-primary); }
+/* 컬럼 너비는 thead/tbody 공통, 색·정렬은 tbody만 — thead 헤더는 흰색+가운데 일괄 유지 */
+.qpt-classic__items .col-no { width: 7%; }
+.qpt-classic__items .col-category { width: 13%; }
 .qpt-classic__items .col-detail { width: 56%; }
-.qpt-classic__items .col-unit { width: 8%; text-align: center; }
-.qpt-classic__items .col-amount { width: 16%; text-align: right; color: var(--c-text); }
+.qpt-classic__items .col-unit { width: 8%; }
+.qpt-classic__items .col-amount { width: 16%; }
+.qpt-classic__items tbody td.col-no { text-align: center; color: var(--c-gray); }
+.qpt-classic__items tbody td.col-category { text-align: center; font-weight: 700;
+  color: var(--c-primary); }
+.qpt-classic__items tbody td.col-unit { text-align: center; }
+.qpt-classic__items tbody td.col-amount { text-align: right; color: var(--c-text); }
 .qpt-classic__empty { text-align: center; color: var(--c-gray); padding: 24px; }
 
 /* 합계 산출 */
