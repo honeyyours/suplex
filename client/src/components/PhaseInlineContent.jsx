@@ -8,7 +8,7 @@ import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 //   - phase가 '기타'이거나 매칭 없음 → chip 미표시, 자유 텍스트 그대로 (단순 메모)
 //   - 모바일: chip만 표시 (잔여 텍스트 hidden). 셀 탭/클릭 시 상세 모달에서 전체 확인
 //   - 웹: chip + 잔여 텍스트 같이
-export default function PhaseInlineContent({ entry, textClassName = '', chipClassName = '' }) {
+export default function PhaseInlineContent({ entry, textClassName = '', chipClassName = '', alwaysShowRemainder = false }) {
   const { displayPhase } = usePhaseLabels();
   const text = entry.content || '';
   const phase = entry.category;
@@ -47,8 +47,11 @@ export default function PhaseInlineContent({ entry, textClassName = '', chipClas
       <span className={`inline-block text-[9px] sm:text-[10px] px-1 py-0.5 rounded ${catColor} ${chipClassName}`}>
         {displayPhase(phase)}
       </span>
-      {/* 잔여 텍스트는 웹에서만 표시 (모바일은 chip만 — 좁은 셀 가독성) */}
-      {remainder && <span className={`hidden sm:inline truncate ${textClassName}`}>{remainder}</span>}
+      {/* 잔여 텍스트는 웹에서만 표시 (모바일은 chip만 — 좁은 셀 가독성).
+          alwaysShowRemainder=true면 모바일 상세 시트 등에서 강제 노출 */}
+      {remainder && (
+        <span className={`${alwaysShowRemainder ? '' : 'hidden sm:inline'} truncate ${textClassName}`}>{remainder}</span>
+      )}
     </>
   );
 }

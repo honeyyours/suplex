@@ -99,7 +99,7 @@ export default function MobileScheduleSheet({
                 >{e.confirmed && '✓'}</button>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-navy-800">
-                    <PhaseInlineContent entry={e} />
+                    <PhaseInlineContent entry={e} alwaysShowRemainder />
                   </div>
                   {e.vendor && (
                     <div className="text-[11px] text-violet-700 mt-0.5">🏢 {e.vendor.name}</div>
