@@ -9,6 +9,7 @@ import { phaseKeywordsApi } from '../api/phaseKeywords';
 import { phaseDeadlinesApi, phaseAdvicesApi, phasePresetApi } from '../api/phaseRules';
 import { companyPhaseTipsApi, GENERAL_PHASE } from '../api/companyPhaseTips';
 import { hasFeature, F } from '../utils/features';
+import PlanBadge from '../components/PlanBadge';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
@@ -196,6 +197,13 @@ function CompanyInfoSection({ company, onSaved, canEdit }) {
     <Section title="회사 정보 (견적서 갑지에 표시)">
       {!editing ? (
         <>
+          <div className="flex items-center py-2 border-b text-sm">
+            <span className="w-24 text-gray-500">현재 등급</span>
+            <span className="flex items-center gap-2 flex-1">
+              <PlanBadge plan={company.plan} size="md" />
+              <span className="text-[11px] text-gray-400">사용 중인 구독 등급입니다</span>
+            </span>
+          </div>
           <Row label="회사명" value={company.name} />
           <Row label="대표자명" value={company.representative} />
           <Row label="사업자번호" value={company.bizNumber} />

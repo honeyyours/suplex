@@ -26,5 +26,8 @@ export const adminApi = {
   listPendingCompanies: () => api.get('/admin/companies/pending').then((r) => r.data),
   approveCompany: (id) => api.post(`/admin/companies/${id}/approve`).then((r) => r.data),
   rejectCompany: (id) => api.post(`/admin/companies/${id}/reject`).then((r) => r.data),
+  // 등급 관리
+  changeCompanyPlan: (id, plan) => api.patch(`/admin/companies/${id}/plan`, { plan }).then((r) => r.data),
+  getPlanFeatures: () => api.get('/admin/plan-features').then((r) => r.data),
 };
 

@@ -197,7 +197,7 @@ router.get('/me', authRequired, async (req, res, next) => {
       where: { id: req.user.id },
       include: {
         memberships: {
-          include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true } } },
+          include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } } },
         },
       },
     });
@@ -215,6 +215,7 @@ router.get('/me', authRequired, async (req, res, next) => {
         companyName: m.company.name,
         hideExpenses: m.company.hideExpenses,
         approvalStatus: m.company.approvalStatus,
+        plan: m.company.plan,
         role: m.role,
       })),
       current: {
@@ -223,6 +224,8 @@ router.get('/me', authRequired, async (req, res, next) => {
         isSuperAdmin: !!req.user.isSuperAdmin,
         // 베타 진입 통제 — APPROVED 외에는 프론트에서 PendingApprovalPage로 redirect
         approvalStatus: currentCompany?.approvalStatus || null,
+        // 구독 등급 — 사용 화면에 배지로 표시 + hasFeature 판정에 사용
+        plan: currentCompany?.plan || null,
       },
       permissions,
     });

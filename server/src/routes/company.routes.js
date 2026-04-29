@@ -41,6 +41,8 @@ router.get('/', async (req, res, next) => {
         rateSupervision: true,
         rateDesign: true,
         rateVat: true,
+        plan: true,
+        approvalStatus: true,
         createdAt: true,
         updatedAt: true,
       },

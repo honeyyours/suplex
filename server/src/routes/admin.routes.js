@@ -78,6 +78,7 @@ router.get('/companies', async (req, res, next) => {
         name: c.name,
         hideExpenses: c.hideExpenses,
         approvalStatus: c.approvalStatus,
+        plan: c.plan,
         createdAt: c.createdAt,
         memberCount: c._count.memberships,
         projectCount: c._count.projects,
@@ -807,6 +808,44 @@ router.post('/companies/:id/approve', async (req, res, next) => {
     });
     res.json({ ok: true });
   } catch (e) { next(e); }
+});
+
+// PATCH /api/admin/companies/:id/plan — 회사 등급 변경 (STARTER/PRO/ENTERPRISE)
+router.patch('/companies/:id/plan', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const { plan } = req.body || {};
+    if (!['STARTER', 'PRO', 'ENTERPRISE'].includes(plan)) {
+      return res.status(400).json({ error: 'plan은 STARTER/PRO/ENTERPRISE 중 하나여야 합니다' });
+    }
+    const company = await prisma.company.findUnique({
+      where: { id }, select: { id: true, name: true, plan: true },
+    });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+    if (company.plan === plan) return res.json({ ok: true, unchanged: true });
+    await prisma.company.update({ where: { id }, data: { plan } });
+    audit(req, 'company.plan_change', {
+      targetType: 'COMPANY', targetId: id,
+      metadata: { name: company.name, prevPlan: company.plan, newPlan: plan },
+    });
+    res.json({ ok: true, plan });
+  } catch (e) { next(e); }
+});
+
+// GET /api/admin/plan-features — 등급별 권한 매트릭스 (읽기 전용 표시용)
+// 코드의 PLAN_FEATURES와 모든 feature 식별자/라벨을 함께 내림.
+router.get('/plan-features', (req, res) => {
+  const { F, PLAN_FEATURES } = require('../services/features');
+  // 클라이언트에 보낼 feature 메타 — 식별자 + 사람이 읽을 라벨/그룹
+  // (TOGGLE_FEATURE_META는 클라이언트 features.js에 있고, 서버는 식별자만 알면 됨)
+  const allFeatures = Object.values(F);
+  const matrix = {};
+  for (const plan of ['STARTER', 'PRO', 'ENTERPRISE']) {
+    matrix[plan] = Object.fromEntries(
+      allFeatures.map((f) => [f, PLAN_FEATURES[plan].includes(f)])
+    );
+  }
+  res.json({ features: allFeatures, matrix });
 });
 
 // POST /api/admin/companies/:id/reject — 회사 거절 (사용자에게는 PENDING과 동일하게 표시)

@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { F, canAccess } from '../utils/features';
+import PlanBadge from './PlanBadge';
 
 const NAV = [
   { to: '/', label: '홈', exact: true },
@@ -94,19 +95,24 @@ export default function Layout() {
             >
               {isDark ? '☀️' : '🌙'}
             </button>
-            <span className="hidden sm:inline">
+            <span className="hidden sm:inline-flex items-center gap-2">
               {isAdmin ? (
                 <span className="text-violet-200">🛡️ 시스템 관리자</span>
-              ) : hasMultipleCompanies ? (
-                <CompanySwitcher
-                  current={auth?.company}
-                  memberships={memberships}
-                  onSwitch={switchCompany}
-                />
               ) : (
-                <>{auth?.company?.name}</>
+                <>
+                  {hasMultipleCompanies ? (
+                    <CompanySwitcher
+                      current={auth?.company}
+                      memberships={memberships}
+                      onSwitch={switchCompany}
+                    />
+                  ) : (
+                    <span>{auth?.company?.name}</span>
+                  )}
+                  {auth?.company?.plan && <PlanBadge plan={auth.company.plan} />}
+                </>
               )}
-              {' · '}{auth?.user?.name}
+              <span>· {auth?.user?.name}</span>
             </span>
             <button
               onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}

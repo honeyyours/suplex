@@ -58,21 +58,23 @@ export function AuthProvider({ children }) {
     api.get('/auth/me').then((r) => {
       if (!alive) return;
       setMemberships(r.data?.memberships || []);
-      // 서버 진실 기준으로 isSuperAdmin·permissions·approvalStatus 보강 (구버전 localStorage 호환)
+      // 서버 진실 기준으로 isSuperAdmin·permissions·approvalStatus·plan 보강
       const serverIsSuper = !!r.data?.current?.isSuperAdmin;
       const serverPermissions = r.data?.permissions || {};
       const serverApprovalStatus = r.data?.current?.approvalStatus || null;
+      const serverPlan = r.data?.current?.plan || null;
       setAuth((prev) => {
         if (!prev) return prev;
         const samePerm = JSON.stringify(prev.permissions || {}) === JSON.stringify(serverPermissions);
         const sameSuper = !!prev.isSuperAdmin === serverIsSuper;
         const sameApproval = (prev.company?.approvalStatus || null) === serverApprovalStatus;
-        if (sameSuper && samePerm && sameApproval) return prev;
+        const samePlan = (prev.company?.plan || null) === serverPlan;
+        if (sameSuper && samePerm && sameApproval && samePlan) return prev;
         return {
           ...prev,
           isSuperAdmin: serverIsSuper,
           permissions: serverPermissions,
-          company: { ...(prev.company || {}), approvalStatus: serverApprovalStatus },
+          company: { ...(prev.company || {}), approvalStatus: serverApprovalStatus, plan: serverPlan },
         };
       });
       setIsAuthChecked(true);

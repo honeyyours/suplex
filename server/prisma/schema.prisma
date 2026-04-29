@@ -48,6 +48,10 @@ model Company {
   // SUSPENDED는 운영 중 임시 차단(베타 종료 등) 용.
   approvalStatus CompanyApprovalStatus @default(PENDING)
 
+  // 구독 등급 — STARTER/PRO/ENTERPRISE. 기본 PRO (베타 동안 모든 회사 PRO 제공).
+  // PLAN_FEATURES(server/src/services/features.js)와 매트릭스 매칭. 슈퍼어드민이 콘솔에서 변경.
+  plan CompanyPlan @default(PRO)
+
   // 시스템 프리셋 표준 회사 플래그 — 한 번에 한 회사만 true.
   // true면 신규 회사 가입 시 이 회사의 4묶음(phaseLabels·키워드·데드라인·어드바이스)을 snapshot 복사.
   // 자세한 정책: 메모리 `수플렉스_설계_시스템프리셋.md`
@@ -126,6 +130,13 @@ enum CompanyApprovalStatus {
   APPROVED // 승인됨, 정상 사용
   REJECTED // 거절됨 (사용자에게는 PENDING과 동일 메시지 표시)
   SUSPENDED // 운영 중 임시 차단 (베타 종료, 정책 위반 등)
+}
+
+// 구독 등급 — Company.plan. PLAN_FEATURES 매트릭스(features.js)와 매칭.
+enum CompanyPlan {
+  STARTER
+  PRO
+  ENTERPRISE
 }
 
 // 사용자 ↔ 회사 다대다 (+ 역할)

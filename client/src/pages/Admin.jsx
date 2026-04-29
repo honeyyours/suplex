@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { adminApi } from '../api/admin';
@@ -46,6 +46,7 @@ export default function Admin() {
         <TabBtn active={tab === 'pending'} onClick={() => setTab('pending')}>⏳ 베타 신청</TabBtn>
         <TabBtn active={tab === 'companies'} onClick={() => setTab('companies')}>🏢 회사</TabBtn>
         <TabBtn active={tab === 'users'} onClick={() => setTab('users')}>👥 사용자</TabBtn>
+        <TabBtn active={tab === 'plans'} onClick={() => setTab('plans')}>📋 등급/권한</TabBtn>
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
         <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
       </div>
@@ -53,6 +54,7 @@ export default function Admin() {
       {tab === 'pending' && <PendingApprovalsTab />}
       {tab === 'companies' && <CompaniesTab />}
       {tab === 'users' && <UsersTab currentUserId={auth?.user?.id} />}
+      {tab === 'plans' && <PlanFeaturesTab />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'audit' && <AuditTab />}
     </div>
@@ -253,8 +255,28 @@ function CompaniesTab() {
                   {c.isPhasePresetDefault && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded border border-amber-300">🌟 프리셋 표준</span>}
                   {c.isDormant && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-300">😴 휴면</span>}
                   {c.hideExpenses && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded border border-amber-200">지출숨김</span>}
-                  <div className="text-[11px] text-gray-400 mt-0.5">
-                    가입 {new Date(c.createdAt).toLocaleDateString('ko-KR')}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] text-gray-400">
+                      가입 {new Date(c.createdAt).toLocaleDateString('ko-KR')}
+                    </span>
+                    <select
+                      value={c.plan || 'PRO'}
+                      onChange={async (e) => {
+                        const plan = e.target.value;
+                        try {
+                          await adminApi.changeCompanyPlan(c.id, plan);
+                          await load();
+                        } catch (err) {
+                          alert('등급 변경 실패: ' + (err.response?.data?.error || err.message));
+                        }
+                      }}
+                      className="text-[10px] px-1.5 py-0.5 border rounded bg-white"
+                      title="구독 등급 변경"
+                    >
+                      <option value="STARTER">STARTER</option>
+                      <option value="PRO">PRO</option>
+                      <option value="ENTERPRISE">ENTERPRISE</option>
+                    </select>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-gray-600 text-xs">
@@ -972,6 +994,97 @@ function PendingApprovalsTab() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// 등급/권한 매트릭스 — 코드(PLAN_FEATURES)의 읽기 전용 뷰
+// 각 등급에 어떤 feature가 포함되는지 한눈에 확인. 편집은 정식 출시 직전 별도 작업.
+// ============================================================
+function PlanFeaturesTab() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    adminApi.getPlanFeatures()
+      .then(setData)
+      .catch((e) => alert('매트릭스 로드 실패: ' + (e.response?.data?.error || e.message)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-sm text-gray-400">불러오는 중…</div>;
+  if (!data) return null;
+
+  const PLANS = ['STARTER', 'PRO', 'ENTERPRISE'];
+  const PLAN_COLOR = {
+    STARTER: 'bg-gray-100 text-gray-700',
+    PRO: 'bg-sky-100 text-sky-700',
+    ENTERPRISE: 'bg-violet-100 text-violet-700',
+  };
+
+  // feature 식별자를 그룹별로 정렬: core / expenses / settings / ai / 기타
+  const grouped = {
+    '핵심 기능 (core)': data.features.filter((f) => f.startsWith('core.')),
+    '회계 (expenses)': data.features.filter((f) => f.startsWith('expenses.')),
+    '회사 설정 (settings)': data.features.filter((f) => f.startsWith('settings.')),
+    'AI비서 (ai)': data.features.filter((f) => f.startsWith('ai.')),
+    '기타': data.features.filter((f) =>
+      !f.startsWith('core.') && !f.startsWith('expenses.') && !f.startsWith('settings.') && !f.startsWith('ai.')
+    ),
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed">
+        💡 등급별 권한 매트릭스 (읽기 전용)입니다. 편집은 정식 출시 직전에 별도 작업 예정.<br/>
+        지금은 코드(<code>server/src/services/features.js</code>의 <code>PLAN_FEATURES</code>)에서 직접 수정 후 배포.
+      </div>
+
+      <div className="bg-white rounded-xl border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500">
+            <tr>
+              <th className="px-3 py-2 text-left">기능 (식별자)</th>
+              {PLANS.map((p) => (
+                <th key={p} className="px-3 py-2 text-center">
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${PLAN_COLOR[p]}`}>{p}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(grouped).map(([group, features]) =>
+              features.length === 0 ? null : (
+                <Fragment key={group}>
+                  <tr className="bg-gray-50">
+                    <td colSpan={4} className="px-3 py-1.5 text-[11px] font-semibold text-gray-600">
+                      {group} ({features.length})
+                    </td>
+                  </tr>
+                  {features.map((f) => (
+                    <tr key={f} className="border-t hover:bg-gray-50">
+                      <td className="px-3 py-1.5 text-xs text-gray-700">
+                        <code className="text-gray-500">{f}</code>
+                      </td>
+                      {PLANS.map((p) => (
+                        <td key={p} className="px-3 py-1.5 text-center">
+                          {data.matrix[p][f] ? (
+                            <span className="text-emerald-600 font-bold">✓</span>
+                          ) : (
+                            <span className="text-gray-300">·</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </Fragment>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
