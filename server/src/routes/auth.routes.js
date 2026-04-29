@@ -7,6 +7,7 @@ const env = require('../config/env');
 const { authRequired } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
+const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdvices');
 
 const router = express.Router();
 
@@ -76,6 +77,8 @@ router.post('/signup', async (req, res, next) => {
       // 표준 25개 phase 기본 키워드 자동 시드 — 일정 자동 인식이 즉시 작동하도록
       const seedRows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: company.id }));
       await tx.phaseKeywordRule.createMany({ data: seedRows, skipDuplicates: true });
+      // 시스템 룰(미확정 알림 D-14/D-7) 자동 보장 — 사용자 액션 없이 항상 들어가 있도록
+      await ensureSystemDefaultsForCompany(tx, company.id);
       return { user, company };
     });
 

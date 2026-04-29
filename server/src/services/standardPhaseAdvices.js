@@ -58,4 +58,47 @@ const STANDARD_ADVICES = [
   { phase: '마무리(점검, 실리콘)', daysBefore: 0, title: '준공 전체 공간별 사진', category: '사진', requiresPhoto: true },
 ];
 
-module.exports = { STANDARD_ADVICES };
+// ===== 시스템 룰 (미확정 알림) — 회사마다 항상 보장되는 고정 룰 =====
+// 사용자는 추가/삭제 못 함, 활성/비활성 토글만 가능.
+// daysBefore = 오늘로부터 N일 후 시작하는 일정 중 confirmed=false 항목을 점검 체크리스트로 띄움.
+const SYSTEM_DEFAULT_RULES = [
+  {
+    ruleType: 'UNCONFIRMED_CHECK',
+    phase: '시스템',
+    daysBefore: 14,
+    title: 'D-14 미확정 일정 점검',
+    description: '2주 후 시작하는 일정 중 아직 확정 표시하지 않은 항목을 확인하세요.',
+    category: '관리',
+    requiresPhoto: false,
+  },
+  {
+    ruleType: 'UNCONFIRMED_CHECK',
+    phase: '시스템',
+    daysBefore: 7,
+    title: 'D-7 미확정 일정 점검',
+    description: '1주 후 시작하는 일정 중 아직 확정 표시하지 않은 항목을 확인하세요.',
+    category: '관리',
+    requiresPhoto: false,
+  },
+];
+
+// 회사별 시스템 기본 룰 보장 — 누락된 것만 INSERT, 기존 항목의 active 상태는 건드리지 않음.
+// (사용자가 비활성화한 룰을 다시 활성으로 되돌리면 안 됨)
+async function ensureSystemDefaultsForCompany(prismaOrTx, companyId) {
+  for (const rule of SYSTEM_DEFAULT_RULES) {
+    const existing = await prismaOrTx.phaseAdvice.findFirst({
+      where: {
+        companyId,
+        ruleType: rule.ruleType,
+        daysBefore: rule.daysBefore,
+      },
+      select: { id: true },
+    });
+    if (existing) continue;
+    await prismaOrTx.phaseAdvice.create({
+      data: { companyId, ...rule, active: true },
+    });
+  }
+}
+
+module.exports = { STANDARD_ADVICES, SYSTEM_DEFAULT_RULES, ensureSystemDefaultsForCompany };

@@ -1116,16 +1116,13 @@ function PhaseDeadlineRulesSection() {
 // 자주 쓰는 어드바이스 카테고리 — datalist 자동완성용 (자유 입력 허용)
 const ADVICE_CATEGORIES = ['관리실 협의', '안전', '사전 준비', '자재', '사진'];
 const SYSTEM_PHASE_LABEL = '시스템';
-const RULE_TYPE_OPTIONS = [
-  { value: 'STANDARD', label: '일반 (D-N)' },
-  { value: 'UNCONFIRMED_CHECK', label: '시스템: 미확정 알림' },
-];
+// 시스템 룰은 회사 가입 시 자동 시드 — 사용자는 활성/비활성 토글만, 추가/삭제 X.
 
 function PhaseAdvicesSection() {
   const { displayPhase } = usePhaseLabels();
   const [advices, setAdvices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState({ ruleType: 'STANDARD', phase: '', daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
+  const [draft, setDraft] = useState({ phase: '', daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
   const [selected, setSelected] = useState(() => new Set()); // checked id 들
   const [collapsed, setCollapsed] = useState(() => new Set()); // 접힌 그룹 phase 라벨
 
@@ -1139,23 +1136,22 @@ function PhaseAdvicesSection() {
   useEffect(() => { reload(); }, []);
 
   async function add() {
-    const isSystem = draft.ruleType === 'UNCONFIRMED_CHECK';
-    if (!isSystem && !draft.phase) {
+    if (!draft.phase) {
       alert('공정을 선택해주세요.');
       return;
     }
     if (!draft.title.trim()) return;
     try {
       await phaseAdvicesApi.create({
-        ruleType: draft.ruleType,
-        phase: isSystem ? SYSTEM_PHASE_LABEL : draft.phase,
+        ruleType: 'STANDARD',
+        phase: draft.phase,
         daysBefore: Number(draft.daysBefore),
         title: draft.title.trim(),
         description: draft.description.trim() || null,
         category: draft.category.trim() || null,
         requiresPhoto: !!draft.requiresPhoto,
       });
-      setDraft({ ruleType: draft.ruleType, phase: isSystem ? '' : draft.phase, daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
+      setDraft({ phase: draft.phase, daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
       reload();
     } catch (e) { alert('저장 실패: ' + (e.response?.data?.error || e.message)); }
   }
@@ -1198,11 +1194,17 @@ function PhaseAdvicesSection() {
     reload();
   }
 
+  // 시스템 룰은 벌크 대상에서 제외 — id 들의 ruleType 을 advices 캐시로 검사
+  function filterUserRuleIds(ids) {
+    const set = new Set(advices.filter((a) => a.ruleType !== 'UNCONFIRMED_CHECK').map((a) => a.id));
+    return ids.filter((id) => set.has(id));
+  }
+
   // 벌크: 선택 복제
   async function bulkDuplicate() {
-    const ids = Array.from(selected);
+    const ids = filterUserRuleIds(Array.from(selected));
     if (ids.length === 0) return;
-    if (!confirm(`선택한 ${ids.length}개 어드바이스를 복제할까요?`)) return;
+    if (!confirm(`선택한 ${ids.length}개 어드바이스를 복제할까요? (시스템 룰은 자동 제외)`)) return;
     try {
       const r = await phaseAdvicesApi.bulkDuplicate(ids);
       setSelected(new Set());
@@ -1213,11 +1215,12 @@ function PhaseAdvicesSection() {
 
   // 벌크: 선택 삭제
   async function bulkDelete() {
-    const ids = Array.from(selected);
+    const ids = filterUserRuleIds(Array.from(selected));
     if (ids.length === 0) return;
-    if (!confirm(`선택한 ${ids.length}개 어드바이스를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    if (!confirm(`선택한 ${ids.length}개 어드바이스를 삭제할까요? (시스템 룰은 자동 제외, 되돌릴 수 없습니다)`)) return;
+    const idSet = new Set(ids);
     const snapshot = advices;
-    setAdvices((prev) => prev.filter((x) => !selected.has(x.id)));
+    setAdvices((prev) => prev.filter((x) => !idSet.has(x.id)));
     try {
       const r = await phaseAdvicesApi.bulkDelete(ids);
       setSelected(new Set());
@@ -1288,7 +1291,7 @@ function PhaseAdvicesSection() {
     <Section title="공정 어드바이스 (체크리스트 자동 생성)" collapsible>
       <p className="text-xs text-gray-500 mb-3">
         일반 룰: 일정에 해당 공정이 등록되면 (시작일 - D-N)에 체크리스트 자동 생성. D-N=0 + 사진필수=ON 은 시공 사진 증거(옛 템플릿 역할).<br/>
-        시스템 룰(미확정 알림): 오늘 기준 D-N 일 후의 미확정 일정마다 "확정 안 됨" 체크리스트 자동 생성. 일정이 확정되면 체크리스트도 자동 완료 처리.
+        🛎 <b>시스템 룰</b>(미확정 알림 D-14 / D-7)은 회사 가입 시 자동 등록되며 <b>활성/비활성</b> 만 조절합니다. 오늘 기준 D-N 일 후의 미확정 일정마다 "확정 안 됨" 체크리스트가 자동 생성되고, 일정을 확정하면 자동 완료됩니다.
       </p>
 
       {/* 액션 바 — 시드 / 벌크 */}
@@ -1321,23 +1324,28 @@ function PhaseAdvicesSection() {
       {/* 그룹 카드 — phase 별 collapsible */}
       <div className="space-y-2">
         {groups.map(([phase, list]) => {
-          const groupIds = list.map((a) => a.id);
+          const isSystem = phase === SYSTEM_PHASE_LABEL;
+          // 시스템 그룹은 선택 대상에서 제외 (체크박스 숨김)
+          const groupIds = isSystem ? [] : list.map((a) => a.id);
           const allChecked = groupIds.length > 0 && groupIds.every((id) => selected.has(id));
           const someChecked = groupIds.some((id) => selected.has(id));
-          const isSystem = phase === SYSTEM_PHASE_LABEL;
           const isCollapsed = collapsed.has(phase);
           const activeCount = list.filter((a) => a.active).length;
           return (
             <div key={phase} className={`border rounded ${isSystem ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'}`}>
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-50/60 border-b">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  ref={(el) => { if (el) el.indeterminate = !allChecked && someChecked; }}
-                  onChange={() => toggleGroupSelected(groupIds, allChecked)}
-                  className="w-4 h-4 accent-navy-700"
-                  title="이 공정 전체 선택"
-                />
+                {isSystem ? (
+                  <span className="w-4 h-4" /> // 자리 맞춤용 placeholder
+                ) : (
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    ref={(el) => { if (el) el.indeterminate = !allChecked && someChecked; }}
+                    onChange={() => toggleGroupSelected(groupIds, allChecked)}
+                    className="w-4 h-4 accent-navy-700"
+                    title="이 공정 전체 선택"
+                  />
+                )}
                 <button
                   onClick={() => toggleCollapsed(phase)}
                   className="flex-1 flex items-center gap-2 text-left"
@@ -1347,6 +1355,9 @@ function PhaseAdvicesSection() {
                     {isSystem ? '🛎 시스템 (미확정 알림)' : displayPhase(phase)}
                   </span>
                   <span className="text-xs text-gray-400">{activeCount}/{list.length}</span>
+                  {isSystem && (
+                    <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">기본 제공 · 활성/비활성만 가능</span>
+                  )}
                 </button>
               </div>
               {!isCollapsed && (
@@ -1364,76 +1375,105 @@ function PhaseAdvicesSection() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {list.map((a) => (
-                        <tr key={a.id} className={`hover:bg-gray-50 ${a.active ? '' : 'opacity-50'} ${selected.has(a.id) ? 'bg-navy-50/40' : ''}`}>
-                          <td className="px-2 py-1.5 align-top">
-                            <input
-                              type="checkbox"
-                              checked={selected.has(a.id)}
-                              onChange={() => toggleSelected(a.id)}
-                              className="w-4 h-4 accent-navy-700"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 text-right align-top">
-                            <div className="flex items-center justify-end gap-0.5">
-                              <span className="text-gray-400">D-</span>
-                              <InlineNumberCell
-                                value={a.daysBefore}
-                                onSave={(v) => patchAdvice(a.id, { daysBefore: v })}
+                      {list.map((a) => {
+                        const locked = a.ruleType === 'UNCONFIRMED_CHECK'; // 시스템 룰 = 편집 잠금
+                        return (
+                          <tr key={a.id} className={`hover:bg-gray-50 ${a.active ? '' : 'opacity-50'} ${selected.has(a.id) ? 'bg-navy-50/40' : ''}`}>
+                            <td className="px-2 py-1.5 align-top">
+                              {locked ? (
+                                <span className="text-gray-300 text-xs" title="시스템 룰 — 선택 불가">🔒</span>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={selected.has(a.id)}
+                                  onChange={() => toggleSelected(a.id)}
+                                  className="w-4 h-4 accent-navy-700"
+                                />
+                              )}
+                            </td>
+                            <td className="px-2 py-1.5 text-right align-top">
+                              <div className="flex items-center justify-end gap-0.5">
+                                <span className="text-gray-400">D-</span>
+                                {locked ? (
+                                  <span className="text-xs px-1.5 py-0.5 text-gray-700">{a.daysBefore}</span>
+                                ) : (
+                                  <InlineNumberCell
+                                    value={a.daysBefore}
+                                    onSave={(v) => patchAdvice(a.id, { daysBefore: v })}
+                                  />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 py-1.5 align-top">
+                              {locked ? (
+                                <>
+                                  <div className="font-medium text-navy-800 px-1.5 py-0.5">{a.title}</div>
+                                  {a.description && (
+                                    <div className="text-gray-500 text-[11px] px-1.5">{a.description}</div>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <InlineTextCell
+                                    value={a.title}
+                                    onSave={(v) => {
+                                      const trimmed = v.trim();
+                                      if (!trimmed) throw new Error('제목은 비울 수 없습니다');
+                                      return patchAdvice(a.id, { title: trimmed });
+                                    }}
+                                    placeholder="제목"
+                                    className="font-medium text-navy-800"
+                                  />
+                                  <InlineTextareaCell
+                                    value={a.description || ''}
+                                    onSave={(v) => patchAdvice(a.id, { description: v.trim() || null })}
+                                    placeholder="설명 추가 (선택)"
+                                    className="text-gray-500 text-[11px]"
+                                  />
+                                </>
+                              )}
+                            </td>
+                            <td className="px-2 py-1.5 text-gray-500 align-top">
+                              {locked ? (
+                                <span className="text-xs px-1.5 py-0.5">{a.category || '—'}</span>
+                              ) : (
+                                <InlineTextCell
+                                  value={a.category || ''}
+                                  onSave={(v) => patchAdvice(a.id, { category: v.trim() || null })}
+                                  placeholder="—"
+                                />
+                              )}
+                            </td>
+                            <td className="px-2 py-1.5 text-center align-top">
+                              <input
+                                type="checkbox"
+                                checked={!!a.requiresPhoto}
+                                disabled={locked}
+                                onChange={async (e) => {
+                                  const next = e.target.checked;
+                                  try { await patchAdvice(a.id, { requiresPhoto: next }); }
+                                  catch (err) { alert('변경 실패: ' + (err?.response?.data?.error || err?.message)); }
+                                }}
+                                className="w-4 h-4 accent-navy-700 disabled:opacity-30"
+                                title={locked ? '시스템 룰은 변경 불가' : '사진 첨부 필수'}
                               />
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5 align-top">
-                            <InlineTextCell
-                              value={a.title}
-                              onSave={(v) => {
-                                const trimmed = v.trim();
-                                if (!trimmed) throw new Error('제목은 비울 수 없습니다');
-                                return patchAdvice(a.id, { title: trimmed });
-                              }}
-                              placeholder="제목"
-                              className="font-medium text-navy-800"
-                            />
-                            <InlineTextareaCell
-                              value={a.description || ''}
-                              onSave={(v) => patchAdvice(a.id, { description: v.trim() || null })}
-                              placeholder="설명 추가 (선택)"
-                              className="text-gray-500 text-[11px]"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 text-gray-500 align-top">
-                            <InlineTextCell
-                              value={a.category || ''}
-                              onSave={(v) => patchAdvice(a.id, { category: v.trim() || null })}
-                              placeholder="—"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 text-center align-top">
-                            <input
-                              type="checkbox"
-                              checked={!!a.requiresPhoto}
-                              onChange={async (e) => {
-                                const next = e.target.checked;
-                                try { await patchAdvice(a.id, { requiresPhoto: next }); }
-                                catch (err) { alert('변경 실패: ' + (err?.response?.data?.error || err?.message)); }
-                              }}
-                              className="w-4 h-4 accent-navy-700"
-                              title="사진 첨부 필수"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 text-center align-top">
-                            <button
-                              onClick={() => toggleActive(a)}
-                              className={`text-xs sm:text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
-                            >
-                              {a.active ? '활성' : '비활성'}
-                            </button>
-                          </td>
-                          <td className="px-2 py-1.5 text-right align-top">
-                            <button onClick={() => remove(a.id)} className="text-rose-500 hover:underline">삭제</button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="px-2 py-1.5 text-center align-top">
+                              <button
+                                onClick={() => toggleActive(a)}
+                                className={`text-xs sm:text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
+                              >
+                                {a.active ? '활성' : '비활성'}
+                              </button>
+                            </td>
+                            <td className="px-2 py-1.5 text-right align-top">
+                              {!locked && (
+                                <button onClick={() => remove(a.id)} className="text-rose-500 hover:underline">삭제</button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1446,34 +1486,20 @@ function PhaseAdvicesSection() {
         )}
       </div>
 
-      {/* 입력 폼 — 그룹 카드 아래에 별도 영역으로 분리 (긴 목록에서도 항상 접근 가능) */}
+      {/* 입력 폼 — 일반 룰만 추가 가능 (시스템 룰은 가입 시 자동 시드) */}
       <div className="mt-4 border-t pt-3">
         <div className="text-xs font-medium text-gray-600 mb-2">+ 새 어드바이스 추가</div>
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start">
           <select
-            value={draft.ruleType}
-            onChange={(e) => setDraft({ ...draft, ruleType: e.target.value, phase: e.target.value === 'UNCONFIRMED_CHECK' ? '' : draft.phase })}
+            value={draft.phase}
+            onChange={(e) => setDraft({ ...draft, phase: e.target.value })}
             className="sm:col-span-3 text-xs px-2 py-1.5 border rounded bg-white"
-            title="룰 종류"
           >
-            {RULE_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <option value="">— 공정 선택 —</option>
+            {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
+              <option key={p.key} value={p.label}>{displayPhase(p.label)}</option>
+            ))}
           </select>
-          {draft.ruleType === 'STANDARD' ? (
-            <select
-              value={draft.phase}
-              onChange={(e) => setDraft({ ...draft, phase: e.target.value })}
-              className="sm:col-span-3 text-xs px-2 py-1.5 border rounded bg-white"
-            >
-              <option value="">— 공정 선택 —</option>
-              {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
-                <option key={p.key} value={p.label}>{displayPhase(p.label)}</option>
-              ))}
-            </select>
-          ) : (
-            <div className="sm:col-span-3 text-xs px-2 py-1.5 border rounded bg-amber-50 text-amber-800">
-              🛎 시스템 (자동 분류)
-            </div>
-          )}
           <div className="sm:col-span-2 flex items-center gap-1">
             <span className="text-xs text-gray-400">D-</span>
             <input
@@ -1488,8 +1514,8 @@ function PhaseAdvicesSection() {
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Enter') add(); }}
-            placeholder={draft.ruleType === 'UNCONFIRMED_CHECK' ? '예: D-7 미확정 일정 점검' : '예: 보양 관련 관리실 문의'}
-            className="sm:col-span-4 text-xs px-2 py-1.5 border rounded outline-none focus:border-navy-700"
+            placeholder="예: 보양 관련 관리실 문의"
+            className="sm:col-span-7 text-xs px-2 py-1.5 border rounded outline-none focus:border-navy-700"
           />
           <textarea
             value={draft.description}
@@ -1519,7 +1545,7 @@ function PhaseAdvicesSection() {
           </label>
           <button
             onClick={add}
-            disabled={(!draft.phase && draft.ruleType !== 'UNCONFIRMED_CHECK') || !draft.title.trim()}
+            disabled={!draft.phase || !draft.title.trim()}
             className="sm:col-span-1 text-xs px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-40"
           >+ 추가</button>
         </div>

@@ -139,6 +139,10 @@ router.post('/advices', requireAdviceEdit, async (req, res, next) => {
   try {
     const data = adviceSchema.parse(req.body);
     const ruleType = data.ruleType || 'STANDARD';
+    // 시스템 룰은 가입 시 자동 시드만 — 사용자가 임의로 추가 X (활성/비활성 토글만 허용)
+    if (ruleType === 'UNCONFIRMED_CHECK') {
+      return res.status(400).json({ error: '시스템 룰은 기본 제공이며 임의로 추가할 수 없습니다.' });
+    }
     const advice = await prisma.phaseAdvice.create({
       data: {
         companyId: req.user.companyId,
@@ -166,6 +170,14 @@ router.patch('/advices/:id', requireAdviceEdit, async (req, res, next) => {
     });
     if (!existing) return res.status(404).json({ error: 'Advice not found' });
     const data = adviceSchema.partial().parse(req.body);
+    // 시스템 룰은 active 토글만 허용 — 본문/제목/D-N/타입 등 변경 차단
+    if (existing.ruleType === 'UNCONFIRMED_CHECK') {
+      const allowedKeys = ['active'];
+      const violation = Object.keys(data).find((k) => !allowedKeys.includes(k));
+      if (violation) {
+        return res.status(400).json({ error: '시스템 룰은 활성/비활성만 변경할 수 있습니다.' });
+      }
+    }
     // phase 변경 요청이 있으면 ruleType(요청값 또는 기존값) 기준으로 정규화
     const patch = { ...data };
     if (data.phase !== undefined) {
@@ -189,18 +201,21 @@ router.delete('/advices/:id', requireAdviceEdit, async (req, res, next) => {
       where: { id: req.params.id, companyId: req.user.companyId },
     });
     if (!existing) return res.status(404).json({ error: 'Advice not found' });
+    if (existing.ruleType === 'UNCONFIRMED_CHECK') {
+      return res.status(400).json({ error: '시스템 룰은 삭제할 수 없습니다. 비활성으로만 끌 수 있습니다.' });
+    }
     await prisma.phaseAdvice.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
-// 벌크 복제 — 선택 항목들을 동일 회사 안에서 통째로 복사
+// 벌크 복제 — 선택 항목들을 동일 회사 안에서 통째로 복사 (시스템 룰 제외)
 router.post('/advices/bulk-duplicate', requireAdviceEdit, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x) => typeof x === 'string') : [];
     if (ids.length === 0) return res.status(400).json({ error: 'ids array required' });
     const sources = await prisma.phaseAdvice.findMany({
-      where: { id: { in: ids }, companyId: req.user.companyId },
+      where: { id: { in: ids }, companyId: req.user.companyId, ruleType: { not: 'UNCONFIRMED_CHECK' } },
     });
     const created = await prisma.$transaction(
       sources.map((s) => prisma.phaseAdvice.create({
@@ -217,17 +232,17 @@ router.post('/advices/bulk-duplicate', requireAdviceEdit, async (req, res, next)
         },
       }))
     );
-    res.status(201).json({ created: created.length, advices: created });
+    res.status(201).json({ created: created.length, skipped: ids.length - sources.length, advices: created });
   } catch (e) { next(e); }
 });
 
-// 벌크 삭제 — 선택 항목들을 한 번에 삭제
+// 벌크 삭제 — 선택 항목들을 한 번에 삭제 (시스템 룰 제외)
 router.post('/advices/bulk-delete', requireAdviceEdit, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x) => typeof x === 'string') : [];
     if (ids.length === 0) return res.status(400).json({ error: 'ids array required' });
     const result = await prisma.phaseAdvice.deleteMany({
-      where: { id: { in: ids }, companyId: req.user.companyId },
+      where: { id: { in: ids }, companyId: req.user.companyId, ruleType: { not: 'UNCONFIRMED_CHECK' } },
     });
     res.json({ ok: true, deleted: result.count });
   } catch (e) { next(e); }

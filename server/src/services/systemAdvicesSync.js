@@ -5,6 +5,8 @@
 // 룰 식별은 체크리스트 title 에 룰 id 가 보이지 않게 하기 위해
 // (projectId, linkedScheduleId, title) 조합으로 중복 방지한다.
 
+const { ensureSystemDefaultsForCompany } = require('./standardPhaseAdvices');
+
 const SYSTEM_PHASE_LABEL = '시스템';
 
 function startOfDay(d) {
@@ -21,6 +23,10 @@ function endOfDay(d) {
 
 // 한 프로젝트에 대해 회사의 시스템 룰을 적용 — 누락된 미확정 체크리스트를 INSERT.
 async function syncSystemAdvicesForProject(prisma, { projectId, companyId, userId, today = new Date() }) {
+  // 회사 시스템 기본 룰이 누락돼 있으면 자동 보충 (기존 회사 백필).
+  // 사용자가 비활성화한 룰의 active 상태는 건드리지 않음.
+  await ensureSystemDefaultsForCompany(prisma, companyId);
+
   const rules = await prisma.phaseAdvice.findMany({
     where: { companyId, ruleType: 'UNCONFIRMED_CHECK', active: true },
   });
