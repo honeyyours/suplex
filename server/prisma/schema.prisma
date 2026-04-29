@@ -490,6 +490,7 @@ model Material {
   memo       String?
 
   orderIndex Int      @default(0)
+  isFavorite Boolean  @default(false) // 항목별 즐겨찾기 — 마감재 탭 상단 별도 영역에 모임 (2026-04-29)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

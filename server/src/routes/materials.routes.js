@@ -250,6 +250,7 @@ const baseSchema = {
   totalPrice: z.number().optional().nullable(),
   memo: z.string().optional().nullable(),
   orderIndex: z.number().int().optional(),
+  isFavorite: z.boolean().optional(),
 };
 
 const createSchema = z.object(baseSchema);
@@ -287,6 +288,7 @@ function toCreateData(data) {
     totalPrice: num(data.totalPrice),
     memo: data.memo?.trim() || null,
     orderIndex: data.orderIndex ?? 0,
+    isFavorite: data.isFavorite ?? false,
   };
 }
 
@@ -443,7 +445,12 @@ router.patch('/:id', async (req, res, next) => {
       });
     }
 
-    if (historyEntries.length === 0) {
+    // 즐겨찾기는 history 추적 X — 자주 바뀌는 UI 토글 (변경 카운트로 노이즈)
+    if (data.isFavorite !== undefined && data.isFavorite !== existing.isFavorite) {
+      updateData.isFavorite = !!data.isFavorite;
+    }
+
+    if (historyEntries.length === 0 && Object.keys(updateData).length === 0) {
       return res.json({ material: existing });
     }
 

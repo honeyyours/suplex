@@ -82,6 +82,7 @@ export default function ProjectMaterialsSimple() {
           // 데드라인 — 같은 spaceGroup 일정 시작일 - D-N
           deadline: m.deadline || null,
           daysToDeadline: m.daysToDeadline,
+          isFavorite: !!m.isFavorite,
         })),
       );
     } finally {
@@ -207,6 +208,8 @@ export default function ProjectMaterialsSimple() {
     if ('sourceUrl' in patch) serverPatch.sourceUrl = patch.sourceUrl || null;
     // 상태 (status 변경 시 백엔드의 syncPurchaseOrders가 자동으로 PO 생성/동기화)
     if ('status' in patch) serverPatch.status = patch.status;
+    // 즐겨찾기 토글
+    if ('isFavorite' in patch) serverPatch.isFavorite = !!patch.isFavorite;
     if (Object.keys(serverPatch).length > 0) scheduleSave(id, serverPatch);
 
     // 가전 자동 학습 — APPLIANCE 행이고 modelCode/brand/size 변경에 영향 있는 patch면 트리거
@@ -585,6 +588,12 @@ export default function ProjectMaterialsSimple() {
   }, [items, emptyGroups]);
   const groupNames = grouped.map((g) => g.name);
 
+  // 즐겨찾기 — isFavorite 항목 모음. spaceGroup 표기 같이 (어느 그룹의 항목인지)
+  const favoriteItems = useMemo(
+    () => items.filter((it) => it.isFavorite),
+    [items]
+  );
+
   if (loading) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
   }
@@ -620,10 +629,23 @@ export default function ProjectMaterialsSimple() {
         </div>
       </div>
 
+      {/* 즐겨찾기 — 별표한 항목들 한 곳에 모아 상단 고정 */}
+      {favoriteItems.length > 0 && (
+        <FavoritesCard
+          items={favoriteItems}
+          savingMap={savingMap}
+          onItemPatch={patchItem}
+          onItemRemove={removeItem}
+          onToggleConfirmed={toggleConfirmed}
+          onCellKeyDown={handleCellKeyDown}
+        />
+      )}
+
       {grouped.map((g) => (
         <GroupCard
           key={g.name}
           group={g}
+          projectId={projectId}
           savingMap={savingMap}
           onItemPatch={patchItem}
           onItemRemove={removeItem}
@@ -820,9 +842,125 @@ function ApplianceSearchModal({ spaceGroup, onClose, onSelect }) {
 // ============================================
 // 그룹 카드
 // ============================================
-function GroupCard({ group, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport }) {
+// ============================================
+// 즐겨찾기 카드 — 별표한 항목들 한 곳에 모음. FINISH/APPLIANCE 혼합 가능
+// 항목 옆에 원래 그룹명 작게 표시 (어디에서 별표한 건지 컨텍스트 유지)
+// ============================================
+function FavoritesCard({ items, savingMap, onItemPatch, onItemRemove, onToggleConfirmed, onCellKeyDown }) {
   const { displayPhase } = usePhaseLabels();
-  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className="bg-amber-50/50 rounded-xl border border-amber-200 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-amber-200 bg-amber-100/40 flex items-center gap-2">
+        <span className="text-amber-600 font-bold text-base">★</span>
+        <span className="font-bold text-amber-800">즐겨찾기</span>
+        <span className="text-xs text-amber-700/70 tabular-nums">{items.length}개</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '32px' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '70px' }} />
+            <col />
+            <col style={{ width: '60px' }} />
+          </colgroup>
+          <thead className="bg-amber-50 text-xs text-amber-800/70">
+            <tr>
+              <th className="text-center"></th>
+              <th className="text-left px-2 py-1.5">그룹</th>
+              <th className="text-left px-2 py-1.5">항목</th>
+              <th className="text-left px-2 py-1.5">브랜드 규격 등</th>
+              <th className="text-left px-2 py-1.5">수량</th>
+              <th className="text-left px-2 py-1.5">비고</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-amber-100">
+            {items.map((it) => (
+              <tr key={it.id} className="hover:bg-amber-50/40">
+                <td className="px-2 py-1.5 text-center">
+                  <ConfirmCheckbox item={it} onToggle={() => onToggleConfirmed(it.id)} />
+                </td>
+                <td className="px-2 py-1.5 text-xs text-amber-700 truncate" title={it.spaceGroup}>
+                  {displayPhase(it.spaceGroup || '')}
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    value={it.itemName || ''}
+                    onChange={(e) => onItemPatch(it.id, { itemName: e.target.value })}
+                    onKeyDown={(e) => onCellKeyDown?.(e, it.id, 'itemName')}
+                    className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 bg-transparent"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    value={it.brand || ''}
+                    onChange={(e) => onItemPatch(it.id, { brand: e.target.value })}
+                    onKeyDown={(e) => onCellKeyDown?.(e, it.id, 'brand')}
+                    className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 bg-transparent"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    value={it.quantityText || ''}
+                    onChange={(e) => onItemPatch(it.id, { quantityText: e.target.value })}
+                    onKeyDown={(e) => onCellKeyDown?.(e, it.id, 'quantityText')}
+                    className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 bg-transparent"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    value={it.memo || ''}
+                    onChange={(e) => onItemPatch(it.id, { memo: e.target.value })}
+                    onKeyDown={(e) => onCellKeyDown?.(e, it.id, 'memo')}
+                    className="w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 bg-transparent"
+                  />
+                </td>
+                <td className="px-1 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => onItemPatch(it.id, { isFavorite: false })}
+                      tabIndex={-1}
+                      className="text-amber-500 hover:text-amber-600 text-sm leading-none"
+                      title="즐겨찾기 해제"
+                    >★</button>
+                    {savingMap[it.id] ? (
+                      <span className="text-xs sm:text-[10px] text-gray-400">…</span>
+                    ) : (
+                      <button
+                        onClick={() => onItemRemove(it.id)}
+                        tabIndex={-1}
+                        className="text-gray-300 hover:text-rose-500 text-sm"
+                        title="삭제"
+                      >✕</button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function GroupCard({ group, projectId, savingMap, onItemPatch, onItemRemove, onAddItem, onAddApplianceFromSpec, onRenameGroup, onRemoveGroup, onConfirmGroup, onToggleConfirmed, onCellKeyDown, onShowQuote, onShowImport }) {
+  const { displayPhase } = usePhaseLabels();
+  // 그룹 접기 상태를 localStorage에 영구 저장 — 새로고침해도 유지
+  const storageKey = `mat-collapsed:${projectId}:${group.name}`;
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(storageKey) === '1'; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try {
+      if (collapsed) localStorage.setItem(storageKey, '1');
+      else localStorage.removeItem(storageKey);
+    } catch { /* noop */ }
+  }, [collapsed, storageKey]);
   const isAppliance = group.kind === 'APPLIANCE';
   const headerBg = isAppliance ? 'bg-violet-50/60' : 'bg-navy-50/40';
   const accentText = isAppliance ? 'text-violet-700' : 'text-navy-600';
@@ -1131,19 +1269,27 @@ function ApplianceRow({ item, saving, onChange, onRemove, onCellKeyDown }) {
           placeholder="빌트인 여부, 도어 개폐 방향, 콘센트 위치 등"
         />
       </td>
-      <td className="px-1 text-right">
-        {saving ? (
-          <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : (
+      <td className="px-1 text-right whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1">
           <button
-            onClick={onRemove}
+            onClick={() => onChange({ isFavorite: !item.isFavorite })}
             tabIndex={-1}
-            className="text-gray-300 hover:text-rose-500 text-sm"
-            title="삭제"
+            className={`text-sm leading-none ${item.isFavorite ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-400'}`}
+            title={item.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 — 상단 고정'}
           >
-            ✕
+            {item.isFavorite ? '★' : '☆'}
           </button>
-        )}
+          {saving ? (
+            <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
+          ) : (
+            <button
+              onClick={onRemove}
+              tabIndex={-1}
+              className="text-gray-300 hover:text-rose-500 text-sm"
+              title="삭제"
+            >✕</button>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -1203,18 +1349,28 @@ function ItemRow({ item, saving, onChange, onRemove, onCellKeyDown, onToggle }) 
         />
       </td>
       <td className="px-1 text-right whitespace-nowrap">
-        {saving ? (
-          <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
-        ) : (
-          !locked && (
-            <button
-              onClick={onRemove}
-              tabIndex={-1}
-              className="text-gray-300 hover:text-rose-500 text-sm"
-              title="삭제"
-            >✕</button>
-          )
-        )}
+        <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => onChange({ isFavorite: !item.isFavorite })}
+            tabIndex={-1}
+            className={`text-sm leading-none ${item.isFavorite ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-400'}`}
+            title={item.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 — 상단 고정'}
+          >
+            {item.isFavorite ? '★' : '☆'}
+          </button>
+          {saving ? (
+            <span className="text-xs sm:text-[10px] text-gray-400" title="저장 중">…</span>
+          ) : (
+            !locked && (
+              <button
+                onClick={onRemove}
+                tabIndex={-1}
+                className="text-gray-300 hover:text-rose-500 text-sm"
+                title="삭제"
+              >✕</button>
+            )
+          )}
+        </div>
       </td>
     </tr>
   );
