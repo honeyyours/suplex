@@ -13,7 +13,24 @@ const emptyForm = {
   status: 'PLANNED',
   doorPassword: '',
   siteNotes: '',
+  acquisitionSource: '',
 };
+
+// 견적 요청 경로 자동완성 옵션 (자유 입력도 허용)
+const ACQUISITION_SOURCE_SUGGESTIONS = [
+  '네이버 검색',
+  '네이버 블로그',
+  '네이버 카페',
+  '인스타그램',
+  '유튜브',
+  '당근마켓',
+  '구글 검색',
+  '지인 소개',
+  '기존 고객 소개',
+  '광고',
+  '홈페이지 직접 접수',
+  '기타',
+];
 
 function toDateInput(iso) {
   if (!iso) return '';
@@ -38,6 +55,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
           status: initial.status || 'PLANNED',
           doorPassword: initial.doorPassword || '',
           siteNotes: initial.siteNotes || '',
+          acquisitionSource: initial.acquisitionSource || '',
         }
       : {}),
   }));
@@ -76,6 +94,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
         ...(initial ? { status: form.status } : {}),
         doorPassword: form.doorPassword.trim() || null,
         siteNotes: form.siteNotes.trim() || null,
+        acquisitionSource: form.acquisitionSource.trim() || null,
       });
     } catch (e) {
       setErr(e.response?.data?.error || '저장 실패');
@@ -203,6 +222,22 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
           placeholder="서울시 강남구 테헤란로 123"
           className="input"
         />
+      </Field>
+
+      <Field
+        label="견적 요청 경로"
+        hint="고객이 어떤 경로로 우리를 찾아왔는지 (자유 입력 또는 자주 쓰는 경로 선택)"
+      >
+        <input
+          list="acquisition-source-suggestions"
+          value={form.acquisitionSource}
+          onChange={update('acquisitionSource')}
+          placeholder="예: 네이버 카페, 지인 소개, 인스타그램"
+          className="input"
+        />
+        <datalist id="acquisition-source-suggestions">
+          {ACQUISITION_SOURCE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
+        </datalist>
       </Field>
 
       <Field label="현장정보">

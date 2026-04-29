@@ -114,8 +114,8 @@ export default function ProjectDetail() {
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
         <div className="flex border-b px-2 overflow-x-auto">
           <NavLink to="process" className={tab}>공정 현황</NavLink>
-          <NavLink to="quotes" className={tab}>견적</NavLink>
           <NavLink to="quote-consultations" className={tab}>견적상담</NavLink>
+          <NavLink to="quotes" className={tab}>견적</NavLink>
           <NavLink to="schedule" className={tab}>공정 일정</NavLink>
           <NavLink to="materials" className={tab}>마감재</NavLink>
           <NavLink to="orders" className={tab}>발주</NavLink>

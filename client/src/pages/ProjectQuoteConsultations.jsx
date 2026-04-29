@@ -7,6 +7,7 @@ import { useOutletContext } from 'react-router-dom';
 import { STANDARD_PHASES } from '../utils/phases';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 import { phaseNotesApi, GENERAL_PHASE, ROLE_LABEL } from '../api/phaseNotes';
+import { projectsApi } from '../api/projects';
 
 const SELECTABLE_PHASES = STANDARD_PHASES.filter((p) => p.key !== 'OTHER');
 
@@ -83,7 +84,9 @@ export default function ProjectQuoteConsultations() {
   }, [checked, notesByPhase]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
+    <div className="space-y-4">
+      <ConsultationAttendeeBar project={project} />
+      <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
       {/* 좌측 — 공정 체크박스 (견적서 모달 패턴) */}
       <aside className="md:border-r md:pr-4">
         <div className="text-xs font-medium text-gray-700 mb-1">공정 선택</div>
@@ -152,6 +155,52 @@ export default function ProjectQuoteConsultations() {
           ))
         )}
       </main>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// 응대 고객 바 — 페이지 상단. blur 자동저장
+// ============================================
+function ConsultationAttendeeBar({ project }) {
+  const [value, setValue] = useState(project?.consultationAttendee || '');
+  const [savedValue, setSavedValue] = useState(project?.consultationAttendee || '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(project?.consultationAttendee || '');
+    setSavedValue(project?.consultationAttendee || '');
+  }, [project?.id, project?.consultationAttendee]);
+
+  async function commit() {
+    if (saving) return;
+    if (value === savedValue) return;
+    setSaving(true);
+    try {
+      await projectsApi.update(project.id, { consultationAttendee: value.trim() || null });
+      setSavedValue(value);
+    } catch (e) {
+      setValue(savedValue);
+      alert('저장 실패: ' + (e?.response?.data?.error || e?.message));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
+      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">👤 응대 고객</span>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+        placeholder="예: 부인 박OO / 할머니 김OO / 대리인"
+        className="flex-1 min-w-[200px] px-3 py-1.5 text-sm border rounded focus:border-navy-700 outline-none"
+      />
+      {saving && <span className="text-xs text-navy-600">저장 중…</span>}
+      {!saving && value !== savedValue && <span className="text-xs text-amber-600">미저장</span>}
     </div>
   );
 }

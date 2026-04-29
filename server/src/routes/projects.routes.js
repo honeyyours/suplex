@@ -302,6 +302,8 @@ const createSchema = z.object({
   siteNotes: z.string().optional().nullable(),
   area: z.number().optional().nullable(),
   memo: z.string().optional().nullable(),
+  acquisitionSource: z.string().max(100).optional().nullable(),
+  consultationAttendee: z.string().max(100).optional().nullable(),
 }).refine(
   (d) => new Date(d.startDate) <= new Date(d.expectedEndDate),
   { message: '마감일은 시작일과 같거나 그 이후여야 합니다', path: ['expectedEndDate'] }
@@ -324,6 +326,8 @@ router.post('/', async (req, res, next) => {
         siteNotes: data.siteNotes || null,
         area: data.area ?? null,
         memo: data.memo || null,
+        acquisitionSource: data.acquisitionSource?.trim() || null,
+        consultationAttendee: data.consultationAttendee?.trim() || null,
         companyId: req.user.companyId,
         createdById: req.user.id,
       },
@@ -657,6 +661,8 @@ const updateSchema = z.object({
   siteNotes: z.string().optional().nullable(),
   area: z.number().optional().nullable(),
   memo: z.string().optional().nullable(),
+  acquisitionSource: z.string().max(100).optional().nullable(),
+  consultationAttendee: z.string().max(100).optional().nullable(),
 });
 
 router.patch('/:id', async (req, res, next) => {
@@ -694,6 +700,8 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.siteNotes !== undefined && { siteNotes: data.siteNotes || null }),
         ...(data.area !== undefined && { area: data.area }),
         ...(data.memo !== undefined && { memo: data.memo || null }),
+        ...(data.acquisitionSource !== undefined && { acquisitionSource: data.acquisitionSource?.trim() || null }),
+        ...(data.consultationAttendee !== undefined && { consultationAttendee: data.consultationAttendee?.trim() || null }),
       },
     });
     res.json({ project: updated });
