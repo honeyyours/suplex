@@ -144,6 +144,20 @@ export default function Layout() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <Outlet />
       </main>
+
+      <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
+          <span className="font-semibold tracking-wide">SUPLEX</span>
+          {auth?.company?.name && (
+            <>
+              <span aria-hidden>·</span>
+              <span>{auth.company.name}</span>
+            </>
+          )}
+          <span aria-hidden>·</span>
+          <span>© {new Date().getFullYear()}</span>
+        </div>
+      </footer>
     </div>
   );
 }
