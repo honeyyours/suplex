@@ -78,7 +78,9 @@ export default function Settings() {
 
       <QuoteRatesSection company={company} onSaved={setCompany} canEdit={isOwner} />
 
-      <QuoteTemplatesSection />
+      {/* 견적항목 템플릿 — 상세 견적 시스템과 함께 베타엔 숨김. 코드·API·백엔드는 보존
+          (메모리 핵심결정: "상세 견적 시스템은 숨김만, 삭제 X"). */}
+      {/* <QuoteTemplatesSection /> */}
 
       <PhaseLabelsSection canEdit={isOwner} />
 
