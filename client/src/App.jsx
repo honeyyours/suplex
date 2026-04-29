@@ -28,6 +28,7 @@ import ProjectChecklist from './pages/ProjectChecklist';
 import ProjectReports from './pages/ProjectReports';
 import ProjectExpenses from './pages/ProjectExpenses';
 import ProjectMemo from './pages/ProjectMemo';
+import ProjectQuoteConsultations from './pages/ProjectQuoteConsultations';
 import ProjectProcessOverview from './pages/ProjectProcessOverview';
 
 export default function App() {
@@ -60,6 +61,7 @@ export default function App() {
           <Route index element={<Navigate to="schedule" replace />} />
           <Route path="quotes" element={<ProjectSimpleQuotes />} />
           <Route path="quotes-detail" element={<ProjectQuotes />} />
+          <Route path="quote-consultations" element={<ProjectQuoteConsultations />} />
           <Route path="schedule" element={<ProjectSchedule />} />
           <Route path="materials" element={<ProjectMaterialsSimple />} />
           <Route path="orders" element={<ProjectOrders />} />

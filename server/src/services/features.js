@@ -18,6 +18,7 @@ const F = Object.freeze({
   CORE_MEMO:        'core.memo',
   CORE_ORDERS:      'core.orders',
   CORE_QUOTES:      'core.quotes',
+  CORE_QUOTE_CONSULTATIONS: 'core.quote_consultations', // 견적상담 탭 (모두)
   CORE_TEAM:        'core.team',           // OWNER 한정 (멤버 관리)
 
   // 회계 (OWNER 한정, ENTERPRISE까지 풀)
@@ -98,7 +99,8 @@ const ROLE_DEFAULTS = Object.freeze({
 // ============================================
 const STARTER_FEATURES = [
   F.CORE_PROJECTS, F.CORE_SCHEDULE, F.CORE_MATERIALS, F.CORE_CHECKLIST,
-  F.CORE_REPORTS, F.CORE_MEMO, F.CORE_ORDERS, F.CORE_QUOTES, F.CORE_TEAM,
+  F.CORE_REPORTS, F.CORE_MEMO, F.CORE_ORDERS, F.CORE_QUOTES,
+  F.CORE_QUOTE_CONSULTATIONS, F.CORE_TEAM,
   F.EXPENSES_VIEW, F.EXPENSES_EDIT,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,

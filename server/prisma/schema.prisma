@@ -97,6 +97,7 @@ model User {
   createdAccountCodes    AccountCode[]         @relation("AccountCodeCreatedBy")
   createdExpenseRules    ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
   applianceCorrections   ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
+  quoteConsultations     QuoteConsultation[]   @relation("QuoteConsultationAuthor")
 
   @@map("users")
 }
@@ -256,10 +257,37 @@ model Project {
   purchaseOrders       PurchaseOrder[]
   expenses             Expense[]
   projectMemos         ProjectMemo[]
+  quoteConsultations   QuoteConsultation[]
 
   @@unique([companyId, siteCode])
   @@index([companyId, status])
   @@map("projects")
+}
+
+// 견적상담 — 견적 진행 중 고객과의 통화·미팅·카톡 기록 (프로젝트 안의 한 탭).
+// 카드 1개 = 1번의 접촉. 시간 역순으로 누적, 다음 액션 추적용.
+model QuoteConsultation {
+  id          String   @id @default(cuid())
+  projectId   String
+  occurredAt  DateTime // 통화/미팅 시각
+  channel     String   // 'PHONE' | 'KAKAO' | 'MEETING' | 'EMAIL' | 'ZOOM'
+  topic       String? // 주제 (자유 또는 표준 11종 중)
+  body        String   // 본문 (자유 텍스트)
+  nextAction  String? // 다음 액션 (자유 텍스트)
+  // 2단계 (선택)
+  attendee    String? // 응대 고객 (부부 중 누구·대리인 등)
+  reaction    String? // 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'DECIDED'
+  quoteRound  Int? // 연관 견적 라운드 (1차·2차·N차)
+  // 메타
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation("QuoteConsultationAuthor", fields: [authorId], references: [id])
+
+  @@index([projectId, occurredAt])
+  @@map("quote_consultations")
 }
 
 enum ChecklistCategory {

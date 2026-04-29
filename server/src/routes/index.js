@@ -14,6 +14,7 @@ const photoRoutes = require('./photos.routes');
 const quoteRoutes = require('./quotes.routes');
 const simpleQuoteRoutes = require('./simpleQuotes.routes');
 const projectMemoRoutes = require('./projectMemos.routes');
+const quoteConsultationsRoutes = require('./quoteConsultations.routes');
 const phaseRulesRoutes = require('./phaseRules.routes');
 const quoteTemplateRoutes = require('./quoteLineItemTemplates.routes');
 const companyRoutes = require('./company.routes');
@@ -50,6 +51,7 @@ router.use('/projects/:projectId/photos', photoRoutes);
 router.use('/projects/:projectId/quotes', quoteRoutes);
 router.use('/projects/:projectId/simple-quotes', simpleQuoteRoutes);
 router.use('/projects/:projectId/memos', projectMemoRoutes);
+router.use('/projects/:projectId/quote-consultations', quoteConsultationsRoutes);
 router.use('/projects/:projectId/purchase-orders', purchaseOrders.projectRouter);
 
 // 회사 전체 스코프
