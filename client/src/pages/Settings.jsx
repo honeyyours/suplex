@@ -707,6 +707,7 @@ const PRESET_BUNDLE_LABELS = {
   phaseKeywordRules: '공종 인식 키워드',
   phaseDeadlineRules: '공정별 발주 데드라인',
   phaseAdvices: '공정 어드바이스',
+  companyPhaseTips: '공정별 견적 가이드',
 };
 function PresetResetButton({ bundle }) {
   const [busy, setBusy] = useState(false);
@@ -2284,6 +2285,12 @@ function CompanyPhaseTipsSection({ auth }) {
         견적 작성 시 우측 드로어에 자동으로 표시되는 회사 내부 메모입니다.
         공정 셀이 활성화되면 그 공정의 가이드가 자동 매칭됩니다. <b>화면 전용 — 견적서 PDF에는 절대 나가지 않습니다.</b>
       </p>
+
+      {canEdit && (
+        <div className="mb-3">
+          <PresetResetButton bundle="companyPhaseTips" />
+        </div>
+      )}
 
       {!canEdit && (
         <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-3">

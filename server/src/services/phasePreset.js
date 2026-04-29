@@ -1,17 +1,18 @@
 // 시스템 프리셋 — 표준 회사(`Company.isPhasePresetDefault=true`)의 4묶음을 다른 회사로 snapshot 복사.
 // 자세한 정책: 메모리 `수플렉스_설계_시스템프리셋.md`
 //
-// 4묶음:
+// 5묶음:
 //   1) phaseLabels (Company.phaseLabels JSON)
 //   2) PhaseKeywordRule
 //   3) PhaseDeadlineRule
 //   4) PhaseAdvice (ruleType=STANDARD 만 — UNCONFIRMED_CHECK 시스템 룰은 별도)
+//   5) CompanyPhaseTip (공정별 견적 가이드 — 회사 내부 메모)
 //
 // 사용처:
 //   - 신규 회사 가입 시 전체 복사 (auth.routes.js)
 //   - 기존 회사 사용자가 묶음별 "리셋" 버튼 누를 때 (phaseRules / phaseKeywords 라우트)
 
-const BUNDLES = ['phaseLabels', 'phaseKeywordRules', 'phaseDeadlineRules', 'phaseAdvices'];
+const BUNDLES = ['phaseLabels', 'phaseKeywordRules', 'phaseDeadlineRules', 'phaseAdvices', 'companyPhaseTips'];
 
 // 표준 회사 조회. 없거나 자기 자신이 표준이면 null 반환 (호출 측이 fallback 시드 사용).
 async function findPresetSourceCompany(prismaOrTx, excludeCompanyId = null) {
@@ -80,6 +81,26 @@ async function applyBundleFromPreset(prismaOrTx, { sourceCompanyId, targetCompan
     });
     if (rows.length > 0) {
       await prismaOrTx.phaseDeadlineRule.createMany({
+        data: rows.map((r) => ({ ...r, companyId: targetCompanyId })),
+        skipDuplicates: true,
+      });
+    }
+    return { applied: true, count: rows.length };
+  }
+
+  if (bundle === 'companyPhaseTips') {
+    if (mode === 'reset') {
+      await prismaOrTx.companyPhaseTip.deleteMany({ where: { companyId: targetCompanyId } });
+    } else {
+      const cnt = await prismaOrTx.companyPhaseTip.count({ where: { companyId: targetCompanyId } });
+      if (cnt > 0) return { applied: false, reason: 'target-not-empty' };
+    }
+    const rows = await prismaOrTx.companyPhaseTip.findMany({
+      where: { companyId: sourceCompanyId },
+      select: { phase: true, body: true },
+    });
+    if (rows.length > 0) {
+      await prismaOrTx.companyPhaseTip.createMany({
         data: rows.map((r) => ({ ...r, companyId: targetCompanyId })),
         skipDuplicates: true,
       });
