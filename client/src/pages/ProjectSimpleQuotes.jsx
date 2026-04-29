@@ -243,6 +243,9 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [showGuide, setShowGuide] = useState(true);
   // 활성 라인 인덱스 — 드로어가 그 라인의 그룹 헤더 공정을 자동 추적
   const [activeLineIdx, setActiveLineIdx] = useState(null);
+  // drag-and-drop 상태 — { fromIdx, isGroupHeader } / dragOverIdx (drop indicator 표시용)
+  const [dragging, setDragging] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -402,58 +405,43 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     });
   }
 
-  // 라인 순서 바꾸기 — 한 칸씩 위/아래. 활성 라인이 함께 이동하도록 activeLineIdx도 동기화.
-  function moveLine(idx, dir) {
-    const target = idx + dir;
+  // 단일 라인 fromIdx → toIdx로 이동 (drag-drop 용). toIdx는 "그 자리 앞에 끼움".
+  function reorderLine(fromIdx, toIdx) {
+    if (fromIdx === toIdx || fromIdx === toIdx - 1) return;
+    const activeKey = activeLineIdx != null ? lines[activeLineIdx]?._key : null;
     setLines((prev) => {
-      if (target < 0 || target >= prev.length) return prev;
+      if (fromIdx < 0 || fromIdx >= prev.length) return prev;
+      const moving = prev[fromIdx];
       const next = [...prev];
-      [next[idx], next[target]] = [next[target], next[idx]];
+      next.splice(fromIdx, 1);
+      // splice 후 toIdx 보정
+      const adjustedTo = toIdx > fromIdx ? toIdx - 1 : toIdx;
+      next.splice(adjustedTo, 0, moving);
       scheduleLineSave(next);
+      if (activeKey) {
+        const newIdx = next.findIndex((l) => l._key === activeKey);
+        if (newIdx >= 0) setActiveLineIdx(newIdx);
+      }
       return next;
-    });
-    setActiveLineIdx((cur) => {
-      if (cur === idx) return target;
-      if (cur === target) return idx;
-      return cur;
     });
   }
 
-  // 그룹 통째 이동 — 헤더~종료마커(또는 다음 그룹 시작 직전)까지 한 묶음으로 위/아래 그룹과 swap.
-  // 사이에 그룹 밖 자유 라인이 있어도 그건 자리에 남고 그룹만 교환됨.
-  // activeLineIdx는 _key 기반으로 재추적 (단순·안전).
-  function moveGroup(headerIdx, dir) {
+  // 그룹(헤더~종료마커 또는 다음 그룹 직전)을 toIdx 자리로 통째 이동
+  function reorderGroup(headerIdx, toIdx) {
     const activeKey = activeLineIdx != null ? lines[activeLineIdx]?._key : null;
     setLines((prev) => {
       const ranges = computeGroupRanges(prev);
-      const myIdx = ranges.findIndex((r) => r.start === headerIdx);
-      if (myIdx < 0) return prev;
-      const targetIdx = myIdx + dir;
-      if (targetIdx < 0 || targetIdx >= ranges.length) return prev;
-      const me = ranges[myIdx];
-      const target = ranges[targetIdx];
-      const meBlock = prev.slice(me.start, me.end + 1);
-      const targetBlock = prev.slice(target.start, target.end + 1);
-      let next;
-      if (dir === -1) {
-        next = [
-          ...prev.slice(0, target.start),
-          ...meBlock,
-          ...prev.slice(target.end + 1, me.start),
-          ...targetBlock,
-          ...prev.slice(me.end + 1),
-        ];
-      } else {
-        next = [
-          ...prev.slice(0, me.start),
-          ...targetBlock,
-          ...prev.slice(me.end + 1, target.start),
-          ...meBlock,
-          ...prev.slice(target.end + 1),
-        ];
-      }
+      const me = ranges.find((r) => r.start === headerIdx);
+      if (!me) return prev;
+      const blockSize = me.end - me.start + 1;
+      // 자기 자신 영역 안쪽으로의 이동은 무시
+      if (toIdx >= me.start && toIdx <= me.end + 1) return prev;
+      const block = prev.slice(me.start, me.end + 1);
+      const next = [...prev];
+      next.splice(me.start, blockSize);
+      const adjustedTo = toIdx > me.end ? toIdx - blockSize : toIdx;
+      next.splice(adjustedTo, 0, ...block);
       scheduleLineSave(next);
-      // 활성 라인 _key가 새 배열에서 어느 idx로 갔는지 다시 계산
       if (activeKey) {
         const newIdx = next.findIndex((l) => l._key === activeKey);
         if (newIdx >= 0) setActiveLineIdx(newIdx);
@@ -778,6 +766,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             }}
           >
             <colgroup>
+              <col style={{ width: '20px' }} />{/* 드래그 핸들 (hover 시만 노출) */}
               <col style={{ width: '110px' }} />{/* 품명 */}
               <col style={{ width: '50px' }} />{/* 규격 */}
               <col style={{ width: '44px' }} />{/* 수량 */}
@@ -789,6 +778,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             </colgroup>
             <thead className="bg-gray-50 text-xs text-gray-500">
               <tr>
+                <th></th>
                 <th className="text-left px-2 py-2">품명 (공정)</th>
                 <th className="text-left px-2 py-2">규격</th>
                 <th className="text-right px-2 py-2">수량</th>
@@ -802,18 +792,6 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             <tbody className="divide-y">
               {linesWithMeta.map((l, idx) => {
                 const isGroupHeader = l.isGroup && !l.isGroupEnd;
-                let onUp = null, onDown = null;
-                if (isGroupHeader) {
-                  // 그룹 헤더: 그룹 통째 이동 — 위/아래에 다른 그룹이 있을 때만 활성화
-                  const ranges = computeGroupRanges(lines);
-                  const myIdx = ranges.findIndex((r) => r.start === idx);
-                  if (myIdx > 0) onUp = () => moveGroup(idx, -1);
-                  if (myIdx >= 0 && myIdx < ranges.length - 1) onDown = () => moveGroup(idx, +1);
-                } else if (!l.isGroupEnd) {
-                  // 일반 라인: 한 칸씩 이동
-                  if (idx > 0) onUp = () => moveLine(idx, -1);
-                  if (idx < lines.length - 1) onDown = () => moveLine(idx, +1);
-                }
                 return (
                   <LineRow
                     key={l._key}
@@ -822,15 +800,39 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                     inGroup={l._inGroup}
                     onChange={(patch) => patchLine(idx, patch)}
                     onRemove={() => removeLine(idx)}
-                    onMoveUp={onUp}
-                    onMoveDown={onDown}
                     onCellKeyDown={handleCellKeyDown}
+                    isDragging={dragging?.fromIdx === idx}
+                    showDropIndicator={dragOverIdx === idx}
+                    onDragStart={() => setDragging({ fromIdx: idx, isGroupHeader })}
+                    onDragEnd={() => { setDragging(null); setDragOverIdx(null); }}
+                    onDragOver={(e) => {
+                      if (!dragging) return;
+                      e.preventDefault();
+                      // 자기 자신 또는 자기 그룹 안쪽 위로 drag면 indicator 숨김
+                      if (dragging.fromIdx === idx) { setDragOverIdx(null); return; }
+                      if (dragging.isGroupHeader) {
+                        const ranges = computeGroupRanges(lines);
+                        const me = ranges.find((r) => r.start === dragging.fromIdx);
+                        if (me && idx >= me.start && idx <= me.end) { setDragOverIdx(null); return; }
+                      }
+                      setDragOverIdx(idx);
+                    }}
+                    onDrop={(e) => {
+                      if (!dragging) return;
+                      e.preventDefault();
+                      const from = dragging.fromIdx;
+                      const to = idx;
+                      setDragging(null);
+                      setDragOverIdx(null);
+                      if (dragging.isGroupHeader) reorderGroup(from, to);
+                      else reorderLine(from, to);
+                    }}
                   />
                 );
               })}
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-gray-400 text-sm">
+                  <td colSpan={9} className="text-center py-6 text-gray-400 text-sm">
                     아래 [+ 항목 추가] 버튼을 눌러 공정을 추가하세요.
                   </td>
                 </tr>
@@ -1001,7 +1003,26 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
 // ============================================
 // 라인 행
 // ============================================
-function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDown, onCellKeyDown }) {
+// 노션 스타일 드래그 핸들 (점 6개) — group-hover 시만 노출
+function DragHandle({ onDragStart, onDragEnd, title }) {
+  return (
+    <div
+      draggable={true}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      title={title}
+      className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-400 hover:text-navy-700 select-none flex items-center justify-center text-[10px] leading-none transition-opacity"
+      style={{ touchAction: 'none' }}
+    >
+      ⠿
+    </div>
+  );
+}
+
+function LineRow({
+  line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown,
+  isDragging, showDropIndicator, onDragStart, onDragEnd, onDragOver, onDrop,
+}) {
   const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
 
   // 0일 때 빈칸으로 보이게 — type="number" value={0} 일 때 사용자가 새 값을 치면 leading 0 문제 발생
@@ -1018,7 +1039,13 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
   // ===== 그룹 종료 마커 (가는 구분선) =====
   if (line.isGroup && line.isGroupEnd) {
     return (
-      <tr className="bg-gray-50" data-row-idx={rowIdx}>
+      <tr
+        className={`group bg-gray-50 ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+        data-row-idx={rowIdx}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        <td className="px-0"></td>
         <td colSpan={7} className="px-2 py-1">
           <div className="flex items-center gap-2 text-[11px] text-gray-400">
             <span className="flex-1 border-t border-dashed border-gray-300"></span>
@@ -1043,7 +1070,15 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
   // ===== 그룹 시작 헤더 =====
   if (line.isGroup) {
     return (
-      <tr className="bg-navy-50/40" data-row-idx={rowIdx}>
+      <tr
+        className={`group bg-navy-50/40 ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+        data-row-idx={rowIdx}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        <td className="px-0 align-middle">
+          <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} title="그룹 통째 이동" />
+        </td>
         <td colSpan={7} className="px-2 py-1.5">
           <div className="flex items-center gap-1">
             <span className="text-navy-600 font-bold text-base flex-shrink-0">▸</span>
@@ -1058,28 +1093,12 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
           </div>
         </td>
         <td className="px-1">
-          <div className="flex flex-col items-center gap-0.5">
-            <button
-              onClick={onMoveUp}
-              disabled={!onMoveUp}
-              tabIndex={-1}
-              className="text-gray-400 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
-              title="그룹 통째로 위로"
-            >▲</button>
-            <button
-              onClick={onMoveDown}
-              disabled={!onMoveDown}
-              tabIndex={-1}
-              className="text-gray-400 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
-              title="그룹 통째로 아래로"
-            >▼</button>
-            <button
-              onClick={onRemove}
-              tabIndex={-1}
-              className="text-gray-300 hover:text-rose-500 text-sm leading-none mt-0.5"
-              title="그룹 삭제"
-            >✕</button>
-          </div>
+          <button
+            onClick={onRemove}
+            tabIndex={-1}
+            className="text-gray-300 hover:text-rose-500 text-sm"
+            title="그룹 삭제"
+          >✕</button>
         </td>
       </tr>
     );
@@ -1087,7 +1106,15 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
 
   // ===== 일반 라인 행 =====
   return (
-    <tr className={`hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''}`} data-row-idx={rowIdx}>
+    <tr
+      className={`group hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''} ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+      data-row-idx={rowIdx}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <td className="px-0 align-middle">
+        <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} title="라인 이동" />
+      </td>
       <td className="px-2 py-1.5">
         <div className={`flex items-center gap-1.5 ${inGroup ? 'pl-3 border-l-2 border-navy-300' : ''}`}>
           <input
@@ -1155,29 +1182,13 @@ function LineRow({ line, rowIdx, inGroup, onChange, onRemove, onMoveUp, onMoveDo
           placeholder="설명/규격/색상 등 (Enter 줄바꿈)"
         />
       </td>
-      <td className="px-1 align-top">
-        <div className="flex flex-col items-center gap-0.5">
-          <button
-            onClick={onMoveUp}
-            disabled={!onMoveUp}
-            tabIndex={-1}
-            className="text-gray-300 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
-            title="위로"
-          >▲</button>
-          <button
-            onClick={onMoveDown}
-            disabled={!onMoveDown}
-            tabIndex={-1}
-            className="text-gray-300 hover:text-navy-700 text-[10px] disabled:opacity-30 leading-none"
-            title="아래로"
-          >▼</button>
-          <button
-            onClick={onRemove}
-            tabIndex={-1}
-            className="text-gray-300 hover:text-rose-500 text-sm leading-none mt-0.5"
-            title="삭제"
-          >✕</button>
-        </div>
+      <td className="px-1">
+        <button
+          onClick={onRemove}
+          tabIndex={-1}
+          className="text-gray-300 hover:text-rose-500 text-sm"
+          title="삭제"
+        >✕</button>
       </td>
     </tr>
   );
