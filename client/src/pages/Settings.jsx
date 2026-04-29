@@ -1135,7 +1135,7 @@ function PhaseAdvicesSection() {
   const { displayPhase } = usePhaseLabels();
   const [advices, setAdvices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState({ phase: '', daysBefore: 1, title: '', category: '', requiresPhoto: false });
+  const [draft, setDraft] = useState({ phase: '', daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
 
   async function reload() {
     setLoading(true);
@@ -1157,12 +1157,23 @@ function PhaseAdvicesSection() {
         phase: draft.phase, // 드롭다운에서 선택한 표준 라벨
         daysBefore: Number(draft.daysBefore),
         title: draft.title.trim(),
+        description: draft.description.trim() || null,
         category: draft.category.trim() || null,
         requiresPhoto: !!draft.requiresPhoto,
       });
-      setDraft({ phase: '', daysBefore: 1, title: '', category: '', requiresPhoto: false });
+      setDraft({ phase: '', daysBefore: 1, title: '', description: '', category: '', requiresPhoto: false });
       reload();
     } catch (e) { alert('저장 실패: ' + (e.response?.data?.error || e.message)); }
+  }
+  // 인라인 셀 편집 — optimistic update + 실패 시 reload로 롤백
+  async function patchAdvice(id, patch) {
+    setAdvices((prev) => prev.map((x) => x.id === id ? { ...x, ...patch } : x));
+    try {
+      await phaseAdvicesApi.update(id, patch);
+    } catch (e) {
+      await reload();
+      throw e;
+    }
   }
   async function toggleActive(a) {
     // optimistic — 즉시 UI 반영, 실패 시 롤백 (전체 reload 안 함)
@@ -1226,9 +1237,9 @@ function PhaseAdvicesSection() {
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               <th className="text-left px-2 py-1.5 w-20">공정</th>
-              <th className="text-right px-2 py-1.5 w-12">D-N</th>
-              <th className="text-left px-2 py-1.5">제목</th>
-              <th className="text-left px-2 py-1.5 w-24">카테고리</th>
+              <th className="text-right px-2 py-1.5 w-16">D-N</th>
+              <th className="text-left px-2 py-1.5">제목 / 설명</th>
+              <th className="text-left px-2 py-1.5 w-28">카테고리</th>
               <th className="text-center px-2 py-1.5 w-12">📷</th>
               <th className="text-center px-2 py-1.5 w-20">활성</th>
               <th className="px-2 py-1.5 w-16"></th>
@@ -1237,12 +1248,55 @@ function PhaseAdvicesSection() {
           <tbody className="divide-y">
             {advices.map((a) => (
               <tr key={a.id} className={`hover:bg-gray-50 ${a.active ? '' : 'opacity-50'}`}>
-                <td className="px-2 py-1.5 font-medium text-navy-800">{displayPhase(a.phase)}</td>
-                <td className="px-2 py-1.5 text-right">D-{a.daysBefore}</td>
-                <td className="px-2 py-1.5">{a.title}</td>
-                <td className="px-2 py-1.5 text-gray-500">{a.category || '—'}</td>
-                <td className="px-2 py-1.5 text-center">{a.requiresPhoto ? '📷' : '—'}</td>
-                <td className="px-2 py-1.5 text-center">
+                <td className="px-2 py-1.5 font-medium text-navy-800 align-top">{displayPhase(a.phase)}</td>
+                <td className="px-2 py-1.5 text-right align-top">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <span className="text-gray-400">D-</span>
+                    <InlineNumberCell
+                      value={a.daysBefore}
+                      onSave={(v) => patchAdvice(a.id, { daysBefore: v })}
+                    />
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 align-top">
+                  <InlineTextCell
+                    value={a.title}
+                    onSave={(v) => {
+                      const trimmed = v.trim();
+                      if (!trimmed) throw new Error('제목은 비울 수 없습니다');
+                      return patchAdvice(a.id, { title: trimmed });
+                    }}
+                    placeholder="제목"
+                    className="font-medium text-navy-800"
+                  />
+                  <InlineTextareaCell
+                    value={a.description || ''}
+                    onSave={(v) => patchAdvice(a.id, { description: v.trim() || null })}
+                    placeholder="설명 추가 (선택)"
+                    className="text-gray-500 text-[11px]"
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-gray-500 align-top">
+                  <InlineTextCell
+                    value={a.category || ''}
+                    onSave={(v) => patchAdvice(a.id, { category: v.trim() || null })}
+                    placeholder="—"
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-center align-top">
+                  <input
+                    type="checkbox"
+                    checked={!!a.requiresPhoto}
+                    onChange={async (e) => {
+                      const next = e.target.checked;
+                      try { await patchAdvice(a.id, { requiresPhoto: next }); }
+                      catch (err) { alert('변경 실패: ' + (err?.response?.data?.error || err?.message)); }
+                    }}
+                    className="w-4 h-4 accent-navy-700"
+                    title="사진 첨부 필수"
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-center align-top">
                   <button
                     onClick={() => toggleActive(a)}
                     className={`text-xs sm:text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${a.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500 line-through'}`}
@@ -1250,7 +1304,7 @@ function PhaseAdvicesSection() {
                     {a.active ? '활성' : '비활성'}
                   </button>
                 </td>
-                <td className="px-2 py-1.5 text-right">
+                <td className="px-2 py-1.5 text-right align-top">
                   <button onClick={() => remove(a.id)} className="text-rose-500 hover:underline">삭제</button>
                 </td>
               </tr>
@@ -1291,6 +1345,13 @@ function PhaseAdvicesSection() {
                   placeholder="예: 보양 관련 관리실 문의"
                   className="w-full text-xs px-2 py-1 border rounded focus:border-navy-700 outline-none"
                 />
+                <textarea
+                  value={draft.description}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  placeholder="설명 (선택)"
+                  rows={1}
+                  className="w-full text-[11px] text-gray-600 mt-1 px-2 py-1 border rounded focus:border-navy-700 outline-none resize-y"
+                />
               </td>
               <td className="px-2 py-2 align-top">
                 <input
@@ -1330,6 +1391,112 @@ function PhaseAdvicesSection() {
         💡 카테고리는 자유 입력입니다. 자주 쓰는 5개와 회사에서 이미 등록한 카테고리가 자동완성 제안으로 노출돼요.
       </div>
     </Section>
+  );
+}
+
+// ============================================
+// Inline 셀 편집 헬퍼 — focus 시 살짝 강조, blur/Enter 시 저장, ESC로 취소
+// 변경 없을 시 저장 호출 안 함. 실패 시 부모가 reload로 롤백 → useEffect [value]에서 자동 sync
+// ============================================
+function InlineTextCell({ value, onSave, placeholder = '', className = '' }) {
+  const [v, setV] = useState(value);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setV(value); }, [value]);
+  async function commit() {
+    if (busy) return;
+    if (v === value) return;
+    setBusy(true);
+    try {
+      await onSave(v);
+    } catch (e) {
+      setV(value);
+      alert('저장 실패: ' + (e?.response?.data?.error || e?.message || ''));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <input
+      type="text"
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+        if (e.key === 'Escape') { setV(value); e.target.blur(); }
+      }}
+      placeholder={placeholder}
+      disabled={busy}
+      className={`w-full text-xs px-1.5 py-0.5 bg-transparent border border-transparent hover:border-gray-300 focus:border-navy-700 focus:bg-white rounded outline-none ${className}`}
+    />
+  );
+}
+
+function InlineTextareaCell({ value, onSave, placeholder = '', className = '' }) {
+  const [v, setV] = useState(value);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setV(value); }, [value]);
+  async function commit() {
+    if (busy) return;
+    if (v === value) return;
+    setBusy(true);
+    try {
+      await onSave(v);
+    } catch (e) {
+      setV(value);
+      alert('저장 실패: ' + (e?.response?.data?.error || e?.message || ''));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <textarea
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') { setV(value); e.target.blur(); }
+      }}
+      placeholder={placeholder}
+      disabled={busy}
+      rows={1}
+      className={`w-full mt-0.5 px-1.5 py-0.5 bg-transparent border border-transparent hover:border-gray-300 focus:border-navy-700 focus:bg-white rounded outline-none resize-y ${className}`}
+    />
+  );
+}
+
+function InlineNumberCell({ value, onSave }) {
+  const [v, setV] = useState(String(value));
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setV(String(value)); }, [value]);
+  async function commit() {
+    if (busy) return;
+    const n = Number(v);
+    if (!Number.isFinite(n)) { setV(String(value)); return; }
+    if (n === value) return;
+    setBusy(true);
+    try {
+      await onSave(n);
+    } catch (e) {
+      setV(String(value));
+      alert('저장 실패: ' + (e?.response?.data?.error || e?.message || ''));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <input
+      type="number"
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+        if (e.key === 'Escape') { setV(String(value)); e.target.blur(); }
+      }}
+      disabled={busy}
+      className="w-12 text-xs text-right px-1 py-0.5 bg-transparent border border-transparent hover:border-gray-300 focus:border-navy-700 focus:bg-white rounded outline-none"
+    />
   );
 }
 
