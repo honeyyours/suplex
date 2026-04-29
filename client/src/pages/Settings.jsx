@@ -878,7 +878,15 @@ function PhaseKeywordsSection() {
     }
   }
 
-  const filtered = rules.filter((r) => r.phase === activePhase);
+  // 옛 row(closed 25 정책 이전 시드된 비표준 phase 라벨)도 정규화 기준으로 묶어 표시.
+  // 백엔드 unique 제약은 (companyId, keyword) 기반이라, UI 그루핑이 정확 일치만 하면
+  // 옛 row가 보이지 않은 채 "이미 등록된 키워드" 가 떠서 사용자가 혼란.
+  const phaseEq = (rulePhase, target) => {
+    if (!rulePhase) return false;
+    if (rulePhase === target) return true;
+    return normalizePhase(rulePhase).label === target;
+  };
+  const filtered = rules.filter((r) => phaseEq(r.phase, activePhase));
 
   return (
     <Section title="공종 자동 인식 키워드" collapsible>
@@ -898,7 +906,7 @@ function PhaseKeywordsSection() {
 
       <div className="flex flex-wrap gap-1 border-b mb-3 pb-2">
         {phases.map((p) => {
-          const cnt = rules.filter((r) => r.phase === p).length;
+          const cnt = rules.filter((r) => phaseEq(r.phase, p)).length;
           const active = activePhase === p;
           return (
             <button

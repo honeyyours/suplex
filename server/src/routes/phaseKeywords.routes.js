@@ -80,7 +80,17 @@ router.post('/', requireEdit, async (req, res, next) => {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
     }
     if (e.code === 'P2002') {
-      return res.status(409).json({ error: '이미 등록된 키워드입니다' });
+      // 어느 phase에 이미 있는지 함께 알려줘 사용자 혼란 방지
+      const existing = await prisma.phaseKeywordRule.findFirst({
+        where: { companyId: req.user.companyId, keyword: req.body?.keyword?.trim() },
+        select: { phase: true, active: true },
+      });
+      const phaseHint = existing ? `"${existing.phase}" 공정` : '다른 공정';
+      return res.status(409).json({
+        error: `이미 등록된 키워드입니다 (${phaseHint}에 있음).`,
+        existingPhase: existing?.phase || null,
+        existingActive: existing?.active ?? null,
+      });
     }
     next(e);
   }
