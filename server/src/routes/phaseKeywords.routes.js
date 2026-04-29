@@ -16,7 +16,19 @@ const requireEdit = requireFeature(F.SETTINGS_PHASE_KEYWORDS);
 // GET /api/phase-keywords?phase=철거
 router.get('/', async (req, res, next) => {
   try {
-    const where = { companyId: req.user.companyId };
+    const companyId = req.user.companyId;
+
+    // lazy 자동 시드 — 회사 키워드가 0건이면 표준 키워드 자동 시드.
+    // (가입 시 자동 시드가 누락됐거나 옛 회사 백필용. 일부라도 있으면 사용자 의도
+    //  존중해서 자동 시드 안 함 — 사용자는 "📋 기본 시드 (재시드)" 버튼으로 수동 보충 가능)
+    const totalCount = await prisma.phaseKeywordRule.count({ where: { companyId } });
+    if (totalCount === 0) {
+      const rows = buildSeedRows().map((r) => ({ ...r, companyId }));
+      await prisma.phaseKeywordRule.createMany({ data: rows, skipDuplicates: true });
+      invalidateCache(companyId);
+    }
+
+    const where = { companyId };
     if (req.query.phase) where.phase = req.query.phase;
     const rules = await prisma.phaseKeywordRule.findMany({
       where,
