@@ -87,6 +87,7 @@ export default function ProjectUtilities() {
       {showSettlement && (
         <LaborSettlementModal
           project={project}
+          projectId={id}
           onClose={() => setShowSettlement(false)}
         />
       )}

@@ -8,8 +8,8 @@ import { projectMemosApi } from '../api/projectMemos';
 
 const SAVE_DELAY = 800;
 
-// 태그 정의 — 6개. AI 어드바이스 입력 신호로 사용. 사용 예시는 모달 placeholder/hint로 노출.
-// 자재발주는 본질이 다름(행동 트리거) → wide=true로 한 줄 폭, mono=true로 모노스페이스.
+// 태그 정의 — 7개. AI 어드바이스 입력 신호로 사용. 사용 예시는 모달 placeholder/hint로 노출.
+// 자재발주·인건비는 본질이 다름(행동 트리거) → wide=true로 한 줄 폭 강조.
 const TAGS = [
   {
     value: '일반',
@@ -65,6 +65,17 @@ const TAGS = [
       '목공 자재 발주 정리',
       '타일 자재 발주 정리',
       '도배 자재 발주 정리',
+    ],
+  },
+  {
+    value: '인건비',
+    chipBg: 'bg-violet-100',
+    chipText: 'text-violet-800',
+    hint: '인건비 정산 자동 기록 — 편의기능 탭 → 인건비 정산에서 "카톡 복사 + 저장" 클릭 시 동일 내용이 여기 자동 추가됩니다',
+    wide: true,   // 한 줄 폭으로 강조 (정산 명세는 길어서 한 줄 폭이 가독성 좋음)
+    examples: [
+      '4월 정산 — 목공 박OO 5일',
+      '5월 정산 — 전기 김OO 3일, 이OO 4일',
     ],
   },
   {

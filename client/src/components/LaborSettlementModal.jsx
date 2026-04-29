@@ -4,8 +4,9 @@
 // 지출 격리 정책: 지출 탭으로의 push 없음. 카톡 텍스트만 산출.
 import { useEffect, useMemo, useState } from 'react';
 import { vendorsApi } from '../api/vendors';
+import { projectMemosApi } from '../api/projectMemos';
 
-export default function LaborSettlementModal({ project, onClose }) {
+export default function LaborSettlementModal({ project, projectId, onClose }) {
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState('');
   const [vendors, setVendors] = useState([]);
@@ -91,10 +92,10 @@ export default function LaborSettlementModal({ project, onClose }) {
     }
     setBusy(true);
     try {
+      const text = buildText();
+
       // 1) 카톡 텍스트 클립보드 복사
-      await navigator.clipboard.writeText(buildText());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(text);
 
       // 2) 디폴트값이 변경된 행은 Vendor에 자동 저장 (다음 정산 시 자동 채움)
       const changed = rows.filter((r) =>
@@ -111,6 +112,20 @@ export default function LaborSettlementModal({ project, onClose }) {
           }).catch(() => {})
         )
       );
+
+      // 3) 메모 탭에 "인건비" 태그로 자동 기록 (실패는 조용히 — 카톡 복사는 이미 성공)
+      if (projectId) {
+        await projectMemosApi.create(projectId, {
+          tag: '인건비',
+          content: text,
+        }).catch((e) => {
+          // eslint-disable-next-line no-console
+          console.warn('메모 자동 기록 실패', e);
+        });
+      }
+
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
     } catch (e) {
       alert('복사 실패: ' + (e?.message || ''));
     } finally {
@@ -130,7 +145,7 @@ export default function LaborSettlementModal({ project, onClose }) {
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-navy-800">인건비 정산</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            공종 선택 → 작업자 선택 → 일수·금액 입력 → 카톡 텍스트 복사. 일당·식비·교통비는 변경 시 자동 저장되어 다음 정산 시 그 값이 자동 채워집니다.
+            공종 선택 → 작업자 선택 → 일수·금액 입력 → 카톡 텍스트 복사. 일당·식비·교통비는 변경 시 자동 저장되어 다음 정산 시 그 값이 자동 채워집니다. <span className="text-violet-700">복사와 동시에 메모 탭에 "인건비" 태그로 자동 기록됩니다.</span>
           </p>
         </div>
 
