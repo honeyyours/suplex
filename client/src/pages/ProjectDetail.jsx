@@ -95,7 +95,7 @@ export default function ProjectDetail() {
   const menuItems = [
     { icon: '✏️', label: '수정', onClick: () => setEditing(true) },
     { icon: '📝', label: '변동 로그', onClick: () => setShowChanges(true) },
-    { icon: '🔍', label: '일정 추출', onClick: () => setShowExtract(true) },
+    { icon: '📋', label: '현장 일정 복사', onClick: () => setShowExtract(true) },
     { divider: true },
     { icon: '💾', label: 'JSON 내보내기', onClick: handleExport },
     { icon: '📥', label: 'JSON 복원', onClick: triggerImport },
@@ -139,7 +139,7 @@ export default function ProjectDetail() {
       )}
 
       {/* 일정 탭 모달 — 햄버거 메뉴에서 트리거 */}
-      {showExtract && <ExtractModal projectId={id} onClose={() => setShowExtract(false)} />}
+      {showExtract && <ExtractModal projectId={id} project={project} onClose={() => setShowExtract(false)} />}
       {showChanges && <ChangesModal projectId={id} onClose={() => setShowChanges(false)} />}
 
       {/* 일정 탭 백업 import용 hidden input */}

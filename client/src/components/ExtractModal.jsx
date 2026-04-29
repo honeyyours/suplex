@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, formatDateDisplay, categoryClass } from '../utils/date';
 
-export default function ExtractModal({ projectId, onClose }) {
+export default function ExtractModal({ projectId, project, onClose }) {
   const [keyword, setKeyword] = useState('');
   const [fromToday, setFromToday] = useState(true);
   const [results, setResults] = useState(null);
@@ -27,12 +27,29 @@ export default function ExtractModal({ projectId, onClose }) {
 
   function copy() {
     if (!results?.entries?.length) return;
-    const lines = results.entries.map((e) => {
+    // [일정] 먼저 → [현장정보] 헤더 뒤에. 단일 프로젝트 모드일 때만 헤더 노출.
+    const scheduleLines = results.entries.map((e) => {
       const date = e.date.slice(0, 10);
-      const proj = e.project?.name ? `${e.project.name} - ` : '';
+      const proj = !project && e.project?.name ? `${e.project.name} - ` : '';
       return `<${date}> ${proj}${e.content}`;
     });
-    navigator.clipboard.writeText(lines.join('\n'));
+
+    const parts = [];
+    parts.push('[일정]');
+    parts.push(...scheduleLines);
+
+    if (project) {
+      const info = [];
+      info.push('');
+      info.push(`[${project.name}]`);
+      if (project.siteAddress) info.push(`주소: ${project.siteAddress}`);
+      if (project.customerPhone) info.push(`연락처: ${project.customerPhone}`);
+      if (project.doorPassword) info.push(`출입번호: ${project.doorPassword}`);
+      if (project.siteNotes) info.push(`현장정보: ${project.siteNotes}`);
+      parts.push(...info);
+    }
+
+    navigator.clipboard.writeText(parts.join('\n'));
   }
 
   return (
@@ -45,8 +62,8 @@ export default function ExtractModal({ projectId, onClose }) {
         className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
       >
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-navy-800">일정추출</h2>
-          <p className="text-xs text-gray-500 mt-0.5">공종 키워드로 일정을 검색합니다</p>
+          <h2 className="text-lg font-bold text-navy-800">현장 일정 복사</h2>
+          <p className="text-xs text-gray-500 mt-0.5">공종 키워드로 일정 검색 후 현장정보와 함께 복사 (협력업체 카톡 공유용)</p>
         </div>
 
         <div className="px-6 py-4 space-y-3 border-b">
