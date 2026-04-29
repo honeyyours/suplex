@@ -5,6 +5,7 @@ import { formatDateDot } from '../utils/date';
 import { normalizePhase, isOther } from '../utils/phases';
 import NewQuoteWithPhasesModal from '../components/NewQuoteWithPhasesModal';
 import QuoteGuideDrawer from '../components/QuoteGuideDrawer';
+import { QUOTE_PRINT_TEMPLATES, DEFAULT_TEMPLATE_KEY } from '../components/QuotePrintTemplates';
 
 // 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
 // 표준 매핑된 경우만 표시 (예: "벽지" → "도배"). OTHER는 자유 텍스트로 처리되니 표시 X.
@@ -1215,25 +1216,57 @@ function SumRow({ label, value, highlight, neutral }) {
 }
 
 // ============================================
-// PDF 미리보기 / 인쇄 모달
-// styles/index.css 의 body.print-quote .quote-printable 패턴을 재사용
+// PDF 미리보기 / 인쇄 모달 — 양식 선택형
+// 양식 추가는 components/QuotePrintTemplates.jsx 의 QUOTE_PRINT_TEMPLATES 배열에 push
 // ============================================
 function PrintModal({ quote, lines, totals, onClose }) {
+  const [templateKey, setTemplateKey] = useState(() => {
+    return localStorage.getItem('suplex.quotePrintTemplate') || DEFAULT_TEMPLATE_KEY;
+  });
+
   useEffect(() => {
-    document.body.classList.add('print-quote');
-    return () => document.body.classList.remove('print-quote');
+    document.body.classList.add('print-quote', 'print-styled');
+    return () => {
+      document.body.classList.remove('print-quote', 'print-styled');
+    };
   }, []);
+
+  function changeTemplate(key) {
+    setTemplateKey(key);
+    localStorage.setItem('suplex.quotePrintTemplate', key);
+  }
 
   function handlePrint() {
     window.print();
   }
 
+  const tpl = QUOTE_PRINT_TEMPLATES.find((t) => t.key === templateKey) || QUOTE_PRINT_TEMPLATES[0];
+  const TemplateComponent = tpl.Component;
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-        <div className="sticky top-0 bg-gray-100 border-b px-4 py-2 flex items-center justify-between no-print">
-          <div className="text-sm font-medium">PDF 미리보기</div>
-          <div className="flex gap-2">
+      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-auto">
+        <div className="sticky top-0 bg-gray-100 border-b px-4 py-2 flex items-center justify-between gap-3 no-print">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="text-sm font-medium">PDF 미리보기</div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500 mr-1">양식</span>
+              {QUOTE_PRINT_TEMPLATES.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => changeTemplate(t.key)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                    t.key === templateKey
+                      ? 'bg-navy-700 text-white border-navy-700'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-navy-500 hover:text-navy-700'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
             <button
               onClick={handlePrint}
               className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
@@ -1245,182 +1278,10 @@ function PrintModal({ quote, lines, totals, onClose }) {
             </button>
           </div>
         </div>
-        <div className="p-6 quote-printable">
-          <SimpleQuotePrintView quote={quote} lines={lines} totals={totals} />
+        <div className="bg-gray-200 p-4 flex justify-center quote-styled-printable">
+          <TemplateComponent quote={quote} lines={lines} totals={totals} />
         </div>
       </div>
-    </div>
-  );
-}
-
-// ============================================
-// 인쇄용 견적서 (classic 템플릿)
-// ============================================
-function SimpleQuotePrintView({ quote, lines, totals }) {
-  const designFeeOn = Number(quote.designFeeRate) > 0;
-  const round = Number(quote.roundAdjustment) || 0;
-  return (
-    <div className="font-sans text-[13px] text-gray-900 quote-print">
-      <h1 className="text-3xl font-bold text-center mb-6 underline tracking-widest">견 적 서</h1>
-
-      {/* 헤더 정보 */}
-      <table className="w-full border-collapse mb-4">
-        <tbody>
-          <tr>
-            <td className="border px-3 py-2 w-1/2 align-top">
-              <div className="text-xs text-gray-500">{formatDateDot(quote.quoteDate)}</div>
-              <div className="mt-2 text-base font-medium">{quote.clientName || '—'} 귀하</div>
-              <div className="mt-1 text-sm text-gray-700">{quote.projectName}</div>
-              <div className="mt-2 text-xs text-gray-500">아래와 같이 견적합니다.</div>
-            </td>
-            <td className="border px-3 py-2 w-1/2 text-xs">
-              <div className="font-bold text-sm mb-1">{quote.supplierName}</div>
-              <Row k="등록번호" v={quote.supplierRegNo} />
-              <Row k="대 표" v={quote.supplierOwner} />
-              <Row k="주 소" v={quote.supplierAddress} />
-              <Row k="Tel" v={quote.supplierTel} />
-              <Row k="E-mail" v={quote.supplierEmail} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 합계 강조 */}
-      <table className="w-full border-collapse mb-4">
-        <tbody>
-          <tr>
-            <td className="border bg-gray-50 px-3 py-3 w-32 text-center font-bold">합 계 금 액</td>
-            <td className="border px-3 py-3 text-2xl font-bold tabular-nums">
-              {formatWon(totals.total)} 원
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 라인 테이블 — 비고를 메인 폭(약 60%)으로 */}
-      <table className="w-full border-collapse text-xs" style={{ tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: '14%' }} />{/* 품명 */}
-          <col style={{ width: '7%' }} />{/* 규격 */}
-          <col style={{ width: '5%' }} />{/* 수량 */}
-          <col style={{ width: '5%' }} />{/* 단위 */}
-          <col style={{ width: '10%' }} />{/* 단가 */}
-          <col style={{ width: '10%' }} />{/* 금액 */}
-          <col />{/* 비고 — 약 49% */}
-        </colgroup>
-        <thead className="bg-emerald-700 text-white">
-          <tr>
-            <th className="border px-2 py-2 text-left">품 명</th>
-            <th className="border px-2 py-2">규 격</th>
-            <th className="border px-2 py-2">수량</th>
-            <th className="border px-2 py-2">단위</th>
-            <th className="border px-2 py-2">단 가</th>
-            <th className="border px-2 py-2">금 액</th>
-            <th className="border px-2 py-2 text-left">비 고</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(() => {
-            // 인쇄용도 inGroup 상태 추적해서 들여쓰기 표시
-            let inGroup = false;
-            return lines.map((l, i) => {
-              if (l.isGroup && l.isGroupEnd) {
-                inGroup = false;
-                // 인쇄에서는 종료 마커 자체를 라인으로 표시하지 않고 그냥 흐름만 종료
-                return null;
-              }
-              if (l.isGroup) {
-                inGroup = true;
-                return (
-                  <tr key={l._key || i} className="bg-emerald-50">
-                    <td colSpan={7} className="border px-2 py-1.5 font-bold text-emerald-900">
-                      ▸ {l.itemName}
-                    </td>
-                  </tr>
-                );
-              }
-              const amt = (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
-              return (
-                <tr key={l._key || i}>
-                  <td className="border px-2 py-1.5">
-                    {inGroup ? <span className="text-gray-400 mr-1">·</span> : null}
-                    <span className={inGroup ? 'pl-2' : ''}>{l.itemName}</span>
-                  </td>
-                  <td className="border px-2 py-1.5 text-center">{l.spec}</td>
-                  <td className="border px-2 py-1.5 text-center tabular-nums">{Number(l.quantity) || 0}</td>
-                  <td className="border px-2 py-1.5 text-center">{l.unit}</td>
-                  <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(l.unitPrice)}</td>
-                  <td className="border px-2 py-1.5 text-right tabular-nums">{formatWon(amt)}</td>
-                  <td className="border px-2 py-1.5">{l.notes}</td>
-                </tr>
-              );
-            });
-          })()}
-          {/* 빈 행 채우기 (시각적 안정감) */}
-          {Array.from({ length: Math.max(0, 8 - lines.length) }).map((_, i) => (
-            <tr key={`empty-${i}`}>
-              <td className="border px-2 py-1.5">&nbsp;</td>
-              <td className="border"></td>
-              <td className="border"></td>
-              <td className="border"></td>
-              <td className="border"></td>
-              <td className="border"></td>
-              <td className="border"></td>
-            </tr>
-          ))}
-
-          {/* 합계 영역 */}
-          <tr className="bg-yellow-100">
-            <td colSpan={5} className="border px-2 py-2 text-center font-bold">합 계</td>
-            <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.subtotal)}</td>
-            <td className="border"></td>
-          </tr>
-          {designFeeOn && (
-            <tr className="bg-yellow-100">
-              <td colSpan={5} className="border px-2 py-2 text-center font-bold">
-                설계 및 감리비 ({Number(quote.designFeeRate)}%)
-              </td>
-              <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.designFeeAmount)}</td>
-              <td className="border"></td>
-            </tr>
-          )}
-          {round !== 0 && (
-            <tr className="bg-yellow-50">
-              <td colSpan={5} className="border px-2 py-2 text-center text-gray-600">단수조정</td>
-              <td className="border px-2 py-2 text-right tabular-nums">{round < 0 ? '-' : ''}{formatWon(Math.abs(round))}</td>
-              <td className="border"></td>
-            </tr>
-          )}
-          <tr className="bg-yellow-100">
-            <td colSpan={5} className="border px-2 py-2 text-center font-bold">
-              부가세 ({Number(quote.vatRate)}%)
-            </td>
-            <td className="border px-2 py-2 text-right tabular-nums font-bold">{formatWon(totals.vatAmount)}</td>
-            <td className="border"></td>
-          </tr>
-          <tr className="bg-yellow-200">
-            <td colSpan={5} className="border px-2 py-2 text-center font-bold">총 금 액</td>
-            <td className="border px-2 py-2 text-right tabular-nums font-bold text-base">{formatWon(totals.total)}</td>
-            <td className="border"></td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 푸터 */}
-      {quote.footerNotes && (
-        <div className="mt-4 text-xs text-gray-700 whitespace-pre-line">
-          {quote.footerNotes}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Row({ k, v }) {
-  return (
-    <div className="flex py-0.5 border-b last:border-b-0">
-      <span className="w-16 text-gray-500">{k}</span>
-      <span className="text-gray-800">{v || '—'}</span>
     </div>
   );
 }
