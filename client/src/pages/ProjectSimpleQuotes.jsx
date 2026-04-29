@@ -497,22 +497,29 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     });
   }, [lines]);
 
-  // 활성 라인의 그룹 헤더 → 표준 공정 라벨 정규화. OTHER면 가이드 매칭 X.
+  // 활성 라인 → 표준 공정 라벨 정규화. OTHER면 가이드 매칭 X.
+  // 매칭 우선순위:
+  //   1) 그룹 안에 있으면 그룹 헤더 itemName
+  //   2) 그룹 밖이면 활성 라인 자신의 itemName (그룹 없이 라인 자체가 공정인 케이스)
   const activePhase = useMemo(() => {
     if (activeLineIdx == null) return null;
     const meta = linesWithMeta[activeLineIdx];
-    if (!meta || !meta._groupName?.trim()) return null;
-    const phase = normalizePhase(meta._groupName);
+    if (!meta) return null;
+    const text = (meta._groupName?.trim()) || (meta.itemName?.trim());
+    if (!text) return null;
+    const phase = normalizePhase(text);
     if (isOther(phase.label)) return null;
     return phase.label;
   }, [activeLineIdx, linesWithMeta]);
 
-  // 견적 처음 열 때 첫 그룹 헤더를 자동 활성으로 — 사용자가 셀 클릭 안 해도 가이드 표시
+  // 견적 처음 열 때 자동 활성: 첫 그룹 헤더 우선, 없으면 첫 일반 라인
   useEffect(() => {
     if (activeLineIdx != null) return;
     if (!linesWithMeta.length) return;
     const firstGroup = linesWithMeta.findIndex((l) => l.isGroup && !l.isGroupEnd);
-    if (firstGroup >= 0) setActiveLineIdx(firstGroup);
+    if (firstGroup >= 0) { setActiveLineIdx(firstGroup); return; }
+    const firstLine = linesWithMeta.findIndex((l) => !l.isGroup);
+    if (firstLine >= 0) setActiveLineIdx(firstLine);
   }, [linesWithMeta, activeLineIdx]);
 
   if (loading || !quote) {
