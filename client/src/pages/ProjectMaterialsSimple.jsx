@@ -7,6 +7,7 @@ import { materialsApi } from '../api/materials';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import QuoteContextDrawer from '../components/QuoteContextDrawer';
 import MaterialImportModal from '../components/MaterialImportModal';
+import InputModal from '../components/InputModal';
 import { OtherBadge } from '../components/PhaseSelect';
 import { normalizePhase, isOther } from '../utils/phases';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
@@ -27,6 +28,8 @@ export default function ProjectMaterialsSimple() {
   const [emptyGroups, setEmptyGroups] = useState([]);
   // 공정별 불러오기 모달 — { spaceGroup, kind } 또는 null
   const [importTarget, setImportTarget] = useState(null);
+  // 그룹 이름 입력 모달 — { mode: 'create' | 'rename', from?: string } 또는 null
+  const [groupModal, setGroupModal] = useState(null);
 
   // 견적 → 마감재 보내기에서 넘어온 빈 그룹 자동 노출
   useEffect(() => {
@@ -498,56 +501,75 @@ export default function ProjectMaterialsSimple() {
       return;
     }
 
-    // 마감재 — 표준 25개 정규화 + 사용자 확인 흐름 유지
-    const name = prompt(`새 마감재 그룹 이름을 입력하세요 (예: 목공, 도배, 화장실 — 표준 25개로 자동 흡수)`);
-    if (!name) return;
+    // 마감재 — InputModal로 입력 받음 (정규화·확인은 handleAddFinishGroup)
+    setGroupModal({ mode: 'create' });
+  }
+
+  // InputModal에서 새 마감재 그룹 이름 확정 시 호출 — 표준 25개 정규화 + confirm
+  function handleAddFinishGroup(name) {
+    if (!name) { setGroupModal(null); return; }
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed) { setGroupModal(null); return; }
 
     let finalName = trimmed;
     const phase = normalizePhase(trimmed);
     if (phase.key !== 'OTHER' && phase.label !== trimmed) {
-      // 표준 매핑 발견 — 사용자 확인
-      if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다.\n계속하시겠어요?`)) return;
+      if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다.\n계속하시겠어요?`)) {
+        setGroupModal(null);
+        return;
+      }
       finalName = phase.label;
     }
-    // OTHER로 떨어지면 원본 그대로 (자유 키워드 보존)
 
     if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다.');
+      setGroupModal(null);
       return;
     }
-    // 빈 그룹으로 추가 — Material 자동 생성 X. 사용자가 "+ 항목" 클릭으로 첫 항목 추가.
     setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'FINISH' }]);
+    setGroupModal(null);
   }
 
-  async function renameGroup(from) {
-    const next = prompt(`그룹 이름 변경: "${from}" →`, from);
-    if (next == null) return;
-    const trimmed = next.trim();
-    if (!trimmed || trimmed === from) return;
+  function renameGroup(from) {
+    setGroupModal({ mode: 'rename', from });
+  }
 
-    // 같은 정규화 흐름 (마감재만, 가전 그룹은 그대로). OTHER는 원본 보존.
+  // InputModal에서 이름 변경 확정
+  async function handleRenameGroup(next) {
+    if (next == null) { setGroupModal(null); return; }
+    const from = groupModal?.from;
+    const trimmed = next.trim();
+    if (!trimmed || !from || trimmed === from) {
+      setGroupModal(null);
+      return;
+    }
+
     const fromGroup = grouped.find((g) => g.name === from);
     let finalName = trimmed;
     if (fromGroup?.kind === 'FINISH') {
       const phase = normalizePhase(trimmed);
       if (phase.key !== 'OTHER' && phase.label !== trimmed) {
-        if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다. 계속하시겠어요?`)) return;
+        if (!confirm(`"${trimmed}" → 표준 공정 "${phase.label}"으로 자동 저장됩니다. 계속하시겠어요?`)) {
+          setGroupModal(null);
+          return;
+        }
         finalName = phase.label;
       }
     }
 
-    if (finalName === from) return;
+    if (finalName === from) { setGroupModal(null); return; }
     if (groupNames.includes(finalName)) {
       alert('이미 같은 이름의 그룹이 있습니다. 다른 이름을 사용하세요.');
+      setGroupModal(null);
       return;
     }
     try {
       await materialsApi.renameGroup(projectId, from, finalName);
       setItems((prev) => prev.map((it) => (it.spaceGroup === from ? { ...it, spaceGroup: finalName } : it)));
+      setGroupModal(null);
     } catch (e) {
       alert('이름 변경 실패: ' + (e.response?.data?.error || e.message));
+      setGroupModal(null);
     }
   }
 
@@ -702,6 +724,26 @@ export default function ProjectMaterialsSimple() {
           kind={importTarget.kind}
           onClose={() => setImportTarget(null)}
           onImported={() => { setImportTarget(null); reload(); }}
+        />
+      )}
+
+      {groupModal?.mode === 'create' && (
+        <InputModal
+          title="새 마감재 그룹"
+          placeholder="예: 목공, 도배, 화장실"
+          hint="표준 25개 공정으로 자동 흡수됩니다 (자유 텍스트는 '기타' 그룹으로)."
+          confirmLabel="추가"
+          onConfirm={handleAddFinishGroup}
+          onCancel={() => setGroupModal(null)}
+        />
+      )}
+      {groupModal?.mode === 'rename' && (
+        <InputModal
+          title={`그룹 이름 변경 — "${groupModal.from}"`}
+          defaultValue={groupModal.from}
+          confirmLabel="변경"
+          onConfirm={handleRenameGroup}
+          onCancel={() => setGroupModal(null)}
         />
       )}
 

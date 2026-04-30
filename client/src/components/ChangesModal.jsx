@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useEscape } from '../hooks/useEscape';
 import { scheduleChangesApi } from '../api/schedules';
 import { relativeTime, formatDateDisplay } from '../utils/date';
 
@@ -11,6 +12,7 @@ const ACTION_LABEL = {
 };
 
 export default function ChangesModal({ projectId, onClose }) {
+  useEscape(true, onClose);
   const [days, setDays] = useState(3);
   const [changes, setChanges] = useState([]);
   const [loading, setLoading] = useState(true);

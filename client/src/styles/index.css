@@ -34,63 +34,80 @@ input[type="number"] {
 }
 
 /* ============================================
-   다크 모드 (html.dark) — 핵심 색상 글로벌 override.
-   각 컴포넌트에 dark: variant 일일이 추가하지 않고
-   bg-white/bg-gray-50/text-gray-* 같은 자주 쓰는 클래스를 강제 변환.
+   다크 모드 (html.dark) — 색상 시스템.
+   참고: Tailwind UI 다크 표준 + Linear 패턴.
+   slate 컬러(따뜻한 푸른빛 회색)가 navy 시스템과 자연스럽게 어울려서
+   gray 대신 slate 톤으로 통일. navy 강조는 자체 navy 팔레트 재사용.
+
+   3단계 elevation:
+     L0 페이지 배경 = slate-950   (가장 어두움)
+     L1 카드 표면  = slate-900    (bg-white 변환)
+     L2 강조 표면  = slate-800    (bg-gray-100, modal 등)
+
+   글로벌 override 패턴이라 각 컴포넌트에 dark: variant 직접 안 추가해도
+   라이트 클래스(bg-white, bg-gray-50, text-gray-*)가 자동 다크로 매핑됨.
    ============================================ */
 html.dark {
   color-scheme: dark;
 }
 html.dark body {
-  @apply bg-gray-900 text-gray-100;
+  background-color: rgb(2 6 23); /* slate-950 — 페이지 배경 L0 */
+  color: rgb(241 245 249); /* slate-100 */
 }
 
-/* 배경 */
-html.dark .bg-white         { background-color: rgb(31 41 55); }     /* gray-800 */
-html.dark .bg-gray-50       { background-color: rgb(17 24 39); }     /* gray-900 */
-html.dark .bg-gray-50\/60   { background-color: rgb(17 24 39 / 0.6); }
-html.dark .bg-gray-100      { background-color: rgb(55 65 81); }     /* gray-700 */
-html.dark .bg-navy-50       { background-color: rgb(30 58 102 / 0.25); }
-html.dark .bg-navy-50\/60   { background-color: rgb(30 58 102 / 0.2); }
-html.dark .bg-amber-50      { background-color: rgb(120 53 15 / 0.25); }
-html.dark .bg-emerald-50    { background-color: rgb(6 78 59 / 0.3); }
-html.dark .bg-sky-50        { background-color: rgb(7 89 133 / 0.25); }
-html.dark .bg-rose-50       { background-color: rgb(159 18 57 / 0.25); }
-html.dark .bg-violet-50     { background-color: rgb(76 29 149 / 0.25); }
-html.dark .bg-yellow-50     { background-color: rgb(113 63 18 / 0.25); }
-html.dark .bg-navy-100      { background-color: rgb(30 58 102 / 0.4); }
-html.dark .bg-emerald-100   { background-color: rgb(6 78 59 / 0.5); }
-html.dark .bg-sky-100       { background-color: rgb(7 89 133 / 0.5); }
-html.dark .bg-amber-100     { background-color: rgb(120 53 15 / 0.5); }
-html.dark .bg-rose-100      { background-color: rgb(159 18 57 / 0.5); }
-html.dark .bg-violet-100    { background-color: rgb(76 29 149 / 0.5); }
-html.dark .bg-gray-200      { background-color: rgb(75 85 99); }
-/* 헤더 nav active 가시성 — bg-navy-700이 헤더 bg-navy-800과 너무 비슷 */
-html.dark .bg-navy-700      { background-color: rgb(59 130 246 / 0.8); }
-html.dark .hover\:bg-navy-700\/60:hover { background-color: rgb(59 130 246 / 0.4); }
-html.dark .hover\:bg-navy-800:hover { background-color: rgb(37 99 235); }
-/* 다크에서 흰 배경 navy-700 텍스트 → 더 밝게 */
-html.dark .text-navy-100    { color: rgb(191 219 254); }
+/* ── 배경 (3단계 elevation) ── */
+html.dark .bg-white         { background-color: rgb(15 23 42); }   /* slate-900 — 카드 L1 */
+html.dark .bg-gray-50       { background-color: rgb(2 6 23); }     /* slate-950 — 페이지 단계 L0 */
+html.dark .bg-gray-50\/60   { background-color: rgb(2 6 23 / 0.6); }
+html.dark .bg-gray-100      { background-color: rgb(30 41 59); }   /* slate-800 — 강조 L2 */
+html.dark .bg-gray-200      { background-color: rgb(51 65 85); }   /* slate-700 */
 
-/* 텍스트 */
-html.dark .text-gray-900    { color: rgb(243 244 246); }
-html.dark .text-gray-800    { color: rgb(229 231 235); }
-html.dark .text-gray-700    { color: rgb(209 213 219); }
-html.dark .text-gray-600    { color: rgb(156 163 175); }
-html.dark .text-gray-500    { color: rgb(156 163 175); }
-html.dark .text-gray-400    { color: rgb(107 114 128); }
-html.dark .text-gray-300    { color: rgb(75 85 99); }
+/* navy 강조 — 자체 팔레트 재사용 (디자인 시스템 일관성) */
+html.dark .bg-navy-50       { background-color: rgb(12 26 51 / 0.7); }    /* navy-900/70 */
+html.dark .bg-navy-50\/60   { background-color: rgb(12 26 51 / 0.5); }
+html.dark .bg-navy-100      { background-color: rgb(21 41 74 / 0.8); }    /* navy-800/80 */
+/* 헤더 nav active item — 헤더(navy-800) 위에서 보이는 navy-600 */
+html.dark .bg-navy-700      { background-color: rgb(42 74 128); }         /* navy-600 */
+html.dark .hover\:bg-navy-700\/60:hover { background-color: rgb(42 74 128 / 0.5); }
+html.dark .hover\:bg-navy-800:hover { background-color: rgb(30 58 102); }  /* navy-700 */
+
+/* 의미색 강조 배경 — Tailwind 950/40 패턴 (저채도, 차분) */
+html.dark .bg-amber-50      { background-color: rgb(69 26 3 / 0.5); }
+html.dark .bg-amber-100     { background-color: rgb(120 53 15 / 0.6); }
+html.dark .bg-emerald-50    { background-color: rgb(2 44 34 / 0.55); }
+html.dark .bg-emerald-100   { background-color: rgb(6 78 59 / 0.55); }
+html.dark .bg-sky-50        { background-color: rgb(8 47 73 / 0.5); }
+html.dark .bg-sky-100       { background-color: rgb(7 89 133 / 0.55); }
+html.dark .bg-rose-50       { background-color: rgb(76 5 25 / 0.5); }
+html.dark .bg-rose-100      { background-color: rgb(159 18 57 / 0.55); }
+html.dark .bg-violet-50     { background-color: rgb(46 16 101 / 0.5); }
+html.dark .bg-violet-100    { background-color: rgb(76 29 149 / 0.55); }
+html.dark .bg-yellow-50     { background-color: rgb(66 32 6 / 0.5); }
+
+/* ── 텍스트 ── */
+html.dark .text-gray-900    { color: rgb(241 245 249); }   /* slate-100 — primary */
+html.dark .text-gray-800    { color: rgb(226 232 240); }   /* slate-200 */
+html.dark .text-gray-700    { color: rgb(203 213 225); }   /* slate-300 */
+html.dark .text-gray-600    { color: rgb(148 163 184); }   /* slate-400 — secondary */
+html.dark .text-gray-500    { color: rgb(148 163 184); }   /* slate-400 */
+html.dark .text-gray-400    { color: rgb(100 116 139); }   /* slate-500 — muted */
+html.dark .text-gray-300    { color: rgb(71 85 105); }     /* slate-600 */
+
+/* navy 텍스트 — navy-200 (#b3c5e1) 가독성 좋음 */
+html.dark .text-navy-100    { color: rgb(217 226 240); }   /* navy-100 keep */
 html.dark .text-navy-900,
 html.dark .text-navy-800,
-html.dark .text-navy-700    { color: rgb(147 197 253); }
-html.dark .text-navy-600    { color: rgb(96 165 250); }
-html.dark .text-navy-500    { color: rgb(59 130 246); }
-html.dark .text-violet-500  { color: rgb(167 139 250); }
-html.dark .text-violet-600  { color: rgb(167 139 250); }
+html.dark .text-navy-700    { color: rgb(179 197 225); }   /* navy-200 */
+html.dark .text-navy-600    { color: rgb(141 168 210); }   /* navy-300 */
+html.dark .text-navy-500    { color: rgb(141 168 210); }   /* navy-300 */
+
+/* 의미색 텍스트 — 300 단계 (저채도, 다크 배경에서 충분히 밝음) */
+html.dark .text-violet-500,
+html.dark .text-violet-600  { color: rgb(196 181 253); }
 html.dark .text-violet-700,
 html.dark .text-violet-800,
 html.dark .text-violet-900  { color: rgb(196 181 253); }
-html.dark .text-sky-500     { color: rgb(56 189 248); }
+html.dark .text-sky-500     { color: rgb(125 211 252); }
 html.dark .text-sky-700,
 html.dark .text-sky-800,
 html.dark .text-sky-900     { color: rgb(125 211 252); }
@@ -100,40 +117,63 @@ html.dark .text-amber-700,
 html.dark .text-amber-800   { color: rgb(252 211 77); }
 html.dark .text-rose-600,
 html.dark .text-rose-700,
-html.dark .text-rose-800    { color: rgb(252 165 165); }
-/* 캘린더 일요일 — red-500는 rose 통일 대상이 아님 (한국 캘린더 관습) */
-html.dark .text-red-500     { color: rgb(252 165 165); }
+html.dark .text-rose-800    { color: rgb(253 164 175); }
+/* 캘린더 일요일 — 한국 캘린더 관습 (rose 통일 대상 아님) */
+html.dark .text-red-500     { color: rgb(253 164 175); }
 
-/* 테두리 */
+/* ── 테두리 — slate-800 (카드 표면 위에서 은은하게) ── */
 html.dark .border-gray-200,
-html.dark .border-gray-300  { border-color: rgb(55 65 81); }
-html.dark .border           { border-color: rgb(55 65 81); }
+html.dark .border-gray-300  { border-color: rgb(30 41 59); }   /* slate-800 */
+html.dark .border           { border-color: rgb(30 41 59); }
 html.dark .border-b,
 html.dark .border-t,
 html.dark .border-l,
 html.dark .border-r,
 html.dark .border-y,
-html.dark .border-x         { border-color: rgb(55 65 81); }
-html.dark .divide-y > * + * { border-color: rgb(55 65 81); }
-html.dark .border-dashed    { border-color: rgb(75 85 99); }
+html.dark .border-x         { border-color: rgb(30 41 59); }
+html.dark .divide-y > * + * { border-color: rgb(30 41 59); }
+html.dark .border-dashed    { border-color: rgb(51 65 85); }   /* slate-700 */
 
-/* 인풋/셀렉트/textarea — 자주 쓰는 흰 배경 input들 */
+/* ── 입력 요소 — 페이지 배경(slate-950)보다 한 단계 밝은 slate-900 ── */
 html.dark input:not([type=checkbox]):not([type=radio]),
 html.dark select,
 html.dark textarea {
-  background-color: rgb(17 24 39);
-  color: rgb(243 244 246);
-  border-color: rgb(55 65 81);
+  background-color: rgb(15 23 42); /* slate-900 */
+  color: rgb(241 245 249);          /* slate-100 */
+  border-color: rgb(51 65 85);      /* slate-700 */
 }
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: rgb(107 114 128);
+  color: rgb(100 116 139); /* slate-500 */
+}
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: rgb(141 168 210);   /* navy-300 — focus accent */
 }
 
-/* hover bg-gray-50 보강 */
-html.dark .hover\:bg-gray-50:hover { background-color: rgb(55 65 81); }
-html.dark .hover\:bg-gray-100:hover { background-color: rgb(75 85 99); }
-html.dark .hover\:bg-white\/70:hover { background-color: rgb(31 41 55 / 0.7); }
+/* ── hover 상태 ── */
+html.dark .hover\:bg-gray-50:hover  { background-color: rgb(30 41 59); }   /* slate-800 */
+html.dark .hover\:bg-gray-100:hover { background-color: rgb(51 65 85); }   /* slate-700 */
+html.dark .hover\:bg-white\/70:hover { background-color: rgb(15 23 42 / 0.7); }
+html.dark .hover\:bg-navy-50:hover  { background-color: rgb(21 41 74 / 0.7); }
+
+/* ── shadow → ring 패턴 (다크에선 그림자가 거의 안 보여서 ring으로 윤곽 강조) ── */
+html.dark .shadow-sm,
+html.dark .shadow {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+html.dark .shadow-md {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.4);
+}
+html.dark .shadow-lg,
+html.dark .shadow-xl {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 10px 30px rgb(0 0 0 / 0.5);
+}
+
+/* ── 모달 overlay — 다크에서 더 진하게 ── */
+html.dark .bg-black\/40 { background-color: rgb(0 0 0 / 0.6); }
+html.dark .bg-black\/50 { background-color: rgb(0 0 0 / 0.7); }
 
 /* ============================================
    인쇄 (견적서 PDF 출력용)

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { projectsApi } from '../api/projects';
 import { teamApi, ROLE_META } from '../api/team';
 import { useAuth } from '../contexts/AuthContext';
+import { useEscape } from '../hooks/useEscape';
 
 // 프로젝트 멤버(LEAD/MEMBER) 관리 모달 — 오픈 디폴트 (2026-04-30)
 // 정책: 같은 회사 멤버는 모든 프로젝트 보기·작업 가능 (오픈 디폴트).
 // 이 모달은 "LEAD 지정"과 "DELETE/멤버관리 권한 부여"용. LEAD가 같은 회사 멤버를 추가/제거/역할 변경.
 // OWNER는 행 없어도 자동 풀권한(우회 룰). 정식 출시 후 팀 단위 분리 시 진화.
 export default function ProjectMembersModal({ projectId, onClose }) {
+  useEscape(true, onClose);
   const { auth } = useAuth();
   const [members, setMembers] = useState([]);
   const [companyMembers, setCompanyMembers] = useState([]);

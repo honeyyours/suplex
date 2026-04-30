@@ -3,8 +3,10 @@
 // 메타데이터·메모·견적은 그대로 유지. 재업로드 시 동일 출처에 다시 올리면 자연 복원.
 import { useEffect, useState } from 'react';
 import { photoArchiveApi } from '../api/photoArchive';
+import { useEscape } from '../hooks/useEscape';
 
 export default function PhotoArchiveModal({ project, onClose, onArchived }) {
+  useEscape(true, onClose);
   const [summary, setSummary] = useState(null);
   const [loadErr, setLoadErr] = useState('');
   const [downloaded, setDownloaded] = useState(false);

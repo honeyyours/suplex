@@ -7,8 +7,10 @@
 // UI: 다른 프로젝트 탭은 프로젝트별 collapsible 섹션 + 헤더 체크박스로 통째 선택.
 import { useEffect, useMemo, useState } from 'react';
 import { materialsApi } from '../api/materials';
+import { useEscape } from '../hooks/useEscape';
 
 export default function MaterialImportModal({ projectId, spaceGroup, kind = 'FINISH', onClose, onImported }) {
+  useEscape(true, onClose);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('templates'); // 'templates' | 'others'

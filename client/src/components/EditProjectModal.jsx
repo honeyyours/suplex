@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import ProjectForm from './ProjectForm';
 import { projectsApi } from '../api/projects';
+import { useEscape } from '../hooks/useEscape';
 
 export default function EditProjectModal({ project, onClose, onSaved, onDeleted }) {
+  useEscape(true, onClose);
   const queryClient = useQueryClient();
 
   async function submit(payload) {

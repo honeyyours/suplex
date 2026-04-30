@@ -77,10 +77,10 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
+    <div className="min-h-full flex items-center justify-center bg-gray-50 dark:bg-slate-950 py-12 px-4">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow dark:ring-1 dark:ring-white/5 p-8">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-2xl font-bold text-navy-800">회원가입</h1>
+          <h1 className="text-2xl font-bold text-navy-800 dark:text-navy-200">회원가입</h1>
           <span className="text-xs text-gray-400">{step}/2</span>
         </div>
         <p className="text-sm text-gray-500 mb-6">

@@ -4,6 +4,7 @@ import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import PhaseInlineContent from './PhaseInlineContent';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
+import { useEscape } from '../hooks/useEscape';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -26,6 +27,7 @@ export default function MobileScheduleSheet({
   canPrev,
   canNext,
 }) {
+  useEscape(true, onClose);
   const [content, setContent] = useState('');
   const [vendorMenu, setVendorMenu] = useState(null); // { x, y, entry } | null
   const phases = useCompanyPhases();

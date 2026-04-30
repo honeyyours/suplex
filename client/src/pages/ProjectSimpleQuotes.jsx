@@ -138,7 +138,7 @@ export default function ProjectSimpleQuotes() {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4 xl:pr-[340px]">
       <aside>
         <button
           onClick={() => setShowNewModal(true)}

@@ -5,8 +5,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { vendorsApi } from '../api/vendors';
 import { projectMemosApi } from '../api/projectMemos';
+import { useEscape } from '../hooks/useEscape';
 
 export default function LaborSettlementModal({ project, projectId, onClose }) {
+  useEscape(true, onClose);
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState('');
   const [vendors, setVendors] = useState([]);

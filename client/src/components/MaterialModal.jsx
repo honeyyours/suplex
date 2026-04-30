@@ -6,6 +6,7 @@ import {
 } from '../api/materials';
 import { getFormSchema } from '../utils/materialFormSchemas';
 import { relativeTime } from '../utils/date';
+import { useEscape } from '../hooks/useEscape';
 
 // 공용부 동일 inherit 가능한 itemName (방1/방2/안방의 바닥재·도배 → 거실에서 가져옴)
 const INHERITABLE_FORM_KEYS = new Set(['floor_material', 'wallpaper']);
@@ -23,6 +24,7 @@ export default function MaterialModal({
   onSaved,
   onDeleted,
 }) {
+  useEscape(true, onClose);
   const isEdit = Boolean(material?.id);
   const [tab, setTab] = useState('info');
   const [history, setHistory] = useState(null);

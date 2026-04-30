@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, formatDateDisplay, categoryClass } from '../utils/date';
+import { useEscape } from '../hooks/useEscape';
 
 export default function ExtractModal({ projectId, project, onClose }) {
+  useEscape(true, onClose);
   const [keyword, setKeyword] = useState('');
   const [fromToday, setFromToday] = useState(true);
   const [results, setResults] = useState(null);

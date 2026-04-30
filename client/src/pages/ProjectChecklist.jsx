@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi } from '../api/checklists';
 import { photosApi } from '../api/reports';
 import { relativeTime } from '../utils/date';
+import InputModal from '../components/InputModal';
 
 export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
   const [newDueDate, setNewDueDate] = useState('');
   const [err, setErr] = useState('');
+  const [editingItem, setEditingItem] = useState(null); // prompt() 대체 — 편집 대상
 
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['checklists', 'project', id],
@@ -68,10 +70,19 @@ export default function ProjectChecklist({ projectId } = {}) {
     reload();
   }
 
-  async function edit(item) {
-    const newTitleVal = prompt('항목 수정:', item.title);
-    if (!newTitleVal || newTitleVal.trim() === item.title) return;
-    await checklistsApi.update(id, item.id, { title: newTitleVal.trim() });
+  function edit(item) {
+    setEditingItem(item);
+  }
+
+  async function handleEditConfirm(newTitleVal) {
+    if (!editingItem) return;
+    const trimmed = (newTitleVal || '').trim();
+    if (!trimmed || trimmed === editingItem.title) {
+      setEditingItem(null);
+      return;
+    }
+    await checklistsApi.update(id, editingItem.id, { title: trimmed });
+    setEditingItem(null);
     reload();
   }
 
@@ -165,6 +176,15 @@ export default function ProjectChecklist({ projectId } = {}) {
         </Column>
       </div>
 
+      {editingItem && (
+        <InputModal
+          title="항목 수정"
+          defaultValue={editingItem.title}
+          confirmLabel="저장"
+          onConfirm={handleEditConfirm}
+          onCancel={() => setEditingItem(null)}
+        />
+      )}
     </div>
   );
 }

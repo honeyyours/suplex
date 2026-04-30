@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { STANDARD_PHASES } from '../utils/phases';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 import { phaseNotesApi, GENERAL_PHASE } from '../api/phaseNotes';
+import { useEscape } from '../hooks/useEscape';
 
 // 새 간편 견적 생성 모달.
 // 표준 공종(척추)을 체크 → 클릭 순서대로 견적 그룹으로 만들어 생성.
@@ -10,6 +11,7 @@ import { phaseNotesApi, GENERAL_PHASE } from '../api/phaseNotes';
 const SELECTABLE_PHASES = STANDARD_PHASES.filter((p) => p.key !== 'OTHER');
 
 export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }) {
+  useEscape(true, onClose);
   const { displayPhase } = usePhaseLabels();
   // 클릭 순서 보존이 핵심 — Set 대신 배열로 phase.label을 순서대로 쌓는다.
   const [selectedLabels, setSelectedLabels] = useState([]);
