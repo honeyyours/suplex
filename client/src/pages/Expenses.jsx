@@ -110,6 +110,45 @@ export default function Expenses() {
     });
   }, [queryClient, queryParams]);
 
+  // 인라인 신규 거래 — optimistic update로 저장 즉시 UI 반영, 서버 응답은 백그라운드.
+  // projects/accountCodes에서 join 정보 미리 채워 ListRow가 즉시 정상 표시.
+  const handleAddSave = useCallback((payload) => {
+    const tempId = '__temp_' + Date.now() + Math.random().toString(36).slice(2, 6);
+    const proj = payload.projectId ? projects.find((p) => p.id === payload.projectId) : null;
+    const ac = payload.accountCodeId ? accountCodes.find((c) => c.id === payload.accountCodeId) : null;
+    const optimistic = {
+      id: tempId,
+      ...payload,
+      project: proj ? { id: proj.id, name: proj.name, siteCode: proj.siteCode || null } : null,
+      accountCode: ac ? { id: ac.id, code: ac.code, groupName: ac.groupName || null } : null,
+      vendorEntity: null,
+      createdBy: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    // 즉시 cache 추가 + 행 닫음 — 사용자에겐 0ms 응답
+    queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+      if (!old) return old;
+      return { ...old, expenses: [optimistic, ...old.expenses] };
+    });
+    setAdding(false);
+    // 서버 응답 백그라운드 처리 — 성공 시 실제 expense로 교체, 실패 시 rollback
+    return expensesApi.create(payload).then(({ expense }) => {
+      queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+        if (!old) return old;
+        return { ...old, expenses: old.expenses.map((e) => e.id === tempId ? expense : e) };
+      });
+    }).catch((err) => {
+      queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+        if (!old) return old;
+        return { ...old, expenses: old.expenses.filter((e) => e.id !== tempId) };
+      });
+      alert('저장 실패: ' + (err.response?.data?.error || err.message));
+    });
+  }, [queryClient, queryParams, projects, accountCodes]);
+
+  const handleAddCancel = useCallback(() => setAdding(false), []);
+
   useEffect(() => {
     accountCodesApi.list().then((r) => setAccountCodes(r.codes || []));
   }, []);
@@ -243,15 +282,8 @@ export default function Expenses() {
               projects={projects}
               accountCodes={accountCodes}
               adding={adding}
-              onAddCancel={() => setAdding(false)}
-              onAddSave={async (payload) => {
-                const { expense } = await expensesApi.create(payload);
-                queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
-                  if (!old) return old;
-                  return { ...old, expenses: [expense, ...old.expenses] };
-                });
-                setAdding(false);
-              }}
+              onAddCancel={handleAddCancel}
+              onAddSave={handleAddSave}
               onEdit={setEditing}
               onPatch={handleInlinePatch}
               onRemove={handleInlineRemove}
@@ -583,7 +615,10 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
   );
 });
 
-// 신규 거래 입력 행 — 인라인 (모달 X). 외부 클릭 시 자동 저장 (필수 필드 있으면).
+// 신규 거래 입력 행 — 인라인 (모달 X). 외부 클릭 시 자동 저장.
+// 입력 중 끊김 방지를 위해 형식 단순화 (2026-04-30):
+//   - 자동분류는 명시 버튼 클릭 시에만 (디바운스 useEffect 제거 = 입력 중 작업 0)
+//   - outside click handler는 formRef로 최신 값 추적 (deps = onSave/onCancel만)
 function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [type, setType] = useState('EXPENSE');
@@ -593,69 +628,66 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
   const [accountCodeId, setAccountCodeId] = useState('');
   const [projectId, setProjectId] = useState('');
   const [workCategory, setWorkCategory] = useState('');
-  const [classifyHint, setClassifyHint] = useState(null);
+  const [classifying, setClassifying] = useState(false);
   const rowRef = useRef(null);
   const busyRef = useRef(false);
+  // 입력값을 ref로 추적 — useEffect deps 변동 줄여 outside click 리스너 한 번만 등록
+  const formRef = useRef({});
+  formRef.current = { date, type, description, memoVal, amount, accountCodeId, projectId, workCategory };
 
-  // 자동분류 룰 미리보기 — description 입력 후 700ms 디바운스 후 검색만 (자동 적용 X).
-  // 사용자가 명시 버튼 클릭 시 적용. 매 keystroke 자동 적용은 입력 중 cascade re-render로 끊김 발생.
-  useEffect(() => {
-    if (!description.trim()) { setClassifyHint(null); return; }
-    let alive = true;
-    const t = setTimeout(async () => {
-      try {
-        const { results } = await expenseRulesApi.classify([description]);
-        if (!alive) return;
-        setClassifyHint(results?.[0] || null);
-      } catch (e) { /* noop */ }
-    }, 700);
-    return () => { alive = false; clearTimeout(t); };
-  }, [description]);
-
-  function applyClassify() {
-    if (!classifyHint) return;
-    if (classifyHint.accountCodeId) setAccountCodeId(classifyHint.accountCodeId);
-    if (classifyHint.workCategory) setWorkCategory(classifyHint.workCategory);
-    if (classifyHint.siteCode) {
-      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
-      if (proj) setProjectId(proj.id);
-    }
+  // 자동분류 — 사용자가 🏷️ 버튼 클릭 시에만 classify API 호출
+  async function applyClassify() {
+    const desc = description.trim();
+    if (!desc) return;
+    setClassifying(true);
+    try {
+      const { results } = await expenseRulesApi.classify([desc]);
+      const g = results?.[0];
+      if (!g) return;
+      if (g.accountCodeId) setAccountCodeId(g.accountCodeId);
+      if (g.workCategory) setWorkCategory(g.workCategory);
+      if (g.siteCode) {
+        const proj = projects.find((p) => p.siteCode === g.siteCode);
+        if (proj) setProjectId(proj.id);
+      }
+    } catch (e) { /* noop */ } finally { setClassifying(false); }
   }
 
-  // 행 밖 클릭 시 자동 저장 (내역만 있으면) 또는 조용히 닫기.
-  // 단순화 (2026-04-30): amount 없어도 저장. 필수 = 내역(description)만.
-  // amount 0이어도 사용자가 나중에 인라인 편집 가능.
+  // 행 밖 클릭 시 자동 저장 — 마운트 1회만 등록.
   useEffect(() => {
     function onDoc(e) {
       if (!rowRef.current) return;
       if (rowRef.current.contains(e.target)) return;
       if (busyRef.current) return;
-      const desc = description.trim();
+      const f = formRef.current;
+      const desc = f.description.trim();
       if (desc) {
-        const num = Number(String(amount).replace(/[^\d.-]/g, ''));
+        const num = Number(String(f.amount).replace(/[^\d.-]/g, ''));
         busyRef.current = true;
-        onSave({
-          date,
-          type,
+        const result = onSave({
+          date: f.date,
+          type: f.type,
           amount: Number.isFinite(num) ? num : 0,
           description: desc,
           vendor: desc,
-          memo: memoVal.trim() || null,
-          accountCodeId: accountCodeId || null,
-          projectId: projectId || null,
-          workCategory: workCategory.trim() || null,
-        }).catch((err) => {
-          alert('저장 실패: ' + (err.response?.data?.error || err.message));
-          busyRef.current = false;
+          memo: f.memoVal.trim() || null,
+          accountCodeId: f.accountCodeId || null,
+          projectId: f.projectId || null,
+          workCategory: f.workCategory.trim() || null,
         });
+        if (result && typeof result.catch === 'function') {
+          result.catch((err) => {
+            alert('저장 실패: ' + (err.response?.data?.error || err.message));
+            busyRef.current = false;
+          });
+        }
       } else {
-        // 내역 비어있으면 조용히 닫음 (다른 필드 일부 입력해도 의미 없음)
         onCancel();
       }
     }
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, [date, type, description, memoVal, amount, accountCodeId, projectId, workCategory, onSave, onCancel]);
+  }, [onSave, onCancel]);
 
   function handleKey(e) {
     if (e.key === 'Escape') onCancel();
@@ -739,14 +771,13 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
         />
       </td>
       <td className="px-3 py-1.5 text-center">
-        {classifyHint && (
-          <button
-            type="button"
-            onClick={applyClassify}
-            className="text-[10px] px-1.5 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-100"
-            title={`'${classifyHint.keyword}' 매칭 — 클릭 시 계정과목·공종·현장 적용`}
-          >🏷️</button>
-        )}
+        <button
+          type="button"
+          onClick={applyClassify}
+          disabled={!description.trim() || classifying}
+          className="text-[10px] px-1.5 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-100 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="자동분류 룰 적용 — 클릭 시 계정과목·공종·현장 채움"
+        >{classifying ? '…' : '🏷️'}</button>
       </td>
     </tr>
   );
