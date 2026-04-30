@@ -9,8 +9,13 @@ const { audit } = require('../services/audit');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdvices');
 const { seedAllBundlesFromPresetIfAvailable } = require('../services/phasePreset');
+const { checkPasswordPolicy } = require('../services/passwordPolicy');
+const { loginLimiter, signupLimiter, passwordChangeLimiter } = require('../middlewares/rateLimit');
 
 const router = express.Router();
+
+// 이메일 정규화 — 모바일 자동 대문자·앞뒤 공백 입력 케이스 흡수.
+const emailField = z.string().email().transform((s) => s.trim().toLowerCase());
 
 // 멤버십의 UserPermission을 { feature: bool } 맵으로 (graceful fallback: 테이블 미존재 환경 OK).
 async function loadPermissionMap(membershipId) {
@@ -31,7 +36,7 @@ async function loadPermissionMap(membershipId) {
 
 const signupSchema = z.object({
   // 개인 정보 (단계 1)
-  email: z.string().email(),
+  email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
   phone: z.string().optional(),
@@ -44,9 +49,13 @@ const signupSchema = z.object({
   companyEmail: z.string().email().optional().nullable().or(z.literal('')),
 });
 
-router.post('/signup', async (req, res, next) => {
+router.post('/signup', signupLimiter, async (req, res, next) => {
   try {
     const data = signupSchema.parse(req.body);
+
+    // 비번 강도 정책
+    const policyErr = checkPasswordPolicy(data.password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
 
     const exists = await prisma.user.findUnique({ where: { email: data.email } });
     if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
@@ -63,6 +72,8 @@ router.post('/signup', async (req, res, next) => {
           phone: data.companyPhone || null,
           email: data.companyEmail || data.email, // 비어있으면 가입 이메일로
         },
+        // signup 응답에 approvalStatus·plan을 함께 보내기 위해 select 명시
+        select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true },
       });
       const user = await tx.user.create({
         data: {
@@ -104,7 +115,13 @@ router.post('/signup', async (req, res, next) => {
     res.status(201).json({
       token,
       user: { id: result.user.id, email: result.user.email, name: result.user.name },
-      company: { id: result.company.id, name: result.company.name, hideExpenses: result.company.hideExpenses },
+      company: {
+        id: result.company.id,
+        name: result.company.name,
+        hideExpenses: result.company.hideExpenses,
+        approvalStatus: result.company.approvalStatus, // PENDING 디폴트 — 클라이언트 PendingApprovalPage 즉시 분기
+        plan: result.company.plan, // 베타 동안 PRO 디폴트 — 헤더 PlanBadge 즉시 표시
+      },
       role: 'OWNER',
       permissions: {}, // OWNER는 토글 무시 — 항상 ROLE_DEFAULTS
     });
@@ -117,11 +134,11 @@ router.post('/signup', async (req, res, next) => {
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailField,
   password: z.string(),
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({
@@ -129,8 +146,9 @@ router.post('/login', async (req, res, next) => {
       include: {
         memberships: {
           include: {
-            // 명시 select — phaseLabels 같이 prod에 미반영된 컬럼이 있을 때 fallback 안전
-            company: { select: { id: true, name: true, hideExpenses: true } },
+            // 명시 select — phaseLabels 같이 prod에 미반영된 컬럼이 있을 때 fallback 안전.
+            // approvalStatus/plan 포함 — 클라이언트 첫 로그인 직후 깜빡임 제거.
+            company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } },
           },
         },
       },
@@ -171,7 +189,13 @@ router.post('/login', async (req, res, next) => {
       token,
       user: { id: user.id, email: user.email, name: user.name },
       company: membership
-        ? { id: membership.company.id, name: membership.company.name, hideExpenses: membership.company.hideExpenses }
+        ? {
+            id: membership.company.id,
+            name: membership.company.name,
+            hideExpenses: membership.company.hideExpenses,
+            approvalStatus: membership.company.approvalStatus,
+            plan: membership.company.plan,
+          }
         : null,
       role: membership?.role || null,
       isSuperAdmin: user.isSuperAdmin,
@@ -241,7 +265,8 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
 
     const membership = await prisma.membership.findUnique({
       where: { userId_companyId: { userId: req.user.id, companyId: data.companyId } },
-      include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+      // approvalStatus/plan 포함 — 회사 전환 직후 PendingApproval·PlanBadge 즉시 분기
+      include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } } },
     });
     if (!membership) {
       return res.status(403).json({ error: '소속되지 않은 회사입니다' });
@@ -273,6 +298,8 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
         id: membership.company.id,
         name: membership.company.name,
         hideExpenses: membership.company.hideExpenses,
+        approvalStatus: membership.company.approvalStatus,
+        plan: membership.company.plan,
       },
       role: membership.role,
       permissions,
@@ -308,9 +335,12 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
-router.post('/change-password', authRequired, async (req, res, next) => {
+router.post('/change-password', passwordChangeLimiter, authRequired, async (req, res, next) => {
   try {
     const data = changePasswordSchema.parse(req.body);
+
+    const policyErr = checkPasswordPolicy(data.newPassword);
+    if (policyErr) return res.status(400).json({ error: policyErr });
 
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },

@@ -10,6 +10,8 @@ const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired, requireRole } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
+const { checkPasswordPolicy } = require('../services/passwordPolicy');
+const { inviteTokenLimiter } = require('../middlewares/rateLimit');
 
 const router = express.Router();
 
@@ -136,7 +138,7 @@ router.delete('/:id', authRequired, requireRole('OWNER'), async (req, res, next)
 //   userExists=false                          → 신규 가입 화면
 //   userExists=true  & hasOtherMemberships=false → 좀비 케이스(비번 검증 후 합류)
 //   userExists=true  & hasOtherMemberships=true  → "로그인 후 다시 클릭" 안내
-router.get('/by-token/:token', async (req, res, next) => {
+router.get('/by-token/:token', inviteTokenLimiter, async (req, res, next) => {
   try {
     const inv = await prisma.invitation.findUnique({
       where: { token: req.params.token },
@@ -238,8 +240,9 @@ router.post('/accept', async (req, res, next) => {
       if (!data.name?.trim()) {
         return res.status(400).json({ error: '이름을 입력해주세요' });
       }
-      if (data.password.length < 8) {
-        return res.status(400).json({ error: '비밀번호는 8자 이상이어야 합니다' });
+      const policyErr = checkPasswordPolicy(data.password);
+      if (policyErr) {
+        return res.status(400).json({ error: policyErr });
       }
 
       const passwordHash = await bcrypt.hash(data.password, 10);

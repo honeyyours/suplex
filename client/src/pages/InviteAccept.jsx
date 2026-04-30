@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { invitationsApi } from '../api/invitations';
 import { ROLE_META } from '../api/team';
+import { checkPasswordPolicy } from '../utils/passwordPolicy';
 
 export default function InviteAccept() {
   const { token } = useParams();
@@ -87,13 +88,16 @@ export default function InviteAccept() {
       setSubmitErr('비밀번호를 입력해주세요');
       return;
     }
-    if (!isRecover && form.password.length < 8) {
-      setSubmitErr('비밀번호는 8자 이상이어야 합니다');
-      return;
-    }
-    if (!isRecover && !form.name.trim()) {
-      setSubmitErr('이름을 입력해주세요');
-      return;
+    if (!isRecover) {
+      const passwordErr = checkPasswordPolicy(form.password);
+      if (passwordErr) {
+        setSubmitErr(passwordErr);
+        return;
+      }
+      if (!form.name.trim()) {
+        setSubmitErr('이름을 입력해주세요');
+        return;
+      }
     }
     setBusy(true);
     try {

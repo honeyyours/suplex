@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { checkPasswordPolicy } from '../utils/passwordPolicy';
 
 // 2단계 회원가입 — 1) 개인 정보 + 약관 동의 2) 회사 정보
 // 회사 정보는 견적서 갑지에 자동 채워지므로 가입 시 받아두면 첫 견적 작성이 빨라짐.
@@ -34,8 +35,9 @@ export default function Signup() {
       setErr('이메일·비밀번호·이름을 모두 입력해주세요');
       return;
     }
-    if (form.password.length < 8) {
-      setErr('비밀번호는 8자 이상이어야 합니다');
+    const passwordErr = checkPasswordPolicy(form.password);
+    if (passwordErr) {
+      setErr(passwordErr);
       return;
     }
     if (!agreedTerms || !agreedPrivacy) {
