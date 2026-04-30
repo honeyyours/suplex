@@ -38,8 +38,10 @@ const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
 
+// 헬스체크는 app.js의 `/health`로 단일화 (2026-04-30).
+// 과거 `/api/health`를 사용하던 외부 모니터링이 있을 수 있어 별칭만 남겨둠 — 신규 사용 X.
 router.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'suplex-api' });
+  res.json({ ok: true, service: 'suplex-api', note: 'use /health (top-level) instead' });
 });
 
 router.use('/auth', authRoutes);

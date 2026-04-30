@@ -41,7 +41,9 @@ export default function Admin() {
             슈퍼 어드민: <b>{auth?.user?.email}</b> · 회사 데이터 직접 조회는 멀티테넌시 격리로 차단되며 메타 정보만 노출됩니다.
           </div>
         </div>
+        <BackupStatusBadge />
       </div>
+      <BackupStatusBanner />
 
       <div className="border-b flex gap-1 flex-wrap">
         <TabBtn active={tab === 'pending'} onClick={() => setTab('pending')}>⏳ 베타 신청</TabBtn>
@@ -1091,6 +1093,74 @@ function PlanFeaturesTab() {
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 백업 상태 — 어드민 헤더 인디케이터 + 7일+ 빨간 배너
+// ============================================================
+function useBackupStatus() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    function load() {
+      adminApi.backupStatus()
+        .then((r) => { if (alive) setData(r); })
+        .catch(() => {});
+    }
+    load();
+    // 백업 다운로드 직후 빠른 갱신 + 30초 단위 폴링
+    const t = setInterval(load, 30_000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+  return data;
+}
+
+function BackupStatusBadge() {
+  const data = useBackupStatus();
+  if (!data) return null;
+  const { status, daysAgo, lastCompanyName } = data;
+  const palette = {
+    ok:      { bg: 'bg-emerald-50 border-emerald-200 text-emerald-700', icon: '✓' },
+    caution: { bg: 'bg-amber-50 border-amber-300 text-amber-800', icon: '⏳' },
+    warn:    { bg: 'bg-rose-50 border-rose-300 text-rose-700', icon: '⚠️' },
+    none:    { bg: 'bg-gray-50 border-gray-200 text-gray-500', icon: '○' },
+  }[status];
+  const label =
+    status === 'none' ? '백업 기록 없음' :
+    daysAgo === 0 ? '오늘 백업' :
+    `${daysAgo}일 전 백업`;
+  return (
+    <div className={`text-xs px-3 py-1.5 rounded-full border ${palette.bg} whitespace-nowrap`} title={lastCompanyName ? `최근 백업: ${lastCompanyName}` : ''}>
+      {palette.icon} {label}
+    </div>
+  );
+}
+
+function BackupStatusBanner() {
+  const data = useBackupStatus();
+  if (!data || data.status === 'ok' || data.status === 'caution') return null;
+  if (data.status === 'warn') {
+    return (
+      <div className="bg-rose-50 border border-rose-300 text-rose-800 rounded-lg p-3 text-sm flex items-start gap-2">
+        <span>⚠️</span>
+        <div>
+          <b>백업이 {data.daysAgo}일째 없습니다.</b>{' '}
+          🏢 회사 탭에서 회사별 ⬇️ 백업 버튼으로 JSON을 다운로드해 안전하게 보관하세요.
+          {data.lastCompanyName && <span className="text-rose-600/70"> (마지막 백업 회사: {data.lastCompanyName})</span>}
+        </div>
+      </div>
+    );
+  }
+  // status === 'none' — 백업 기록 자체가 없음
+  return (
+    <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-lg p-3 text-sm flex items-start gap-2">
+      <span>📦</span>
+      <div>
+        <b>아직 백업 기록이 없습니다.</b>{' '}
+        🏢 회사 탭에서 회사별 ⬇️ 백업 버튼을 눌러 첫 JSON 백업을 만들어주세요.
       </div>
     </div>
   );

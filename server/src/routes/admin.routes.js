@@ -529,6 +529,11 @@ router.get('/companies/:id/backup', async (req, res, next) => {
       prisma.applianceSpec.findMany({ where: { companyId } }),
     ]);
 
+    audit(req, 'admin.company-backup', {
+      targetType: 'COMPANY', targetId: companyId,
+      metadata: { companyName: company.name },
+    });
+
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="suplex-admin-backup-${company.name}-${Date.now()}.json"`);
     res.json({
@@ -538,6 +543,35 @@ router.get('/companies/:id/backup', async (req, res, next) => {
       company,
       memberships, vendors, projects, materialTemplates, accountCodes, expenseRules,
       phaseKeywords, phaseDeadlines, phaseAdvices, applianceSpecs,
+    });
+  } catch (e) { next(e); }
+});
+
+// GET /api/admin/backup-status — 마지막 백업 시각 + 일수 + 위험도
+// AuditLog의 admin.company-backup 액션 기준
+router.get('/backup-status', async (req, res, next) => {
+  try {
+    const last = await prisma.auditLog.findFirst({
+      where: { action: 'admin.company-backup' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, companyId: true, metadata: true },
+    });
+    if (!last) {
+      return res.json({ lastBackupAt: null, daysAgo: null, status: 'none', lastCompanyName: null });
+    }
+    const ms = Date.now() - new Date(last.createdAt).getTime();
+    const daysAgo = Math.floor(ms / (24 * 60 * 60 * 1000));
+    // 0~2일: ok / 3~6일: caution / 7일+: warn
+    const status = daysAgo >= 7 ? 'warn' : daysAgo >= 3 ? 'caution' : 'ok';
+    let lastCompanyName = null;
+    if (last.metadata && typeof last.metadata === 'object') {
+      lastCompanyName = last.metadata.companyName || null;
+    }
+    res.json({
+      lastBackupAt: last.createdAt,
+      daysAgo,
+      status,
+      lastCompanyName,
     });
   } catch (e) { next(e); }
 });

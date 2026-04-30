@@ -40,5 +40,7 @@ export const adminApi = {
   createAnnouncement: (payload) => api.post('/admin/announcements', payload).then((r) => r.data),
   patchAnnouncement: (id, payload) => api.patch(`/admin/announcements/${id}`, payload).then((r) => r.data),
   deleteAnnouncement: (id) => api.delete(`/admin/announcements/${id}`).then((r) => r.data),
+  // 백업 상태
+  backupStatus: () => api.get('/admin/backup-status').then((r) => r.data),
 };
 
