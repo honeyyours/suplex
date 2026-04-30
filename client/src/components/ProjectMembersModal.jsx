@@ -73,9 +73,22 @@ export default function ProjectMembersModal({ projectId, onClose }) {
     } finally { setBusy(false); }
   }
 
-  // 추가 후보 = 회사 멤버 중 아직 프로젝트 멤버 아닌 사람
+  // 회사 OWNER들 — ProjectMember 행 없어도 풀권한(우회 룰)이라 항상 표시
+  // (시드 안 됐을 때도 OWNER 가시성 보장. 정책: 출구정리 — OWNER 우회 룰)
   const memberUserIds = new Set(members.map((m) => m.userId));
-  const candidates = companyMembers.filter((cm) => !memberUserIds.has(cm.id));
+  const virtualOwners = companyMembers
+    .filter((cm) => cm.role === 'OWNER' && !memberUserIds.has(cm.id))
+    .map((o) => ({
+      userId: o.id,
+      role: '__OWNER_AUTO__',
+      user: { id: o.id, name: o.name, email: o.email },
+      _virtual: true,
+    }));
+  const displayMembers = [...virtualOwners, ...members];
+
+  // 추가 후보 = 회사 멤버 중 아직 프로젝트 멤버 아닌 사람 (가상 OWNER 포함해서 제외)
+  const allDisplayUserIds = new Set(displayMembers.map((m) => m.userId));
+  const candidates = companyMembers.filter((cm) => !allDisplayUserIds.has(cm.id));
 
   return (
     <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -90,33 +103,39 @@ export default function ProjectMembersModal({ projectId, onClose }) {
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
-          {!loading && members.length === 0 && (
+          {!loading && displayMembers.length === 0 && (
             <div className="text-sm text-gray-400 py-6 text-center">멤버가 없습니다.</div>
           )}
 
-          {!loading && members.length > 0 && (
+          {!loading && displayMembers.length > 0 && (
             <ul className="divide-y">
-              {members.map((m) => {
+              {displayMembers.map((m) => {
+                const isVirtualOwner = m._virtual === true;
                 const cm = companyMembers.find((x) => x.id === m.userId);
                 const roleMeta = cm ? (ROLE_META[cm.role] || ROLE_META.DESIGNER) : null;
-                const canRemove = isLead && m.userId !== auth?.id;
-                const canDemote = isLead && m.role === 'LEAD' && members.filter((x) => x.role === 'LEAD').length > 1;
-                const canPromote = isLead && m.role === 'MEMBER';
+                const canRemove = !isVirtualOwner && isLead && m.userId !== auth?.id;
+                const canDemote = !isVirtualOwner && isLead && m.role === 'LEAD' && members.filter((x) => x.role === 'LEAD').length > 1;
+                const canPromote = !isVirtualOwner && isLead && m.role === 'MEMBER';
                 return (
                   <li key={m.userId} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-navy-800 truncate">{m.user?.name || m.user?.email || m.userId}</span>
-                        {m.role === 'LEAD' && (
+                        {isVirtualOwner && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-800 border border-violet-200" title="회사 대표는 모든 프로젝트에 자동 풀권한이 있습니다">
+                            👑 회사 대표 (자동 풀권한)
+                          </span>
+                        )}
+                        {!isVirtualOwner && m.role === 'LEAD' && (
                           <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-800 border border-violet-200">👑 LEAD</span>
                         )}
-                        {roleMeta && (
+                        {!isVirtualOwner && roleMeta && (
                           <span className={`text-xs px-1.5 py-0.5 rounded border ${roleMeta.color}`}>{roleMeta.label}</span>
                         )}
                       </div>
                       <div className="text-xs text-gray-500 truncate">{m.user?.email}</div>
                     </div>
-                    {isLead && (
+                    {isLead && !isVirtualOwner && (
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {canPromote && (
                           <button onClick={() => changeRole(m.userId, 'LEAD')} disabled={busy}
