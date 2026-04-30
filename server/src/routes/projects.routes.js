@@ -2,6 +2,8 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { requireProjectMember, requireProjectLead, getAccessibleProjectIds } = require('../middlewares/projectAccess');
+const { audit } = require('../services/audit');
 const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
@@ -12,12 +14,16 @@ const router = express.Router();
 
 router.use(authRequired);
 
+// :id 라우트들 (GET 상세·프로세스 오버뷰·phase-detail / PATCH / DELETE)에 멤버십 가드.
+// 정책: OWNER는 회사 내 모든 프로젝트 접근 가능(우회). DESIGNER/FIELD는 ProjectMember 행 있을 때만.
+const pmGuard = requireProjectMember('id');
+
 // ============================================
 // GET /api/projects/:id/process-overview
 // 25개 표준 공정(척추) × 4축(견적·마감재·일정·발주) 통합 뷰
 // 메모리 핵심결정 "공정=척추" 시각적 구현체. 베타 7-A.
 // ============================================
-router.get('/:id/process-overview', async (req, res, next) => {
+router.get('/:id/process-overview', pmGuard, async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const project = await prisma.project.findFirst({
@@ -179,7 +185,7 @@ router.get('/:id/process-overview', async (req, res, next) => {
 // GET /api/projects/:id/phase-detail?phase=...
 // 단일 공정의 4축 상세 — 공정 현황 페이지 행 클릭 시 WorkContextDrawer에서 사용
 // ============================================
-router.get('/:id/phase-detail', async (req, res, next) => {
+router.get('/:id/phase-detail', pmGuard, async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const phase = String(req.query.phase || '').trim();
@@ -271,15 +277,20 @@ router.get('/:id/phase-detail', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/projects
+// GET /api/projects — OWNER는 회사 전체, DESIGNER/FIELD는 ProjectMember인 프로젝트만
 router.get('/', async (req, res, next) => {
   try {
     const { status } = req.query;
+    const accessibleIds = await getAccessibleProjectIds(req);
+
+    const where = {
+      companyId: req.user.companyId,
+      ...(status ? { status } : {}),
+      ...(accessibleIds !== null ? { id: { in: accessibleIds } } : {}),
+    };
+
     const projects = await prisma.project.findMany({
-      where: {
-        companyId: req.user.companyId,
-        ...(status ? { status } : {}),
-      },
+      where,
       orderBy: { createdAt: 'desc' },
     });
     res.json({ projects });
@@ -312,27 +323,65 @@ const createSchema = z.object({
 router.post('/', async (req, res, next) => {
   try {
     const data = createSchema.parse(req.body);
-    const project = await prisma.project.create({
-      data: {
-        name: data.name.trim(),
-        customerName: data.customerName.trim(),
-        customerPhone: data.customerPhone || null,
-        siteAddress: data.siteAddress.trim(),
-        contractAmount: data.contractAmount ?? null,
-        contractVatRate: data.contractVatRate ?? null,
-        startDate: new Date(data.startDate),
-        expectedEndDate: new Date(data.expectedEndDate),
-        doorPassword: data.doorPassword || null,
-        siteNotes: data.siteNotes || null,
-        area: data.area ?? null,
-        memo: data.memo || null,
-        acquisitionSource: data.acquisitionSource?.trim() || null,
-        consultationAttendee: data.consultationAttendee?.trim() || null,
-        companyId: req.user.companyId,
-        createdById: req.user.id,
-      },
+
+    // 추가 멤버 — body.memberUserIds(배열, MEMBER) + body.leadUserId(있으면 LEAD 위임).
+    // 미지정이면 createdBy 본인이 자동 LEAD.
+    const memberUserIds = Array.isArray(req.body.memberUserIds) ? req.body.memberUserIds.filter(Boolean) : [];
+    const leadUserIdRaw = (typeof req.body.leadUserId === 'string' && req.body.leadUserId.trim()) || null;
+
+    // 같은 회사 멤버인지 검증
+    const validUserIds = new Set();
+    if (memberUserIds.length > 0 || leadUserIdRaw) {
+      const ids = Array.from(new Set([...memberUserIds, leadUserIdRaw].filter(Boolean)));
+      const memberships = await prisma.membership.findMany({
+        where: { userId: { in: ids }, companyId: req.user.companyId },
+        select: { userId: true },
+      });
+      for (const m of memberships) validUserIds.add(m.userId);
+    }
+    const leadUserId = leadUserIdRaw && validUserIds.has(leadUserIdRaw) ? leadUserIdRaw : req.user.id;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const project = await tx.project.create({
+        data: {
+          name: data.name.trim(),
+          customerName: data.customerName.trim(),
+          customerPhone: data.customerPhone || null,
+          siteAddress: data.siteAddress.trim(),
+          contractAmount: data.contractAmount ?? null,
+          contractVatRate: data.contractVatRate ?? null,
+          startDate: new Date(data.startDate),
+          expectedEndDate: new Date(data.expectedEndDate),
+          doorPassword: data.doorPassword || null,
+          siteNotes: data.siteNotes || null,
+          area: data.area ?? null,
+          memo: data.memo || null,
+          acquisitionSource: data.acquisitionSource?.trim() || null,
+          consultationAttendee: data.consultationAttendee?.trim() || null,
+          companyId: req.user.companyId,
+          createdById: req.user.id,
+        },
+      });
+
+      // 멤버 등록 — LEAD + MEMBER들. 본인이 LEAD면 본인을 LEAD로, 아니면 본인은 MEMBER로 추가.
+      const memberRows = [];
+      memberRows.push({ projectId: project.id, userId: leadUserId, role: 'LEAD' });
+      // 본인이 LEAD가 아닐 때 본인도 멤버로 (생성자는 항상 멤버 — 사고 방지)
+      if (leadUserId !== req.user.id) {
+        memberRows.push({ projectId: project.id, userId: req.user.id, role: 'MEMBER' });
+      }
+      for (const uid of memberUserIds) {
+        if (!validUserIds.has(uid) || uid === leadUserId || uid === req.user.id) continue;
+        memberRows.push({ projectId: project.id, userId: uid, role: 'MEMBER' });
+      }
+      if (memberRows.length > 0) {
+        await tx.projectMember.createMany({ data: memberRows, skipDuplicates: true });
+      }
+
+      return project;
     });
-    res.status(201).json({ project });
+
+    res.status(201).json({ project: result });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
@@ -634,7 +683,7 @@ router.post('/_seed-sample', async (req, res, next) => {
   }
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', pmGuard, async (req, res, next) => {
   try {
     const project = await prisma.project.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
@@ -665,7 +714,7 @@ const updateSchema = z.object({
   consultationAttendee: z.string().max(100).optional().nullable(),
 });
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', pmGuard, async (req, res, next) => {
   try {
     const data = updateSchema.parse(req.body);
     const existing = await prisma.project.findFirst({
@@ -713,8 +762,131 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res, next) => {
+// ============================================
+// 프로젝트 멤버 관리 (Step 4 — 출구정리 정책 기반 프로젝트별 가시성)
+// ============================================
+
+// GET /api/projects/:id/members — 멤버 목록 (멤버 본인 + OWNER만 봄)
+router.get('/:id/members', pmGuard, async (req, res, next) => {
   try {
+    const members = await prisma.projectMember.findMany({
+      where: { projectId: req.params.id },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+    });
+    res.json({ members });
+  } catch (e) { next(e); }
+});
+
+const memberCreateSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(['LEAD', 'MEMBER']).optional(),
+});
+
+// POST /api/projects/:id/members — 멤버 추가 (LEAD or OWNER)
+router.post('/:id/members', requireProjectLead('id'), async (req, res, next) => {
+  try {
+    const data = memberCreateSchema.parse(req.body);
+    // 같은 회사 멤버인지 검증
+    const ms = await prisma.membership.findFirst({
+      where: { userId: data.userId, companyId: req.user.companyId },
+      select: { userId: true, user: { select: { id: true, name: true, email: true } } },
+    });
+    if (!ms) return res.status(400).json({ error: '같은 회사의 멤버가 아닙니다' });
+
+    const created = await prisma.projectMember.upsert({
+      where: { projectId_userId: { projectId: req.params.id, userId: data.userId } },
+      update: data.role ? { role: data.role } : {},
+      create: { projectId: req.params.id, userId: data.userId, role: data.role || 'MEMBER' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    audit(req, 'project.member.add', {
+      targetType: 'PROJECT', targetId: req.params.id,
+      metadata: { addedUserId: data.userId, role: created.role, email: ms.user.email },
+    });
+
+    res.status(201).json({ member: created });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+const memberPatchSchema = z.object({ role: z.enum(['LEAD', 'MEMBER']) });
+
+// PATCH /api/projects/:id/members/:userId — 역할 변경 (LEAD or OWNER)
+router.patch('/:id/members/:userId', requireProjectLead('id'), async (req, res, next) => {
+  try {
+    const data = memberPatchSchema.parse(req.body);
+    const existing = await prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId: req.params.id, userId: req.params.userId } },
+    });
+    if (!existing) return res.status(404).json({ error: 'Member not found' });
+
+    // 마지막 LEAD를 MEMBER로 강등하는 건 금지 (최소 1명의 LEAD 보장)
+    if (existing.role === 'LEAD' && data.role === 'MEMBER') {
+      const leadCount = await prisma.projectMember.count({
+        where: { projectId: req.params.id, role: 'LEAD' },
+      });
+      if (leadCount <= 1) {
+        return res.status(400).json({ error: '최소 1명의 LEAD가 필요합니다. 다른 멤버를 LEAD로 먼저 위임하세요.' });
+      }
+    }
+
+    const updated = await prisma.projectMember.update({
+      where: { projectId_userId: { projectId: req.params.id, userId: req.params.userId } },
+      data: { role: data.role },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    audit(req, 'project.member.role_change', {
+      targetType: 'PROJECT', targetId: req.params.id,
+      metadata: { userId: req.params.userId, from: existing.role, to: data.role },
+    });
+    res.json({ member: updated });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// DELETE /api/projects/:id/members/:userId — 멤버 제거 (LEAD or OWNER)
+router.delete('/:id/members/:userId', requireProjectLead('id'), async (req, res, next) => {
+  try {
+    const existing = await prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId: req.params.id, userId: req.params.userId } },
+    });
+    if (!existing) return res.status(404).json({ error: 'Member not found' });
+
+    // 마지막 LEAD 제거 금지
+    if (existing.role === 'LEAD') {
+      const leadCount = await prisma.projectMember.count({
+        where: { projectId: req.params.id, role: 'LEAD' },
+      });
+      if (leadCount <= 1) {
+        return res.status(400).json({ error: '최소 1명의 LEAD가 필요합니다. 다른 멤버를 LEAD로 위임 후 제거하세요.' });
+      }
+    }
+
+    await prisma.projectMember.delete({
+      where: { projectId_userId: { projectId: req.params.id, userId: req.params.userId } },
+    });
+    audit(req, 'project.member.remove', {
+      targetType: 'PROJECT', targetId: req.params.id,
+      metadata: { userId: req.params.userId, role: existing.role },
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.delete('/:id', pmGuard, async (req, res, next) => {
+  try {
+    // 보수적 정책: DELETE는 OWNER 또는 LEAD만 (멤버는 삭제 불가)
+    if (req.user.role !== 'OWNER' && req.projectMemberRole !== 'LEAD') {
+      return res.status(403).json({ error: 'Forbidden — OWNER or LEAD only' });
+    }
     const existing = await prisma.project.findFirst({
       where: { id: req.params.id, companyId: req.user.companyId },
     });

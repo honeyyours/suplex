@@ -12,4 +12,10 @@ export const projectsApi = {
   processOverview: (id) => api.get(`/projects/${id}/process-overview`).then((r) => r.data),
   // 단일 공정의 4축 상세 — WorkContextDrawer에서 사용
   phaseDetail: (id, phase) => api.get(`/projects/${id}/phase-detail`, { params: { phase } }).then((r) => r.data),
+
+  // 프로젝트 멤버 관리 (Step 4 — 출구정리 정책)
+  listMembers:    (id) => api.get(`/projects/${id}/members`).then((r) => r.data),
+  addMember:      (id, payload) => api.post(`/projects/${id}/members`, payload).then((r) => r.data),
+  updateMember:   (id, userId, payload) => api.patch(`/projects/${id}/members/${userId}`, payload).then((r) => r.data),
+  removeMember:   (id, userId) => api.delete(`/projects/${id}/members/${userId}`).then((r) => r.data),
 };

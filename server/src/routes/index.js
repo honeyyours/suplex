@@ -12,6 +12,7 @@ const phasesRoutes = require('./phases.routes');
 const reportRoutes = require('./reports.routes');
 const materialRequestRoutes = require('./materialRequests.routes');
 const photoRoutes = require('./photos.routes');
+const photoArchiveRoutes = require('./projectPhotoArchive.routes');
 const quoteRoutes = require('./quotes.routes');
 const simpleQuoteRoutes = require('./simpleQuotes.routes');
 const projectMemoRoutes = require('./projectMemos.routes');
@@ -32,6 +33,7 @@ const vendorRoutes = require('./vendors.routes');
 const backupRoutes = require('./backup.routes');
 const activityRoutes = require('./activity.routes');
 const applianceSpecsRoutes = require('./applianceSpecs.routes');
+const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
 
@@ -55,19 +57,21 @@ router.use((req, res, next) => {
 
 router.use('/projects', projectRoutes);
 
-// 프로젝트-스코프
-router.use('/projects/:projectId/schedules', schedules.projectRouter);
-router.use('/projects/:projectId/schedule-changes', scheduleChanges.projectRouter);
-router.use('/projects/:projectId/checklists', checklists.router);
-router.use('/projects/:projectId/materials', materialRoutes);
-router.use('/projects/:projectId/reports', reportRoutes);
-router.use('/projects/:projectId/material-requests', materialRequestRoutes);
-router.use('/projects/:projectId/photos', photoRoutes);
-router.use('/projects/:projectId/quotes', quoteRoutes);
-router.use('/projects/:projectId/simple-quotes', simpleQuoteRoutes);
-router.use('/projects/:projectId/memos', projectMemoRoutes);
-router.use('/projects/:projectId/phase-notes', phaseNotesRoutes);
-router.use('/projects/:projectId/purchase-orders', purchaseOrders.projectRouter);
+// 프로젝트-스코프 — 모든 중첩 라우트에 멤버십 가드 (OWNER 우회)
+const pmGuard = requireProjectMember('projectId');
+router.use('/projects/:projectId/schedules', pmGuard, schedules.projectRouter);
+router.use('/projects/:projectId/schedule-changes', pmGuard, scheduleChanges.projectRouter);
+router.use('/projects/:projectId/checklists', pmGuard, checklists.router);
+router.use('/projects/:projectId/materials', pmGuard, materialRoutes);
+router.use('/projects/:projectId/reports', pmGuard, reportRoutes);
+router.use('/projects/:projectId/material-requests', pmGuard, materialRequestRoutes);
+router.use('/projects/:projectId/photos', pmGuard, photoRoutes);
+router.use('/projects/:projectId/photo-archive', pmGuard, photoArchiveRoutes);
+router.use('/projects/:projectId/quotes', pmGuard, quoteRoutes);
+router.use('/projects/:projectId/simple-quotes', pmGuard, simpleQuoteRoutes);
+router.use('/projects/:projectId/memos', pmGuard, projectMemoRoutes);
+router.use('/projects/:projectId/phase-notes', pmGuard, phaseNotesRoutes);
+router.use('/projects/:projectId/purchase-orders', pmGuard, purchaseOrders.projectRouter);
 
 // 회사 전체 스코프
 router.use('/company', companyRoutes);

@@ -114,6 +114,7 @@ model User {
   applianceCorrections    ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
   updatedPhaseNotes       ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
   updatedCompanyPhaseTips CompanyPhaseTip[]     @relation("CompanyPhaseTipUpdatedBy")
+  projectMemberships      ProjectMember[]
 
   @@map("users")
 }
@@ -215,20 +216,20 @@ model Invitation {
 // ============================================
 
 model Vendor {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String // 업체명
-  category    String // 공종 (전기, 설비, 타일 등)
-  contact     String? // 담당자
-  phone       String?
+  id               String   @id @default(cuid())
+  companyId        String
+  name             String // 업체명
+  category         String // 공종 (전기, 설비, 타일 등)
+  contact          String? // 담당자
+  phone            String?
   unitPrice        Decimal? @db.Decimal(12, 2)
   unit             String? // 단위 (m², 개, 일 등)
   bankAccount      String? // 계좌 (한 줄 자유 입력 — 예: "국민 123-45-678901 김OO". 인건비 정산 카톡 복사용)
   defaultMeal      Decimal? @db.Decimal(12, 2) // 인건비 정산 디폴트 식비 (1일 단위)
   defaultTransport Decimal? @db.Decimal(12, 2) // 인건비 정산 디폴트 교통비 (1일 단위)
   memo             String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   scheduleTasks        ScheduleTask[]
@@ -250,6 +251,28 @@ enum ProjectStatus {
   ON_HOLD // 보류
   COMPLETED // 완료
   CANCELLED // 취소
+}
+
+// 프로젝트별 권한 (베타: 사람 단위 소속). 정식 출시 후 Team 모델로 진화 예정.
+// OWNER는 ProjectMember 행 없어도 풀권한(코드상 우회). 직원은 멤버만 보기·작업.
+enum ProjectMemberRole {
+  LEAD // 그 프로젝트 안에서 멤버 추가/제거 권한 (OWNER 위임 형태)
+  MEMBER // 보기·라벨링·작업 (멤버 관리 X)
+}
+
+model ProjectMember {
+  id        String            @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectMemberRole @default(MEMBER)
+  createdAt DateTime          @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
 }
 
 model Project {
@@ -274,6 +297,8 @@ model Project {
   acquisitionSource    String? // 견적 요청 경로 (네이버 검색·블로그·인스타·카페·당근·소개·광고 등)
   consultationAttendee String? // 응대 고객 (부부 중 누구·할머니·대리인 등)
   memo                 String? // 기타 메모
+  // 사진 외부 보관(Partial Archive) 이력 — 마지막 실행 시각. UI 배지용.
+  photosArchivedAt     DateTime?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -295,6 +320,7 @@ model Project {
   expenses             Expense[]
   projectMemos         ProjectMemo[]
   phaseNotes           ProjectPhaseNote[]
+  members              ProjectMember[]
 
   @@unique([companyId, siteCode])
   @@index([companyId, status])
@@ -633,6 +659,7 @@ model TaskPhoto {
   id        String   @id @default(cuid())
   taskId    String
   url       String
+  publicId  String? // Cloudinary public_id — purge(외부 보관) 시 안정적 삭제용. 기존 행은 null (URL 파싱 fallback)
   caption   String?
   createdAt DateTime @default(now())
 
@@ -719,6 +746,7 @@ model ProjectPhoto {
   sourceId     String // DailyReport / MaterialRequest / ProjectChecklist id
   url          String // Cloudinary URL (원본)
   thumbnailUrl String? // Cloudinary 변환 URL (썸네일)
+  publicId     String? // Cloudinary public_id — purge(외부 보관) 시 안정적 삭제용. 기존 행은 null (URL 파싱 fallback)
   caption      String?
   uploadedById String
   createdAt    DateTime    @default(now())

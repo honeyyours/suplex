@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDateDot, weeksBetween } from '../utils/date';
 import { SIMPLE_QUOTE_STATUS_META, formatWon } from '../api/simpleQuotes';
+import ProjectMembersModal from './ProjectMembersModal';
 
 const STATUS_LABEL = {
   PLANNED: { label: '예정', color: 'bg-amber-100 text-amber-700' },
@@ -14,6 +16,7 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
   const status = STATUS_LABEL[project.status] || STATUS_LABEL.PLANNED;
   const weeks = weeksBetween(project.startDate, project.expectedEndDate);
   const quoteMeta = activeQuote ? (SIMPLE_QUOTE_STATUS_META[activeQuote.status] || SIMPLE_QUOTE_STATUS_META.DRAFT) : null;
+  const [showMembers, setShowMembers] = useState(false);
 
   return (
     <div className={`bg-white rounded-xl border ${compact ? 'p-3 sm:p-4' : 'p-3 sm:p-5'}`}>
@@ -25,6 +28,14 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
               <span className={`text-xs px-2 py-0.5 rounded ${status.color}`}>{status.label}</span>
               {project.customerName && (
                 <span className="text-xs text-gray-500">고객: {project.customerName}</span>
+              )}
+              {project.photosArchivedAt && (
+                <span
+                  className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600"
+                  title={`사진 외부 보관: ${new Date(project.photosArchivedAt).toLocaleString('ko-KR')}`}
+                >
+                  📦 사진 외부 보관 · {new Date(project.photosArchivedAt).toISOString().slice(0, 10)}
+                </span>
               )}
             </div>
             {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
@@ -84,7 +95,13 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
             <span className="text-gray-400 italic">미입력</span>
           )}
         </InfoRow>
+        <InfoRow label="팀" full>
+          <button onClick={() => setShowMembers(true)} className="text-navy-700 hover:underline text-sm">
+            👥 팀 관리 →
+          </button>
+        </InfoRow>
       </div>
+      {showMembers && <ProjectMembersModal projectId={project.id} onClose={() => setShowMembers(false)} />}
     </div>
   );
 }

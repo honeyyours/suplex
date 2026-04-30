@@ -5,6 +5,7 @@ const { authRequired } = require('../middlewares/auth');
 const { requireFeature, loadPermissionsMap } = require('../middlewares/requireFeature');
 const { F, hasFeature } = require('../services/features');
 const { classifyOne } = require('../services/autoClassify');
+const { getAccessibleProjectIds } = require('../middlewares/projectAccess');
 
 // 출구정리 정책: 손익(PnL)은 OWNER만. summary 응답에서 권한 없으면 pnl 빼기.
 async function canViewPnl(req) {
@@ -19,6 +20,24 @@ async function canViewPnl(req) {
   } catch (e) { plan = null; }
   const permissions = await loadPermissionsMap(req);
   return hasFeature({ role: req.user.role, plan, permissions }, F.EXPENSES_VIEW_PNL);
+}
+
+// 직원이 그 거래의 projectId에 접근 가능한지 (없는 거래 = 본사/미분류 → 직원 거부, OWNER만)
+async function assertProjectAccess(req, res, projectId) {
+  if (req.user.role === 'OWNER') return true;
+  if (!projectId) {
+    res.status(403).json({ error: 'Forbidden — non-project transactions are owner-only' });
+    return false;
+  }
+  const member = await prisma.projectMember.findFirst({
+    where: { projectId, userId: req.user.id, project: { companyId: req.user.companyId } },
+    select: { id: true },
+  });
+  if (!member) {
+    res.status(403).json({ error: 'Forbidden — not a project member' });
+    return false;
+  }
+  return true;
 }
 
 const router = express.Router();
@@ -56,7 +75,19 @@ router.get('/', async (req, res, next) => {
     const { projectId, dateFrom, dateTo, accountCodeId, accountGroup, type, vendor, vendorId, q } = req.query;
     const where = { companyId: req.user.companyId };
 
-    if (projectId === 'NONE') where.projectId = null;
+    // 직원(DESIGNER/FIELD)은 본인 멤버 프로젝트 거래만. 본사/미분류(projectId=null)는 OWNER만.
+    const accessibleIds = await getAccessibleProjectIds(req);
+    if (accessibleIds !== null) {
+      if (projectId === 'NONE') return res.json({ expenses: [] }); // 직원에게 본사 거래 차단
+      if (projectId) {
+        if (!accessibleIds.includes(projectId)) {
+          return res.status(403).json({ error: 'Forbidden — not a project member' });
+        }
+        where.projectId = projectId;
+      } else {
+        where.projectId = { in: accessibleIds };
+      }
+    } else if (projectId === 'NONE') where.projectId = null;
     else if (projectId) where.projectId = projectId;
 
     if (accountCodeId === 'NONE') where.accountCodeId = null;
@@ -106,9 +137,13 @@ router.get('/summary', async (req, res, next) => {
     const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
+    // 직원은 멤버 프로젝트 거래만 합산. OWNER는 전체.
+    const accessibleIds = await getAccessibleProjectIds(req);
+    const projectScope = accessibleIds !== null ? { projectId: { in: accessibleIds } } : {};
+
     // 지출만 집계 (TRANSFER 제외, INCOME 별도)
-    const expenseWhere = { companyId, type: 'EXPENSE' };
-    const incomeWhere = { companyId, type: 'INCOME' };
+    const expenseWhere = { companyId, type: 'EXPENSE', ...projectScope };
+    const incomeWhere = { companyId, type: 'INCOME', ...projectScope };
 
     const [thisExp, prevExp, allExp, thisInc, allInc, byProject, byGroup] = await Promise.all([
       prisma.expense.aggregate({
@@ -134,7 +169,30 @@ router.get('/summary', async (req, res, next) => {
         where: expenseWhere,
         _sum: { amount: true },
       }),
-      prisma.$queryRaw`
+      // byGroup: 직원에게는 멤버 프로젝트 거래의 그룹별 합. 단순화: 직원이면 prisma.expense.groupBy로 계정 그룹 직접 집계.
+      accessibleIds !== null
+        ? (async () => {
+            const grouped = await prisma.expense.groupBy({
+              by: ['accountCodeId'],
+              where: { companyId, type: 'EXPENSE', projectId: { in: accessibleIds } },
+              _sum: { amount: true }, _count: true,
+            });
+            const codeIds = grouped.map((g) => g.accountCodeId).filter(Boolean);
+            const codes = codeIds.length > 0
+              ? await prisma.accountCode.findMany({ where: { id: { in: codeIds } }, select: { id: true, groupName: true } })
+              : [];
+            const groupMap = new Map(codes.map((c) => [c.id, c.groupName]));
+            const aggMap = new Map();
+            for (const g of grouped) {
+              const gName = g.accountCodeId ? (groupMap.get(g.accountCodeId) || null) : null;
+              const cur = aggMap.get(gName) || { group_name: gName, total: 0, count: 0 };
+              cur.total += Number(g._sum.amount || 0);
+              cur.count += g._count;
+              aggMap.set(gName, cur);
+            }
+            return Array.from(aggMap.values()).sort((a, b) => b.total - a.total);
+          })()
+        : prisma.$queryRaw`
         SELECT ac."groupName" AS group_name, SUM(e.amount)::float AS total, COUNT(*)::int AS count
         FROM "expenses" e
         LEFT JOIN "account_codes" ac ON e."accountCodeId" = ac.id
@@ -164,10 +222,13 @@ router.get('/summary', async (req, res, next) => {
       });
     }
 
-    const noProjectAgg = await prisma.expense.aggregate({
-      where: { ...expenseWhere, projectId: null },
-      _sum: { amount: true }, _count: true,
-    });
+    // 본사/미분류는 OWNER 한정. 직원에게는 0.
+    const noProjectAgg = req.user.role === 'OWNER'
+      ? await prisma.expense.aggregate({
+          where: { companyId, type: 'EXPENSE', projectId: null },
+          _sum: { amount: true }, _count: true,
+        })
+      : { _sum: { amount: 0 }, _count: 0 };
 
     res.json({
       thisMonth: { total: Number(thisExp._sum.amount || 0), count: thisExp._count },
@@ -223,6 +284,8 @@ router.post('/', async (req, res, next) => {
     if (data.projectId && !(await assertProjectIfGiven(data.projectId, req.user.companyId))) {
       return res.status(400).json({ error: '존재하지 않는 프로젝트입니다' });
     }
+    // 직원은 자기 멤버 프로젝트로만 생성 가능. 본사/null도 OWNER만.
+    if (!(await assertProjectAccess(req, res, data.projectId))) return;
 
     // 자동 분류: accountCodeId 미지정 + description 있으면 룰로 분류 시도
     let { accountCodeId, projectId, workCategory } = data;
@@ -271,9 +334,12 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// POST /api/expenses/bulk (CSV 가져오기. items에 이미 분류 포함)
+// POST /api/expenses/bulk (CSV 가져오기. items에 이미 분류 포함). OWNER 한정.
 router.post('/bulk', async (req, res, next) => {
   try {
+    if (req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Forbidden — CSV import is owner only' });
+    }
     const items = Array.isArray(req.body?.items) ? req.body.items : [];
     if (items.length === 0) return res.status(400).json({ error: 'items 배열 필요' });
 
@@ -341,6 +407,11 @@ router.patch('/:id', async (req, res, next) => {
     if (data.projectId && !(await assertProjectIfGiven(data.projectId, req.user.companyId))) {
       return res.status(400).json({ error: '존재하지 않는 프로젝트입니다' });
     }
+    // 직원: 거래의 기존 projectId 멤버여야 함. + 변경하려는 projectId도 멤버여야 함.
+    if (!(await assertProjectAccess(req, res, existing.projectId))) return;
+    if (data.projectId !== undefined && data.projectId !== existing.projectId) {
+      if (!(await assertProjectAccess(req, res, data.projectId))) return;
+    }
 
     const updateData = {};
     if (data.projectId !== undefined) updateData.projectId = data.projectId || null;
@@ -377,6 +448,7 @@ router.delete('/:id', async (req, res, next) => {
       where: { id: req.params.id, companyId: req.user.companyId },
     });
     if (!existing) return res.status(404).json({ error: 'Not found' });
+    if (!(await assertProjectAccess(req, res, existing.projectId))) return;
     await prisma.expense.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (e) { next(e); }
