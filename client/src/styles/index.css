@@ -6,6 +6,19 @@ html, body, #root {
   height: 100%;
 }
 
+/* ============================================
+   표 헤더 가운데 정렬 — 전역 (2026-04-30)
+   사용자 요구: 모든 표의 제목(th)은 가운데 정렬.
+   utility 클래스(text-left/right) 이기려면 !important 필요.
+   인쇄(quote-styled-printable 등) 양식은 자체 CSS 우선이라 .no-th-center 클래스 또는 양식 내부 명시로 override 가능.
+   ============================================ */
+th {
+  text-align: center !important;
+}
+/* 인쇄 양식 등 의도적 좌우 정렬은 별도 클래스로 보존 (필요 시) */
+th.th-left { text-align: left !important; }
+th.th-right { text-align: right !important; }
+
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }

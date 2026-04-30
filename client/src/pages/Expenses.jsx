@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -76,6 +76,43 @@ export default function Expenses() {
   function reload() {
     return queryClient.invalidateQueries({ queryKey: ['expenses'] });
   }
+
+  // 인라인 편집 — invalidate 대신 cache 직접 patch (입력 중 깜빡임 방지)
+  const handleInlinePatch = useCallback(async (id, patch) => {
+    const { expense } = await expensesApi.update(id, patch);
+    queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        expenses: old.expenses.map((e) => e.id === id ? { ...e, ...expense } : e),
+      };
+    });
+    // 금액·종류·프로젝트 변경 시 summary 영향 → 백그라운드 갱신
+    if (patch.amount !== undefined || patch.type !== undefined || patch.projectId !== undefined) {
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+    }
+  }, [queryClient, queryParams]);
+
+  const handleInlineRemove = useCallback(async (id) => {
+    if (!confirm('이 거래를 삭제할까요?')) return;
+    await expensesApi.remove(id);
+    queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+      if (!old) return old;
+      return { ...old, expenses: old.expenses.filter((e) => e.id !== id) };
+    });
+    queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+  }, [queryClient, queryParams]);
+
+  const handleInlineBulkRemove = useCallback(async (ids) => {
+    if (!confirm(`${ids.length}건을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    await Promise.all(ids.map((id) => expensesApi.remove(id)));
+    const idSet = new Set(ids);
+    queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+      if (!old) return old;
+      return { ...old, expenses: old.expenses.filter((e) => !idSet.has(e.id)) };
+    });
+    queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+  }, [queryClient, queryParams]);
 
   useEffect(() => {
     accountCodesApi.list().then((r) => setAccountCodes(r.codes || []));
@@ -210,20 +247,9 @@ export default function Expenses() {
               projects={projects}
               accountCodes={accountCodes}
               onEdit={setEditing}
-              onPatch={async (id, patch) => {
-                await expensesApi.update(id, patch);
-                reload();
-              }}
-              onRemove={async (id) => {
-                if (!confirm('이 거래를 삭제할까요?')) return;
-                await expensesApi.remove(id);
-                reload();
-              }}
-              onBulkRemove={async (ids) => {
-                if (!confirm(`${ids.length}건을 삭제할까요? 되돌릴 수 없습니다.`)) return;
-                await Promise.all(ids.map((id) => expensesApi.remove(id)));
-                reload();
-              }}
+              onPatch={handleInlinePatch}
+              onRemove={handleInlineRemove}
+              onBulkRemove={handleInlineBulkRemove}
             />
           )}
           {!loading && view === VIEW_PROJECT && (
@@ -422,7 +448,8 @@ function ListView({ expenses, total, projects, accountCodes, onEdit, onPatch, on
 }
 
 // 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
-function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
+// memo로 감싸서 다른 행 변경에 의한 불필요한 re-render 차단 (입력 중 깜빡임 방지).
+const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
   const [memo, setMemo] = useState(e.memo || '');
   const [amount, setAmount] = useState(String(e.amount));
   const [accountCodeId, setAccountCodeId] = useState(e.accountCodeId || '');
@@ -511,7 +538,7 @@ function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes,
       </td>
     </tr>
   );
-}
+});
 
 function GroupedView({ expenses, groupBy }) {
   const groups = useMemo(() => {
