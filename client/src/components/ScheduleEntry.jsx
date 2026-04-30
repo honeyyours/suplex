@@ -107,8 +107,8 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
         }}
         className={`
           relative group text-[9px] sm:text-xs rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
-          ${catColor} sm:bg-navy-50/60 dark:sm:bg-slate-800/50 sm:text-navy-800 dark:sm:text-slate-200
-          sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50 dark:sm:bg-emerald-950/40' : 'sm:border-navy-400'}
+          ${catColor} sm:bg-navy-50/60 sm:dark:bg-slate-800/60 sm:text-navy-800 sm:dark:text-slate-200
+          sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50 sm:dark:bg-emerald-950/40' : 'sm:border-navy-400'}
         `}
       >
         <div className="flex-1 min-w-0">
