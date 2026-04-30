@@ -126,6 +126,7 @@ export default function ProjectDetail() {
           <NavLink to="checklist" className={tab}>체크리스트</NavLink>
           <NavLink to="reports" className={tab}>현장 보고</NavLink>
           {!hideExpenses && <NavLink to="expenses" className={tab}>지출</NavLink>}
+          {!hideExpenses && <NavLink to="settlement" className={tab}>정산</NavLink>}
           <NavLink to="tools" className={tab}>편의기능</NavLink>
           <NavLink to="memo" className={tab}>메모</NavLink>
         </div>

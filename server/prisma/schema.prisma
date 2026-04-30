@@ -321,6 +321,7 @@ model Project {
   projectMemos         ProjectMemo[]
   phaseNotes           ProjectPhaseNote[]
   members              ProjectMember[]
+  settlementNotes      ProjectSettlementNote[]
 
   @@unique([companyId, siteCode])
   @@index([companyId, status])
@@ -1225,6 +1226,23 @@ model SimpleQuoteLine {
 // 프로젝트 메모 — Google Keep 같은 다중 메모 카드
 // 자유 텍스트(줄바꿈은 사용자가 직접 입력)
 // ============================================
+// 정산 탭 — 공정별 정산 메모. 견적 가이드 드로어에 회사 누적 표시 → 다음 견적 prefill 사이클 ★
+model ProjectSettlementNote {
+  id        String   @id @default(cuid())
+  projectId String
+  phase     String   // 25공정 표준 키 또는 라벨 (normalizePhase로 정규화 권장)
+  body      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, phase])
+  @@index([projectId])
+  @@index([phase])
+  @@map("project_settlement_notes")
+}
+
 model ProjectMemo {
   id         String   @id @default(cuid())
   projectId  String

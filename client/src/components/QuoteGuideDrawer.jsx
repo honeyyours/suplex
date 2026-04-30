@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { phaseNotesApi, GENERAL_PHASE as GENERAL_NOTE, ROLE_LABEL } from '../api/phaseNotes';
 import { companyPhaseTipsApi, GENERAL_PHASE as GENERAL_TIP } from '../api/companyPhaseTips';
+import { settlementApi } from '../api/settlement';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
 
@@ -35,6 +36,8 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
 
   const [notes, setNotes] = useState([]);
   const [tips, setTips] = useState([]);
+  // 회사 누적 정산 노트 (활성 공정에 대해서만 lazy 로드)
+  const [settlementNotes, setSettlementNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // 사용자 조절 가능한 폭 (localStorage에 저장)
@@ -85,6 +88,16 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
     return () => { cancelled = true; };
     /* eslint-disable-next-line */
   }, [projectId, open]);
+
+  // 활성 공정 변경 시 회사 누적 정산 노트 로드 (★ 핵심 사이클 — 다음 견적 작성 시 지난 정산 결과 보임)
+  useEffect(() => {
+    if (!open || !activePhase) { setSettlementNotes([]); return; }
+    let cancelled = false;
+    settlementApi.companyByPhase(activePhase)
+      .then((r) => { if (!cancelled) setSettlementNotes(r.notes || []); })
+      .catch(() => { if (!cancelled) setSettlementNotes([]); });
+    return () => { cancelled = true; };
+  }, [open, activePhase]);
 
   if (!open) return null;
 
@@ -168,6 +181,28 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
                     await reload();
                   }}
                 />
+
+                {/* 📊 지난 정산 노트 — 회사 누적, 최근순 (★ 핵심 사이클) */}
+                {settlementNotes.length > 0 && (
+                  <div className="border rounded-lg bg-violet-50/60 border-violet-200 p-2.5 space-y-1.5">
+                    <div className="text-[10px] font-semibold tracking-wider text-violet-700 flex items-center justify-between">
+                      <span>📊 지난 정산 노트 (이 회사 누적)</span>
+                      <span className="text-violet-500 font-normal">{settlementNotes.length}건</span>
+                    </div>
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                      {settlementNotes.map((n) => (
+                        <div key={n.id} className="bg-white border border-violet-100 rounded p-2 text-xs">
+                          <div className="text-[10px] text-gray-500 mb-0.5">
+                            {n.project?.name || '프로젝트'}{n.project?.siteCode ? ` · ${n.project.siteCode}` : ''}
+                            {' · '}
+                            {n.updatedAt ? String(n.updatedAt).slice(0, 10) : ''}
+                          </div>
+                          <div className="text-gray-800 whitespace-pre-wrap">{n.body}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-[11px] text-gray-400 text-center pt-3 border-t leading-relaxed">
