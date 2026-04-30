@@ -16,8 +16,9 @@ export default function ProjectMembersModal({ projectId, onClose }) {
   const [newUserId, setNewUserId] = useState('');
   const [newRole, setNewRole] = useState('MEMBER');
 
+  const myUserId = auth?.user?.id;
   const isOwner = auth?.role === 'OWNER';
-  const myMembership = members.find((m) => m.userId === auth?.id);
+  const myMembership = members.find((m) => m.userId === myUserId);
   const isLead = isOwner || myMembership?.role === 'LEAD';
 
   async function load() {
@@ -113,7 +114,7 @@ export default function ProjectMembersModal({ projectId, onClose }) {
                 const isVirtualOwner = m._virtual === true;
                 const cm = companyMembers.find((x) => x.userId === m.userId);
                 const roleMeta = cm ? (ROLE_META[cm.role] || ROLE_META.DESIGNER) : null;
-                const canRemove = !isVirtualOwner && isLead && m.userId !== auth?.id;
+                const canRemove = !isVirtualOwner && isLead && m.userId !== myUserId;
                 const canDemote = !isVirtualOwner && isLead && m.role === 'LEAD' && members.filter((x) => x.role === 'LEAD').length > 1;
                 const canPromote = !isVirtualOwner && isLead && m.role === 'MEMBER';
                 return (
