@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-// 2단계 회원가입 — 1) 개인 정보 2) 회사 정보
+// 2단계 회원가입 — 1) 개인 정보 + 약관 동의 2) 회사 정보
 // 회사 정보는 견적서 갑지에 자동 채워지므로 가입 시 받아두면 첫 견적 작성이 빨라짐.
 // 회사명만 필수, 나머지는 건너뛰기 가능 (정식 출시 후 Settings에서 수정).
 export default function Signup() {
@@ -20,6 +20,8 @@ export default function Signup() {
     companyPhone: '',
     companyEmail: '',
   });
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -34,6 +36,10 @@ export default function Signup() {
     }
     if (form.password.length < 8) {
       setErr('비밀번호는 8자 이상이어야 합니다');
+      return;
+    }
+    if (!agreedTerms || !agreedPrivacy) {
+      setErr('이용약관과 개인정보처리방침에 모두 동의해주세요');
       return;
     }
     setStep(2);
@@ -91,6 +97,31 @@ export default function Signup() {
             <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
             <Field label="대표자 이름 *" value={form.name} onChange={update('name')} required />
             <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
+
+            <div className="space-y-2 pt-2 border-t">
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedTerms}
+                  onChange={(e) => setAgreedTerms(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-gray-700">
+                  <Link to="/terms" target="_blank" className="text-navy-700 underline">이용약관</Link>에 동의합니다 <span className="text-rose-500">(필수)</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedPrivacy}
+                  onChange={(e) => setAgreedPrivacy(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-gray-700">
+                  <Link to="/privacy" target="_blank" className="text-navy-700 underline">개인정보처리방침</Link>에 동의합니다 <span className="text-rose-500">(필수)</span>
+                </span>
+              </label>
+            </div>
 
             {err && <p className="text-sm text-rose-600">{err}</p>}
             <button

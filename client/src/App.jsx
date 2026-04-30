@@ -7,6 +7,8 @@ import { F } from './utils/features';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import InviteAccept from './pages/InviteAccept';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
@@ -38,6 +40,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/invite/:token" element={<InviteAccept />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
 
       <Route
         element={

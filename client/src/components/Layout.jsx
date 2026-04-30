@@ -156,6 +156,12 @@ export default function Layout() {
           )}
           <span aria-hidden>·</span>
           <span>© {new Date().getFullYear()}</span>
+          <span aria-hidden>·</span>
+          <Link to="/terms" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">이용약관</Link>
+          <span aria-hidden>·</span>
+          <Link to="/privacy" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">개인정보처리방침</Link>
+          <span aria-hidden>·</span>
+          <a href="mailto:support@suplex.kr" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">문의</a>
         </div>
       </footer>
     </div>
