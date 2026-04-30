@@ -213,6 +213,17 @@ html.dark .shadow-xl {
 html.dark .bg-black\/40 { background-color: rgb(0 0 0 / 0.6); }
 html.dark .bg-black\/50 { background-color: rgb(0 0 0 / 0.7); }
 
+/* ── sm: variant 다크 매핑 (캘린더 일정 칩 등) ──
+   sm:bg-white 같은 modifier 클래스는 별도 selector라 글로벌 .bg-white 매핑이
+   못 잡음. 미디어 쿼리 안에 넣어 sm 이상 화면에서만 적용되게 한다.
+   (모바일에선 본래 ${catColor} 적용 — 글로벌 매핑이 처리) */
+@media (min-width: 640px) {
+  html.dark .sm\:bg-white         { background-color: rgb(15 23 42); }   /* slate-900 */
+  html.dark .sm\:bg-navy-50\/60   { background-color: rgb(12 26 51 / 0.55); }
+  html.dark .sm\:bg-emerald-50    { background-color: rgb(2 44 34 / 0.55); }
+  html.dark .sm\:text-navy-800    { color: rgb(179 197 225); }            /* navy-200 */
+}
+
 /* ============================================
    인쇄 (견적서 PDF 출력용)
    - body.print-quote: 인쇄 모드 활성 (모달이 토글)
