@@ -848,6 +848,143 @@ router.get('/plan-features', (req, res) => {
   res.json({ features: allFeatures, matrix });
 });
 
+// ============================================
+// 운영 메타 — 마이그레이션 / Cloudinary 사용량 / 외부 API 헬스체크
+// ============================================
+
+// GET /api/admin/migrations — Prisma 마이그레이션 적용 상태
+router.get('/migrations', async (req, res, next) => {
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id,
+        migration_name AS name,
+        started_at AS "startedAt",
+        finished_at AS "finishedAt",
+        applied_steps_count AS "appliedSteps",
+        rolled_back_at AS "rolledBackAt",
+        logs
+      FROM _prisma_migrations
+      ORDER BY started_at DESC
+      LIMIT 100
+    `;
+    res.json({
+      migrations: rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        startedAt: r.startedAt,
+        finishedAt: r.finishedAt,
+        appliedSteps: r.appliedSteps,
+        rolledBackAt: r.rolledBackAt,
+        ok: !!r.finishedAt && !r.rolledBackAt,
+      })),
+    });
+  } catch (e) {
+    // _prisma_migrations 테이블이 없으면(prisma db push만 사용 환경) 친화적 안내
+    if (e.code === 'P2010' || /_prisma_migrations/.test(e.message || '')) {
+      return res.json({
+        migrations: [],
+        note: '_prisma_migrations 테이블이 없습니다. 이 환경은 prisma db push 기반(suplex 운영 정책)이라 마이그레이션 이력이 별도 추적되지 않습니다',
+      });
+    }
+    next(e);
+  }
+});
+
+// GET /api/admin/cloudinary-usage — Cloudinary 계정 + 회사별 사진 카운트
+router.get('/cloudinary-usage', async (req, res, next) => {
+  try {
+    const force = req.query.force === 'true';
+    const { getUsage } = require('../services/cloudinaryUsage');
+    const result = await getUsage({ force });
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
+// GET /api/admin/health-check — Anthropic / Cloudinary / Solapi / Resend ping
+router.get('/health-check', async (req, res, next) => {
+  try {
+    const force = req.query.force === 'true';
+    const { getHealthCheck } = require('../services/healthcheck');
+    const result = await getHealthCheck({ force });
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// 시스템 공지 — 슈퍼어드민 작성, 사용자 헤더 배너 노출
+// ============================================
+const announcementSchema = z.object({
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(2000),
+  level: z.enum(['info', 'warn', 'alert']).default('info'),
+  startsAt: z.string().datetime().nullable().optional(),
+  endsAt: z.string().datetime().nullable().optional(),
+  isActive: z.boolean().default(true),
+});
+
+router.get('/announcements', async (req, res, next) => {
+  try {
+    const list = await prisma.systemAnnouncement.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { createdBy: { select: { id: true, email: true, name: true } } },
+    });
+    res.json({ announcements: list });
+  } catch (e) { next(e); }
+});
+
+router.post('/announcements', async (req, res, next) => {
+  try {
+    const data = announcementSchema.parse(req.body);
+    const created = await prisma.systemAnnouncement.create({
+      data: {
+        title: data.title,
+        body: data.body,
+        level: data.level,
+        startsAt: data.startsAt ? new Date(data.startsAt) : null,
+        endsAt: data.endsAt ? new Date(data.endsAt) : null,
+        isActive: data.isActive,
+        createdById: req.user.id,
+      },
+    });
+    audit(req, 'admin.announcement-create', { targetType: 'ANNOUNCEMENT', targetId: created.id, metadata: { title: data.title, level: data.level } });
+    res.json({ announcement: created });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+router.patch('/announcements/:id', async (req, res, next) => {
+  try {
+    const data = announcementSchema.partial().parse(req.body);
+    const id = req.params.id;
+    const patch = {};
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.body !== undefined) patch.body = data.body;
+    if (data.level !== undefined) patch.level = data.level;
+    if (data.isActive !== undefined) patch.isActive = data.isActive;
+    if (data.startsAt !== undefined) patch.startsAt = data.startsAt ? new Date(data.startsAt) : null;
+    if (data.endsAt !== undefined) patch.endsAt = data.endsAt ? new Date(data.endsAt) : null;
+    const updated = await prisma.systemAnnouncement.update({ where: { id }, data: patch });
+    audit(req, 'admin.announcement-update', { targetType: 'ANNOUNCEMENT', targetId: id, metadata: patch });
+    res.json({ announcement: updated });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+router.delete('/announcements/:id', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    await prisma.systemAnnouncement.delete({ where: { id } });
+    audit(req, 'admin.announcement-delete', { targetType: 'ANNOUNCEMENT', targetId: id });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 // POST /api/admin/companies/:id/reject — 회사 거절 (사용자에게는 PENDING과 동일하게 표시)
 router.post('/companies/:id/reject', async (req, res, next) => {
   try {

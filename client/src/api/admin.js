@@ -29,5 +29,16 @@ export const adminApi = {
   // 등급 관리
   changeCompanyPlan: (id, plan) => api.patch(`/admin/companies/${id}/plan`, { plan }).then((r) => r.data),
   getPlanFeatures: () => api.get('/admin/plan-features').then((r) => r.data),
+  // 운영 메타 — 마이그레이션 / Cloudinary / 헬스체크
+  listMigrations: () => api.get('/admin/migrations').then((r) => r.data),
+  getCloudinaryUsage: (force = false) =>
+    api.get('/admin/cloudinary-usage', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
+  getHealthCheck: (force = false) =>
+    api.get('/admin/health-check', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
+  // 시스템 공지
+  listAnnouncements: () => api.get('/admin/announcements').then((r) => r.data),
+  createAnnouncement: (payload) => api.post('/admin/announcements', payload).then((r) => r.data),
+  patchAnnouncement: (id, payload) => api.patch(`/admin/announcements/${id}`, payload).then((r) => r.data),
+  deleteAnnouncement: (id) => api.delete(`/admin/announcements/${id}`).then((r) => r.data),
 };
 

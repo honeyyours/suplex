@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { F, canAccess } from '../utils/features';
+import { announcementsApi } from '../api/announcements';
 import PlanBadge from './PlanBadge';
 
 const NAV = [
@@ -75,6 +77,7 @@ export default function Layout() {
           </button>
         </div>
       )}
+      {auth && !isAdmin && <AnnouncementBanners />}
       <header className="bg-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -167,6 +170,50 @@ export default function Layout() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// 활성 시스템 공지 배너 — 모든 일반 사용자 (어드민/사칭 시 미노출)
+// 사용자별 dismiss는 sessionStorage 사용 — 새 세션엔 다시 노출
+function AnnouncementBanners() {
+  const { data } = useQuery({
+    queryKey: ['announcements', 'active'],
+    queryFn: () => announcementsApi.active(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+  });
+  const [dismissed, setDismissed] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('suplex_announcements_dismissed') || '[]'); }
+    catch { return []; }
+  });
+  function dismiss(id) {
+    const next = [...dismissed, id];
+    setDismissed(next);
+    sessionStorage.setItem('suplex_announcements_dismissed', JSON.stringify(next));
+  }
+  const visible = (data?.announcements || []).filter((a) => !dismissed.includes(a.id));
+  if (visible.length === 0) return null;
+  const palette = {
+    info:  'bg-navy-50 text-navy-900 border-b border-navy-200',
+    warn:  'bg-amber-50 text-amber-950 border-b border-amber-300',
+    alert: 'bg-rose-50 text-rose-900 border-b border-rose-300',
+  };
+  return (
+    <>
+      {visible.map((a) => (
+        <div key={a.id} className={`${palette[a.level] || palette.info} px-4 py-2 text-sm flex items-start justify-between gap-3`}>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold">{a.title}</div>
+            {a.body && <div className="text-xs mt-0.5 whitespace-pre-line opacity-90">{a.body}</div>}
+          </div>
+          <button
+            onClick={() => dismiss(a.id)}
+            className="text-xs px-2 py-1 rounded hover:bg-black/10 whitespace-nowrap"
+            title="이번 세션에서 숨김"
+          >✕</button>
+        </div>
+      ))}
+    </>
   );
 }
 

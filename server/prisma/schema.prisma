@@ -115,8 +115,30 @@ model User {
   updatedPhaseNotes       ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
   updatedCompanyPhaseTips CompanyPhaseTip[]     @relation("CompanyPhaseTipUpdatedBy")
   projectMemberships      ProjectMember[]
+  systemAnnouncements     SystemAnnouncement[]  @relation("AnnouncementCreatedBy")
 
   @@map("users")
+}
+
+// 시스템 공지 — 슈퍼어드민이 작성, 모든 회사 사용자 헤더에 배너로 노출.
+// startsAt/endsAt 둘 다 nullable — 비어있으면 무기한 노출.
+// isActive=false면 즉시 숨김 (작성 후 임시 보류용).
+model SystemAnnouncement {
+  id        String    @id @default(cuid())
+  title     String
+  body      String    @db.Text
+  level     String    @default("info") // info | warn | alert  (배너 색)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation("AnnouncementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([isActive, endsAt])
+  @@map("system_announcements")
 }
 
 enum Role {
@@ -302,8 +324,8 @@ model Project {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdBy            User                 @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  company              Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy            User                    @relation("ProjectCreatedBy", fields: [createdById], references: [id])
   checklists           ProjectChecklist[]
   materials            Material[]
   schedules            Schedule[]
@@ -1230,7 +1252,7 @@ model SimpleQuoteLine {
 model ProjectSettlementNote {
   id        String   @id @default(cuid())
   projectId String
-  phase     String   // 25공정 표준 키 또는 라벨 (normalizePhase로 정규화 권장)
+  phase     String // 25공정 표준 키 또는 라벨 (normalizePhase로 정규화 권장)
   body      String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

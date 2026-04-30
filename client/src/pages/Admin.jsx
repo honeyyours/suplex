@@ -42,12 +42,14 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="border-b flex gap-1">
+      <div className="border-b flex gap-1 flex-wrap">
         <TabBtn active={tab === 'pending'} onClick={() => setTab('pending')}>⏳ 베타 신청</TabBtn>
         <TabBtn active={tab === 'companies'} onClick={() => setTab('companies')}>🏢 회사</TabBtn>
         <TabBtn active={tab === 'users'} onClick={() => setTab('users')}>👥 사용자</TabBtn>
         <TabBtn active={tab === 'plans'} onClick={() => setTab('plans')}>📋 등급/권한</TabBtn>
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
+        <TabBtn active={tab === 'announcements'} onClick={() => setTab('announcements')}>📢 공지</TabBtn>
+        <TabBtn active={tab === 'ops'} onClick={() => setTab('ops')}>🩺 운영</TabBtn>
         <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
       </div>
 
@@ -56,6 +58,8 @@ export default function Admin() {
       {tab === 'users' && <UsersTab currentUserId={auth?.user?.id} />}
       {tab === 'plans' && <PlanFeaturesTab />}
       {tab === 'stats' && <StatsTab />}
+      {tab === 'announcements' && <AnnouncementsTab />}
+      {tab === 'ops' && <OpsTab />}
       {tab === 'audit' && <AuditTab />}
     </div>
   );
@@ -1095,6 +1099,493 @@ function Card({ label, value, accent }) {
       <div className="text-xs text-gray-500">{label}</div>
       <div className={`text-2xl font-bold mt-1 ${accent ? 'text-navy-700' : 'text-gray-800'}`}>
         {value.toLocaleString('ko-KR')}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 📢 공지 탭 — 시스템 공지 작성·수정·삭제
+// ============================================================
+function AnnouncementsTab() {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { announcements } = await adminApi.listAnnouncements();
+      setList(announcements);
+    } catch (e) {
+      alert('공지 목록 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function toggleActive(a) {
+    try {
+      await adminApi.patchAnnouncement(a.id, { isActive: !a.isActive });
+      load();
+    } catch (e) {
+      alert('변경 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function remove(a) {
+    if (!confirm(`"${a.title}" 공지를 삭제할까요?`)) return;
+    try {
+      await adminApi.deleteAnnouncement(a.id);
+      load();
+    } catch (e) {
+      alert('삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-white rounded-xl border p-3 flex items-center justify-between">
+        <div className="text-sm text-gray-600">활성 공지는 모든 사용자 헤더에 배너로 노출됩니다.</div>
+        <button
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+        >+ 새 공지</button>
+      </div>
+
+      <div className="bg-white rounded-xl border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <tr>
+              <th className="px-4 py-3 text-left">제목 / 내용</th>
+              <th className="px-4 py-3 text-center">레벨</th>
+              <th className="px-4 py-3 text-center">기간</th>
+              <th className="px-4 py-3 text-center">활성</th>
+              <th className="px-4 py-3 text-right">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+            ) : list.length === 0 ? (
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">공지가 없습니다</td></tr>
+            ) : list.map((a) => (
+              <tr key={a.id} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-800">{a.title}</div>
+                  <div className="text-xs text-gray-500 mt-1 line-clamp-2 whitespace-pre-line">{a.body}</div>
+                  <div className="text-[11px] text-gray-400 mt-1">
+                    {new Date(a.createdAt).toLocaleString('ko-KR')} · {a.createdBy?.name || '—'}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <LevelBadge level={a.level} />
+                </td>
+                <td className="px-4 py-3 text-center text-xs text-gray-500">
+                  {a.startsAt ? new Date(a.startsAt).toLocaleDateString('ko-KR') : '—'}
+                  <span className="mx-1">~</span>
+                  {a.endsAt ? new Date(a.endsAt).toLocaleDateString('ko-KR') : '무기한'}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => toggleActive(a)}
+                    className={`text-xs px-2 py-1 rounded border ${
+                      a.isActive
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                        : 'bg-gray-50 border-gray-300 text-gray-500'
+                    }`}
+                  >{a.isActive ? '✓ 활성' : '○ 비활성'}</button>
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap space-x-1">
+                  <button
+                    onClick={() => { setEditing(a); setShowForm(true); }}
+                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                  >수정</button>
+                  <button
+                    onClick={() => remove(a)}
+                    className="text-xs px-2 py-1 border rounded text-rose-600 border-rose-300 hover:bg-rose-50"
+                  >삭제</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showForm && (
+        <AnnouncementForm
+          editing={editing}
+          onClose={() => { setShowForm(false); setEditing(null); }}
+          onSaved={() => { setShowForm(false); setEditing(null); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function LevelBadge({ level }) {
+  const map = {
+    info:  { bg: 'bg-navy-100 text-navy-700', label: 'ℹ️ 안내' },
+    warn:  { bg: 'bg-amber-100 text-amber-800', label: '⚠️ 주의' },
+    alert: { bg: 'bg-rose-100 text-rose-700', label: '🚨 경고' },
+  };
+  const m = map[level] || map.info;
+  return <span className={`text-xs px-2 py-0.5 rounded ${m.bg}`}>{m.label}</span>;
+}
+
+function AnnouncementForm({ editing, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    title: editing?.title || '',
+    body: editing?.body || '',
+    level: editing?.level || 'info',
+    startsAt: editing?.startsAt ? new Date(editing.startsAt).toISOString().slice(0, 16) : '',
+    endsAt: editing?.endsAt ? new Date(editing.endsAt).toISOString().slice(0, 16) : '',
+    isActive: editing?.isActive ?? true,
+  });
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!form.title.trim() || !form.body.trim()) {
+      alert('제목·내용을 입력하세요');
+      return;
+    }
+    setBusy(true);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        body: form.body.trim(),
+        level: form.level,
+        isActive: form.isActive,
+        startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+        endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+      };
+      if (editing) await adminApi.patchAnnouncement(editing.id, payload);
+      else await adminApi.createAnnouncement(payload);
+      onSaved();
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg my-8">
+        <div className="px-6 py-4 border-b">
+          <h2 className="text-lg font-bold text-navy-800">{editing ? '공지 수정' : '새 공지'}</h2>
+        </div>
+        <div className="px-6 py-5 space-y-3">
+          <label className="block">
+            <span className="block text-xs font-medium text-gray-600 mb-1">제목</span>
+            <input
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="예: 4/30 오후 2시~3시 점검 예정"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-xs font-medium text-gray-600 mb-1">내용</span>
+            <textarea
+              value={form.body}
+              onChange={(e) => setForm({ ...form, body: e.target.value })}
+              rows={4}
+              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="자세한 안내 내용"
+            />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {['info', 'warn', 'alert'].map((lv) => (
+              <button
+                key={lv}
+                onClick={() => setForm({ ...form, level: lv })}
+                className={`text-xs px-3 py-2 rounded border ${
+                  form.level === lv ? 'bg-navy-100 border-navy-400 text-navy-800' : 'bg-white text-gray-600'
+                }`}
+              ><LevelBadge level={lv} /></button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="block text-xs font-medium text-gray-600 mb-1">시작 (선택)</span>
+              <input
+                type="datetime-local"
+                value={form.startsAt}
+                onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs font-medium text-gray-600 mb-1">종료 (선택)</span>
+              <input
+                type="datetime-local"
+                value={form.endsAt}
+                onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+            />
+            활성 (저장 즉시 모든 사용자 헤더에 노출)
+          </label>
+        </div>
+        <div className="px-6 py-3 border-t flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 border rounded-md text-sm">취소</button>
+          <button onClick={submit} disabled={busy} className="px-5 py-2 bg-navy-700 text-white rounded-md text-sm disabled:opacity-50">
+            {busy ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 🩺 운영 탭 — 마이그레이션 + Cloudinary + 외부 API 헬스체크
+// ============================================================
+function OpsTab() {
+  return (
+    <div className="space-y-6">
+      <HealthCheckSection />
+      <CloudinarySection />
+      <MigrationsSection />
+    </div>
+  );
+}
+
+function HealthCheckSection() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load(force = false) {
+    setLoading(true);
+    try {
+      const r = await adminApi.getHealthCheck(force);
+      setData(r);
+    } catch (e) {
+      alert('헬스체크 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { load(false); }, []);
+
+  return (
+    <div className="bg-white rounded-xl border p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-base font-semibold text-gray-800">🩺 외부 API 헬스체크</h3>
+          <div className="text-xs text-gray-500 mt-1">
+            5분 캐시 ·
+            {data?.checkedAt && ` 마지막 체크 ${new Date(data.checkedAt).toLocaleString('ko-KR')}`}
+            {data?.cached && ' (캐시)'}
+          </div>
+        </div>
+        <button
+          onClick={() => load(true)}
+          disabled={loading}
+          className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50 disabled:opacity-50"
+        >🔄 다시 체크</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ServiceStatus name="Anthropic (AI비서)" data={data?.anthropic} />
+        <ServiceStatus name="Cloudinary (사진)" data={data?.cloudinary} />
+        <ServiceStatus name="Solapi (알림톡)" data={data?.solapi} />
+        <ServiceStatus name="Resend (메일)" data={data?.resend} />
+      </div>
+    </div>
+  );
+}
+
+function ServiceStatus({ name, data }) {
+  if (!data) return (
+    <div className="border rounded-lg p-3 text-sm text-gray-400">{name} — 로딩 중...</div>
+  );
+  const palette = {
+    ok: { bg: 'bg-emerald-50 border-emerald-300', text: 'text-emerald-700', label: '✓ 정상' },
+    down: { bg: 'bg-rose-50 border-rose-300', text: 'text-rose-700', label: '✗ 응답 없음' },
+    not_configured: { bg: 'bg-gray-50 border-gray-300', text: 'text-gray-500', label: '○ 미설정' },
+    error: { bg: 'bg-amber-50 border-amber-300', text: 'text-amber-700', label: '? 오류' },
+  };
+  const p = palette[data.status] || palette.error;
+  return (
+    <div className={`border rounded-lg p-3 ${p.bg}`}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-800">{name}</span>
+        <span className={`text-xs font-bold ${p.text}`}>{p.label}</span>
+      </div>
+      <div className="text-[11px] text-gray-500 mt-1">
+        {data.latencyMs != null && `${data.latencyMs}ms`}
+        {data.note && ` · ${data.note}`}
+        {data.error && ` · ${data.error}`}
+      </div>
+    </div>
+  );
+}
+
+function CloudinarySection() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load(force = false) {
+    setLoading(true);
+    try {
+      const r = await adminApi.getCloudinaryUsage(force);
+      setData(r);
+    } catch (e) {
+      alert('Cloudinary 사용량 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { load(false); }, []);
+
+  const acc = data?.account;
+  const byCompany = data?.byCompany || [];
+
+  return (
+    <div className="bg-white rounded-xl border p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-base font-semibold text-gray-800">☁️ Cloudinary 사용량</h3>
+          <div className="text-xs text-gray-500 mt-1">
+            5분 캐시 ·
+            {data?.checkedAt && ` 마지막 ${new Date(data.checkedAt).toLocaleString('ko-KR')}`}
+            {data?.cached && ' (캐시)'}
+          </div>
+        </div>
+        <button
+          onClick={() => load(true)}
+          disabled={loading}
+          className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50 disabled:opacity-50"
+        >🔄 새로고침</button>
+      </div>
+      {acc?.status === 'not_configured' && (
+        <div className="text-sm text-gray-500 py-3">CLOUDINARY_* 환경변수 미설정</div>
+      )}
+      {acc?.status === 'error' && (
+        <div className="text-sm text-rose-600 py-3">조회 실패: {acc.error}</div>
+      )}
+      {acc?.status === 'ok' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <UsageBar label="크레딧" data={acc.credits} />
+          <UsageBar label="대역폭" data={acc.bandwidth} unit="bytes" />
+          <UsageBar label="저장공간" data={acc.storage} unit="bytes" />
+        </div>
+      )}
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">회사별 사진 카운트 (DB 기준)</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+              <tr>
+                <th className="px-3 py-2 text-left">회사명</th>
+                <th className="px-3 py-2 text-right">사진 수</th>
+              </tr>
+            </thead>
+            <tbody>
+              {byCompany.map((c) => (
+                <tr key={c.companyId} className="border-t">
+                  <td className="px-3 py-1.5 text-gray-700">{c.companyName}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">{c.photoCount.toLocaleString('ko-KR')}</td>
+                </tr>
+              ))}
+              {byCompany.length === 0 && (
+                <tr><td colSpan={2} className="px-3 py-4 text-center text-gray-400">회사가 없습니다</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UsageBar({ label, data, unit }) {
+  if (!data) return null;
+  const used = data.usage ?? data.used ?? 0;
+  const limit = data.limit ?? 0;
+  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  function fmt(n) {
+    if (unit === 'bytes') {
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+      return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
+    return n.toLocaleString('ko-KR');
+  }
+  const barColor = pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-emerald-500';
+  return (
+    <div className="border rounded-lg p-3">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs font-bold text-gray-700">{pct}%</span>
+      </div>
+      <div className="h-2 rounded bg-gray-200 overflow-hidden">
+        <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="text-[11px] text-gray-500 mt-1 tabular-nums">
+        {fmt(used)} / {limit > 0 ? fmt(limit) : '무제한'}
+      </div>
+    </div>
+  );
+}
+
+function MigrationsSection() {
+  const [list, setList] = useState([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { migrations, note: n } = await adminApi.listMigrations();
+        setList(migrations);
+        if (n) setNote(n);
+      } catch (e) {
+        alert('마이그레이션 로드 실패: ' + (e.response?.data?.error || e.message));
+      } finally { setLoading(false); }
+    })();
+  }, []);
+
+  return (
+    <div className="bg-white rounded-xl border p-5">
+      <h3 className="text-base font-semibold text-gray-800 mb-3">🗄️ 마이그레이션 적용 상태</h3>
+      {note && <div className="text-sm text-gray-500 mb-3 p-3 bg-gray-50 rounded">{note}</div>}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <tr>
+              <th className="px-3 py-2 text-left">마이그레이션</th>
+              <th className="px-3 py-2 text-left">시작</th>
+              <th className="px-3 py-2 text-left">완료</th>
+              <th className="px-3 py-2 text-center">상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-gray-400">로딩...</td></tr>
+            ) : list.length === 0 ? (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-gray-400">기록 없음</td></tr>
+            ) : list.map((m) => (
+              <tr key={m.id} className="border-t">
+                <td className="px-3 py-1.5 text-gray-700"><code className="text-xs">{m.name}</code></td>
+                <td className="px-3 py-1.5 text-xs text-gray-500">{m.startedAt ? new Date(m.startedAt).toLocaleString('ko-KR') : '—'}</td>
+                <td className="px-3 py-1.5 text-xs text-gray-500">{m.finishedAt ? new Date(m.finishedAt).toLocaleString('ko-KR') : '—'}</td>
+                <td className="px-3 py-1.5 text-center">
+                  {m.rolledBackAt ? (
+                    <span className="text-xs text-rose-600">↩ 롤백</span>
+                  ) : m.ok ? (
+                    <span className="text-xs text-emerald-600">✓ 적용</span>
+                  ) : (
+                    <span className="text-xs text-amber-600">⏳ 진행 중</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

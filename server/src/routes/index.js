@@ -33,6 +33,7 @@ const vendorRoutes = require('./vendors.routes');
 const backupRoutes = require('./backup.routes');
 const activityRoutes = require('./activity.routes');
 const applianceSpecsRoutes = require('./applianceSpecs.routes');
+const announcementsRoutes = require('./announcements.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -95,6 +96,7 @@ router.use('/admin', adminRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/activity', activityRoutes);
 router.use('/appliance-specs', applianceSpecsRoutes);
+router.use('/announcements', announcementsRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
