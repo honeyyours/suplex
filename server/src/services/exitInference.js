@@ -4,7 +4,9 @@
 // 자동 라벨 절대 X. 후보 1~3개만 제시, 사람이 1-클릭 컨펌.
 //
 // Step 1 (2026-04-30): PhasePeriod derive — DailyScheduleEntry로부터 (projectId, phaseKey)
-// 별로 연속 구간을 묶어 PhasePeriod 배열로 반환. 발주 매칭/카드 좌표 추론은 후속 단계.
+// 별로 연속 구간을 묶어 PhasePeriod 배열로 반환.
+// Step 2 (2026-04-30): 발주 매칭 후보 — 통장 거래 1건 → PurchaseOrder 후보 점수화.
+// 결정론적 룰만 (AI 자동분류 보류 정책 준수).
 
 const prisma = require('../config/prisma');
 const { normalizePhase } = require('./phases');
@@ -123,8 +125,166 @@ function findActivePeriods(periods, targetDate, options = {}) {
   });
 }
 
+// ============================================================
+// Step 2: 발주 매칭 후보 — 통장 거래 1건 → PurchaseOrder 후보 점수
+// ============================================================
+
+// 거래처명 정규화 — 주식회사·(주)·㈜·유한회사·공백·특수문자 제거 + 소문자.
+function normalizeVendorText(s) {
+  if (!s) return '';
+  return String(s)
+    .toLowerCase()
+    .replace(/\(주\)|㈜|주식회사|유한회사|\(유\)|㈜/g, '')
+    .replace(/[\s\-_·.,()[\]{}/]/g, '')
+    .trim();
+}
+
+// 두 텍스트의 겹침 강도 (0~1).
+// - 정규화 후 동일 → 1
+// - 한쪽이 다른 쪽을 포함 (>=2자) → 0.7
+// - 공통 토큰(>=2자) 있음 → 0.4
+// - 그 외 → 0
+function vendorOverlap(a, b) {
+  const na = normalizeVendorText(a);
+  const nb = normalizeVendorText(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  if (na.length >= 2 && nb.length >= 2 && (na.includes(nb) || nb.includes(na))) return 0.7;
+  // 토큰 기반 — 원문(소문자)에서 공백·특수문자로 split
+  const tokenize = (s) => String(s).toLowerCase().split(/[\s\-_·.,()[\]{}/]+/).filter((t) => t.length >= 2);
+  const ta = new Set(tokenize(a));
+  const tb = tokenize(b);
+  for (const t of tb) {
+    if (ta.has(t)) return 0.4;
+  }
+  return 0;
+}
+
+// 두 일자 절대 차이.
+function absDays(a, b) {
+  if (!a || !b) return Infinity;
+  return Math.abs(daysBetween(new Date(a), new Date(b)));
+}
+
+const STATUS_BOOST = {
+  ORDERED: 5,
+  RECEIVED: 5,
+  PENDING: 3,
+  CANCELLED: -100, // 사실상 제외
+};
+
+// PurchaseOrder의 매칭 금액 — totalPrice 우선, 없으면 quantity * unitPrice.
+function poAmount(po) {
+  if (po.totalPrice != null) return Number(po.totalPrice);
+  if (po.quantity != null && po.unitPrice != null) {
+    return Number(po.quantity) * Number(po.unitPrice);
+  }
+  return null;
+}
+
+/**
+ * 통장 거래 1건에 대해 발주 매칭 후보를 점수화해서 반환.
+ * @param {object} txn 통장 거래 — { amount, date, vendorText, projectId? }
+ * @param {string} companyId 회사 ID (소속 프로젝트의 발주만 조회)
+ * @param {object} [options]
+ * @param {number} [options.minScore=30] 이 점수 미만 후보 제외
+ * @param {number} [options.limit=5] 반환 최대 개수
+ * @param {boolean} [options.includeAlreadyLinked=true] 이미 다른 Expense에 연결된 PO도 포함 (분할 결제 케이스)
+ * @returns {Promise<Array<{purchaseOrder: object, score: number, signals: object}>>}
+ */
+async function findPurchaseOrderCandidates(txn, companyId, options = {}) {
+  const minScore = options.minScore ?? 30;
+  const limit = options.limit ?? 5;
+  if (!companyId) return [];
+
+  const amount = Number(txn.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return [];
+  const txnDate = txn.date ? new Date(txn.date) : null;
+
+  const where = {
+    project: { companyId },
+    status: { not: 'CANCELLED' },
+  };
+  if (txn.projectId) where.projectId = txn.projectId;
+
+  const orders = await prisma.purchaseOrder.findMany({
+    where,
+    include: {
+      project: { select: { id: true, name: true, siteAddress: true } },
+      vendorEntity: { select: { id: true, name: true, category: true } },
+      expenses: { select: { id: true } },
+    },
+    take: 500, // 안전 상한
+  });
+
+  const candidates = [];
+  for (const po of orders) {
+    const signals = {
+      vendor: 0,        // 0~40
+      amount: 0,        // 0~30
+      date: 0,          // 0~15
+      project: 0,       // 0~10
+      statusBoost: 0,   // -100~5
+    };
+
+    // 거래처
+    const vendorOverlapVendor = vendorOverlap(txn.vendorText || '', po.vendor || '');
+    const vendorOverlapEntity = vendorOverlap(txn.vendorText || '', po.vendorEntity?.name || '');
+    const vendorBest = Math.max(vendorOverlapVendor, vendorOverlapEntity);
+    signals.vendor = Math.round(vendorBest * 40);
+
+    // 금액
+    const a = poAmount(po);
+    if (a != null && a > 0) {
+      const diff = Math.abs(amount - a) / a;
+      if (diff < 0.001) signals.amount = 30;
+      else if (diff <= 0.01) signals.amount = 25;
+      else if (diff <= 0.05) signals.amount = 15;
+      else if (diff <= 0.10) signals.amount = 5;
+    }
+
+    // 날짜 — expectedDate 기준 (없으면 orderedAt 또는 receivedAt)
+    const refDate = po.expectedDate || po.orderedAt || po.receivedAt;
+    if (txnDate && refDate) {
+      const d = absDays(refDate, txnDate);
+      if (d === 0) signals.date = 15;
+      else if (d <= 3) signals.date = 10;
+      else if (d <= 7) signals.date = 5;
+      else if (d <= 14) signals.date = 2;
+    }
+
+    // 현장 (txn.projectId 일치)
+    if (txn.projectId && po.projectId === txn.projectId) signals.project = 10;
+
+    // 상태 가산
+    signals.statusBoost = STATUS_BOOST[po.status] ?? 0;
+
+    const score =
+      signals.vendor +
+      signals.amount +
+      signals.date +
+      signals.project +
+      signals.statusBoost;
+
+    if (score < minScore) continue;
+
+    candidates.push({
+      purchaseOrder: po,
+      score,
+      signals,
+      alreadyLinked: po.expenses.length > 0,
+    });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates.slice(0, limit);
+}
+
 module.exports = {
   getPhasePeriods,
   findActivePeriods,
+  findPurchaseOrderCandidates,
+  normalizeVendorText,
+  vendorOverlap,
   DEFAULT_GAP_THRESHOLD_DAYS,
 };

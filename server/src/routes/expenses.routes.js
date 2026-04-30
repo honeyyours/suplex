@@ -5,6 +5,7 @@ const { authRequired } = require('../middlewares/auth');
 const { requireFeature, loadPermissionsMap } = require('../middlewares/requireFeature');
 const { F, hasFeature } = require('../services/features');
 const { classifyOne } = require('../services/autoClassify');
+const { findPurchaseOrderCandidates } = require('../services/exitInference');
 
 // 출구정리 정책: 손익(PnL)은 OWNER만. summary 응답에서 권한 없으면 pnl 빼기.
 async function canViewPnl(req) {
@@ -434,6 +435,23 @@ router.patch('/:id', async (req, res, next) => {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
   }
+});
+
+// 출구정리 추론엔진 — 통장 거래 1건에 대한 발주 매칭 후보 점수.
+// body: { amount, date, vendorText, projectId? }
+// 자동 라벨 X. 사람 1-클릭 컨펌용 후보만 반환.
+router.post('/inference-candidates', async (req, res, next) => {
+  try {
+    const { amount, date, vendorText, projectId } = req.body || {};
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      return res.status(400).json({ error: 'amount required (positive number)' });
+    }
+    const candidates = await findPurchaseOrderCandidates(
+      { amount: Number(amount), date, vendorText, projectId },
+      req.user.companyId,
+    );
+    res.json({ candidates });
+  } catch (e) { next(e); }
 });
 
 router.delete('/:id', async (req, res, next) => {
