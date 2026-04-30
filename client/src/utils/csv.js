@@ -1,4 +1,6 @@
-// 간단한 CSV 직렬화/역직렬화 유틸 (RFC 4180 부분 준수)
+// 간단한 CSV 직렬화/역직렬화 유틸 (RFC 4180 부분 준수) + 한국 은행 .xls/.xlsx 직접 파싱
+
+import * as XLSX from 'xlsx';
 
 export function csvEscape(v) {
   const s = v == null ? '' : String(v);
@@ -96,6 +98,26 @@ export function detectCsvHeader(rows) {
   }
   // 폴백 — 첫 행을 헤더로 (기존 동작)
   return { headerIndex: 0, header: rows[0], dataRows: rows.slice(1) };
+}
+
+// 통합 파일 리더 — 확장자 따라 CSV/XLS/XLSX 자동 분기.
+// 반환: 2차원 배열 [[col, col], ...] (header 미분리, 첫 행이 헤더이거나 메타 줄일 수 있음 → detectCsvHeader로 보정).
+// 신한·국민·하나 등 한국 은행은 .xls 다운로드가 일반적이라 핵심.
+export async function readSpreadsheetFile(file) {
+  const name = (file.name || '').toLowerCase();
+  if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { cellDates: true, cellNF: false });
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    if (!sheet) return [];
+    // raw: false → 날짜·숫자도 사람 읽는 형식 문자열로 변환 (예: "2026-04-30")
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: null, header: 1, raw: false, blankrows: false });
+    return rows;
+  }
+  // CSV (또는 .txt)
+  const text = await readFileAsText(file);
+  return parseCSV(text);
 }
 
 // 날짜 문자열 정규화 — 다양한 한국 은행 포맷 대응 → "YYYY-MM-DD" 반환 (실패 시 빈 문자열)

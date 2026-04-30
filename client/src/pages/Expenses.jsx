@@ -9,7 +9,7 @@ import { accountCodesApi, accountColor } from '../api/accountCodes';
 import { expenseRulesApi } from '../api/expenseRules';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
-import { toCSV, parseCSV, downloadFile, readFileAsText, detectCsvHeader, normalizeDate } from '../utils/csv';
+import { toCSV, downloadFile, detectCsvHeader, normalizeDate, readSpreadsheetFile } from '../utils/csv';
 import VendorAutocomplete from '../components/VendorAutocomplete';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
@@ -118,10 +118,10 @@ export default function Expenses() {
   async function handleImportFile(file) {
     if (!file) return;
     try {
-      const text = await readFileAsText(file);
-      const allRows = parseCSV(text);
-      if (allRows.length < 2) { alert('CSV에 데이터가 없습니다'); return; }
-      // 헤더 자동 탐지 — 신한 등 상단에 메타(계좌·기간) 있는 케이스 대응
+      // .xls/.xlsx (신한·국민 등) / .csv 자동 분기
+      const allRows = await readSpreadsheetFile(file);
+      if (!allRows || allRows.length < 2) { alert('파일에 데이터가 없습니다'); return; }
+      // 헤더 자동 탐지 — 신한 등 상단에 메타(계좌번호·기간·총건수) 있는 케이스 대응
       const detected = detectCsvHeader(allRows);
       const rows = [detected.header, ...detected.dataRows];
       setImporting({ rows, projects, accountCodes });
@@ -138,8 +138,14 @@ export default function Expenses() {
         <h1 className="text-2xl font-bold text-navy-800">지출관리</h1>
         <div className="flex gap-2 flex-wrap">
           <button onClick={handleExport} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📥 CSV 내보내기 ({expenses.length})</button>
-          <button onClick={() => fileInputRef.current?.click()} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📤 CSV 가져오기</button>
-          <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={(e) => handleImportFile(e.target.files?.[0])} className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📤 통장 가져오기 (.xls/.xlsx/.csv)</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={(e) => handleImportFile(e.target.files?.[0])}
+            className="hidden"
+          />
           <button onClick={() => setAdding(true)} className="bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2 rounded-md">+ 거래 추가</button>
         </div>
       </div>
@@ -662,19 +668,22 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
   const header = rows[0].map((h) => h.trim());
   const dataRows = rows.slice(1);
 
+  // 우선순위 기반 추측 — names 배열 순서대로 시도. 1순위가 모든 헤더에 없을 때만 2순위.
+  // 신한 케이스: header에 '적요'와 '내용' 둘 다 있어도 '내용'(거래처) 우선.
   const guess = (names) => {
-    for (let i = 0; i < header.length; i++) {
-      const h = header[i];
-      if (names.some((n) => h.includes(n))) return i;
+    for (const name of names) {
+      for (let i = 0; i < header.length; i++) {
+        if (header[i] && header[i].includes(name)) return i;
+      }
     }
     return -1;
   };
   const [mapping, setMapping] = useState({
-    date:        guess(['일자', '날짜', 'Date', '거래일']),
+    date:        guess(['거래일자', '일자', '날짜', 'Date']),
     amount:      guess(['출금액', '출금', '지출']),
     inAmt:       guess(['입금액', '입금']),
     vendor:      guess(['거래처', '받는', '이체처', '의뢰인']),
-    description: guess(['내용', '적요', '메모', '비고', '거래내용']),
+    description: guess(['내용', '거래내용', '메모', '비고', '적요']),  // 신한: '내용'=거래처, '적요'=거래유형 — 내용 우선
   });
 
   const [perRow, setPerRow] = useState(() =>
