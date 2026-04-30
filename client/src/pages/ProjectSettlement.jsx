@@ -80,31 +80,22 @@ export default function ProjectSettlement() {
     return m;
   }, [expensesData]);
 
-  // 표시할 공정 = 견적 또는 지출에 등장한 공정 + 표준 25개 (빈 행도 메모 작성 가능)
+  // 표시 정책 (봉기님 요구, 2026-04-30):
+  //   - 견적에 없는 공정은 표시 X (노이즈 제거)
+  //   - 단 지출에서 강제로 견적에 없는 공정으로 입력한 케이스는 표시 (실지출 > 0)
+  //   - 기존 메모가 있는 공정도 보존 (견적 수정으로 빠져도 흔적 유지)
+  //   - 견적의 "공종 아닌 항목"(설계감리비·부가세·일반관리비 등 OTHER 매핑)은
+  //     "기타" 행에 합산 (normalizePhase가 자동 OTHER → "기타")
   const phaseRows = useMemo(() => {
-    const seen = new Set();
     const rows = [];
     for (const p of STANDARD_PHASES) {
-      if (p.key === 'OTHER') continue;
-      const label = p.label;
+      const label = p.label; // "기타"(OTHER) 포함
       const quote = quoteByPhase.get(label) || 0;
       const actual = expenseByPhase.get(label) || 0;
       const note = savedNotes.get(label) || '';
-      // 모든 표준 공정 노출 (메모 작성 가능)
+      // 견적·지출·메모 모두 없으면 노이즈 → 제외
+      if (quote === 0 && actual === 0 && !note) continue;
       rows.push({ phase: label, quote, actual, note });
-      seen.add(label);
-    }
-    // 표준 외 공정 (있으면)
-    for (const [phase, val] of [...quoteByPhase.entries(), ...expenseByPhase.entries()]) {
-      if (!seen.has(phase)) {
-        rows.push({
-          phase,
-          quote: quoteByPhase.get(phase) || 0,
-          actual: expenseByPhase.get(phase) || 0,
-          note: savedNotes.get(phase) || '',
-        });
-        seen.add(phase);
-      }
     }
     return rows;
   }, [quoteByPhase, expenseByPhase, savedNotes]);
