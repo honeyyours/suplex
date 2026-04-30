@@ -127,8 +127,8 @@ export default function HomeWeekSchedule() {
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
                           relative text-[9px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate block
-                          ${projColor} sm:bg-gray-50 sm:text-navy-800
-                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40' : 'sm:border-navy-400'}
+                          ${projColor} sm:bg-gray-50 dark:sm:bg-slate-800/40 sm:text-navy-800 dark:sm:text-slate-200
+                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500 sm:bg-emerald-50/40 dark:sm:bg-emerald-950/30' : 'sm:border-navy-400'}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.content}`}
