@@ -1,8 +1,9 @@
 """
-Suplex 소개서 → PPTX 변환기
-- 입력: 본 스크립트 안의 콘텐츠 (소개서.md 기반)
-- 출력: suplex/docs/sales/소개서.pptx
-- 22 슬라이드, 16:9, 한국어 (맑은 고딕)
+Suplex 14슬라이드 소개서 → PPTX 변환기
+- SSOT: docs/sales/JTBD캔버스_P1.md
+- 입력 본문: 원페이저.md 기반 + 14슬라이드 구조
+- 출력: docs/sales/소개서.pptx
+- 16:9, 한국어 (맑은 고딕)
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -20,11 +21,14 @@ GRAY_200    = RGBColor(0xe5, 0xe7, 0xeb)
 GRAY_400    = RGBColor(0x9c, 0xa3, 0xaf)
 GRAY_600    = RGBColor(0x4b, 0x55, 0x63)
 GRAY_800    = RGBColor(0x1f, 0x29, 0x37)
+RED_700     = RGBColor(0xb9, 0x1c, 0x1c)
+GREEN_700   = RGBColor(0x15, 0x80, 0x3d)
 AMBER       = RGBColor(0xfb, 0xbf, 0x24)
 AMBER_DARK  = RGBColor(0xb4, 0x80, 0x0a)
 
 FONT_KO = "맑은 고딕"
-FONT_MONO = "맑은 고딕"  # 한국어 코드블록도 가독성 우선
+FONT_MONO = "맑은 고딕"
+TOTAL = 14
 
 
 # ── 헬퍼 ──
@@ -89,12 +93,12 @@ def rrect(slide, x, y, w, h, fill, line=None):
     return sh
 
 
-def footer(slide, num, total, dark=False):
-    color = GRAY_400 if not dark else GRAY_400
+def footer(slide, num, dark=False):
+    color = GRAY_400
     text(slide, Inches(0.5), Inches(7.1), Inches(2), Inches(0.3),
          "SUPLEX", size=9, bold=True, color=color)
     text(slide, Inches(11), Inches(7.1), Inches(1.8), Inches(0.3),
-         f"{num:02d} / {total:02d}", size=9, color=color, align=PP_ALIGN.RIGHT)
+         f"{num:02d} / {TOTAL:02d}", size=9, color=color, align=PP_ALIGN.RIGHT)
 
 
 def code_block(slide, x, y, w, h, code_text):
@@ -115,370 +119,593 @@ def code_block(slide, x, y, w, h, code_text):
         r.font.color.rgb = WHITE
 
 
-# ── 슬라이드 빌더 ──
-def s_title(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    rect(s, Inches(0.6), Inches(2), Inches(0.08), Inches(3.5), AMBER)
-    text(s, Inches(0.95), Inches(2), Inches(11), Inches(1.2),
-         "수플렉스", size=72, bold=True, color=WHITE)
-    text(s, Inches(0.95), Inches(3.0), Inches(11), Inches(0.5),
-         "Suplex", size=20, color=GRAY_400)
-    text(s, Inches(0.95), Inches(3.8), Inches(11), Inches(0.55),
-         "인테리어 회사를 위한 통합 운영 도구", size=22, color=GRAY_200)
-    text(s, Inches(0.95), Inches(4.4), Inches(11), Inches(0.55),
-         "개인의 능력이 아니라 회사의 능력이 올라가는 도구", size=22, color=GRAY_200)
-    text(s, Inches(0.95), Inches(5.0), Inches(11), Inches(0.55),
-         "현장과 사무실, 대표와 직원을 한 줄로 잇습니다.", size=22, color=GRAY_200)
+def circle_num(slide, x, y, d, num, bg, fg):
+    c = slide.shapes.add_shape(MSO_SHAPE.OVAL, x, y, d, d)
+    c.fill.solid(); c.fill.fore_color.rgb = bg
+    c.line.fill.background()
+    c.shadow.inherit = False
+    tf = c.text_frame
+    tf.margin_left = Emu(0); tf.margin_right = Emu(0)
+    tf.margin_top = Emu(0); tf.margin_bottom = Emu(0)
+    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+    r = p.add_run(); r.text = num
+    r.font.name = FONT_KO; r.font.size = Pt(12); r.font.bold = True
+    r.font.color.rgb = fg
+
+
+# ── 슬라이드 ──
+
+def s_1_title(prs):
+    s = add_blank(prs); fill_bg(prs, s, NAVY_DARK)
+    rect(s, Inches(0.6), Inches(2.2), Inches(0.08), Inches(3.4), AMBER)
+    text(s, Inches(0.95), Inches(2.2), Inches(11), Inches(0.8),
+         "수플렉스", size=64, bold=True, color=WHITE)
+    text(s, Inches(0.95), Inches(3.25), Inches(11), Inches(0.4),
+         "Suplex", size=18, color=GRAY_400)
+    text(s, Inches(0.95), Inches(4.0), Inches(12), Inches(0.7),
+         "한 사람의 능력이 아니라,", size=26, bold=True, color=GRAY_200)
+    text(s, Inches(0.95), Inches(4.65), Inches(12), Inches(0.7),
+         "회사 전체의 능력이 올라갑니다.", size=26, bold=True, color=AMBER)
+    text(s, Inches(0.95), Inches(5.6), Inches(11), Inches(0.5),
+         "효율로 더 많은 매출을 만드는 인테리어 회사 운영 도구",
+         size=14, color=GRAY_200)
     text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
          "도입 검토용 소개서  ·  2026", size=10, color=GRAY_400, align=PP_ALIGN.RIGHT)
 
 
-def s_toc(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
-    text(s, Inches(0.7), Inches(0.6), Inches(8), Inches(0.5),
-         "CONTENTS", size=11, bold=True, color=GRAY_400)
-    text(s, Inches(0.7), Inches(1.1), Inches(8), Inches(0.6),
-         "목차", size=30, bold=True, color=NAVY_DARK)
-    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.05), AMBER)
-    items = [
-        ("01", "인테리어 회사가 매일 잃는 시간"),
-        ("02", "한국 인테리어 6단계에 끼는 수플렉스"),
-        ("03", "실전 시나리오 — 강남 30평 박상철 고객 리모델링"),
-        ("04", "핵심 차별점"),
-        ("05", "도입 첫날 체크리스트"),
-        ("06", "다음 행동"),
-    ]
-    y = Inches(2.4)
-    for num, title in items:
-        text(s, Inches(0.7), y, Inches(1.5), Inches(0.7),
-             num, size=36, bold=True, color=NAVY_DARK)
-        text(s, Inches(2.2), y + Inches(0.18), Inches(10), Inches(0.5),
-             title, size=20, color=GRAY_800)
-        y += Inches(0.7)
-    footer(s, 2, total)
-
-
-def s_section(prs, total, num, title, page_num):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    text(s, Inches(0.7), Inches(2.3), Inches(5), Inches(2),
-         num, size=140, bold=True, color=AMBER)
-    text(s, Inches(0.7), Inches(4.6), Inches(12), Inches(0.7),
-         title, size=34, bold=True, color=WHITE)
-    rect(s, Inches(0.7), Inches(5.5), Inches(0.6), Inches(0.05), AMBER)
-    text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
-         f"SUPLEX  ·  {page_num:02d} / {total:02d}", size=9, color=GRAY_400, align=PP_ALIGN.RIGHT)
-
-
-def s_pains(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
+def s_2_pain(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
     text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
-         "01. 인테리어 회사가 매일 잃는 시간", size=11, bold=True, color=GRAY_400)
-    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.6),
-         "정보 단절과 사람 의존 — 사장님들이 가장 많이 호소하는 6가지 통증",
-         size=22, bold=True, color=NAVY_DARK)
-    rect(s, Inches(0.7), Inches(1.7), Inches(0.6), Inches(0.04), AMBER)
-    pains = [
-        ("정보 흩어짐", "견적·일정·발주가 카톡·엑셀·노션에 흩어져 있다",
-         "변경 1건당 3~5곳 수동 동기화", False),
-        ("모바일 가독성", "현장에서 일정 확인이 어렵다. 모바일 달력은 글씨가 안 보여 매번 팝업",
-         "즉시 판단해야 할 때 시간 손실", False),
-        ("정보 비대칭", "대표·디자이너·현장팀이 같은 정보를 다르게 알고 있다",
-         "변경이 일부에게만 전달 → 헷갈림", False),
-        ("발주 누락", "자재 발주를 깜빡. 시공일 임박해서 자재가 없는 걸 발견",
-         "공기 지연 → 단가 상승", False),
-        ("결정 추적 X", "마감재 결정이 자꾸 바뀌는데 어디까지 확정인지 추적 안 됨",
-         "발주서가 옛날 결정 기준 → 자재 어긋남", False),
-        ("사람 의존", "직원 머리 속에만 있는 노하우 — 어느 아파트가 까다롭고 어느 모델이 헐거워지는지",
-         "직원이 그만두면 회사 자산이 함께 사라짐", True),
-    ]
-    cw = Inches(4.0); ch = Inches(2.3); gap = Inches(0.15)
-    sx = Inches(0.7); sy = Inches(2.0)
-    for i, (label, pain, result, hl) in enumerate(pains):
-        col, row = i % 3, i // 3
-        x = sx + (cw + gap) * col
-        y = sy + (ch + gap) * row
-        bg = NAVY_DARK if hl else GRAY_50
-        c_label = WHITE if hl else NAVY_DARK
-        c_pain = WHITE if hl else GRAY_800
-        c_res = AMBER if hl else GRAY_600
-        rrect(s, x, y, cw, ch, bg)
-        text(s, x + Inches(0.3), y + Inches(0.25), cw - Inches(0.6), Inches(0.35),
-             label, size=11, bold=True, color=c_label)
-        text(s, x + Inches(0.3), y + Inches(0.65), cw - Inches(0.6), Inches(1.1),
-             pain, size=12, color=c_pain)
-        text(s, x + Inches(0.3), y + Inches(1.78), cw - Inches(0.6), Inches(0.4),
-             "→ " + result, size=11, bold=True, color=c_res)
-    footer(s, 4, total)
-
-
-def s_message(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    text(s, Inches(0.7), Inches(2.4), Inches(12), Inches(0.5),
-         "수플렉스의 약속", size=14, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.7), Inches(3.1), Inches(12), Inches(1),
-         "일을 쌓을수록", size=44, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.7), Inches(4.0), Inches(12), Inches(1),
-         "회사 자체의 능력이 두꺼워지는 도구", size=44, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.7), Inches(5.4), Inches(12), Inches(0.5),
-         "직원이 떠나도 회사는 남습니다", size=18, color=GRAY_200, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
-         f"SUPLEX  ·  05 / {total:02d}", size=9, color=GRAY_400, align=PP_ALIGN.RIGHT)
-
-
-def s_pipeline(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
-    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
-         "02. 한국 인테리어 6단계", size=11, bold=True, color=GRAY_400)
-    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.6),
-         "표준 6단계 흐름 + 각 단계마다 수플렉스가 자동으로 처리해주는 것",
-         size=22, bold=True, color=NAVY_DARK)
-    rect(s, Inches(0.7), Inches(1.7), Inches(0.6), Inches(0.04), AMBER)
-    stages = [
-        ("01", "현장실측", "프로젝트 카드 생성 — 면적·주소·고객 정보 한 번에 입력"),
-        ("02", "설계·디자인", "가전 366개 모델 자동 검색(사이즈 자동 기입), 마감재 6단계 상태 추적"),
-        ("03", "견적", "간편 + 상세 두 양식, 회사 비율 12개 자동 적용, PDF 출력"),
-        ("04", "계획", "일정 입력 시 사전 체크리스트 자동, 발주 데드라인 자동 계산"),
-        ("05", "시공", "발주 탭 자연 연계, 임박 발주만 D-day 알림, 발주서 자동 작성·복사"),
-        ("06", "완공", "프로젝트 기록 누적(피드백·A/S·자재 노하우), JSON 백업"),
-    ]
-    row_h = Inches(0.65)
-    sy = Inches(2.1)
-    for i, (num, name, desc) in enumerate(stages):
-        y = sy + row_h * i
-        is_planning = (i == 3)
-        bg = AMBER if is_planning else NAVY_DARK
-        # 번호 원
-        circle = s.shapes.add_shape(MSO_SHAPE.OVAL, Inches(0.7), y + Inches(0.05), Inches(0.55), Inches(0.55))
-        circle.fill.solid()
-        circle.fill.fore_color.rgb = bg
-        circle.line.fill.background()
-        circle.shadow.inherit = False
-        tf = circle.text_frame
-        tf.margin_left = Emu(0); tf.margin_right = Emu(0)
-        tf.margin_top = Emu(0); tf.margin_bottom = Emu(0)
-        p = tf.paragraphs[0]
-        p.alignment = PP_ALIGN.CENTER
-        r = p.add_run()
-        r.text = num
-        r.font.name = FONT_KO
-        r.font.size = Pt(13)
-        r.font.bold = True
-        r.font.color.rgb = NAVY_DARK if is_planning else WHITE
-        # 단계명
-        c_name = AMBER_DARK if is_planning else NAVY_DARK
-        text(s, Inches(1.45), y + Inches(0.13), Inches(2.7), Inches(0.45),
-             name, size=18, bold=True, color=c_name)
-        # 설명
-        text(s, Inches(4.2), y + Inches(0.15), Inches(8.7), Inches(0.45),
-             desc, size=13, color=GRAY_800)
-    # 하단 메모
-    rrect(s, Inches(0.7), Inches(6.2), Inches(12), Inches(0.7), GRAY_50)
-    text(s, Inches(0.95), Inches(6.32), Inches(11.5), Inches(0.5),
-         "표준 4단계는 보통 \"계약\"이지만, 수플렉스는 클라이언트와 회사 간 계약에 관여하지 않습니다.",
-         size=10, color=GRAY_600)
-    text(s, Inches(0.95), Inches(6.55), Inches(11.5), Inches(0.5),
-         "우리가 다루는 건 그 다음의 「계획(공정·자재 사전 준비)」 단계입니다.",
-         size=10, color=GRAY_600)
-    footer(s, 7, total)
-
-
-def s_scenario_intro(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    text(s, Inches(0.7), Inches(0.6), Inches(12), Inches(0.4),
-         "03. 실전 시나리오", size=11, bold=True, color=AMBER)
-    text(s, Inches(0.7), Inches(1.1), Inches(12), Inches(0.9),
-         "강남 30평 박상철 고객 리모델링", size=34, bold=True, color=WHITE)
-    rect(s, Inches(0.7), Inches(2.1), Inches(0.6), Inches(0.04), AMBER)
-    rrect(s, Inches(0.7), Inches(2.7), Inches(12), Inches(3.5), NAVY_MID)
-    text(s, Inches(1.0), Inches(2.95), Inches(11), Inches(0.4),
-         "배경", size=12, bold=True, color=AMBER)
-    items = [
-        ("회사", "ABC인테리어 (강남 일대 4명 팀)"),
-        ("견적 담당", "김미영 사원"),
-        ("클라이언트", "박상철 (40대 4인 가족, 6주 후 입주 예정)"),
-        ("프로젝트", "강남 래미안 304-1502, 30평 전면 리모델링"),
-        ("예산", "약 5,000만 원"),
-    ]
-    y = Inches(3.5)
-    for label, val in items:
-        text(s, Inches(1.0), y, Inches(2.5), Inches(0.4),
-             label, size=14, bold=True, color=GRAY_400)
-        text(s, Inches(3.5), y, Inches(8.5), Inches(0.4),
-             val, size=14, color=WHITE)
-        y += Inches(0.45)
-    text(s, Inches(0.7), Inches(6.5), Inches(12), Inches(0.4),
-         "다음 7컷으로 시간순 따라갑니다", size=12, color=GRAY_400, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
-         f"SUPLEX  ·  08 / {total:02d}", size=9, color=GRAY_400, align=PP_ALIGN.RIGHT)
-
-
-def s_scenario(prs, total, page_num, cut_no, title, body, code=None,
-               highlight=False, sub_title=None):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
-    cut_color = AMBER_DARK if highlight else NAVY_DARK
-    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
-         f"03. 실전 시나리오  ·  컷 {cut_no}", size=11, bold=True, color=GRAY_400)
+         "01. PAIN", size=11, bold=True, color=GRAY_400)
     text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
-         title, size=24, bold=True, color=cut_color)
-    if sub_title:
-        text(s, Inches(0.7), Inches(1.55), Inches(12), Inches(0.4),
-             sub_title, size=12, color=GRAY_600)
-    rect(s, Inches(0.7), Inches(2.0), Inches(0.6), Inches(0.04),
-         AMBER if highlight else NAVY_DARK)
+         "이런 적 있으세요?", size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
 
-    if code:
-        body_x = Inches(0.7); body_w = Inches(7.0)
-        code_x = Inches(7.9); code_w = Inches(4.9)
-        code_block(s, code_x, Inches(2.3), code_w, Inches(4.5), code)
-    else:
-        body_x = Inches(0.7); body_w = Inches(12)
-
-    body_y = Inches(2.3)
-    for line in body:
-        if isinstance(line, tuple):
-            txt_, kind = line
-        else:
-            txt_, kind = line, "p"
-        if kind == "h":
-            color = NAVY_DARK; size = 14; bold = True; lh = Inches(0.5)
-        elif kind == "em":
-            color = AMBER_DARK; size = 13; bold = True; lh = Inches(0.55)
-        else:
-            color = GRAY_800; size = 12; bold = False; lh = Inches(0.45)
-        text(s, body_x, body_y, body_w, lh + Inches(0.1),
-             txt_, size=size, bold=bold, color=color)
-        body_y += lh + Inches(0.05)
-
-    footer(s, page_num, total)
-
-
-def s_diff(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
-    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
-         "04. 핵심 차별점", size=11, bold=True, color=GRAY_400)
-    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.6),
-         "왜 수플렉스를 도입해야 하는가", size=22, bold=True, color=NAVY_DARK)
-    rect(s, Inches(0.7), Inches(1.7), Inches(0.6), Inches(0.04), AMBER)
-    diffs = [
-        ("개인 능력 → 회사 능력",
-         "직원 머리 속 노하우가 회사 시스템 자산으로. 일을 쌓을수록 회사 능력이 두꺼워집니다.", True),
-        ("사전 체크리스트 자동 생성",
-         "일정만 입력하면 회사 표준 어드바이스가 작동. 노련한 사장님 노하우를 신입도 똑같이.", False),
-        ("클라이언트 비접근 원칙",
-         "회사 영업 정보가 클라이언트에게 보이지 않습니다. PDF만 갑니다.", False),
-        ("어디서든 접근, 모바일 우선",
-         "현장에서 즉시 확인·수정·변경. 모바일에서 공정명이 글씨로 직접 보입니다.", False),
-        ("일정 픽스 — 계획과 확정 구분",
-         "협력업체 섭외 완료된 일정만 픽스. 잡힌 일정과 미정 일정을 한 화면에서 구분.", False),
-        ("일정·발주 텍스트 추출",
-         "작업자·협력업체에 보낼 안내를 매번 타이핑할 필요 없음. 한 번에 클립보드로.", False),
-        ("JSON 통째 백업",
-         "회사 전체 데이터를 언제든 한 파일로. 락인 없음.", False),
-        ("AI 비서 (예정)",
-         "자연어로 지출·발주·마감재·일정·견적·메모 통합 검색·분석. 정식 출시 시 활성화.", False),
+    pains = [
+        ('현장에서 사무실에 전화',
+         '"마감재 뭐였지?"  "타일 언제 잡았지?"\n"마감재 확정됐어?"'),
+        ('작업자·자재상 섭외 십수번 반복',
+         '현장 주소·상황을 매번 같은 내용으로\n손으로 타이핑'),
+        ('프로젝트 노하우 휘발',
+         '끝난 프로젝트의 피드백·자재 노하우 —\n어디 남겼는지 까먹어서 반영 X'),
+        ('발주 데드라인 망실',
+         '"오늘까지 발주했어야 했는데" —\n사람이 까먹어서 자재가 늦음'),
     ]
-    cw = Inches(6.1); ch = Inches(1.13); gx = Inches(0.15); gy = Inches(0.1)
-    sx = Inches(0.7); sy = Inches(2.0)
-    for i, (title_, desc, hl) in enumerate(diffs):
+    cw = Inches(6.0); ch = Inches(1.95); gx = Inches(0.15); gy = Inches(0.15)
+    sx = Inches(0.7); sy = Inches(2.2)
+    for i, (label, body) in enumerate(pains):
+        col, row = i % 2, i // 2
+        x = sx + (cw + gx) * col
+        y = sy + (ch + gy) * row
+        rrect(s, x, y, cw, ch, GRAY_50)
+        text(s, x + Inches(0.35), y + Inches(0.3), cw - Inches(0.7), Inches(0.45),
+             label, size=15, bold=True, color=NAVY_DARK)
+        text(s, x + Inches(0.35), y + Inches(0.85), cw - Inches(0.7), Inches(1.0),
+             body, size=12, color=GRAY_800)
+
+    rrect(s, Inches(0.7), Inches(6.4), Inches(12.15), Inches(0.55), NAVY_DARK)
+    text(s, Inches(0.7), Inches(6.5), Inches(12.15), Inches(0.4),
+         "기록이 한곳에 정렬되지 않으면 놓치는 정보가 생기기 마련입니다.",
+         size=12, bold=True, color=AMBER,
+         anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
+    footer(s, 2)
+
+
+def s_3_old_vs_new(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "02. CONTRAST", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "예전 방식 vs 수플렉스", size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    # 좌측: 예전 방식
+    rrect(s, Inches(0.7), Inches(2.2), Inches(6.0), Inches(4.6), GRAY_50)
+    text(s, Inches(1.0), Inches(2.4), Inches(5.5), Inches(0.4),
+         "예전 방식", size=12, bold=True, color=GRAY_400)
+    text(s, Inches(1.0), Inches(2.85), Inches(5.5), Inches(0.6),
+         "엑셀 + 카톡 + 종이노트", size=20, bold=True, color=GRAY_800)
+    old_items = [
+        "정보가 3~5곳에 흩어짐",
+        "변경 시 매번 수동 동기화",
+        "현장에서 사무실에 전화로 확인",
+        "작업자 안내 매번 손으로 타이핑",
+        "데드라인은 사람이 기억",
+        "노하우는 한 사람의 머릿속에",
+    ]
+    y = Inches(3.75)
+    for item in old_items:
+        text(s, Inches(1.2), y, Inches(0.3), Inches(0.4),
+             "✕", size=14, bold=True, color=RED_700)
+        text(s, Inches(1.55), y, Inches(5.0), Inches(0.4),
+             item, size=12, color=GRAY_800)
+        y += Inches(0.45)
+
+    # 우측: 수플렉스
+    rrect(s, Inches(6.85), Inches(2.2), Inches(6.0), Inches(4.6), NAVY_DARK)
+    text(s, Inches(7.15), Inches(2.4), Inches(5.5), Inches(0.4),
+         "수플렉스", size=12, bold=True, color=AMBER)
+    text(s, Inches(7.15), Inches(2.85), Inches(5.5), Inches(0.6),
+         "한 화면, 시스템이 챙김", size=20, bold=True, color=WHITE)
+    new_items = [
+        "한 화면에 통합 (공정 현황 통합 뷰)",
+        "한 곳 입력 → 자동 연결",
+        "모바일에서 즉시 확인",
+        "카톡 텍스트 시스템이 자동 정리",
+        "시스템이 D-day 자동 챙김",
+        "노하우는 회사 자산으로 누적",
+    ]
+    y = Inches(3.75)
+    for item in new_items:
+        text(s, Inches(7.35), y, Inches(0.3), Inches(0.4),
+             "✓", size=14, bold=True, color=AMBER)
+        text(s, Inches(7.7), y, Inches(5.0), Inches(0.4),
+             item, size=12, color=WHITE)
+        y += Inches(0.45)
+
+    footer(s, 3)
+
+
+def s_4_solution_overview(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "03. SOLUTION", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "수플렉스가 잡습니다", size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    sols = [
+        ("01", "지난 프로젝트의 노하우가 지금 살아납니다",
+         "프로젝트 기록 검색 + 가전 DB 누적 + 자재 불러오기", False),
+        ("02", "시스템이 데드라인을 챙깁니다",
+         "한국 표준 5묶음 자동 적용 + D-day 자동 체크리스트", False),
+        ("03", "카톡 텍스트 자동 정리",
+         "일정 복사 + 발주서 자동 작성 + 인건비 정산 카톡", True),
+        ("04", "4~10개 현장이 한 화면에서",
+         "공정 현황 통합 뷰 + 모바일 가독성", True),
+    ]
+    cw = Inches(6.0); ch = Inches(2.1); gx = Inches(0.15); gy = Inches(0.15)
+    sx = Inches(0.7); sy = Inches(2.3)
+    for i, (num, title, desc, hl) in enumerate(sols):
         col, row = i % 2, i // 2
         x = sx + (cw + gx) * col
         y = sy + (ch + gy) * row
         bg = NAVY_DARK if hl else GRAY_50
-        c_t = AMBER if hl else NAVY_DARK
+        c_n = AMBER if hl else AMBER_DARK
+        c_t = WHITE if hl else NAVY_DARK
         c_d = GRAY_200 if hl else GRAY_600
         rrect(s, x, y, cw, ch, bg)
-        text(s, x + Inches(0.3), y + Inches(0.18), cw - Inches(0.6), Inches(0.4),
-             title_, size=14, bold=True, color=c_t)
-        text(s, x + Inches(0.3), y + Inches(0.6), cw - Inches(0.6), Inches(0.5),
+        text(s, x + Inches(0.4), y + Inches(0.25), cw - Inches(0.8), Inches(0.5),
+             num, size=28, bold=True, color=c_n)
+        text(s, x + Inches(0.4), y + Inches(0.9), cw - Inches(0.8), Inches(0.5),
+             title, size=15, bold=True, color=c_t)
+        text(s, x + Inches(0.4), y + Inches(1.45), cw - Inches(0.8), Inches(0.55),
              desc, size=11, color=c_d)
-    footer(s, 19, total)
+        if hl:
+            text(s, x + cw - Inches(1.2), y + Inches(0.3), Inches(1.0), Inches(0.3),
+                 "MAIN", size=9, bold=True, color=AMBER, align=PP_ALIGN.RIGHT)
+    footer(s, 4)
 
 
-def s_checklist(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, WHITE)
+def s_5_solution_1(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
     text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
-         "05. 도입 첫날 체크리스트", size=11, bold=True, color=GRAY_400)
-    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.6),
-         "30분~1시간 안에 마치시면 첫 견적이 빠르게 나갑니다",
+         "03. SOLUTION  ·  ①", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "지난 프로젝트의 노하우가 지금 현장에서 다시 살아납니다",
          size=22, bold=True, color=NAVY_DARK)
-    rect(s, Inches(0.7), Inches(1.7), Inches(0.6), Inches(0.04), AMBER)
+    rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
+
+    rrect(s, Inches(0.7), Inches(2.3), Inches(7.8), Inches(1.3), GRAY_50, line=AMBER)
+    text(s, Inches(1.0), Inches(2.55), Inches(7.5), Inches(0.4),
+         "시나리오", size=11, bold=True, color=AMBER_DARK)
+    text(s, Inches(1.0), Inches(2.95), Inches(7.5), Inches(0.5),
+         '"3년 전 그 화이트 강마루, 입주 후 반응이 어땠지?"',
+         size=15, bold=True, color=GRAY_800)
+
+    body_lines = [
+        "검색 한 번으로 그때의 피드백·A/S 기록·고객 반응이 떠오릅니다.",
+        "비슷한 사례의 현장이 들어왔을 때, 회사가 쌓아온 결정과",
+        "결과가 그대로 다음 판단에 쓰입니다.",
+        "",
+        "견적·자재·가전 모델은 한 번 입력하면 회사 데이터에 누적,",
+        "두 번째 같은 자재를 처음부터 만들 필요가 없습니다.",
+    ]
+    y = Inches(3.85)
+    for line in body_lines:
+        text(s, Inches(0.7), y, Inches(8.0), Inches(0.4),
+             line, size=13, color=GRAY_800)
+        y += Inches(0.4)
+
+    code = ("[검색: 강마루]\n\n2024-03  강남\n동부센트레빌\n303-1502\n\n"
+            "자재 : 동화 화이트\n       강마루\n반응 : 우수\n       2년차 변색 X\n"
+            "A/S  : 1회\n       걸레받이 코킹\n\n→ 같은 자재\n  추천 가능")
+    code_block(s, Inches(8.85), Inches(2.3), Inches(4.0), Inches(4.4), code)
+    footer(s, 5)
+
+
+def s_6_solution_2(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "03. SOLUTION  ·  ②", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "시스템이 데드라인을 챙깁니다",
+         size=26, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
+
+    rrect(s, Inches(0.7), Inches(2.3), Inches(7.8), Inches(1.55), NAVY_DARK)
+    text(s, Inches(1.0), Inches(2.5), Inches(7.5), Inches(0.4),
+         "가입 첫날부터", size=11, bold=True, color=AMBER)
+    text(s, Inches(1.0), Inches(2.85), Inches(7.5), Inches(0.5),
+         "한국 인테리어 표준 5묶음이", size=18, bold=True, color=WHITE)
+    text(s, Inches(1.0), Inches(3.3), Inches(7.5), Inches(0.5),
+         "회사에 깔려있습니다", size=18, bold=True, color=WHITE)
+
+    text(s, Inches(0.7), Inches(4.05), Inches(8), Inches(0.4),
+         "공정 · 키워드 · D-N 룰 · 체크리스트 · 견적 가이드",
+         size=11, color=GRAY_600)
+
+    text(s, Inches(0.7), Inches(4.7), Inches(8), Inches(0.4),
+         '일정에 "도배" 입력 →', size=14, bold=True, color=NAVY_DARK)
+    rows = [
+        ("D-3", '"벽지 도착 확인" 자동 추가'),
+        ("D-1", '"초벌 풀칠 준비" 자동 추가'),
+    ]
+    y = Inches(5.2)
+    for label, desc in rows:
+        rrect(s, Inches(0.95), y, Inches(0.7), Inches(0.45), AMBER)
+        text(s, Inches(0.95), y + Inches(0.05), Inches(0.7), Inches(0.4),
+             label, size=12, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+        text(s, Inches(1.85), y + Inches(0.05), Inches(7), Inches(0.45),
+             desc, size=14, color=GRAY_800)
+        y += Inches(0.55)
+
+    rrect(s, Inches(8.85), Inches(2.3), Inches(4.0), Inches(4.4), AMBER)
+    text(s, Inches(8.95), Inches(3.4), Inches(3.8), Inches(0.5),
+         "사람이 까먹어도", size=15, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    text(s, Inches(8.95), Inches(3.95), Inches(3.8), Inches(0.5),
+         "시스템이", size=15, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    text(s, Inches(8.95), Inches(4.5), Inches(3.8), Inches(0.5),
+         "까먹지 않습니다", size=15, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    footer(s, 6)
+
+
+def s_7_solution_3(prs):
+    """메인 어필 컷"""
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "03. SOLUTION  ·  ③  ·  메인 기능", size=11, bold=True, color=AMBER_DARK)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "카톡으로 보낼 텍스트는 시스템이 정리합니다",
+         size=22, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
+
     items = [
-        "회사 정보 입력 (회사명·사업자번호·주소·연락처·이메일)",
-        "회사 로고 URL 등록 — 견적서 PDF 헤더에 들어감",
-        "견적 기본비율 12개 점검 — 디자인비 10%, 부가세 등 회사 표준에 맞게",
-        "가전 규격 마스터 시드 — 366개 모델 일괄 등록",
-        "공정별 발주 데드라인 규칙 등록 — 회사 표준 D-day 룰",
-        "사전 체크리스트(어드바이스) 표준 등록 — 회사 표준 노하우 자산화의 시작",
-        "팀원 초대 — 대표 / 디자이너 / 현장팀 역할 부여",
-        "협력업체 5~10개 등록 — 발주·소통 시 자동완성",
-        "기능 표시 설정 점검 — 직원 공유 계정에서 영업 정보 차단 가능",
+        ("일정 복사",
+         '키워드 "전기" 한 번 →\n4개 현장 일정·주소·특이사항이\n카톡 텍스트로 한 번에 복사'),
+        ("발주서 자동 작성",
+         "마감재 체크 →\n자재상에게 보낼 카톡 텍스트로\n자동 변환"),
+        ("인건비 정산",
+         "작업자별 [일수×단가\n+식비+교통비] 자동 합산 →\n송금용 카톡 텍스트"),
     ]
-    y = Inches(2.1)
-    for txt_ in items:
-        box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.9), y + Inches(0.08),
-                                  Inches(0.28), Inches(0.28))
-        box.fill.solid(); box.fill.fore_color.rgb = WHITE
-        box.line.color.rgb = NAVY_DARK; box.line.width = Pt(1.5)
-        box.shadow.inherit = False
-        text(s, Inches(1.4), y, Inches(11), Inches(0.45),
-             txt_, size=14, color=GRAY_800, anchor=MSO_ANCHOR.MIDDLE)
-        y += Inches(0.5)
-    footer(s, 20, total)
+    cw = Inches(4.0); gx = Inches(0.075)
+    sx = Inches(0.7); sy = Inches(2.3); ch = Inches(2.55)
+    for i, (label, body) in enumerate(items):
+        x = sx + (cw + gx) * i
+        rrect(s, x, sy, cw, ch, NAVY_DARK)
+        rect(s, x + Inches(0.3), sy + Inches(0.3), Inches(0.5), Inches(0.04), AMBER)
+        text(s, x + Inches(0.3), sy + Inches(0.45), cw - Inches(0.6), Inches(0.45),
+             label, size=15, bold=True, color=AMBER)
+        text(s, x + Inches(0.3), sy + Inches(1.05), cw - Inches(0.6), Inches(1.4),
+             body, size=12, color=WHITE)
+
+    rrect(s, Inches(0.7), Inches(5.15), Inches(12.15), Inches(1.0), AMBER)
+    text(s, Inches(0.7), Inches(5.3), Inches(12.15), Inches(0.5),
+         "매번 십수번 반복 타이핑하던 잡일이",
+         size=18, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(5.7), Inches(12.15), Inches(0.5),
+         "한 번의 클릭으로 끝납니다.",
+         size=18, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+
+    text(s, Inches(0.7), Inches(6.4), Inches(12.15), Inches(0.4),
+         "* 카카오톡 알림 준비 중 — 베타 이후 회사의 알림 채널로 임박한 데드라인이 자동 전달됩니다.",
+         size=10, color=GRAY_600, align=PP_ALIGN.CENTER)
+    footer(s, 7)
 
 
-def s_cta(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    text(s, Inches(0.7), Inches(0.6), Inches(12), Inches(0.4),
-         "06. 다음 행동", size=11, bold=True, color=AMBER)
-    text(s, Inches(0.7), Inches(1.1), Inches(12), Inches(0.9),
-         "도입 검토를 시작하시려면", size=32, bold=True, color=WHITE)
-    rect(s, Inches(0.7), Inches(2.1), Inches(0.6), Inches(0.04), AMBER)
+def s_8_solution_4(prs):
+    """메인 어필 컷"""
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "03. SOLUTION  ·  ④  ·  메인 기능", size=11, bold=True, color=AMBER_DARK)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "4~10개 현장이 한 화면에서 보입니다",
+         size=22, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
+
+    text(s, Inches(0.7), Inches(2.4), Inches(7.5), Inches(0.6),
+         "공정 현황 통합 뷰", size=22, bold=True, color=AMBER_DARK)
+
+    body = [
+        "25공정 × (견적·마감재·일정·발주) 매트릭스",
+        "빠뜨린 항목·임박한 데드라인이 색깔로 강조",
+        "프로젝트별로 어디까지 왔는지 한눈에",
+        "",
+        "모바일에서 글씨가 직접 보입니다",
+        "팝업 클릭으로 확인하던 잡일이 사라집니다",
+        "현장에서 사무실에 전화할 일이 없어집니다",
+    ]
+    y = Inches(3.15)
+    for line in body:
+        if not line:
+            y += Inches(0.15); continue
+        text(s, Inches(0.95), y, Inches(7.5), Inches(0.4),
+             "▸ " + line, size=13, color=GRAY_800)
+        y += Inches(0.4)
+
+    # 우측: 미니 매트릭스 시각화
+    rrect(s, Inches(8.6), Inches(2.4), Inches(4.25), Inches(4.4), GRAY_50)
+    text(s, Inches(8.85), Inches(2.6), Inches(3.8), Inches(0.4),
+         "공정 현황 (예시)", size=11, bold=True, color=GRAY_600)
+
+    headers = ["공정", "견", "재", "일", "발"]
+    col_w = [Inches(1.4), Inches(0.55), Inches(0.55), Inches(0.55), Inches(0.55)]
+    hx = Inches(8.85); hy = Inches(3.15)
+    cum = Inches(0)
+    for i, h in enumerate(headers):
+        text(s, hx + cum, hy, col_w[i], Inches(0.3),
+             h, size=10, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+        cum = cum + col_w[i]
+
+    rows = [
+        ("타일", "✓", "✓", "✓", "!"),
+        ("도배", "✓", "✓", "✗", "✗"),
+        ("전기", "✓", "✓", "✓", "✓"),
+        ("바닥", "✓", "✓", "!", "✗"),
+        ("주방", "✓", "!", "✗", "✗"),
+        ("가구", "!", "✗", "✗", "✗"),
+    ]
+    ry = Inches(3.55)
+    for phase, *vals in rows:
+        text(s, hx, ry, col_w[0], Inches(0.32),
+             phase, size=10, color=GRAY_800)
+        cum2 = col_w[0]
+        for i, v in enumerate(vals):
+            color = (GREEN_700 if v == "✓"
+                     else AMBER_DARK if v == "!"
+                     else RED_700)
+            text(s, hx + cum2, ry, col_w[i+1], Inches(0.32),
+                 v, size=11, bold=True, color=color, align=PP_ALIGN.CENTER)
+            cum2 = cum2 + col_w[i+1]
+        ry += Inches(0.42)
+
+    text(s, Inches(8.85), Inches(6.25), Inches(3.8), Inches(0.35),
+         "✓ 완료   ! 임박   ✗ 누락",
+         size=9, color=GRAY_600, align=PP_ALIGN.CENTER)
+    footer(s, 8)
+
+
+def s_9_company_asset(prs):
+    s = add_blank(prs); fill_bg(prs, s, NAVY_DARK)
+    text(s, Inches(0.7), Inches(2.4), Inches(12), Inches(0.5),
+         "수플렉스의 메인 테마", size=14, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(3.1), Inches(12), Inches(1),
+         "회사의 노하우는", size=42, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(4.0), Inches(12), Inches(1),
+         "회사 안에 남습니다.", size=42, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(5.4), Inches(12), Inches(0.4),
+         "견적 기준 · 자재 결정 · 현장 환경 · 고객 대응",
+         size=13, color=GRAY_400, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(5.85), Inches(12), Inches(0.4),
+         "한 사람의 머릿속이 아니라 회사의 자산으로 누적됩니다.",
+         size=13, color=GRAY_200, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(6.3), Inches(12), Inches(0.4),
+         "담당자가 바뀌어도 다음 사람이 그 자리를 그대로 이어받습니다.",
+         size=13, color=GRAY_200, align=PP_ALIGN.CENTER)
+    footer(s, 9, dark=True)
+
+
+def s_10_diff(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "04. DIFFERENTIATOR", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "다른 도구와 무엇이 다른가",
+         size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    diffs = [
+        ("회사 자산화",
+         "직원 머릿속 노하우가 회사 자산으로. 일을 쌓을수록 도구가 더 강해집니다."),
+        ("시스템 프리셋",
+         "가입 첫날부터 한국 인테리어 표준 5묶음이 깔린 도구. 빈 도구가 아닙니다."),
+        ("모바일 우선",
+         "현장에서 글씨 직접 보임. 사무실에 전화할 필요가 없습니다."),
+        ("클라이언트 비접근",
+         "회사 영업 정보가 클라이언트에 노출 X. PDF만 발송됩니다."),
+        ("락인 없음",
+         "JSON으로 회사 전체 데이터를 통째 백업. 떠나고 싶을 때 떠날 수 있습니다."),
+    ]
+    # 첫 번째: 풀와이드 강조
+    rrect(s, Inches(0.7), Inches(2.2), Inches(12.15), Inches(1.3), NAVY_DARK)
+    text(s, Inches(1.1), Inches(2.45), Inches(11.5), Inches(0.45),
+         diffs[0][0], size=20, bold=True, color=AMBER)
+    text(s, Inches(1.1), Inches(3.0), Inches(11.5), Inches(0.5),
+         diffs[0][1], size=14, color=GRAY_200)
+
+    cw = Inches(6.0); ch = Inches(1.45); gx = Inches(0.15); gy = Inches(0.15)
+    sx = Inches(0.7); sy = Inches(3.65)
+    for i, (title_, desc) in enumerate(diffs[1:]):
+        col, row = i % 2, i // 2
+        x = sx + (cw + gx) * col
+        y = sy + (ch + gy) * row
+        rrect(s, x, y, cw, ch, GRAY_50)
+        text(s, x + Inches(0.35), y + Inches(0.22), cw - Inches(0.7), Inches(0.4),
+             title_, size=15, bold=True, color=NAVY_DARK)
+        text(s, x + Inches(0.35), y + Inches(0.7), cw - Inches(0.7), Inches(0.6),
+             desc, size=11, color=GRAY_600)
+    footer(s, 10)
+
+
+def s_11_beta(prs):
+    s = add_blank(prs); fill_bg(prs, s, NAVY_DARK)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "05. CLOSE BETA", size=11, bold=True, color=AMBER)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "클로즈 베타 — 평생 20% 할인",
+         size=30, bold=True, color=WHITE)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    items = [
+        ("2개월 무료", "결제 정보 등록 X · 카드 등록 X"),
+        ("프로 등급 풀 기능", "도구의 모든 기능을 그대로 체험"),
+        ("정식 출시 후 평생 20% 할인", "어느 등급이든 영구 적용"),
+        ("락인 없음", "JSON 백업으로 데이터 통째 가져갈 수 있음"),
+    ]
+    cw = Inches(6.0); ch = Inches(1.5); gx = Inches(0.15); gy = Inches(0.15)
+    sx = Inches(0.7); sy = Inches(2.3)
+    for i, (label, desc) in enumerate(items):
+        col, row = i % 2, i // 2
+        x = sx + (cw + gx) * col
+        y = sy + (ch + gy) * row
+        rrect(s, x, y, cw, ch, NAVY_MID)
+        text(s, x + Inches(0.35), y + Inches(0.3), cw - Inches(0.7), Inches(0.45),
+             label, size=16, bold=True, color=AMBER)
+        text(s, x + Inches(0.35), y + Inches(0.85), cw - Inches(0.7), Inches(0.5),
+             desc, size=12, color=GRAY_200)
+
+    rrect(s, Inches(0.7), Inches(5.65), Inches(12.15), Inches(1.0), AMBER)
+    text(s, Inches(0.7), Inches(5.8), Inches(12.15), Inches(0.4),
+         "카톡·엑셀 다 버리지 마세요.",
+         size=15, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    text(s, Inches(0.7), Inches(6.2), Inches(12.15), Inches(0.4),
+         "수플렉스는 그 사이에 흩어진 정보만 모아줍니다.",
+         size=15, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+    footer(s, 11, dark=True)
+
+
+def s_12_onboarding(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "06. ONBOARDING", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "도입 첫날 30분 — 변화는 가볍게",
+         size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    steps = [
+        ("01", "초대 링크 클릭",
+         "이름·비밀번호 설정 → 자동으로 회사 가입"),
+        ("02", "한국 표준 5묶음 자동 복사",
+         "공정·키워드·D-N 룰·체크리스트·견적 가이드가 첫날부터 깔림"),
+        ("03", "회사 정보 입력",
+         "회사명·로고·연락처. 견적서 PDF 헤더에 자동 반영"),
+        ("04", "팀원 초대 (선택)",
+         "디자이너·현장팀 역할 부여. 멤버 무제한"),
+        ("05", "첫 프로젝트 등록",
+         "다음 신규 현장부터 시작. 옛날 프로젝트 다 옮길 필요 X"),
+    ]
+    y = Inches(2.3)
+    for num, title, desc in steps:
+        rrect(s, Inches(0.7), y, Inches(12.15), Inches(0.78), GRAY_50)
+        circle_num(s, Inches(0.95), y + Inches(0.14), Inches(0.5), num, NAVY_DARK, WHITE)
+        text(s, Inches(1.65), y + Inches(0.13), Inches(4.8), Inches(0.45),
+             title, size=14, bold=True, color=NAVY_DARK, anchor=MSO_ANCHOR.MIDDLE)
+        text(s, Inches(6.5), y + Inches(0.13), Inches(6.3), Inches(0.45),
+             desc, size=11, color=GRAY_600, anchor=MSO_ANCHOR.MIDDLE)
+        y += Inches(0.88)
+
+    text(s, Inches(0.7), Inches(6.85), Inches(12), Inches(0.4),
+         "기존 카톡·엑셀은 그대로 쓰세요. 수플렉스는 그 사이에 흩어진 정보만 모아줍니다.",
+         size=12, color=GRAY_600, align=PP_ALIGN.CENTER)
+    footer(s, 12)
+
+
+def s_13_pricing(prs):
+    s = add_blank(prs); fill_bg(prs, s, WHITE)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "07. PRICING", size=11, bold=True, color=GRAY_400)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.7),
+         "가격 패키지", size=30, bold=True, color=NAVY_DARK)
+    rect(s, Inches(0.7), Inches(1.85), Inches(0.6), Inches(0.04), AMBER)
+
+    plans = [
+        ("STARTER", "스타터", "₩59,000", "/월",
+         "소규모 회사 시작용", "프로젝트·용량 등급별 정원"),
+        ("PRO", "프로", "₩99,000", "/월 (베타 ₩79,200)",
+         "메인 추천 등급", "프로젝트 무제한 · 멤버 무제한"),
+        ("ENT", "엔터프라이즈", "₩179,000", "/월",
+         "회사 표준 자유 편집", "+ 프리셋 자체 편집"),
+    ]
+    cw = Inches(4.0); gx = Inches(0.075); ch = Inches(4.1)
+    sx = Inches(0.7); sy = Inches(2.3)
+    for i, (key, name, price, unit, desc, feat) in enumerate(plans):
+        x = sx + (cw + gx) * i
+        hl = (i == 1)
+        bg = NAVY_DARK if hl else GRAY_50
+        c_key = AMBER if hl else GRAY_400
+        c_name = WHITE if hl else NAVY_DARK
+        c_price = AMBER if hl else NAVY_DARK
+        c_unit = GRAY_200 if hl else GRAY_600
+        c_desc = GRAY_200 if hl else GRAY_600
+        c_feat = WHITE if hl else GRAY_800
+
+        rrect(s, x, sy, cw, ch, bg)
+        text(s, x + Inches(0.35), sy + Inches(0.4), cw - Inches(0.7), Inches(0.4),
+             key, size=11, bold=True, color=c_key)
+        text(s, x + Inches(0.35), sy + Inches(0.85), cw - Inches(0.7), Inches(0.5),
+             name, size=20, bold=True, color=c_name)
+        text(s, x + Inches(0.35), sy + Inches(1.65), cw - Inches(0.7), Inches(0.6),
+             price, size=26, bold=True, color=c_price)
+        text(s, x + Inches(0.35), sy + Inches(2.3), cw - Inches(0.7), Inches(0.4),
+             unit, size=11, color=c_unit)
+        text(s, x + Inches(0.35), sy + Inches(2.95), cw - Inches(0.7), Inches(0.5),
+             desc, size=11, color=c_desc)
+        text(s, x + Inches(0.35), sy + Inches(3.5), cw - Inches(0.7), Inches(0.5),
+             feat, size=11, bold=True, color=c_feat)
+        if hl:
+            rrect(s, x + cw - Inches(1.2), sy + Inches(0.35), Inches(0.95), Inches(0.32),
+                  AMBER)
+            text(s, x + cw - Inches(1.2), sy + Inches(0.38), Inches(0.95), Inches(0.3),
+                 "추천", size=10, bold=True, color=NAVY_DARK, align=PP_ALIGN.CENTER)
+
+    text(s, Inches(0.7), Inches(6.65), Inches(12.15), Inches(0.4),
+         "베타 회원 평생 20% 할인 — 어느 등급이든 영구 적용",
+         size=13, bold=True, color=AMBER_DARK, align=PP_ALIGN.CENTER)
+    footer(s, 13)
+
+
+def s_14_cta(prs):
+    s = add_blank(prs); fill_bg(prs, s, NAVY_DARK)
+    text(s, Inches(0.7), Inches(0.5), Inches(12), Inches(0.4),
+         "08. NEXT STEP", size=11, bold=True, color=AMBER)
+    text(s, Inches(0.7), Inches(0.95), Inches(12), Inches(0.9),
+         "다음 행동", size=36, bold=True, color=WHITE)
+    rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
+
     actions = [
-        ("데모 요청", "현장 미팅 시간 잡고 직접 보여드립니다"),
-        ("시범 도입 문의", "회사 1곳 1주 무료 시범 운영"),
-        ("일반 문의", "기능·요금·도입 절차 등"),
+        ("데모 요청",
+         "현장에서 직접 시연 — 1시간 안에 핵심 기능 모두 보여드립니다"),
+        ("베타 시범 도입",
+         "2개월 무료 + 평생 20% — 일단 회사 1곳에서 첫 현장부터"),
+        ("일반 문의",
+         "기능·요금·도입 절차 등"),
     ]
-    y = Inches(2.7)
+    y = Inches(2.6)
     for label, desc in actions:
-        rrect(s, Inches(0.7), y, Inches(12), Inches(1.0), NAVY_MID)
+        rrect(s, Inches(0.7), y, Inches(12.15), Inches(1.05), NAVY_MID)
         text(s, Inches(1.0), y + Inches(0.18), Inches(4), Inches(0.4),
              label, size=18, bold=True, color=AMBER)
-        text(s, Inches(1.0), y + Inches(0.58), Inches(8), Inches(0.4),
+        text(s, Inches(1.0), y + Inches(0.6), Inches(8), Inches(0.4),
              desc, size=12, color=GRAY_200)
-        text(s, Inches(8.3), y + Inches(0.32), Inches(4.2), Inches(0.5),
+        text(s, Inches(8.4), y + Inches(0.32), Inches(4.4), Inches(0.5),
              "_______________________", size=14, color=GRAY_400, align=PP_ALIGN.RIGHT)
-        y += Inches(1.15)
-    text(s, Inches(0.7), Inches(6.5), Inches(12), Inches(0.4),
-         "수플렉스가 잘 잡아주는 부분만 안에서 굴리고, 기존 채널은 그대로 쓰시면 됩니다",
-         size=12, color=GRAY_400, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
-         f"SUPLEX  ·  21 / {total:02d}", size=9, color=GRAY_400, align=PP_ALIGN.RIGHT)
+        y += Inches(1.2)
 
-
-def s_closing(prs, total):
-    s = add_blank(prs)
-    fill_bg(prs, s, NAVY_DARK)
-    text(s, Inches(0.7), Inches(2.5), Inches(12), Inches(1.5),
-         "감사합니다", size=72, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.7), Inches(4.0), Inches(12), Inches(0.55),
-         "Suplex — 인테리어 회사를 위한 통합 운영 도구",
-         size=18, color=GRAY_200, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.7), Inches(4.7), Inches(12), Inches(0.6),
-         "사람이 떠나도 회사는 남습니다",
-         size=22, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
-    text(s, Inches(0.5), Inches(7.05), Inches(12), Inches(0.4),
-         f"SUPLEX  ·  22 / {total:02d}", size=9, color=GRAY_400, align=PP_ALIGN.RIGHT)
+    text(s, Inches(0.7), Inches(6.4), Inches(12), Inches(0.4),
+         "한 사람의 능력이 아니라, 회사 전체의 능력이 올라갑니다.",
+         size=14, bold=True, color=AMBER, align=PP_ALIGN.CENTER)
+    footer(s, 14, dark=True)
 
 
 # ── 메인 ──
@@ -486,158 +713,21 @@ def main():
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
-    TOTAL = 22
 
-    s_title(prs, TOTAL)                                                     # 1
-    s_toc(prs, TOTAL)                                                       # 2
-    s_section(prs, TOTAL, "01", "인테리어 회사가 매일 잃는 시간", 3)        # 3
-    s_pains(prs, TOTAL)                                                     # 4
-    s_message(prs, TOTAL)                                                   # 5
-    s_section(prs, TOTAL, "02", "한국 인테리어 6단계에 끼는 수플렉스", 6)   # 6
-    s_pipeline(prs, TOTAL)                                                  # 7
-    s_scenario_intro(prs, TOTAL)                                            # 8
-
-    # 9. 컷 1 — 프로젝트 등록
-    s_scenario(prs, TOTAL, 9, "1",
-        "미팅 직후 — 프로젝트 등록 + 마감재 빠르게 채움",
-        [
-            ("토요일 오후 2시 미팅이 끝납니다.", "h"),
-            "사무실에 돌아온 김미영 사원이 새 프로젝트를 만듭니다.",
-            "비슷한 평형의 이전 프로젝트 데이터를 참고해서 마감재를 빠르게 채웁니다.",
-            ("회사가 진행한 프로젝트가 쌓일수록 새 프로젝트는 더 빨라집니다", "em"),
-            "키보드만으로 빠르게. Tab으로 다음 필드, 마지막 필드에서 다음 행 자동 펼침.",
-            "1초 뒤 자동 저장. 저장 버튼 따로 누르지 않아도 됩니다.",
-        ],
-        code="프로젝트명 :\n  강남 래미안 304-1502\n  리모델링\n\n고객명     : 박상철\n주소       : 서울 강남구\n             도곡동 123\n             304동 1502호\n\n면적       : 30평\n시작 예정  : 2026-05-15\n종료 예정  : 2026-06-26"
-    )
-
-    # 10. 컷 2 — 가전 사이즈 자동
-    s_scenario(prs, TOTAL, 10, "2",
-        "가전 모델 입력 — 사이즈가 자동으로 들어옵니다",
-        [
-            ("빌트인 가구가 안 맞아 재시공하는 사고를 방지합니다.", "h"),
-            "마감재 행에 모델명을 검색하면 모델 품번·브랜드·사이즈가 한 번에 입력됩니다.",
-            "사이즈 출처 URL도 함께 저장됩니다.",
-            ("냉장고·김치냉장고·식기세척기 366개 모델이 미리 정리되어 있습니다", "em"),
-            "사용자가 새 모델을 입력하면 회사만의 가전 DB에 자동 누적됩니다.",
-            "다음 프로젝트에서는 그 모델이 바로 검색됩니다.",
-        ],
-        code="검색: \"LG DUE6\"\n\n→ LG DUE6BGL2E\n  (BESPOKE 빌트인)\n\n  가로 : 595 mm\n  세로 : 815 mm\n  깊이 : 600 mm\n\n  [선택]"
-    )
-
-    # 11. 컷 3-1 메인
-    s_scenario(prs, TOTAL, 11, "3",
-        "공정 일정 — 어디서든 한 화면에",
-        [
-            ("수플렉스의 메인 기능. 모바일에서도 공정 이름이 글씨로 직접 보입니다.", "h"),
-            "일반 달력 앱은 셀이 좁아 클릭해야 팝업으로만 글씨가 보입니다.",
-            "수플렉스는 인테리어 공정에 맞춰 한 화면에 최대한 많은 정보가 보이게 설계.",
-            ("현장에서 모바일을 꺼내자마자 오늘·이번 주 공정이 한눈에", "em"),
-            "현장에서 일정이 바뀌면 즉시 모바일에서 수정.",
-            "사무실 디자이너 화면에 곧바로 반영됩니다.",
-            ("일정 정보가 개인의 머리 속이 아니라 회사 시스템 안에", "em"),
-        ],
-        highlight=True,
-        sub_title="컷 3-1  ·  메인 기능"
-    )
-
-    # 12. 컷 3-2 메인 — 탭별 + 픽스
-    s_scenario(prs, TOTAL, 12, "3",
-        "탭별 최적화 + 일정 픽스 기능",
-        [
-            ("모든 팀원이 같은 화면을 봅니다 (지출 탭 제외).", "h"),
-            "일정 탭 — 현장팀 우선. 여러 현장 일정·체크리스트 넘나들기 좋게.",
-            "마감재 탭 — 디자이너 우선. 마감재 추가·제거 빠른 UI.",
-            "대표 — 모든 데이터 한 화면. 지출 탭에서 회사 전체 금전 흐름.",
-            ("일정 픽스 — 계획과 확정의 구분", "em"),
-            "처음엔 계획으로 입력 → 협력업체 섭외 끝난 일정만 픽스로 바꿈.",
-            "잡힌 일정과 미정 일정을 팀 전체가 한 화면에서 구분합니다.",
-            ("엑셀·노션·달력 앱에는 없는 소통 기능", "em"),
-        ],
-        highlight=True,
-        sub_title="컷 3-2"
-    )
-
-    # 13. 컷 4-1 — D-day
-    s_scenario(prs, TOTAL, 13, "4",
-        "D-day 알림 — 임박한 발주만 자동으로",
-        [
-            ("자재 발주 누락은 인테리어 공사의 가장 큰 사고입니다.", "h"),
-            "회사가 등록해둔 공정별 발주 데드라인 규칙대로 시스템이 자동 어드바이스.",
-            "타일 시공 7일 전, 도배 5일 전, 바닥재 7일 전 자재 도착 등.",
-            "발주 메뉴에 임박 항목이 통계 카드로 강조됩니다.",
-            ("모델 미정 경고로 자재 미확정 상태에서 데드라인 지나는 일 차단", "em"),
-            "Solapi 카카오 알림톡 연동 시 N일 전 자동 알림톡까지.",
-        ],
-        code="타일 시공 시작:\n  2026-05-29\n\n발주 마감:\n  2026-05-22\n  (시공 7일 전)\n\n오늘  : 2026-05-19\n\n→ 발주 화면에\n  \"타일 D-3 임박\"\n  칩 자동 표시",
-        highlight=True,
-        sub_title="컷 4-1  ·  메인 기능"
-    )
-
-    # 14. 컷 4-2 — 사전 체크리스트
-    s_scenario(prs, TOTAL, 14, "4",
-        "사전 체크리스트 — 일정만 입력하면 자동 생성",
-        [
-            ("노련한 사장님이 챙기던 사전 액션이 신입에게 빠지는 일을 방지합니다.", "h"),
-            "일정에 \"도배\"를 입력하는 순간:",
-            "  · 도배 D-3 \"벽지 도착 확인\" 자동 추가",
-            "  · 도배 D-1 \"초벌 풀칠 준비\" 자동 추가",
-            "회사가 한 번 표준 어드바이스를 등록해두면 모든 프로젝트가 같은 표준으로.",
-            ("사장님 머리 속 \"이쯤 되면 이거 챙겨야 한다\" 노하우를 신입도 똑같이", "em"),
-            "회사가 일찍 표준을 등록해둘수록 누가 일을 진행하든 같은 품질 보장.",
-        ],
-        highlight=True,
-        sub_title="컷 4-2  ·  메인 기능"
-    )
-
-    # 15. 컷 5 — 발주서
-    s_scenario(prs, TOTAL, 15, "5",
-        "발주서 자동 작성 — 협력업체에 카톡 형식으로",
-        [
-            ("마감재 확정 → 발주 탭으로 자연스럽게 이어집니다.", "h"),
-            "보낼 항목 체크 후 \"선택 복사\".",
-            "발주서가 카톡 친화 형식으로 자동 작성, 클립보드에 복사됩니다.",
-            "협력업체 사장님 카톡방에 그대로 붙여넣기.",
-            ("협력업체와의 소통 채널을 바꿀 필요 없이, 정리된 정보만 전달", "em"),
-        ],
-        code="[ABC인테리어]\n[강남 304-1502]\n\n[현장 정보]\n주소: 도곡동 123\n     1502호\n담당: 김미영\n도착: 2026-05-27\n\n[욕실 타일 자재]\n타일 600각: 15박스\n본드 X18  : 6포\n줄눈 화이트: 4봉\n유가 도무스: 2개\n코너비드  : 8개"
-    )
-
-    # 16. 컷 6 — 일정 복사
-    s_scenario(prs, TOTAL, 16, "6",
-        "일정 복사 — 작업자에게 보낼 안내를 한 번에",
-        [
-            ("일정·주소·주의사항을 매번 타이핑하는 일은 가장 반복되는 잡일입니다.", "h"),
-            "일정 탭에서 \"일정 복사\" → 검색창에 「전기」 입력.",
-            "그 프로젝트의 전기 공정 일정 + 주소 + 특이사항이 클립보드에 복사.",
-            "전기팀 사장님 카톡방에 그대로 붙여넣기.",
-            ("회사 전체 일정에서 추출하면 모든 현장의 전기 공사 일정이 한 번에", "em"),
-            "엑셀·노션·달력 앱에서 매번 손으로 정리하던 작업이 한 클릭으로.",
-        ],
-        code="[ABC인테리어]\n[304-1502]\n[전기 공사 안내]\n\n[공사 일정]\n2026-05-18\n  09:00 설비·전기\n\n[현장 정보]\n주소: 도곡동 123\n     1502호\n담당: 김미영\n특이: 1502호 좌측\n     09시 양해 완료"
-    )
-
-    # 17. 컷 7 — 프로젝트 기록
-    s_scenario(prs, TOTAL, 17, "7",
-        "프로젝트 기록 — 머리에서 시스템으로",
-        [
-            ("인테리어 노하우는 대부분 사람의 머리 속에 있습니다.", "h"),
-            "박상철 시공 3주 차, 거실 천장 8cm 발견 → 표면 매입형으로 변경 + 메모.",
-            "준공 1개월 후 안방 욕실 수전 헐거움 A/S → 메모.",
-            "석 달 뒤, 같은 아파트 다른 호수 견적 → 검색 한 번에 과거 노하우 즉시.",
-            ("직원이 그만두는 순간 회사 자산이 함께 사라지는 일을 방지", "em"),
-            "추후 AI 도입으로 비슷한 현장 자동 매칭, 과거 노하우 어드바이스 예정.",
-            ("일찍 도입할수록 회사만의 데이터 자산이 두꺼워집니다", "em"),
-        ],
-        code="[태그: 현장환경]\n강남 래미안\n304-1502\n거실 천장 8cm\n매립등 X\n표면형 권장\n\n[태그: A/S]\n박상철 안방\n욕실 수전\n슈베르트 SK-1240\n시공 1개월 헐거움\n다음 토크 강하게",
-        highlight=True
-    )
-
-    s_section(prs, TOTAL, "04", "핵심 차별점", 18)                          # 18
-    s_diff(prs, TOTAL)                                                       # 19
-    s_checklist(prs, TOTAL)                                                  # 20
-    s_cta(prs, TOTAL)                                                        # 21
-    s_closing(prs, TOTAL)                                                    # 22
+    s_1_title(prs)
+    s_2_pain(prs)
+    s_3_old_vs_new(prs)
+    s_4_solution_overview(prs)
+    s_5_solution_1(prs)
+    s_6_solution_2(prs)
+    s_7_solution_3(prs)
+    s_8_solution_4(prs)
+    s_9_company_asset(prs)
+    s_10_diff(prs)
+    s_11_beta(prs)
+    s_12_onboarding(prs)
+    s_13_pricing(prs)
+    s_14_cta(prs)
 
     out = r"C:\Users\1988k\projects\suplex\docs\sales\소개서.pptx"
     prs.save(out)
