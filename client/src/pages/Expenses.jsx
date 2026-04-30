@@ -40,6 +40,7 @@ export default function Expenses() {
     q: '',
   });
   const [editing, setEditing] = useState(null);
+  // adding: 인라인 신규 입력 행 표시 토글 (모달 X)
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -220,7 +221,7 @@ export default function Expenses() {
             <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="💰 프로젝트 손익" />
           )}
           <div className="ml-auto" />
-          <ViewTab active={view === VIEW_RULES}    onClick={() => setView(VIEW_RULES)}    label="🔮 자동분류 룰" />
+          <ViewTab active={view === VIEW_RULES}    onClick={() => setView(VIEW_RULES)}    label="🏷️ 자동분류 룰" />
         </div>
 
         {view !== VIEW_PNL && view !== VIEW_RULES && (
@@ -241,6 +242,16 @@ export default function Expenses() {
               total={totalFiltered}
               projects={projects}
               accountCodes={accountCodes}
+              adding={adding}
+              onAddCancel={() => setAdding(false)}
+              onAddSave={async (payload) => {
+                const { expense } = await expensesApi.create(payload);
+                queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
+                  if (!old) return old;
+                  return { ...old, expenses: [expense, ...old.expenses] };
+                });
+                setAdding(false);
+              }}
               onEdit={setEditing}
               onPatch={handleInlinePatch}
               onRemove={handleInlineRemove}
@@ -262,13 +273,14 @@ export default function Expenses() {
         </div>
       </div>
 
-      {(adding || editing) && (
+      {/* 새 거래 추가는 인라인 행. 기존 거래 편집(description 클릭)만 모달. */}
+      {editing && (
         <ExpenseModal
           expense={editing}
           projects={projects}
           accountCodes={accountCodes}
-          onClose={() => { setAdding(false); setEditing(null); }}
-          onSaved={() => { setAdding(false); setEditing(null); reload(); }}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); reload(); }}
         />
       )}
       {importing && (
@@ -351,8 +363,17 @@ function FilterBar({ projects, accountCodes, accountGroups, filters, onChange })
   );
 }
 
-function ListView({ expenses, total, projects, accountCodes, onEdit, onPatch, onRemove, onBulkRemove }) {
+function ListView({ expenses, total, projects, accountCodes, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
   const [selected, setSelected] = useState(() => new Set());
+  // ListView 안에서 메모이즈 — NewRow와 ListRow가 같은 ref 공유
+  const accountOptions = useMemo(
+    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
+    [accountCodes]
+  );
+  const projectOptions = useMemo(
+    () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
+    [projects]
+  );
   // 거래 목록이 바뀌면 (필터 변경 등) 선택 초기화 — 사라진 id 청소
   useEffect(() => {
     const validIds = new Set(expenses.map((e) => e.id));
@@ -415,6 +436,15 @@ function ListView({ expenses, total, projects, accountCodes, onEdit, onPatch, on
             </tr>
           </thead>
           <tbody className="divide-y">
+            {adding && (
+              <NewRow
+                projects={projects}
+                accountOptions={accountOptions}
+                projectOptions={projectOptions}
+                onSave={onAddSave}
+                onCancel={onAddCancel}
+              />
+            )}
             {expenses.map((e) => (
               <ListRow
                 key={e.id}
@@ -543,6 +573,170 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
     </tr>
   );
 });
+
+// 신규 거래 입력 행 — 인라인 (모달 X)
+function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [type, setType] = useState('EXPENSE');
+  const [description, setDescription] = useState('');
+  const [memoVal, setMemo] = useState('');
+  const [amount, setAmount] = useState('');
+  const [accountCodeId, setAccountCodeId] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [workCategory, setWorkCategory] = useState('');
+  const [classifyHint, setClassifyHint] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  // 자동분류 룰 미리보기 — description 또는 vendor 입력 시 디바운스로 룰 매칭
+  useEffect(() => {
+    if (!description.trim()) { setClassifyHint(null); return; }
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const { results } = await expenseRulesApi.classify([description]);
+        if (!alive) return;
+        setClassifyHint(results?.[0] || null);
+      } catch (e) { /* noop */ }
+    }, 300);
+    return () => { alive = false; clearTimeout(t); };
+  }, [description]);
+
+  function applyClassify() {
+    if (!classifyHint) return;
+    if (classifyHint.accountCodeId) setAccountCodeId(classifyHint.accountCodeId);
+    if (classifyHint.workCategory) setWorkCategory(classifyHint.workCategory);
+    if (classifyHint.siteCode) {
+      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
+      if (proj) setProjectId(proj.id);
+    }
+  }
+
+  async function save() {
+    if (!amount || isNaN(Number(amount))) { alert('금액을 입력해주세요'); return; }
+    if (!date) { alert('날짜를 입력해주세요'); return; }
+    if (!description.trim()) { alert('내역(거래처)을 입력해주세요'); return; }
+    setBusy(true);
+    try {
+      await onSave({
+        date,
+        type,
+        amount: Number(amount),
+        description: description.trim(),
+        // 거래처 텍스트도 description으로 (회계서류·통장 패턴 — 별도 vendor 컬럼 없음)
+        vendor: description.trim(),
+        memo: memoVal.trim() || null,
+        accountCodeId: accountCodeId || null,
+        projectId: projectId || null,
+        workCategory: workCategory.trim() || null,
+      });
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
+    else if (e.key === 'Escape') onCancel();
+  }
+
+  return (
+    <tr className="bg-amber-50/60 border-b-2 border-amber-300" onKeyDown={handleKey}>
+      <td className="px-3 py-1.5 text-center text-xs text-amber-700 font-medium">+</td>
+      <td className="px-3 py-1.5">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        >
+          {EXPENSE_TYPE_KEYS.map((k) => <option key={k} value={k}>{EXPENSE_TYPE_META[k].label}</option>)}
+        </select>
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="거래처명·내역 (예: OO상사 / 이체이체)"
+          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          autoFocus
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={memoVal}
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="자재·세부"
+          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          type="text"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          className="w-full text-xs text-right tabular-nums border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <InlineCombobox
+          value={accountCodeId}
+          options={accountOptions}
+          onChange={(id) => setAccountCodeId(id || '')}
+          placeholder="검색…"
+          emptyLabel="(미분류)"
+          inputClassName="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <InlineCombobox
+          value={projectId}
+          options={projectOptions}
+          onChange={(id) => setProjectId(id || '')}
+          placeholder="검색…"
+          emptyLabel="(미지정)"
+          inputClassName="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={workCategory}
+          onChange={(e) => setWorkCategory(e.target.value)}
+          placeholder="—"
+          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+        />
+      </td>
+      <td className="px-3 py-1.5 text-right space-x-1 whitespace-nowrap">
+        {classifyHint && (
+          <button
+            type="button"
+            onClick={applyClassify}
+            className="text-xs px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded hover:bg-emerald-100"
+            title={`자동분류 룰: '${classifyHint.keyword}'`}
+          >🏷️ 자동분류</button>
+        )}
+        <button
+          onClick={save}
+          disabled={busy}
+          className="text-xs px-2 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+          title="저장 (Ctrl+Enter)"
+        >{busy ? '...' : '💾'}</button>
+        <button
+          onClick={onCancel}
+          className="text-xs px-1.5 py-1 text-gray-500 hover:text-rose-500"
+          title="취소 (Esc)"
+        >✕</button>
+      </td>
+    </tr>
+  );
+}
 
 function GroupedView({ expenses, groupBy }) {
   const groups = useMemo(() => {
@@ -853,26 +1047,25 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
             />
           </Field>
           <Field label="계정과목">
-            <InlineCombobox
-              value={form.accountCodeId}
-              options={accountOptions}
-              onChange={(id) => set('accountCodeId', id || '')}
-              placeholder="계정과목 검색…"
-              emptyLabel="(미분류)"
-              inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-            />
-            {classifyHint && (
+            <div className="flex gap-2 items-start">
+              <div className="flex-1">
+                <InlineCombobox
+                  value={form.accountCodeId}
+                  options={accountOptions}
+                  onChange={(id) => set('accountCodeId', id || '')}
+                  placeholder="계정과목 검색…"
+                  emptyLabel="(미분류)"
+                  inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+                />
+              </div>
               <button
                 type="button"
                 onClick={applyClassifyHint}
-                className="mt-1 w-full text-xs px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded hover:bg-emerald-100 text-left"
-              >
-                🔮 자동분류 룰 매칭: <b>{classifyHint.keyword}</b>
-                {classifyHint.workCategory && <span className="text-gray-600"> · 공종 {classifyHint.workCategory}</span>}
-                {classifyHint.siteCode && <span className="text-gray-600"> · 현장 {classifyHint.siteCode}</span>}
-                <span className="ml-2 text-emerald-700 font-medium">→ 적용</span>
-              </button>
-            )}
+                disabled={!classifyHint}
+                title={classifyHint ? `룰 매칭: '${classifyHint.keyword}'` : '거래처/내역 입력 후 룰 매칭 시 활성화'}
+                className="text-xs px-3 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >🏷️ 자동분류 적용</button>
+            </div>
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="공종 (선택)">
@@ -1247,7 +1440,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
               ) : (
                 <>📅 첫 가져오기 (기존 거래 없음) · </>
               )}
-              🔁 중복 <b>{prepInfo.dupCount}</b>건 · 💰 매출 <b>{prepInfo.incomeCount || 0}</b>건 자동 스킵 · 🔮 자동분류 완료
+              🔁 중복 <b>{prepInfo.dupCount}</b>건 · 💰 매출 <b>{prepInfo.incomeCount || 0}</b>건 자동 스킵 · 🏷️ 자동분류 완료
               <br /><span className="text-gray-500">지출만 가져옵니다. 전체 불러오기 버튼만 누르시면 됩니다.</span>
             </div>
           ) : (
@@ -1302,7 +1495,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
             disabled={classifying}
             className="text-xs px-3 py-1 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50 disabled:opacity-50"
           >
-            {classifying ? '분류 중...' : '🔮 자동분류 적용'}
+            {classifying ? '분류 중...' : '🏷️ 자동분류 적용'}
           </button>
           <span className="text-gray-600 ml-2">일괄 적용:</span>
           <select onChange={(e) => bulkSetProject(e.target.value)} className="text-xs border rounded px-2 py-1 bg-white" defaultValue="">
