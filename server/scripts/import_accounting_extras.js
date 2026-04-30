@@ -37,7 +37,7 @@ function parseDate(v) {
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const excelPath = args.find((a) => !a.startsWith('--')) || DEFAULT_XLSX;
+  const excelPath = args.find((a) => !a.startsWith('--') && !a.startsWith('회사=')) || DEFAULT_XLSX;
   if (!fs.existsSync(excelPath)) {
     console.error(`❌ 엑셀 파일 없음: ${excelPath}`);
     process.exit(1);
@@ -45,15 +45,24 @@ async function main() {
   console.log(`▸ 엑셀: ${excelPath}`);
   if (dryRun) console.log(`▸ DRY RUN (실제 갱신 X)`);
 
-  // OWNER 회사 찾기
-  const owner = await prisma.membership.findFirst({
-    where: { role: 'OWNER' },
-    include: { user: true, company: true },
-    orderBy: { createdAt: 'asc' },
+  // 대상 회사 선택 — 슈퍼어드민(Suplex 관리) 등 빈 회사 제외
+  // 1) env COMPANY_NAME 또는 인자 "회사=이름"
+  // 2) 디폴트: "리플레이스 디자인" (실 운영 회사)
+  const companyArg = args.find((a) => a.startsWith('회사='))?.slice(3);
+  const targetName = process.env.COMPANY_NAME || companyArg || '리플레이스 디자인';
+
+  const company = await prisma.company.findFirst({
+    where: { name: targetName },
+    select: { id: true, name: true },
   });
-  if (!owner) { console.error('❌ OWNER 없음'); process.exit(1); }
-  const companyId = owner.companyId;
-  console.log(`▸ 대상: 회사 "${owner.company.name}"`);
+  if (!company) {
+    console.error(`❌ 회사 못 찾음: "${targetName}"`);
+    const all = await prisma.company.findMany({ select: { name: true } });
+    console.error('가능한 회사:', all.map((c) => c.name).join(', '));
+    process.exit(1);
+  }
+  const companyId = company.id;
+  console.log(`▸ 대상: 회사 "${company.name}"`);
 
   const wb = XLSX.readFile(excelPath, { cellDates: true });
   const dbRows = XLSX.utils.sheet_to_json(wb.Sheets['DB'], { defval: null, header: 1 }).slice(1);
