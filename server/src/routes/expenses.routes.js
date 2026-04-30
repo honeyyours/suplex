@@ -468,6 +468,33 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
+// 통장 가져오기 준비 — 마지막 거래일 + 최근 거래 fingerprint 셋 (자동 중복 스킵용).
+// 클라이언트는 응답으로 dateFilter.from 자동 세팅 + 중복 행 자동 skip.
+router.get('/import-prep', async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const last = await prisma.expense.findFirst({
+      where: { companyId },
+      orderBy: { date: 'desc' },
+      select: { date: true },
+    });
+    const lastDate = last?.date || null;
+    // 마지막 거래일 - 30일 이후 (없으면 epoch) 의 거래만 fingerprint (응답 크기 제한)
+    const fpFrom = lastDate
+      ? new Date(lastDate.getTime() - 30 * 24 * 60 * 60 * 1000)
+      : new Date(0);
+    const existing = await prisma.expense.findMany({
+      where: { companyId, date: { gte: fpFrom } },
+      select: { date: true, amount: true, description: true, vendor: true },
+    });
+    const fp = (r) => `${r.date.toISOString().slice(0, 10)}|${Number(r.amount)}|${(r.description || '').trim()}|${(r.vendor || '').trim()}`;
+    res.json({
+      lastDate: lastDate ? lastDate.toISOString().slice(0, 10) : null,
+      fingerprints: existing.map(fp),
+    });
+  } catch (e) { next(e); }
+});
+
 // 출구정리 추론엔진 — 통장 거래 1건에 대한 발주 매칭 후보 점수.
 // body: { amount, date, vendorText, projectId? }
 // 자동 라벨 X. 사람 1-클릭 컨펌용 후보만 반환.

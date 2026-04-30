@@ -16,6 +16,9 @@ export const expensesApi = {
   // 출구정리 추론엔진 — 통장 거래 1건 → 발주 매칭 후보
   inferenceCandidates: (txn) =>
     api.post('/expenses/inference-candidates', txn).then((r) => r.data),
+  // 통장 가져오기 준비 — { lastDate, fingerprints }
+  importPrep: () =>
+    api.get('/expenses/import-prep').then((r) => r.data),
 };
 
 // 거래 종류 메타

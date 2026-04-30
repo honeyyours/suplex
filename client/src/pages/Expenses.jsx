@@ -725,6 +725,52 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
     setPerRow((arr) => arr.map((r, i) => isOutOfRange(i) ? r : { ...r, skip: next }));
   }
 
+  // 자동 준비 — 모달 mount 1회: 마지막 거래일 자동 필터 + 중복 자동 스킵 + 자동분류
+  const [prepInfo, setPrepInfo] = useState(null); // { lastDate, dupCount, total }
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { lastDate, fingerprints } = await expensesApi.importPrep();
+        if (!alive) return;
+        const fpSet = new Set(fingerprints || []);
+
+        // 행 fingerprint 계산
+        function rowFp(i) {
+          const r = dataRows[i];
+          const date = normalizeDate(getCell(r, mapping.date));
+          const outAmt = getCellNum(r, mapping.amount);
+          const inAmt = getCellNum(r, mapping.inAmt);
+          const amount = Math.max(Math.abs(outAmt || 0), Math.abs(inAmt || 0));
+          const desc = getCell(r, mapping.description);
+          const vendorText = getCell(r, mapping.vendor) || desc;
+          return `${date}|${amount}|${desc}|${vendorText}`;
+        }
+
+        // 1) 마지막 거래일이 있으면 그 날부터로 from 자동 세팅
+        if (lastDate) {
+          setDateFilter({ from: lastDate, to: '' });
+        }
+
+        // 2) 중복인 행은 skip 자동 체크
+        let dupCount = 0;
+        setPerRow((arr) => arr.map((row, i) => {
+          if (fpSet.has(rowFp(i))) { dupCount++; return { ...row, skip: true, isDuplicate: true }; }
+          return row;
+        }));
+
+        setPrepInfo({ lastDate, dupCount, total: dataRows.length });
+
+        // 3) 자동분류 자동 트리거
+        await autoClassify();
+      } catch (e) {
+        // 실패해도 모달은 동작 — 수동 진행 가능
+      }
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 자동분류 (룰 적용 — 클릭 트리거)
   async function autoClassify() {
     setClassifying(true);
@@ -868,10 +914,20 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
     <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-navy-800">CSV 가져오기 — {dataRows.length}행</h2>
-          <div className="text-xs text-gray-500 mt-1">
-            컬럼 매핑 자동 추측 + 헤더 자동 탐지 + 한글 인코딩 자동(EUC-KR fallback). "🔮 자동분류"로 키워드 룰 적용, "✨ 후보"로 출구정리 추론엔진 발주 매칭 후보 조회.
-          </div>
+          <h2 className="text-lg font-bold text-navy-800">통장 가져오기 — {dataRows.length}행</h2>
+          {prepInfo ? (
+            <div className="text-xs text-gray-600 mt-1 bg-emerald-50 border border-emerald-200 rounded p-2 leading-relaxed">
+              {prepInfo.lastDate ? (
+                <>📅 마지막 거래일 <b>{prepInfo.lastDate}</b> 이후로 자동 필터 · </>
+              ) : (
+                <>📅 첫 가져오기 (기존 거래 없음) · </>
+              )}
+              🔁 중복 <b>{prepInfo.dupCount}</b>건 자동 스킵 · 🔮 자동분류 적용 완료
+              <br /><span className="text-gray-500">전체 불러오기 버튼만 누르시면 됩니다. 필요하면 아래에서 행별 수정 가능.</span>
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 mt-1">자동 준비 중… (마지막 거래일 감지·중복 검사·자동분류)</div>
+          )}
         </div>
 
         <div className="px-6 py-3 border-b bg-gray-50 grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
@@ -986,7 +1042,10 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                     <td className="px-2 py-1 text-right tabular-nums">
                       {amt ? <span className={isIncome ? 'text-emerald-700' : ''}>{isIncome && '+'}{formatWon(amt)}</span> : <span className="text-rose-500">없음</span>}
                     </td>
-                    <td className="px-2 py-1 text-gray-700 truncate max-w-xs">{getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}</td>
+                    <td className="px-2 py-1 text-gray-700 truncate max-w-xs">
+                      {getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}
+                      {perRow[i].isDuplicate && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔁 기존 거래 있음</span>}
+                    </td>
                     <td className="px-2 py-1">
                       <input
                         value={perRow[i].memo}
@@ -1096,7 +1155,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">취소</button>
           <button onClick={save} disabled={busy} className="text-sm px-5 py-2 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50">
-            {busy ? '저장 중...' : `${eligibleCount}건 가져오기`}
+            {busy ? '저장 중...' : `📥 전체 불러오기 (${eligibleCount}건)`}
           </button>
         </div>
         <ModalStyles />
