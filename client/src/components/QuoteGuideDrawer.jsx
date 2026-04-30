@@ -1,12 +1,18 @@
 // 견적 작성 시 우측 fixed 드로어 — 활성 라인의 그룹 헤더 공정 자동 추적해서
 // 회사 내부 가이드(🔒) + 견적상담 메모(📋)를 inline 편집 가능 카드로 표시.
 //
-// 등장 방식: WorkContextDrawer(공정상세)와 동일한 fixed right-side 패턴.
-// - 폭 사용자가 좌측 가장자리 drag로 조절 (280~720px, localStorage에 저장).
-// - 외부 클릭으로 닫히지 않음(작업 중 방해 X).
-// - 모바일 미표시(xl 이상에서만).
-// - PDF/프린트 비포함(.no-print).
-// - 작업영역 padding 안 줌 — 드로어가 위에 떠있음 (z-40, 우측 일부 가림 허용).
+// 레이아웃 정책 (2026-04-30 봉기님 결정):
+//   - 견적 본문(메인)은 그대로 — 본문에 padding 주지 않음
+//   - 드로어가 본문 우측 위로 떠 있는 overlay 패턴 (z-40)
+//   - 본체(max-w-6xl=1152px) + 드로어(280px 디폴트) → 1500px+ 화면에선 본문 안 가림
+//     1280~1472px 사이에선 화면 우측 일부 가림 — 사용자가 폭 드래그로 조절 가능
+//   - 헤더의 "📖 가이드" 버튼으로 닫기/열기 토글 (작업 흐름 방해 X)
+//
+// 동작:
+//   - 폭 사용자가 좌측 가장자리 drag로 조절 (240~720px, localStorage에 저장).
+//   - 외부 클릭으로 닫히지 않음 (작업 중 텍스트 선택 등 방해 X).
+//   - 모바일 미표시 (xl 이상에서만).
+//   - PDF/프린트 비포함 (.no-print).
 //
 // 편집:
 //   - 회사 가이드(tips): SETTINGS_QUOTE_GUIDE 권한 보유자만 편집
@@ -19,9 +25,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
 
 const WIDTH_KEY = 'quoteGuideDrawerWidth';
-const MIN_WIDTH = 280;
+const MIN_WIDTH = 240;          // 더 좁힐 수 있게 (본문 가림 최소화)
 const MAX_WIDTH = 720;
-const DEFAULT_WIDTH = 320;
+const DEFAULT_WIDTH = 280;      // 320 → 280: 1280~1472px 화면에서 본문 가림 영역 축소
 
 export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose }) {
   const { auth } = useAuth();
