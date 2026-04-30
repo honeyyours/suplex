@@ -21,17 +21,21 @@ function pct(n, d) {
 export default function ProjectProcessOverview() {
   const { id: projectId } = useParams();
   const [data, setData] = useState(null);
+  const [loadErr, setLoadErr] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [drawerPhase, setDrawerPhase] = useState(null); // 행 클릭 시 활성 phase
 
-  useEffect(() => {
+  function load() {
     setLoading(true);
+    setLoadErr('');
     projectsApi.processOverview(projectId)
-      .then(setData)
-      .catch((e) => alert('로드 실패: ' + (e.response?.data?.error || e.message)))
+      .then((d) => { setData(d); setLoadErr(''); })
+      .catch((e) => setLoadErr(e.response?.data?.error || e.message || '불러오지 못했습니다'))
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }
+
+  useEffect(() => { load(); }, [projectId]);
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -58,6 +62,18 @@ export default function ProjectProcessOverview() {
   }, [data, showAll]);
 
   if (loading) return <div className="text-sm text-gray-400 py-8 text-center">로딩...</div>;
+  if (loadErr) return (
+    <div className="bg-rose-50 border border-rose-200 rounded-lg p-4 text-sm">
+      <div className="text-rose-700 font-medium mb-1">공정 현황을 불러오지 못했습니다</div>
+      <div className="text-rose-600/80 text-xs mb-3">{loadErr}</div>
+      <button
+        onClick={load}
+        className="text-xs px-3 py-1.5 rounded bg-navy-700 text-white hover:bg-navy-800"
+      >
+        다시 시도
+      </button>
+    </div>
+  );
   if (!data) return null;
 
   const totalRisks = data.phases.reduce((sum, r) => sum + r.risks.length, 0);

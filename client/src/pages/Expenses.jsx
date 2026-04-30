@@ -206,10 +206,21 @@ export default function Expenses() {
             <ListView
               expenses={expenses}
               total={totalFiltered}
+              projects={projects}
+              accountCodes={accountCodes}
               onEdit={setEditing}
+              onPatch={async (id, patch) => {
+                await expensesApi.update(id, patch);
+                reload();
+              }}
               onRemove={async (id) => {
                 if (!confirm('이 거래를 삭제할까요?')) return;
                 await expensesApi.remove(id);
+                reload();
+              }}
+              onBulkRemove={async (ids) => {
+                if (!confirm(`${ids.length}건을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+                await Promise.all(ids.map((id) => expensesApi.remove(id)));
                 reload();
               }}
             />
@@ -318,69 +329,188 @@ function FilterBar({ projects, accountCodes, accountGroups, filters, onChange })
   );
 }
 
-function ListView({ expenses, total, onEdit, onRemove }) {
+function ListView({ expenses, total, projects, accountCodes, onEdit, onPatch, onRemove, onBulkRemove }) {
+  const [selected, setSelected] = useState(() => new Set());
+  // 거래 목록이 바뀌면 (필터 변경 등) 선택 초기화 — 사라진 id 청소
+  useEffect(() => {
+    const validIds = new Set(expenses.map((e) => e.id));
+    setSelected((prev) => {
+      const next = new Set();
+      for (const id of prev) if (validIds.has(id)) next.add(id);
+      return next;
+    });
+  }, [expenses]);
+
   if (expenses.length === 0) {
     return <div className="p-12 text-center text-sm text-gray-400">조건에 맞는 거래가 없습니다.</div>;
   }
+
+  const allSelected = selected.size > 0 && selected.size === expenses.length;
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(expenses.map((e) => e.id)));
+  }
+  function toggleOne(id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-xs text-gray-600">
-          <tr>
-            <th className="text-left px-3 py-2 w-24">날짜</th>
-            <th className="text-left px-3 py-2 w-16">종류</th>
-            <th className="text-left px-3 py-2">내역</th>
-            <th className="text-left px-3 py-2 w-40">메모</th>
-            <th className="text-right px-3 py-2 w-32">금액</th>
-            <th className="text-left px-3 py-2 w-44">계정과목</th>
-            <th className="text-left px-3 py-2 w-36">프로젝트</th>
-            <th className="text-left px-3 py-2 w-28">공종</th>
-            <th className="px-3 py-2 w-12"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {expenses.map((e) => {
-            const t = EXPENSE_TYPE_META[e.type] || EXPENSE_TYPE_META.EXPENSE;
-            return (
-              <tr key={e.id} className="hover:bg-gray-50">
-                <td className="px-3 py-1.5 tabular-nums text-gray-600 text-xs">{String(e.date).slice(0, 10)}</td>
-                <td className="px-3 py-1.5"><span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span></td>
-                <td className="px-3 py-1.5">
-                  <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs">{e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}</button>
-                </td>
-                <td className="px-3 py-1.5 text-xs text-gray-600 truncate max-w-[10rem]" title={e.memo || ''}>
-                  {e.memo || <span className="text-gray-300">—</span>}
-                </td>
-                <td className={`px-3 py-1.5 text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}>
-                  {e.type === 'INCOME' ? '+' : e.type === 'TRANSFER' ? '↔' : ''}{formatWon(e.amount)}
-                </td>
-                <td className="px-3 py-1.5 text-xs">
-                  {e.accountCode ? (
-                    <span className={`px-1.5 py-0.5 rounded ${accountColor(e.accountCode.groupName)}`}>{e.accountCode.code}</span>
-                  ) : <span className="text-gray-300">—</span>}
-                </td>
-                <td className="px-3 py-1.5">
-                  {e.project ? (
-                    <Link to={`/projects/${e.project.id}/expenses`} className="text-navy-700 hover:underline text-xs">{e.project.name}</Link>
-                  ) : <span className="text-gray-400 text-xs">미지정</span>}
-                </td>
-                <td className="px-3 py-1.5 text-xs text-gray-600">{e.workCategory || ''}</td>
-                <td className="px-3 py-1.5 text-center">
-                  <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <tfoot className="bg-gray-50 font-semibold text-navy-800">
-          <tr>
-            <td colSpan={4} className="px-3 py-2.5">필터 합계 ({expenses.length}건)</td>
-            <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(total)}</td>
-            <td colSpan={4} />
-          </tr>
-        </tfoot>
-      </table>
+    <div>
+      {selected.size > 0 && (
+        <div className="px-4 py-2 bg-navy-50 border-b border-navy-200 text-sm flex items-center gap-3 sticky top-0 z-10">
+          <span className="font-medium text-navy-800">{selected.size}건 선택됨</span>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-gray-600 hover:underline"
+          >선택 해제</button>
+          <div className="ml-auto">
+            <button
+              onClick={() => onBulkRemove([...selected]).then(() => setSelected(new Set()))}
+              className="text-xs px-3 py-1 bg-rose-600 text-white rounded hover:bg-rose-700"
+            >🗑️ {selected.size}건 삭제</button>
+          </div>
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-600">
+            <tr>
+              <th className="px-3 py-2 w-10">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} title="전체 선택" />
+              </th>
+              <th className="text-left px-3 py-2 w-24">날짜</th>
+              <th className="text-left px-3 py-2 w-16">종류</th>
+              <th className="text-left px-3 py-2">내역</th>
+              <th className="text-left px-3 py-2 w-40">메모</th>
+              <th className="text-right px-3 py-2 w-32">금액</th>
+              <th className="text-left px-3 py-2 w-44">계정과목</th>
+              <th className="text-left px-3 py-2 w-36">프로젝트</th>
+              <th className="text-left px-3 py-2 w-28">공종</th>
+              <th className="px-3 py-2 w-12"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {expenses.map((e) => (
+              <ListRow
+                key={e.id}
+                expense={e}
+                selected={selected.has(e.id)}
+                onToggleSelect={() => toggleOne(e.id)}
+                projects={projects}
+                accountCodes={accountCodes}
+                onEdit={onEdit}
+                onPatch={onPatch}
+                onRemove={onRemove}
+              />
+            ))}
+          </tbody>
+          <tfoot className="bg-gray-50 font-semibold text-navy-800">
+            <tr>
+              <td colSpan={5} className="px-3 py-2.5">필터 합계 ({expenses.length}건)</td>
+              <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(total)}</td>
+              <td colSpan={4} />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
+  );
+}
+
+// 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
+function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
+  const [memo, setMemo] = useState(e.memo || '');
+  const [amount, setAmount] = useState(String(e.amount));
+  const [accountCodeId, setAccountCodeId] = useState(e.accountCodeId || '');
+  const [projectId, setProjectId] = useState(e.projectId || '');
+  const [workCategory, setWorkCategory] = useState(e.workCategory || '');
+  // expense 새 데이터로 동기화 (다른 행 변경·필터 갱신 후)
+  useEffect(() => { setMemo(e.memo || ''); }, [e.id, e.memo]);
+  useEffect(() => { setAmount(String(e.amount)); }, [e.id, e.amount]);
+  useEffect(() => { setAccountCodeId(e.accountCodeId || ''); }, [e.id, e.accountCodeId]);
+  useEffect(() => { setProjectId(e.projectId || ''); }, [e.id, e.projectId]);
+  useEffect(() => { setWorkCategory(e.workCategory || ''); }, [e.id, e.workCategory]);
+
+  function commitField(field, value, savedValue) {
+    if ((value || '') === (savedValue || '')) return;
+    onPatch(e.id, { [field]: value || null });
+  }
+  function commitAmount() {
+    const n = Number(String(amount).replace(/[^\d.-]/g, ''));
+    if (!Number.isFinite(n) || n === Number(e.amount)) return;
+    onPatch(e.id, { amount: n });
+  }
+
+  const t = EXPENSE_TYPE_META[e.type] || EXPENSE_TYPE_META.EXPENSE;
+  const rowClass = selected ? 'bg-navy-50' : 'hover:bg-gray-50';
+  return (
+    <tr className={rowClass}>
+      <td className="px-3 py-1.5 text-center">
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
+      </td>
+      <td className="px-3 py-1.5 tabular-nums text-gray-600 text-xs">{String(e.date).slice(0, 10)}</td>
+      <td className="px-3 py-1.5">
+        <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span>
+      </td>
+      <td className="px-3 py-1.5">
+        <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs">
+          {e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}
+        </button>
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={memo}
+          onChange={(ev) => setMemo(ev.target.value)}
+          onBlur={() => commitField('memo', memo, e.memo)}
+          placeholder="—"
+          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+        />
+      </td>
+      <td className="px-3 py-1.5 text-right">
+        <input
+          type="text"
+          value={amount}
+          onChange={(ev) => setAmount(ev.target.value)}
+          onBlur={commitAmount}
+          className={`w-full text-xs text-right tabular-nums border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}
+        />
+      </td>
+      <td className="px-3 py-1.5 text-xs">
+        <select
+          value={accountCodeId}
+          onChange={(ev) => { setAccountCodeId(ev.target.value); commitField('accountCodeId', ev.target.value, e.accountCodeId); }}
+          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+        >
+          <option value="">(미분류)</option>
+          {accountCodes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
+        </select>
+      </td>
+      <td className="px-3 py-1.5">
+        <select
+          value={projectId}
+          onChange={(ev) => { setProjectId(ev.target.value); commitField('projectId', ev.target.value, e.projectId); }}
+          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+        >
+          <option value="">(미지정)</option>
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </td>
+      <td className="px-3 py-1.5">
+        <input
+          value={workCategory}
+          onChange={(ev) => setWorkCategory(ev.target.value)}
+          onBlur={() => commitField('workCategory', workCategory, e.workCategory)}
+          placeholder="—"
+          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+        />
+      </td>
+      <td className="px-3 py-1.5 text-center">
+        <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
+      </td>
+    </tr>
   );
 }
 
@@ -752,14 +882,20 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
           setDateFilter({ from: lastDate, to: '' });
         }
 
-        // 2) 중복인 행은 skip 자동 체크
+        // 2) 중복인 행 + 매출(INCOME) 행은 skip 자동 체크
         let dupCount = 0;
+        let incomeCount = 0;
         setPerRow((arr) => arr.map((row, i) => {
-          if (fpSet.has(rowFp(i))) { dupCount++; return { ...row, skip: true, isDuplicate: true }; }
-          return row;
+          const r = dataRows[i];
+          const inAmt = getCellNum(r, mapping.inAmt);
+          const isIncome = inAmt && inAmt > 0;
+          let next = row;
+          if (isIncome) { incomeCount++; next = { ...next, skip: true, isIncome: true }; }
+          if (fpSet.has(rowFp(i))) { dupCount++; next = { ...next, skip: true, isDuplicate: true }; }
+          return next;
         }));
 
-        setPrepInfo({ lastDate, dupCount, total: dataRows.length });
+        setPrepInfo({ lastDate, dupCount, incomeCount, total: dataRows.length });
 
         // 3) 자동분류 자동 트리거
         await autoClassify();
@@ -922,11 +1058,11 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
               ) : (
                 <>📅 첫 가져오기 (기존 거래 없음) · </>
               )}
-              🔁 중복 <b>{prepInfo.dupCount}</b>건 자동 스킵 · 🔮 자동분류 적용 완료
-              <br /><span className="text-gray-500">전체 불러오기 버튼만 누르시면 됩니다. 필요하면 아래에서 행별 수정 가능.</span>
+              🔁 중복 <b>{prepInfo.dupCount}</b>건 · 💰 매출 <b>{prepInfo.incomeCount || 0}</b>건 자동 스킵 · 🔮 자동분류 완료
+              <br /><span className="text-gray-500">지출만 가져옵니다. 전체 불러오기 버튼만 누르시면 됩니다.</span>
             </div>
           ) : (
-            <div className="text-xs text-gray-500 mt-1">자동 준비 중… (마지막 거래일 감지·중복 검사·자동분류)</div>
+            <div className="text-xs text-gray-500 mt-1">자동 준비 중… (마지막 거래일 감지·중복 검사·매출 스킵·자동분류)</div>
           )}
         </div>
 
@@ -1044,7 +1180,8 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                     </td>
                     <td className="px-2 py-1 text-gray-700 truncate max-w-xs">
                       {getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}
-                      {perRow[i].isDuplicate && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔁 기존 거래 있음</span>}
+                      {perRow[i].isDuplicate && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔁 기존 거래</span>}
+                      {perRow[i].isIncome && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">💰 매출</span>}
                     </td>
                     <td className="px-2 py-1">
                       <input

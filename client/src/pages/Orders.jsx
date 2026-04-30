@@ -565,7 +565,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
         <button
           onClick={remove}
           disabled={busy}
-          className="text-xs text-gray-400 hover:text-rose-500 px-1 opacity-0 group-hover:opacity-100"
+          className="text-xs text-gray-400 hover:text-rose-500 px-1 sm:opacity-0 sm:group-hover:opacity-100"
         >🗑</button>
       </div>
     </div>

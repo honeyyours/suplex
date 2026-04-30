@@ -75,13 +75,13 @@ export default function PhotoArchiveModal({ project, onClose, onArchived }) {
                 ✅ 사진 {done.deleted}장이 클라우드에서 제거되었습니다.
                 {done.cloudFailed > 0 && (
                   <span className="block text-amber-700 text-xs mt-1">
-                    (Cloudinary 삭제 실패 {done.cloudFailed}장 — DB는 정리됨)
+                    (이미지 서버 삭제 실패 {done.cloudFailed}장 — DB는 정리됨)
                   </span>
                 )}
               </div>
               <div className="text-xs text-gray-600 space-y-1">
                 <div>• ZIP 파일은 외부에 안전히 보관해주세요. Suplex는 더 이상 보유하지 않습니다.</div>
-                <div>• A/S·분쟁 시 동일 출처(체크리스트/리포트/자재요청)에 사진을 다시 업로드하면 복원됩니다.</div>
+                <div>• A/S 시 동일 출처(체크리스트/리포트/자재요청)에 사진을 다시 업로드하면 복원됩니다.</div>
               </div>
             </div>
           ) : photoCount === 0 ? (

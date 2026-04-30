@@ -247,7 +247,7 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             </span>
           </div>
         </div>
-        <div className="opacity-0 group-hover:opacity-100 transition flex gap-1">
+        <div className="sm:opacity-0 sm:group-hover:opacity-100 transition flex gap-1">
           {!item.isDone && (
             <button
               onClick={() => onEdit(item)}

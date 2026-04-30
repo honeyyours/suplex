@@ -175,7 +175,7 @@ export default function ProjectSimpleQuotes() {
                 <div className="px-2 pb-1.5 flex justify-end">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDuplicate(q.id); }}
-                    className="text-xs sm:text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded opacity-0 group-hover:opacity-100 transition"
+                    className="text-xs sm:text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded sm:opacity-0 sm:group-hover:opacity-100 transition"
                     title="이 견적을 복제해 다음 차수 만들기"
                   >
                     📑 복제
@@ -1012,7 +1012,7 @@ function DragHandle({ onDragStart, onDragEnd, title }) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       title={title}
-      className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-400 hover:text-navy-700 select-none flex items-center justify-center text-[10px] leading-none transition-opacity"
+      className="hidden sm:flex opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-400 hover:text-navy-700 select-none items-center justify-center text-[10px] leading-none transition-opacity"
       style={{ touchAction: 'none' }}
     >
       ⠿
