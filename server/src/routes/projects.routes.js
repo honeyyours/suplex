@@ -5,6 +5,7 @@ const { authRequired } = require('../middlewares/auth');
 const { requireProjectMember, requireProjectLead, getAccessibleProjectIds } = require('../middlewares/projectAccess');
 const { audit } = require('../services/audit');
 const { syncAdvicesFromPhase } = require('../services/checklistAutoSeed');
+const { getPhasePeriods } = require('../services/exitInference');
 const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 const { invalidateCache: invalidatePhaseCache } = require('../services/phaseDetect');
@@ -878,6 +879,19 @@ router.delete('/:id/members/:userId', requireProjectLead('id'), async (req, res,
       metadata: { userId: req.params.userId, role: existing.role },
     });
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// GET /api/projects/:id/phase-periods
+// 출구정리 추론엔진의 입력 — DailyScheduleEntry 기반 PhasePeriod 배열.
+// 같은 공종 인접 일자 묶음. gap > threshold 면 별도 period (예: 도배 1차 + 도배 2차).
+router.get('/:id/phase-periods', pmGuard, async (req, res, next) => {
+  try {
+    const gap = req.query.gap ? Number(req.query.gap) : undefined;
+    const periods = await getPhasePeriods(req.params.id, {
+      gapThresholdDays: Number.isFinite(gap) ? gap : undefined,
+    });
+    res.json({ periods });
   } catch (e) { next(e); }
 });
 
