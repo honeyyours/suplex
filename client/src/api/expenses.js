@@ -13,6 +13,9 @@ export const expensesApi = {
     api.patch(`/expenses/${id}`, payload).then((r) => r.data),
   remove: (id) =>
     api.delete(`/expenses/${id}`).then((r) => r.data),
+  // 출구정리 추론엔진 — 통장 거래 1건 → 발주 매칭 후보
+  inferenceCandidates: (txn) =>
+    api.post('/expenses/inference-candidates', txn).then((r) => r.data),
 };
 
 // 거래 종류 메타

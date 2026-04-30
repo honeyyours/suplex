@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -9,7 +9,7 @@ import { accountCodesApi, accountColor } from '../api/accountCodes';
 import { expenseRulesApi } from '../api/expenseRules';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
-import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
+import { toCSV, parseCSV, downloadFile, readFileAsText, detectCsvHeader, normalizeDate } from '../utils/csv';
 import VendorAutocomplete from '../components/VendorAutocomplete';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
@@ -119,8 +119,11 @@ export default function Expenses() {
     if (!file) return;
     try {
       const text = await readFileAsText(file);
-      const rows = parseCSV(text);
-      if (rows.length < 2) { alert('CSV에 데이터가 없습니다'); return; }
+      const allRows = parseCSV(text);
+      if (allRows.length < 2) { alert('CSV에 데이터가 없습니다'); return; }
+      // 헤더 자동 탐지 — 신한 등 상단에 메타(계좌·기간) 있는 케이스 대응
+      const detected = detectCsvHeader(allRows);
+      const rows = [detected.header, ...detected.dataRows];
       setImporting({ rows, projects, accountCodes });
     } catch (e) {
       alert('파일 읽기 실패: ' + e.message);
@@ -667,17 +670,18 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
     return -1;
   };
   const [mapping, setMapping] = useState({
-    date:        guess(['일자', '날짜', 'Date']),
-    amount:      guess(['금액', '출금', '지출', 'Amount', '출금액']),
-    inAmt:       guess(['입금', '입금액']),
-    vendor:      guess(['거래처', '받는']),
-    description: guess(['내용', '메모', '적요', '비고']),
+    date:        guess(['일자', '날짜', 'Date', '거래일']),
+    amount:      guess(['출금액', '출금', '지출']),
+    inAmt:       guess(['입금액', '입금']),
+    vendor:      guess(['거래처', '받는', '이체처', '의뢰인']),
+    description: guess(['내용', '적요', '메모', '비고', '거래내용']),
   });
 
   const [perRow, setPerRow] = useState(() =>
-    dataRows.map(() => ({ projectId: '', accountCodeId: '', workCategory: '', type: 'EXPENSE', skip: false }))
+    dataRows.map(() => ({ projectId: '', accountCodeId: '', workCategory: '', type: 'EXPENSE', skip: false, candidates: null }))
   );
   const [classifying, setClassifying] = useState(false);
+  const [inferringIdx, setInferringIdx] = useState(null);
   const [busy, setBusy] = useState(false);
 
   // 자동분류 (룰 적용 — 클릭 트리거)
@@ -732,8 +736,49 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
     return (row[idx] || '').trim();
   }
 
+  // 출구정리 추론엔진 후보 조회 — 1건. mapping·dataRows 기준으로 prepare.
+  async function loadInferenceCandidates(i) {
+    const r = dataRows[i];
+    const out = getCellNum(r, mapping.amount);
+    const inn = getCellNum(r, mapping.inAmt);
+    const amount = Math.max(Math.abs(out || 0), Math.abs(inn || 0));
+    const date = normalizeDate(getCell(r, mapping.date));
+    const vendorText = [getCell(r, mapping.vendor), getCell(r, mapping.description)].filter(Boolean).join(' ');
+    if (!amount || !date) {
+      alert('금액·날짜 매핑을 먼저 확인해주세요.');
+      return;
+    }
+    setInferringIdx(i);
+    try {
+      const { candidates } = await expensesApi.inferenceCandidates({
+        amount, date, vendorText,
+        projectId: perRow[i].projectId || undefined,
+      });
+      setPerRow((arr) => arr.map((x, idx) => idx === i ? { ...x, candidates } : x));
+    } catch (e) {
+      alert('추론엔진 호출 실패: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setInferringIdx(null);
+    }
+  }
+
+  function applyCandidate(i, cand) {
+    setPerRow((arr) => arr.map((x, idx) => {
+      if (idx !== i) return x;
+      const po = cand.purchaseOrder;
+      return {
+        ...x,
+        projectId: po.projectId || x.projectId,
+        workCategory: x.workCategory || (po.itemName ? po.itemName.split('·').pop().trim() : x.workCategory),
+        candidates: null,  // 컨펌 후 후보 카드 닫기
+        purchaseOrderId: po.id,
+      };
+    }));
+  }
+
   async function save() {
     const items = [];
+    const errors = [];
     for (let i = 0; i < dataRows.length; i++) {
       if (perRow[i].skip) continue;
       const r = dataRows[i];
@@ -741,20 +786,27 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
       const inAmt = getCellNum(r, mapping.inAmt);
       const amount = Math.max(Math.abs(outAmt || 0), Math.abs(inAmt || 0));
       if (amount === 0) continue;
-      const dateRaw = getCell(r, mapping.date);
-      const date = dateRaw.replace(/[./]/g, '-').slice(0, 10);
+      const date = normalizeDate(getCell(r, mapping.date));
+      if (!date) { errors.push(`${i + 1}행: 날짜 인식 실패 ("${getCell(r, mapping.date)}")`); continue; }
+      // vendor 텍스트 — vendor 컬럼 우선, 없으면 description 사용 (신한·국민 등 vendor 컬럼 없는 케이스)
+      const vendorText = getCell(r, mapping.vendor) || getCell(r, mapping.description) || null;
       items.push({
         projectId: perRow[i].projectId || null,
         type: inAmt && inAmt > 0 ? 'INCOME' : (perRow[i].type || 'EXPENSE'),
         date,
         amount,
-        vendor: getCell(r, mapping.vendor) || null,
+        vendor: vendorText,
         accountCodeId: perRow[i].accountCodeId || null,
         workCategory: perRow[i].workCategory || null,
         description: getCell(r, mapping.description) || null,
+        purchaseOrderId: perRow[i].purchaseOrderId || null,
         importedFrom: '통장 CSV',
         rawText: r.join(' | '),
       });
+    }
+    if (errors.length > 0) {
+      alert('일부 행에 문제가 있습니다:\n' + errors.slice(0, 5).join('\n') + (errors.length > 5 ? `\n...외 ${errors.length - 5}건` : ''));
+      return;
     }
     if (items.length === 0) { alert('가져올 행이 없습니다'); return; }
     if (!confirm(`${items.length}건을 추가합니다. 계속할까요?`)) return;
@@ -773,7 +825,9 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-navy-800">CSV 가져오기 — {dataRows.length}행</h2>
-          <div className="text-xs text-gray-500 mt-1">컬럼 매핑 자동 추측됨. "🔮 자동분류" 클릭하면 키워드 룰 적용.</div>
+          <div className="text-xs text-gray-500 mt-1">
+            컬럼 매핑 자동 추측 + 헤더 자동 탐지 + 한글 인코딩 자동(EUC-KR fallback). "🔮 자동분류"로 키워드 룰 적용, "✨ 후보"로 출구정리 추론엔진 발주 매칭 후보 조회.
+          </div>
         </div>
 
         <div className="px-6 py-3 border-b bg-gray-50 grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
@@ -825,6 +879,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                 <th className="px-2 py-1.5 w-44">프로젝트</th>
                 <th className="px-2 py-1.5 w-44">계정과목</th>
                 <th className="px-2 py-1.5 w-24">공종</th>
+                <th className="px-2 py-1.5 w-20">발주 매칭</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -835,8 +890,11 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                 const dateRaw = getCell(r, mapping.date);
                 const skipped = perRow[i].skip;
                 const isIncome = inn && inn > 0;
+                const cands = perRow[i].candidates;
+                const linkedPo = perRow[i].purchaseOrderId;
                 return (
-                  <tr key={i} className={skipped ? 'opacity-40' : 'hover:bg-gray-50'}>
+                  <Fragment key={i}>
+                  <tr className={skipped ? 'opacity-40' : 'hover:bg-gray-50'}>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={skipped} onChange={(e) => setRow(i, 'skip', e.target.checked)} />
                     </td>
@@ -860,7 +918,82 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                     <td className="px-2 py-1">
                       <input value={perRow[i].workCategory} onChange={(e) => setRow(i, 'workCategory', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5" />
                     </td>
+                    <td className="px-2 py-1 text-center">
+                      {linkedPo ? (
+                        <span className="text-xs text-emerald-700" title="발주에 연결됨">🔗 연결</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => loadInferenceCandidates(i)}
+                          disabled={skipped || inferringIdx === i || amt === 0}
+                          className="text-xs px-2 py-0.5 border border-violet-300 text-violet-700 rounded hover:bg-violet-50 disabled:opacity-40"
+                        >
+                          {inferringIdx === i ? '검색…' : '✨ 후보'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
+                  {cands && cands.length > 0 && (
+                    <tr key={`${i}-cands`} className="bg-violet-50/40">
+                      <td colSpan={8} className="px-3 py-2">
+                        <div className="text-xs text-violet-800 mb-1">
+                          출구정리 추론엔진 — 발주 매칭 후보 {cands.length}건 (1-클릭 컨펌)
+                        </div>
+                        <div className="space-y-1">
+                          {cands.map((c) => {
+                            const po = c.purchaseOrder;
+                            const proj = projects.find((p) => p.id === po.projectId);
+                            return (
+                              <button
+                                key={po.id}
+                                type="button"
+                                onClick={() => applyCandidate(i, c)}
+                                className="w-full text-left bg-white border border-violet-200 rounded px-3 py-1.5 hover:bg-violet-50"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <span className="font-medium text-navy-800">{po.itemName}</span>
+                                    {po.spec && <span className="text-gray-500 ml-2">{po.spec}</span>}
+                                    {po.vendorEntity?.name && <span className="text-gray-500 ml-2">@ {po.vendorEntity.name}</span>}
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="tabular-nums text-navy-700 font-medium">{formatWon(po.totalPrice || 0)}</div>
+                                    <div className="text-gray-400 text-[10px]">{po.expectedDate ? String(po.expectedDate).slice(0, 10) : ''}</div>
+                                  </div>
+                                  <div className="shrink-0 text-violet-700 font-bold tabular-nums">{c.score}점</div>
+                                </div>
+                                {proj && <div className="text-gray-500 text-[10px] mt-0.5">현장: {proj.name}</div>}
+                                <div className="text-gray-400 text-[10px] mt-0.5">
+                                  거래처 {c.signals.vendor} / 금액 {c.signals.amount} / 날짜 {c.signals.date} / 현장 {c.signals.project} / 상태 {c.signals.statusBoost > 0 ? `+${c.signals.statusBoost}` : c.signals.statusBoost}
+                                  {c.alreadyLinked && <span className="ml-2 text-amber-600">⚠ 이미 다른 거래에 연결됨 (분할 결제 가능)</span>}
+                                </div>
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            onClick={() => setPerRow((arr) => arr.map((x, idx) => idx === i ? { ...x, candidates: null } : x))}
+                            className="text-xs text-gray-500 hover:underline"
+                          >
+                            ✕ 후보 닫기
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {cands && cands.length === 0 && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={8} className="px-3 py-1.5 text-xs text-gray-500">
+                        매칭되는 발주 후보 없음 (점수 30점 이상 없음)
+                        <button
+                          type="button"
+                          onClick={() => setPerRow((arr) => arr.map((x, idx) => idx === i ? { ...x, candidates: null } : x))}
+                          className="ml-2 text-gray-400 hover:underline"
+                        >✕</button>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>

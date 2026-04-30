@@ -53,12 +53,73 @@ export function downloadFile(filename, content, mime = 'text/csv;charset=utf-8')
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// File 객체 → 텍스트 (Promise)
-export function readFileAsText(file) {
+// File 객체 → 텍스트 (Promise). 한글 깨짐 자동 감지 후 EUC-KR fallback.
+// 신한·하나·국민 등 일부 한국 은행 CSV가 EUC-KR로 다운되는 경우 대응.
+export async function readFileAsText(file) {
+  const utf8Text = await readWithEncoding(file, 'utf-8');
+  // 깨짐 감지: U+FFFD(replacement char) 비율이 높으면 EUC-KR 재시도
+  const fffdCount = (utf8Text.match(/�/g) || []).length;
+  if (fffdCount > 5) {
+    try {
+      return await readWithEncoding(file, 'euc-kr');
+    } catch (e) {
+      // EUC-KR 디코더 미지원 환경 (구형 브라우저) — UTF-8 결과 그대로 반환
+      return utf8Text;
+    }
+  }
+  return utf8Text;
+}
+
+function readWithEncoding(file, encoding) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
-    reader.readAsText(file, 'utf-8');
+    reader.readAsText(file, encoding);
   });
+}
+
+// CSV 헤더 자동 탐지 — 상단 메타 줄(계좌번호·기간 등)을 건너뛰고 한글 키워드가 포함된 첫 행을 헤더로 잡는다.
+// rows: parseCSV 결과. 반환: { headerIndex, header, dataRows } 또는 폴백으로 { headerIndex: 0, ... }
+const HEADER_KEYWORDS = ['일자', '날짜', '출금', '입금', '거래', '적요', '내용', '거래처', '받는'];
+export function detectCsvHeader(rows) {
+  if (!rows || rows.length === 0) return { headerIndex: 0, header: [], dataRows: [] };
+  // 상단 10행 이내 검사
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const row = rows[i];
+    if (!row || row.length < 3) continue; // 너무 짧은 메타 줄
+    const joined = row.join(' ').toLowerCase();
+    const hits = HEADER_KEYWORDS.filter((k) => joined.includes(k.toLowerCase())).length;
+    if (hits >= 2) {
+      return { headerIndex: i, header: row, dataRows: rows.slice(i + 1) };
+    }
+  }
+  // 폴백 — 첫 행을 헤더로 (기존 동작)
+  return { headerIndex: 0, header: rows[0], dataRows: rows.slice(1) };
+}
+
+// 날짜 문자열 정규화 — 다양한 한국 은행 포맷 대응 → "YYYY-MM-DD" 반환 (실패 시 빈 문자열)
+// 지원: "2026.04.30", "2026/04/30", "2026-04-30", "20260430", "2026.04.30 12:34:56"
+export function normalizeDate(s) {
+  if (!s) return '';
+  let v = String(s).trim();
+  // 시간 부분 제거
+  v = v.split(/[\sT]/)[0];
+  // 8자리 숫자 (YYYYMMDD)
+  if (/^\d{8}$/.test(v)) {
+    return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+  }
+  // 점·슬래시 → 하이픈
+  v = v.replace(/[./]/g, '-');
+  // 한글 (예: "2026년 04월 30일")
+  v = v.replace(/년|월/g, '-').replace(/일/g, '').replace(/\s+/g, '');
+  // YYYY-MM-DD 패턴 추출
+  const m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    const yy = m[1];
+    const mm = m[2].padStart(2, '0');
+    const dd = m[3].padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  }
+  return '';
 }
