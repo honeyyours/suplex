@@ -154,4 +154,4 @@ A. Suplex는 웹 기반이라 어디서든 접속 가능합니다. 단 **공용 
 
 ---
 
-[← Playbook #5](05-simple-vs-detailed.md) · [Playbook #7 →](07-receipt-to-settlement.md)
+[← Playbook #5](05-simple-vs-detailed.md) · [Playbook #8 →](08-dispute-evidence.md)

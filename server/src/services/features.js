@@ -41,7 +41,6 @@ const F = Object.freeze({
 
   // 차등 기능 (정식 출시 시 활성)
   APPLIANCE_DB_UI:  'appliance.db_ui',
-  RECEIPT_OCR:      'receipt.ocr',
   NOTIFICATION_KAKAO: 'notification.kakao',
 });
 
@@ -114,7 +113,6 @@ const STARTER_FEATURES = [
 
 const PRO_FEATURES = [
   ...STARTER_FEATURES,
-  F.RECEIPT_OCR,
   F.NOTIFICATION_KAKAO,
 ];
 

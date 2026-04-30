@@ -243,7 +243,6 @@ const createSchema = z.object({
   description: z.string().optional().nullable(),
   memo: z.string().optional().nullable(),
   paymentMethod: z.enum(PAYMENT_METHODS).optional().nullable(),
-  receiptUrl: z.string().optional().nullable(),
   purchaseOrderId: z.string().optional().nullable(),
   importedFrom: z.string().optional().nullable(),
   rawText: z.string().optional().nullable(),
@@ -309,7 +308,6 @@ router.post('/', async (req, res, next) => {
         description: data.description?.trim() || null,
         memo: data.memo?.trim() || null,
         paymentMethod: data.paymentMethod || null,
-        receiptUrl: data.receiptUrl?.trim() || null,
         purchaseOrderId: data.purchaseOrderId || null,
         importedFrom: data.importedFrom?.trim() || '수동',
         rawText: data.rawText?.trim() || null,
@@ -455,7 +453,6 @@ router.patch('/:id', async (req, res, next) => {
     if (data.description !== undefined) updateData.description = data.description?.trim() || null;
     if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
     if (data.paymentMethod !== undefined) updateData.paymentMethod = data.paymentMethod || null;
-    if (data.receiptUrl !== undefined) updateData.receiptUrl = data.receiptUrl?.trim() || null;
     if (data.purchaseOrderId !== undefined) updateData.purchaseOrderId = data.purchaseOrderId || null;
 
     const expense = await prisma.expense.update({

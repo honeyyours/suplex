@@ -30,7 +30,6 @@ export const F = Object.freeze({
   AI_ADVISOR:       'ai.advisor',
 
   APPLIANCE_DB_UI:  'appliance.db_ui',
-  RECEIPT_OCR:      'receipt.ocr',
   NOTIFICATION_KAKAO: 'notification.kakao',
 });
 
@@ -91,7 +90,7 @@ const STARTER = [
   F.SETTINGS_QUOTE_GUIDE,
   F.AI_ASSISTANT,
 ];
-const PRO = [...STARTER, F.RECEIPT_OCR, F.NOTIFICATION_KAKAO];
+const PRO = [...STARTER, F.NOTIFICATION_KAKAO];
 const ENTERPRISE = [...PRO, F.AI_BILLING_TOOLS, F.AI_ADVISOR, F.APPLIANCE_DB_UI];
 
 export const PLAN_FEATURES = Object.freeze({
