@@ -508,19 +508,24 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
 
   const t = EXPENSE_TYPE_META[e.type] || EXPENSE_TYPE_META.EXPENSE;
   const rowClass = selected ? 'bg-navy-50' : 'hover:bg-gray-50';
+  // 모든 td content를 h-6 wrapper로 감싸 NewRow와 행 높이 일치.
+  const inputCls = 'w-full h-6 text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 bg-transparent';
+  const cellWrap = 'flex items-center h-6';
   return (
-    <tr className={`${rowClass} h-9 align-middle`}>
-      <td className="px-3 py-1.5 text-center">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
-      </td>
-      <td className="px-3 py-1.5 tabular-nums text-gray-600 text-xs">{String(e.date).slice(0, 10)}</td>
+    <tr className={`${rowClass} align-middle`}>
+      <td className="px-3 py-1.5 text-center"><div className={`${cellWrap} justify-center`}><input type="checkbox" checked={selected} onChange={onToggleSelect} /></div></td>
+      <td className="px-3 py-1.5"><div className={`${cellWrap} tabular-nums text-gray-600 text-xs`}>{String(e.date).slice(0, 10)}</div></td>
       <td className="px-3 py-1.5">
-        <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span>
+        <div className={cellWrap}>
+          <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span>
+        </div>
       </td>
       <td className="px-3 py-1.5">
-        <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs">
-          {e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}
-        </button>
+        <div className={cellWrap}>
+          <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs truncate w-full">
+            {e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}
+          </button>
+        </div>
       </td>
       <td className="px-3 py-1.5">
         <input
@@ -528,7 +533,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           onChange={(ev) => setMemo(ev.target.value)}
           onBlur={() => commitField('memo', memoVal, e.memo)}
           placeholder="—"
-          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+          className={inputCls}
         />
       </td>
       <td className="px-3 py-1.5 text-right">
@@ -537,7 +542,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           value={amount}
           onChange={(ev) => setAmount(ev.target.value)}
           onBlur={commitAmount}
-          className={`w-full text-xs text-right tabular-nums border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}
+          className={`${inputCls} text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}
         />
       </td>
       <td className="px-3 py-1.5 text-xs">
@@ -547,6 +552,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           onChange={(id) => { setAccountCodeId(id || ''); commitField('accountCodeId', id || '', e.accountCodeId); }}
           placeholder="검색…"
           emptyLabel="(미분류)"
+          inputClassName={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -556,6 +562,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           onChange={(id) => { setProjectId(id || ''); commitField('projectId', id || '', e.projectId); }}
           placeholder="검색…"
           emptyLabel="(미지정)"
+          inputClassName={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -564,11 +571,13 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           onChange={(ev) => setWorkCategory(ev.target.value)}
           onBlur={() => commitField('workCategory', workCategory, e.workCategory)}
           placeholder="—"
-          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
+          className={inputCls}
         />
       </td>
       <td className="px-3 py-1.5 text-center">
-        <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
+        <div className={`${cellWrap} justify-center`}>
+          <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
+        </div>
       </td>
     </tr>
   );
@@ -588,7 +597,8 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
   const rowRef = useRef(null);
   const busyRef = useRef(false);
 
-  // 자동분류 룰 미리보기 — description 입력 시 디바운스로 룰 매칭. 룰 매칭되면 자동 채움.
+  // 자동분류 룰 미리보기 — description 입력 후 700ms 디바운스 후 검색만 (자동 적용 X).
+  // 사용자가 명시 버튼 클릭 시 적용. 매 keystroke 자동 적용은 입력 중 cascade re-render로 끊김 발생.
   useEffect(() => {
     if (!description.trim()) { setClassifyHint(null); return; }
     let alive = true;
@@ -596,22 +606,21 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       try {
         const { results } = await expenseRulesApi.classify([description]);
         if (!alive) return;
-        const g = results?.[0];
-        setClassifyHint(g || null);
-        // 자동 적용 — 사용자가 빈 필드만 채움 (이미 직접 입력한 값은 보존)
-        if (g) {
-          if (g.accountCodeId) setAccountCodeId((cur) => cur || g.accountCodeId);
-          if (g.workCategory) setWorkCategory((cur) => cur || g.workCategory);
-          if (g.siteCode) {
-            const proj = projects.find((p) => p.siteCode === g.siteCode);
-            if (proj) setProjectId((cur) => cur || proj.id);
-          }
-        }
+        setClassifyHint(results?.[0] || null);
       } catch (e) { /* noop */ }
-    }, 350);
+    }, 700);
     return () => { alive = false; clearTimeout(t); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [description]);
+
+  function applyClassify() {
+    if (!classifyHint) return;
+    if (classifyHint.accountCodeId) setAccountCodeId(classifyHint.accountCodeId);
+    if (classifyHint.workCategory) setWorkCategory(classifyHint.workCategory);
+    if (classifyHint.siteCode) {
+      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
+      if (proj) setProjectId(proj.id);
+    }
+  }
 
   // 행 밖 클릭 시 자동 저장 (내역만 있으면) 또는 조용히 닫기.
   // 단순화 (2026-04-30): amount 없어도 저장. 필수 = 내역(description)만.
@@ -652,11 +661,11 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
     if (e.key === 'Escape') onCancel();
   }
 
-  // ListRow 인풋 스타일과 매칭 — 평소엔 transparent border, hover/focus 시 회색/네이비
-  const inputCls = 'w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent';
+  // ListRow 인풋 스타일과 매칭. 명시 h-6 (24px)로 행 높이 강제 일치.
+  const inputCls = 'w-full h-6 text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 bg-transparent';
 
   return (
-    <tr ref={rowRef} className="bg-amber-50/60 h-9 align-middle" onKeyDown={handleKey}>
+    <tr ref={rowRef} className="bg-amber-50/60 align-middle" onKeyDown={handleKey}>
       <td className="px-3 py-1.5 text-center text-xs text-amber-700 font-medium">+</td>
       <td className="px-3 py-1.5">
         <input
@@ -670,7 +679,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className={`${inputCls} bg-transparent`}
+          className={inputCls}
         >
           {EXPENSE_TYPE_KEYS.map((k) => <option key={k} value={k}>{EXPENSE_TYPE_META[k].label}</option>)}
         </select>
@@ -708,6 +717,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           onChange={(id) => setAccountCodeId(id || '')}
           placeholder="검색…"
           emptyLabel="(미분류)"
+          inputClassName={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -717,6 +727,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           onChange={(id) => setProjectId(id || '')}
           placeholder="검색…"
           emptyLabel="(미지정)"
+          inputClassName={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -729,10 +740,12 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       </td>
       <td className="px-3 py-1.5 text-center">
         {classifyHint && (
-          <span
-            className="text-[10px] text-emerald-700"
-            title={`자동분류 룰 '${classifyHint.keyword}' 매칭 — 빈 필드 자동 채움`}
-          >🏷️</span>
+          <button
+            type="button"
+            onClick={applyClassify}
+            className="text-[10px] px-1.5 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-100"
+            title={`'${classifyHint.keyword}' 매칭 — 클릭 시 계정과목·공종·현장 적용`}
+          >🏷️</button>
         )}
       </td>
     </tr>
