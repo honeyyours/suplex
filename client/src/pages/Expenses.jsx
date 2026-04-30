@@ -60,9 +60,15 @@ export default function Expenses() {
     queryFn: () => expensesApi.summary(),
   });
   const expenses = listData?.expenses || [];
-  // 표시 행 제한 — fiber tree 부담 줄여 입력 lag 제거. 그 이상은 필터·검색으로 좁힘.
+  // 표시 행 점진적 확장 — 한 번에 50건, "더보기" 클릭 시 +50.
+  // fiber tree 부담 줄여 입력 lag 제거. 큰 데이터는 필터·검색 병행.
   const PAGE_SIZE = 50;
-  const displayedExpenses = useMemo(() => expenses.slice(0, PAGE_SIZE), [expenses]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // 필터 변경 시 visibleCount 리셋 — 다른 조건에서 누적 표시 방지
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [queryParams]);
+  const displayedExpenses = useMemo(() => expenses.slice(0, visibleCount), [expenses, visibleCount]);
   // 입력 우선순위 높이고 리스트 업데이트 deferred — 입력 중 cascade re-render 방지
   const deferredExpenses = useDeferredValue(displayedExpenses);
   const loading = listLoading || summaryLoading;
@@ -245,7 +251,9 @@ export default function Expenses() {
             <ListView
               expenses={deferredExpenses}
               totalCount={expenses.length}
+              visibleCount={visibleCount}
               pageSize={PAGE_SIZE}
+              onShowMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
               total={totalFiltered}
               projects={projects}
               adding={adding}
@@ -331,6 +339,8 @@ function ViewTab({ active, onClick, label }) {
 
 function FilterBar({ projects, filters, onChange }) {
   function set(k, v) { onChange({ ...filters, [k]: v }); }
+  function clearDates() { onChange({ ...filters, dateFrom: '', dateTo: '' }); }
+  const hasDate = filters.dateFrom || filters.dateTo;
   return (
     <div className="px-4 py-3 bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
       <select value={filters.projectId} onChange={(e) => set('projectId', e.target.value)} className="px-2 py-1.5 border rounded bg-white">
@@ -342,14 +352,39 @@ function FilterBar({ projects, filters, onChange }) {
         <option value="ALL">모든 거래</option>
         {EXPENSE_TYPE_KEYS.map((k) => <option key={k} value={k}>{EXPENSE_TYPE_META[k].label}만</option>)}
       </select>
-      <input type="date" value={filters.dateFrom} onChange={(e) => set('dateFrom', e.target.value)} className="px-2 py-1.5 border rounded bg-white" />
-      <input type="date" value={filters.dateTo} onChange={(e) => set('dateTo', e.target.value)} className="px-2 py-1.5 border rounded bg-white" />
-      <input type="text" value={filters.q} onChange={(e) => set('q', e.target.value)} placeholder="검색 (내역·거래처)" className="md:col-span-2 px-2 py-1.5 border rounded bg-white" />
+      {/* 기간 — 시작·끝 한 셀 안에 묶음 (시각적으로 한 묶음으로 보이게) */}
+      <div className="flex items-center gap-1.5 px-2 py-1 border rounded bg-white">
+        <span className="text-xs text-gray-500 whitespace-nowrap">기간</span>
+        <input
+          type="date"
+          value={filters.dateFrom}
+          onChange={(e) => set('dateFrom', e.target.value)}
+          className="flex-1 min-w-0 px-1 py-0.5 outline-none bg-transparent"
+          aria-label="시작일"
+        />
+        <span className="text-gray-400">~</span>
+        <input
+          type="date"
+          value={filters.dateTo}
+          onChange={(e) => set('dateTo', e.target.value)}
+          className="flex-1 min-w-0 px-1 py-0.5 outline-none bg-transparent"
+          aria-label="종료일"
+        />
+        {hasDate && (
+          <button
+            type="button"
+            onClick={clearDates}
+            className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap"
+            title="기간 초기화"
+          >✕</button>
+        )}
+      </div>
+      <input type="text" value={filters.q} onChange={(e) => set('q', e.target.value)} placeholder="검색 (내역·거래처)" className="md:col-span-3 px-2 py-1.5 border rounded bg-white" />
     </div>
   );
 }
 
-const ListView = memo(function ListView({ expenses, totalCount, pageSize, total, projects, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
+const ListView = memo(function ListView({ expenses, totalCount, visibleCount, pageSize, onShowMore, total, projects, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
   const [selected, setSelected] = useState(() => new Set());
   const projectOptions = useMemo(
     () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
@@ -446,9 +481,17 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
           </tfoot>
         </table>
       </div>
-      {totalCount > pageSize && (
-        <div className="px-5 py-2 border-t bg-gray-50 text-xs text-gray-500 text-center">
-          전체 <b>{totalCount.toLocaleString('ko-KR')}건</b> 중 최근 <b>{pageSize}건</b> 표시 — 더 보려면 위 필터(프로젝트·날짜·검색) 사용
+      {totalCount > expenses.length && (
+        <div className="px-5 py-3 border-t bg-gray-50 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs">
+          <span className="text-gray-500">
+            전체 <b>{totalCount.toLocaleString('ko-KR')}건</b> 중 <b>{expenses.length.toLocaleString('ko-KR')}건</b> 표시
+          </span>
+          <button
+            onClick={onShowMore}
+            className="px-4 py-1.5 bg-white border border-navy-300 text-navy-700 rounded hover:bg-navy-50 font-medium"
+          >
+            ⬇ {Math.min(pageSize, totalCount - expenses.length).toLocaleString('ko-KR')}건 더 보기
+          </button>
         </div>
       )}
     </div>
