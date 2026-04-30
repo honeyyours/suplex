@@ -11,6 +11,8 @@ import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
 import { toCSV, parseCSV, downloadFile, readFileAsText } from '../utils/csv';
 import VendorAutocomplete from '../components/VendorAutocomplete';
+import { useAuth } from '../contexts/AuthContext';
+import { hasFeature, F } from '../utils/features';
 
 const VIEW_LIST    = 'list';
 const VIEW_PROJECT = 'project';
@@ -21,6 +23,8 @@ export default function Expenses() {
   const [searchParams] = useSearchParams();
   const initialProjectId = searchParams.get('projectId') || 'ALL';
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
+  const canViewPnl = hasFeature(auth, F.EXPENSES_VIEW_PNL);
 
   const [accountCodes, setAccountCodes] = useState([]);
   const [view, setView] = useState(VIEW_LIST);
@@ -169,7 +173,9 @@ export default function Expenses() {
           <ViewTab active={view === VIEW_LIST}    onClick={() => setView(VIEW_LIST)}    label="📋 리스트" />
           <ViewTab active={view === VIEW_PROJECT} onClick={() => setView(VIEW_PROJECT)} label="🏗️ 프로젝트별" />
           <ViewTab active={view === VIEW_VENDOR}  onClick={() => setView(VIEW_VENDOR)}  label="🏢 거래처별" />
-          <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="💰 프로젝트 손익" />
+          {canViewPnl && (
+            <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="💰 프로젝트 손익" />
+          )}
         </div>
 
         {view !== VIEW_PNL && (

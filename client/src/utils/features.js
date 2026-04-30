@@ -16,6 +16,7 @@ export const F = Object.freeze({
 
   EXPENSES_VIEW:    'expenses.view',
   EXPENSES_EDIT:    'expenses.edit',
+  EXPENSES_VIEW_PNL:'expenses.view_pnl',
 
   SETTINGS_QUOTE_TEMPLATES: 'settings.quote_templates',
   SETTINGS_PHASE_LABELS:    'settings.phase_labels',
@@ -43,6 +44,7 @@ export const TOGGLEABLE_FEATURES = Object.freeze([
   F.SETTINGS_QUOTE_GUIDE,
   F.EXPENSES_VIEW,
   F.EXPENSES_EDIT,
+  F.EXPENSES_VIEW_PNL,
 ]);
 
 // 토글 항목 표시용 메타 (label, group)
@@ -55,6 +57,7 @@ export const TOGGLE_FEATURE_META = Object.freeze({
   [F.SETTINGS_QUOTE_GUIDE]:     { label: '공정별 견적가이드 수정',  group: '회사 설정' },
   [F.EXPENSES_VIEW]:            { label: '지출관리 보기',           group: '지출관리' },
   [F.EXPENSES_EDIT]:            { label: '지출관리 추가/수정',      group: '지출관리' },
+  [F.EXPENSES_VIEW_PNL]:        { label: '프로젝트 손익(PnL) 보기', group: '지출관리' },
 });
 
 const ALL = Object.values(F);
@@ -62,7 +65,7 @@ const ALL = Object.values(F);
 const OWNER_FEATURES = [...ALL];
 
 const DESIGNER_FEATURES = ALL.filter((f) => ![
-  F.CORE_TEAM, F.EXPENSES_VIEW, F.EXPENSES_EDIT, F.AI_BILLING_TOOLS,
+  F.CORE_TEAM, F.EXPENSES_VIEW_PNL, F.AI_BILLING_TOOLS,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
   F.SETTINGS_QUOTE_GUIDE,
@@ -82,7 +85,7 @@ const STARTER = [
   F.CORE_PROJECTS, F.CORE_SCHEDULE, F.CORE_MATERIALS, F.CORE_CHECKLIST,
   F.CORE_REPORTS, F.CORE_MEMO, F.CORE_ORDERS, F.CORE_QUOTES,
   F.CORE_QUOTE_CONSULTATIONS, F.CORE_TEAM,
-  F.EXPENSES_VIEW, F.EXPENSES_EDIT,
+  F.EXPENSES_VIEW, F.EXPENSES_EDIT, F.EXPENSES_VIEW_PNL,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
   F.SETTINGS_QUOTE_GUIDE,
@@ -116,7 +119,7 @@ export function hasFeature(auth, feature) {
 // hideExpenses 토글까지 합친 종합 판정 (자주 쓰는 패턴)
 // hideExpenses=true면 지출/AI비서/회계 도구 모두 차단 (메모리: "지출관리·AI비서, 프로젝트의 지출 탭, 홈의 지출 활동")
 const HIDE_EXPENSES_AFFECTED = [
-  F.EXPENSES_VIEW, F.EXPENSES_EDIT,
+  F.EXPENSES_VIEW, F.EXPENSES_EDIT, F.EXPENSES_VIEW_PNL,
   F.AI_ASSISTANT, F.AI_BILLING_TOOLS,
 ];
 

@@ -21,9 +21,10 @@ const F = Object.freeze({
   CORE_QUOTE_CONSULTATIONS: 'core.quote_consultations', // 견적상담 탭 (모두)
   CORE_TEAM:        'core.team',           // OWNER 한정 (멤버 관리)
 
-  // 회계 (OWNER 한정, ENTERPRISE까지 풀)
-  EXPENSES_VIEW:    'expenses.view',
-  EXPENSES_EDIT:    'expenses.edit',
+  // 지출관리 (출구정리 정책 — 라벨링은 직원도, 손익은 OWNER만)
+  EXPENSES_VIEW:    'expenses.view',     // 거래 보기·라벨링 (DESIGNER/FIELD 디폴트 ON)
+  EXPENSES_EDIT:    'expenses.edit',     // 라벨링·수정 (DESIGNER/FIELD 디폴트 ON)
+  EXPENSES_VIEW_PNL:'expenses.view_pnl', // 손익(수익률) — OWNER 한정
 
   // 회사 설정 — 마스터 데이터 수정 권한 (OWNER 한정, OWNER가 직원별로 추가 부여 가능)
   SETTINGS_QUOTE_TEMPLATES: 'settings.quote_templates', // 견적항목 템플릿
@@ -55,6 +56,7 @@ const TOGGLEABLE_FEATURES = Object.freeze([
   'settings.quote_guide',
   'expenses.view',
   'expenses.edit',
+  'expenses.view_pnl',
 ]);
 
 // 회계 도구 식별자(AI비서 도구 이름 → feature 매핑에 사용)
@@ -75,8 +77,7 @@ const OWNER_FEATURES = [...ALL_FEATURES];
 
 const DESIGNER_FEATURES = ALL_FEATURES.filter((f) => ![
   F.CORE_TEAM,
-  F.EXPENSES_VIEW,
-  F.EXPENSES_EDIT,
+  F.EXPENSES_VIEW_PNL, // 손익은 OWNER만 (출구정리 정책 2026-04-30)
   F.AI_BILLING_TOOLS,
   F.SETTINGS_QUOTE_TEMPLATES,
   F.SETTINGS_PHASE_LABELS,
@@ -104,7 +105,7 @@ const STARTER_FEATURES = [
   F.CORE_PROJECTS, F.CORE_SCHEDULE, F.CORE_MATERIALS, F.CORE_CHECKLIST,
   F.CORE_REPORTS, F.CORE_MEMO, F.CORE_ORDERS, F.CORE_QUOTES,
   F.CORE_QUOTE_CONSULTATIONS, F.CORE_TEAM,
-  F.EXPENSES_VIEW, F.EXPENSES_EDIT,
+  F.EXPENSES_VIEW, F.EXPENSES_EDIT, F.EXPENSES_VIEW_PNL,
   F.SETTINGS_QUOTE_TEMPLATES, F.SETTINGS_PHASE_LABELS,
   F.SETTINGS_PHASE_KEYWORDS, F.SETTINGS_PHASE_DEADLINES, F.SETTINGS_PHASE_ADVICE,
   F.SETTINGS_QUOTE_GUIDE,

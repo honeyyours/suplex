@@ -2,9 +2,24 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
-const { requireFeature } = require('../middlewares/requireFeature');
-const { F } = require('../services/features');
+const { requireFeature, loadPermissionsMap } = require('../middlewares/requireFeature');
+const { F, hasFeature } = require('../services/features');
 const { classifyOne } = require('../services/autoClassify');
+
+// 출구정리 정책: 손익(PnL)은 OWNER만. summary 응답에서 권한 없으면 pnl 빼기.
+async function canViewPnl(req) {
+  if (req.user.role === 'OWNER') return true;
+  let plan = null;
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user.companyId },
+      select: { plan: true },
+    });
+    plan = company?.plan || null;
+  } catch (e) { plan = null; }
+  const permissions = await loadPermissionsMap(req);
+  return hasFeature({ role: req.user.role, plan, permissions }, F.EXPENSES_VIEW_PNL);
+}
 
 const router = express.Router();
 router.use(authRequired);
@@ -129,20 +144,25 @@ router.get('/summary', async (req, res, next) => {
       `,
     ]);
 
-    // 프로젝트 PnL
-    const projects = await prisma.project.findMany({
-      where: { companyId },
-      select: { id: true, name: true, status: true, contractAmount: true, siteCode: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const expByProject = new Map(byProject.map((g) => [g.projectId, Number(g._sum.amount || 0)]));
-    const pnl = projects.map((p) => {
-      const totalExpense = expByProject.get(p.id) || 0;
-      const contract = Number(p.contractAmount || 0);
-      const profit = contract - totalExpense;
-      const margin = contract > 0 ? (profit / contract) * 100 : null;
-      return { ...p, contractAmount: contract, totalExpense, profit, margin };
-    });
+    const allowPnl = await canViewPnl(req);
+
+    // 프로젝트 PnL — OWNER(또는 EXPENSES_VIEW_PNL 토글 ON)만 계산·반환
+    let pnl = null;
+    if (allowPnl) {
+      const projects = await prisma.project.findMany({
+        where: { companyId },
+        select: { id: true, name: true, status: true, contractAmount: true, siteCode: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      const expByProject = new Map(byProject.map((g) => [g.projectId, Number(g._sum.amount || 0)]));
+      pnl = projects.map((p) => {
+        const totalExpense = expByProject.get(p.id) || 0;
+        const contract = Number(p.contractAmount || 0);
+        const profit = contract - totalExpense;
+        const margin = contract > 0 ? (profit / contract) * 100 : null;
+        return { ...p, contractAmount: contract, totalExpense, profit, margin };
+      });
+    }
 
     const noProjectAgg = await prisma.expense.aggregate({
       where: { ...expenseWhere, projectId: null },
@@ -158,6 +178,7 @@ router.get('/summary', async (req, res, next) => {
       noProject: { total: Number(noProjectAgg._sum.amount || 0), count: noProjectAgg._count },
       byGroup,
       pnl,
+      canViewPnl: allowPnl,
     });
   } catch (e) { next(e); }
 });
