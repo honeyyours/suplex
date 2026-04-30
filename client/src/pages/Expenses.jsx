@@ -11,6 +11,7 @@ import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
 import { toCSV, downloadFile, detectCsvHeader, normalizeDate, readSpreadsheetFile } from '../utils/csv';
 import VendorAutocomplete from '../components/VendorAutocomplete';
+import InlineCombobox from '../components/InlineCombobox';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
 
@@ -479,24 +480,22 @@ function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes,
         />
       </td>
       <td className="px-3 py-1.5 text-xs">
-        <select
+        <InlineCombobox
           value={accountCodeId}
-          onChange={(ev) => { setAccountCodeId(ev.target.value); commitField('accountCodeId', ev.target.value, e.accountCodeId); }}
-          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
-        >
-          <option value="">(미분류)</option>
-          {accountCodes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
-        </select>
+          options={accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName }))}
+          onChange={(id) => { setAccountCodeId(id || ''); commitField('accountCodeId', id || '', e.accountCodeId); }}
+          placeholder="검색…"
+          emptyLabel="(미분류)"
+        />
       </td>
       <td className="px-3 py-1.5">
-        <select
+        <InlineCombobox
           value={projectId}
-          onChange={(ev) => { setProjectId(ev.target.value); commitField('projectId', ev.target.value, e.projectId); }}
-          className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
-        >
-          <option value="">(미지정)</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+          options={projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' }))}
+          onChange={(id) => { setProjectId(id || ''); commitField('projectId', id || '', e.projectId); }}
+          placeholder="검색…"
+          emptyLabel="(미지정)"
+        />
       </td>
       <td className="px-3 py-1.5">
         <input
@@ -1193,16 +1192,30 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                       />
                     </td>
                     <td className="px-2 py-1">
-                      <select value={perRow[i].projectId} onChange={(e) => setRow(i, 'projectId', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5">
-                        <option value="">(미지정)</option>
-                        {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      {skipped ? (
+                        <span className="text-xs text-gray-400">{projects.find((p) => p.id === perRow[i].projectId)?.name || '(미지정)'}</span>
+                      ) : (
+                        <InlineCombobox
+                          value={perRow[i].projectId}
+                          options={projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' }))}
+                          onChange={(id) => setRow(i, 'projectId', id || '')}
+                          placeholder="검색…"
+                          emptyLabel="(미지정)"
+                        />
+                      )}
                     </td>
                     <td className="px-2 py-1">
-                      <select value={perRow[i].accountCodeId} onChange={(e) => setRow(i, 'accountCodeId', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5">
-                        <option value="">(미분류)</option>
-                        {accountCodes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
-                      </select>
+                      {skipped ? (
+                        <span className="text-xs text-gray-400">{accountCodes.find((c) => c.id === perRow[i].accountCodeId)?.code || '(미분류)'}</span>
+                      ) : (
+                        <InlineCombobox
+                          value={perRow[i].accountCodeId}
+                          options={accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName }))}
+                          onChange={(id) => setRow(i, 'accountCodeId', id || '')}
+                          placeholder="검색…"
+                          emptyLabel="(미분류)"
+                        />
+                      )}
                     </td>
                     <td className="px-2 py-1">
                       <input value={perRow[i].workCategory} onChange={(e) => setRow(i, 'workCategory', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5" />
