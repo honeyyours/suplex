@@ -68,7 +68,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
       designFeeRate: 10,
       vatRate: 0,
       footerNotes:
-        '1. 위 견적은 가견적서이므로 실제 디자인 계약 내용에 따라 금액이 달라질 수 있습니다.\n2. 현금영수증 및 세금계산서 발행시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.',
+        '1. 위 견적은 가견적서이므로 실제 디자인 계약 내용에 따라 금액이 달라질 수 있습니다.\n2. 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.',
     },
   });
 

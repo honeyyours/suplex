@@ -911,7 +911,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                       const newRate = e.target.checked ? 10 : 0;
                       const oldRate = Number(quote.vatRate) || 0;
                       const patch = { vatRate: newRate };
-                      const VAT_NOTE = '※ 현금영수증 및 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.';
+                      const VAT_NOTE = '※ 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.';
                       const footer = quote.footerNotes || '';
 
                       // 0 → 양수(10): 푸터에서 "부가세" 줄 자동 제거

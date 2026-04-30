@@ -498,7 +498,7 @@ router.post('/_seed-sample', async (req, res, next) => {
           vatRate: 0,
           roundAdjustment: 0,
           templateKey: 'classic',
-          footerNotes: '※ 현금영수증 및 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.',
+          footerNotes: '※ 세금계산서 발행 시 부가세(10%) 별도이며 견적 외 공사는 추가금이 발생됩니다.',
         },
       });
       const quoteLines = [
