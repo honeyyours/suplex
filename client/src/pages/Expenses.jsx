@@ -516,11 +516,23 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
   );
 });
 
+// 금액 입력 헬퍼 — 숫자만 + 천 단위 콤마
+function formatAmount(v) {
+  if (v == null || v === '') return '';
+  const n = Number(String(v).replace(/[^\d]/g, ''));
+  if (!Number.isFinite(n)) return '';
+  return n.toLocaleString('ko-KR');
+}
+function parseAmount(v) {
+  const n = Number(String(v).replace(/[^\d]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
 // 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
 // memo로 감싸서 다른 행 변경에 의한 불필요한 re-render 차단 (입력 중 깜빡임 방지).
 const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
   const [memoVal, setMemo] = useState(e.memo || '');
-  const [amount, setAmount] = useState(String(e.amount));
+  const [amount, setAmount] = useState(formatAmount(e.amount));
   const [accountCodeId, setAccountCodeId] = useState(e.accountCodeId || '');
   const [projectId, setProjectId] = useState(e.projectId || '');
   const [workCategory, setWorkCategory] = useState(e.workCategory || '');
@@ -535,7 +547,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
   );
   // expense 새 데이터로 동기화 (다른 행 변경·필터 갱신 후)
   useEffect(() => { setMemo(e.memo || ''); }, [e.id, e.memo]);
-  useEffect(() => { setAmount(String(e.amount)); }, [e.id, e.amount]);
+  useEffect(() => { setAmount(formatAmount(e.amount)); }, [e.id, e.amount]);
   useEffect(() => { setAccountCodeId(e.accountCodeId || ''); }, [e.id, e.accountCodeId]);
   useEffect(() => { setProjectId(e.projectId || ''); }, [e.id, e.projectId]);
   useEffect(() => { setWorkCategory(e.workCategory || ''); }, [e.id, e.workCategory]);
@@ -545,8 +557,8 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
     onPatch(e.id, { [field]: value || null });
   }
   function commitAmount() {
-    const n = Number(String(amount).replace(/[^\d.-]/g, ''));
-    if (!Number.isFinite(n) || n === Number(e.amount)) return;
+    const n = parseAmount(amount);
+    if (n === Number(e.amount)) return;
     onPatch(e.id, { amount: n });
   }
 
@@ -583,8 +595,9 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
       <td className="px-3 py-1.5 text-right">
         <input
           type="text"
+          inputMode="numeric"
           value={amount}
-          onChange={(ev) => setAmount(ev.target.value)}
+          onChange={(ev) => setAmount(formatAmount(ev.target.value))}
           onBlur={commitAmount}
           className={`${inputCls} text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}
         />
@@ -674,12 +687,12 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       const f = formRef.current;
       const desc = f.description.trim();
       if (desc) {
-        const num = Number(String(f.amount).replace(/[^\d.-]/g, ''));
+        const num = parseAmount(f.amount);
         busyRef.current = true;
         const result = onSave({
           date: f.date,
           type: f.type,
-          amount: Number.isFinite(num) ? num : 0,
+          amount: num,
           description: desc,
           vendor: desc,
           memo: f.memoVal.trim() || null,
@@ -748,8 +761,9 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       <td className="px-3 py-1.5">
         <input
           type="text"
+          inputMode="numeric"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => setAmount(formatAmount(e.target.value))}
           placeholder="0"
           className={`${inputCls} text-right tabular-nums font-medium`}
         />
