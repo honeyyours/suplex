@@ -73,22 +73,22 @@ export default function ProjectMembersModal({ projectId, onClose }) {
     } finally { setBusy(false); }
   }
 
+  // teamApi.list() 응답 필드는 { userId, name, email, role, ... } — `id`가 아님
   // 회사 OWNER들 — ProjectMember 행 없어도 풀권한(우회 룰)이라 항상 표시
-  // (시드 안 됐을 때도 OWNER 가시성 보장. 정책: 출구정리 — OWNER 우회 룰)
   const memberUserIds = new Set(members.map((m) => m.userId));
   const virtualOwners = companyMembers
-    .filter((cm) => cm.role === 'OWNER' && !memberUserIds.has(cm.id))
+    .filter((cm) => cm.role === 'OWNER' && !memberUserIds.has(cm.userId))
     .map((o) => ({
-      userId: o.id,
+      userId: o.userId,
       role: '__OWNER_AUTO__',
-      user: { id: o.id, name: o.name, email: o.email },
+      user: { id: o.userId, name: o.name, email: o.email },
       _virtual: true,
     }));
   const displayMembers = [...virtualOwners, ...members];
 
   // 추가 후보 = 회사 멤버 중 아직 프로젝트 멤버 아닌 사람 (가상 OWNER 포함해서 제외)
   const allDisplayUserIds = new Set(displayMembers.map((m) => m.userId));
-  const candidates = companyMembers.filter((cm) => !allDisplayUserIds.has(cm.id));
+  const candidates = companyMembers.filter((cm) => !allDisplayUserIds.has(cm.userId));
 
   return (
     <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -111,7 +111,7 @@ export default function ProjectMembersModal({ projectId, onClose }) {
             <ul className="divide-y">
               {displayMembers.map((m) => {
                 const isVirtualOwner = m._virtual === true;
-                const cm = companyMembers.find((x) => x.id === m.userId);
+                const cm = companyMembers.find((x) => x.userId === m.userId);
                 const roleMeta = cm ? (ROLE_META[cm.role] || ROLE_META.DESIGNER) : null;
                 const canRemove = !isVirtualOwner && isLead && m.userId !== auth?.id;
                 const canDemote = !isVirtualOwner && isLead && m.role === 'LEAD' && members.filter((x) => x.role === 'LEAD').length > 1;
@@ -178,7 +178,7 @@ export default function ProjectMembersModal({ projectId, onClose }) {
                     className="w-full border rounded px-2 py-1.5 text-sm">
                     <option value="">선택…</option>
                     {candidates.map((cm) => (
-                      <option key={cm.id} value={cm.id}>
+                      <option key={cm.userId} value={cm.userId}>
                         {cm.name} ({ROLE_META[cm.role]?.label || cm.role}) · {cm.email}
                       </option>
                     ))}
