@@ -58,8 +58,10 @@ html.dark body {
 /* ── 배경 (3단계 elevation) ── */
 html.dark .bg-white         { background-color: rgb(15 23 42); }   /* slate-900 — 카드 L1 */
 html.dark .bg-gray-50       { background-color: rgb(2 6 23); }     /* slate-950 — 페이지 단계 L0 */
+html.dark .bg-gray-50\/50   { background-color: rgb(15 23 42 / 0.4); }   /* 캘린더 다른 월 셀 */
 html.dark .bg-gray-50\/60   { background-color: rgb(2 6 23 / 0.6); }
 html.dark .bg-gray-100      { background-color: rgb(30 41 59); }   /* slate-800 — 강조 L2 */
+html.dark .bg-gray-100\/70  { background-color: rgb(15 23 42 / 0.5); }   /* 캘린더 inRange 외 셀 */
 html.dark .bg-gray-200      { background-color: rgb(51 65 85); }   /* slate-700 */
 
 /* navy 강조 — 자체 팔레트 재사용 (디자인 시스템 일관성) */

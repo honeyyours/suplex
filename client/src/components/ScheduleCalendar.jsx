@@ -238,7 +238,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                 key={key}
                 onClick={(e) => handleCellClick(e, key, inRange)}
                 className={`group border-r border-b last:border-r-0 min-h-[96px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
-                  inRange ? 'bg-white' : 'bg-gray-100/70 cursor-default'
+                  inRange ? 'bg-white' : 'bg-gray-100/70 dark:bg-slate-900/40 cursor-default'
                 }`}
               >
                 <div className={`flex items-center justify-between px-1 py-1 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
