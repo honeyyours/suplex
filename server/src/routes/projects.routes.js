@@ -897,7 +897,29 @@ router.get('/:id/phase-periods', pmGuard, async (req, res, next) => {
 
 // ============================================
 // 정산 탭 — 공정별 정산 메모. 견적 가이드 사이클 (★ 핵심 컨셉, 2026-04-30)
+// 회사 단위 라우트 (_company)를 :id 패턴 라우트들보다 먼저 등록 — Express
+// 매칭 순서상 :id 패턴이 _company를 projectId로 잡지 않게.
 // ============================================
+
+// 회사 누적 — 특정 공정의 모든 프로젝트 정산 메모 최신순 (견적 가이드 드로어용)
+router.get('/_company/settlement-notes', async (req, res, next) => {
+  try {
+    const phase = req.query.phase ? String(req.query.phase) : null;
+    if (!phase) return res.status(400).json({ error: 'phase required' });
+    const notes = await prisma.projectSettlementNote.findMany({
+      where: {
+        phase,
+        body: { not: '' },
+        project: { companyId: req.user.companyId },
+      },
+      include: { project: { select: { id: true, name: true, siteCode: true } } },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+    });
+    res.json({ notes });
+  } catch (e) { next(e); }
+});
+
 router.get('/:id/settlement-notes', pmGuard, async (req, res, next) => {
   try {
     const projectId = req.params.id;
@@ -921,26 +943,6 @@ router.put('/:id/settlement-notes', pmGuard, async (req, res, next) => {
       update: { body: String(body || '') },
     });
     res.json({ note });
-  } catch (e) { next(e); }
-});
-
-// 회사 단위 — 견적 가이드 드로어에 표시할 누적 정산 노트
-// (특정 공정에 대해 회사 모든 프로젝트의 정산 메모를 최신순으로)
-router.get('/_company/settlement-notes', async (req, res, next) => {
-  try {
-    const phase = req.query.phase ? String(req.query.phase) : null;
-    if (!phase) return res.status(400).json({ error: 'phase required' });
-    const notes = await prisma.projectSettlementNote.findMany({
-      where: {
-        phase,
-        body: { not: '' },
-        project: { companyId: req.user.companyId },
-      },
-      include: { project: { select: { id: true, name: true, siteCode: true } } },
-      orderBy: { updatedAt: 'desc' },
-      take: 20,
-    });
-    res.json({ notes });
   } catch (e) { next(e); }
 });
 

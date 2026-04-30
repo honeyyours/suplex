@@ -52,7 +52,8 @@ export default function ProjectSettlement() {
       if (l.isGroup && l.isGroupEnd) { currentPhase = null; continue; }
       if (!l.isGroup) {
         const phase = currentPhase || (normalizePhase(l.itemName)?.label || '기타');
-        const total = (Number(l.materialPrice || 0) + Number(l.laborPrice || 0) + Number(l.expensePrice || 0)) * Number(l.quantity || 1);
+        // SimpleQuoteLine.amount = quantity × unitPrice 캐시
+        const total = Number(l.amount || 0) || (Number(l.quantity || 1) * Number(l.unitPrice || 0));
         m.set(phase, (m.get(phase) || 0) + total);
       }
     }
