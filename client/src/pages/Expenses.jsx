@@ -77,7 +77,8 @@ export default function Expenses() {
     return queryClient.invalidateQueries({ queryKey: ['expenses'] });
   }
 
-  // 인라인 편집 — invalidate 대신 cache 직접 patch (입력 중 깜빡임 방지)
+  // 인라인 편집 — invalidate 대신 cache 직접 patch (입력 중 깜빡임 방지).
+  // summary는 invalidate 안 함 — 다음 페이지 이동·필터 변경 시 자연 갱신.
   const handleInlinePatch = useCallback(async (id, patch) => {
     const { expense } = await expensesApi.update(id, patch);
     queryClient.setQueryData(['expenses', 'list', queryParams], (old) => {
@@ -87,10 +88,6 @@ export default function Expenses() {
         expenses: old.expenses.map((e) => e.id === id ? { ...e, ...expense } : e),
       };
     });
-    // 금액·종류·프로젝트 변경 시 summary 영향 → 백그라운드 갱신
-    if (patch.amount !== undefined || patch.type !== undefined || patch.projectId !== undefined) {
-      queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
-    }
   }, [queryClient, queryParams]);
 
   const handleInlineRemove = useCallback(async (id) => {
@@ -100,7 +97,6 @@ export default function Expenses() {
       if (!old) return old;
       return { ...old, expenses: old.expenses.filter((e) => e.id !== id) };
     });
-    queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
   }, [queryClient, queryParams]);
 
   const handleInlineBulkRemove = useCallback(async (ids) => {
@@ -111,7 +107,6 @@ export default function Expenses() {
       if (!old) return old;
       return { ...old, expenses: old.expenses.filter((e) => !idSet.has(e.id)) };
     });
-    queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
   }, [queryClient, queryParams]);
 
   useEffect(() => {
@@ -239,8 +234,8 @@ export default function Expenses() {
         )}
 
         <div className="border-t">
-          {loading && view !== VIEW_RULES && <div className="p-6 text-sm text-gray-400">불러오는 중...</div>}
-          {!loading && view === VIEW_LIST && (
+          {loading && expenses.length === 0 && view !== VIEW_RULES && <div className="p-6 text-sm text-gray-400">불러오는 중...</div>}
+          {view === VIEW_LIST && (!loading || expenses.length > 0) && (
             <ListView
               expenses={expenses}
               total={totalFiltered}
@@ -450,11 +445,20 @@ function ListView({ expenses, total, projects, accountCodes, onEdit, onPatch, on
 // 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
 // memo로 감싸서 다른 행 변경에 의한 불필요한 re-render 차단 (입력 중 깜빡임 방지).
 const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
-  const [memo, setMemo] = useState(e.memo || '');
+  const [memoVal, setMemo] = useState(e.memo || '');
   const [amount, setAmount] = useState(String(e.amount));
   const [accountCodeId, setAccountCodeId] = useState(e.accountCodeId || '');
   const [projectId, setProjectId] = useState(e.projectId || '');
   const [workCategory, setWorkCategory] = useState(e.workCategory || '');
+  // options ref 안정화 — InlineCombobox에 새 배열 전달되어 내부 useMemo가 매번 재계산되는 것 방지
+  const accountOptions = useMemo(
+    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
+    [accountCodes]
+  );
+  const projectOptions = useMemo(
+    () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
+    [projects]
+  );
   // expense 새 데이터로 동기화 (다른 행 변경·필터 갱신 후)
   useEffect(() => { setMemo(e.memo || ''); }, [e.id, e.memo]);
   useEffect(() => { setAmount(String(e.amount)); }, [e.id, e.amount]);
@@ -490,9 +494,9 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
       </td>
       <td className="px-3 py-1.5">
         <input
-          value={memo}
+          value={memoVal}
           onChange={(ev) => setMemo(ev.target.value)}
-          onBlur={() => commitField('memo', memo, e.memo)}
+          onBlur={() => commitField('memo', memoVal, e.memo)}
           placeholder="—"
           className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent"
         />
@@ -509,7 +513,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
       <td className="px-3 py-1.5 text-xs">
         <InlineCombobox
           value={accountCodeId}
-          options={accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName }))}
+          options={accountOptions}
           onChange={(id) => { setAccountCodeId(id || ''); commitField('accountCodeId', id || '', e.accountCodeId); }}
           placeholder="검색…"
           emptyLabel="(미분류)"
@@ -518,7 +522,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
       <td className="px-3 py-1.5">
         <InlineCombobox
           value={projectId}
-          options={projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' }))}
+          options={projectOptions}
           onChange={(id) => { setProjectId(id || ''); commitField('projectId', id || '', e.projectId); }}
           placeholder="검색…"
           emptyLabel="(미지정)"
