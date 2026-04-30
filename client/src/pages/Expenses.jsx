@@ -613,23 +613,24 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [description]);
 
-  // 행 밖 클릭 시 자동 저장 (필수 필드 충족 시) 또는 조용히 닫기.
+  // 행 밖 클릭 시 자동 저장 (내역만 있으면) 또는 조용히 닫기.
+  // 단순화 (2026-04-30): amount 없어도 저장. 필수 = 내역(description)만.
+  // amount 0이어도 사용자가 나중에 인라인 편집 가능.
   useEffect(() => {
     function onDoc(e) {
       if (!rowRef.current) return;
       if (rowRef.current.contains(e.target)) return;
-      // 콤보박스 dropdown 등 portal 외부 요소에 클릭한 경우도 — 닫는 게 정상
       if (busyRef.current) return;
-      const num = Number(String(amount).replace(/[^\d.-]/g, ''));
-      const hasRequired = Number.isFinite(num) && num > 0 && date && description.trim();
-      if (hasRequired) {
+      const desc = description.trim();
+      if (desc) {
+        const num = Number(String(amount).replace(/[^\d.-]/g, ''));
         busyRef.current = true;
         onSave({
           date,
           type,
-          amount: num,
-          description: description.trim(),
-          vendor: description.trim(),
+          amount: Number.isFinite(num) ? num : 0,
+          description: desc,
+          vendor: desc,
           memo: memoVal.trim() || null,
           accountCodeId: accountCodeId || null,
           projectId: projectId || null,
@@ -639,9 +640,8 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           busyRef.current = false;
         });
       } else {
-        // 필수 미충족 — 빈 입력이면 조용히 닫음, 일부 입력 상태면 그대로 유지
-        const anyInput = description.trim() || amount || memoVal.trim() || accountCodeId || projectId;
-        if (!anyInput) onCancel();
+        // 내역 비어있으면 조용히 닫음 (다른 필드 일부 입력해도 의미 없음)
+        onCancel();
       }
     }
     document.addEventListener('mousedown', onDoc);
