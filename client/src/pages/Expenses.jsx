@@ -18,6 +18,7 @@ const VIEW_LIST    = 'list';
 const VIEW_PROJECT = 'project';
 const VIEW_VENDOR  = 'vendor';
 const VIEW_PNL     = 'pnl';
+const VIEW_RULES   = 'rules';
 
 export default function Expenses() {
   const [searchParams] = useSearchParams();
@@ -140,7 +141,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      {summary && (
+      {summary && view !== VIEW_RULES && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <SummaryCard label="이번 달 지출" total={summary.thisMonth.total} count={summary.thisMonth.count} highlight />
           <SummaryCard label="전월 지출" total={summary.prevMonth.total} count={summary.prevMonth.count}
@@ -150,7 +151,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {summary?.byGroup && summary.byGroup.length > 0 && (
+      {view !== VIEW_RULES && summary?.byGroup && summary.byGroup.length > 0 && (
         <div className="bg-white border rounded-lg p-4">
           <div className="text-xs text-gray-500 mb-2">계정 그룹별 누적 지출</div>
           <div className="flex gap-2 flex-wrap">
@@ -176,9 +177,11 @@ export default function Expenses() {
           {canViewPnl && (
             <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="💰 프로젝트 손익" />
           )}
+          <div className="ml-auto" />
+          <ViewTab active={view === VIEW_RULES}    onClick={() => setView(VIEW_RULES)}    label="🔮 자동분류 룰" />
         </div>
 
-        {view !== VIEW_PNL && (
+        {view !== VIEW_PNL && view !== VIEW_RULES && (
           <FilterBar
             projects={projects}
             accountCodes={accountCodes}
@@ -189,7 +192,7 @@ export default function Expenses() {
         )}
 
         <div className="border-t">
-          {loading && <div className="p-6 text-sm text-gray-400">불러오는 중...</div>}
+          {loading && view !== VIEW_RULES && <div className="p-6 text-sm text-gray-400">불러오는 중...</div>}
           {!loading && view === VIEW_LIST && (
             <ListView
               expenses={expenses}
@@ -210,6 +213,9 @@ export default function Expenses() {
           )}
           {!loading && view === VIEW_PNL && summary && (
             <PnLTable pnl={summary.pnl} onChanged={reload} />
+          )}
+          {view === VIEW_RULES && (
+            <RulesManager accountCodes={accountCodes} />
           )}
         </div>
       </div>
@@ -891,3 +897,251 @@ function ModalStyles() {
     `}</style>
   );
 }
+
+// ============================================================
+// 자동분류 룰 관리 — 출구정리 추론엔진 워크플로 첫 단계
+// (은행 CSV import → 자동분류기 통과 → 출구정리 추론엔진 후보 제시)
+// ============================================================
+function RulesManager({ accountCodes }) {
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // rule 객체 또는 null
+  const [adding, setAdding] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { rules } = await expenseRulesApi.list({ activeOnly: false });
+      setRules(rules || []);
+    } catch (e) {
+      alert('룰 목록 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function toggleActive(rule) {
+    try {
+      await expenseRulesApi.update(rule.id, { active: !rule.active });
+      load();
+    } catch (e) { alert('변경 실패: ' + (e.response?.data?.error || e.message)); }
+  }
+
+  async function remove(rule) {
+    if (!confirm(`'${rule.keyword}' 룰을 삭제할까요?`)) return;
+    try {
+      await expenseRulesApi.remove(rule.id);
+      load();
+    } catch (e) { alert('삭제 실패: ' + (e.response?.data?.error || e.message)); }
+  }
+
+  return (
+    <div className="p-4 sm:p-5">
+      <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-4">
+        💡 <b>자동분류 룰</b>은 통장 CSV 가져오기 시 거래 텍스트(거래처·내역)에 키워드가 포함되면 자동으로 계정과목·현장·공종을 라벨링합니다. 우선순위가 높을수록 먼저 매칭되며, 같은 우선순위에선 긴 키워드부터.
+        <br />반복 지출(공과금·임대료·통신비 등)을 등록해두면 매번 손으로 분류하지 않아도 됩니다.
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-gray-500">총 {rules.length}개 룰 · 활성 {rules.filter((r) => r.active).length}개</div>
+        <button
+          onClick={() => setAdding(true)}
+          className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+        >
+          + 룰 추가
+        </button>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <tr>
+              <th className="px-3 py-2 text-left">키워드</th>
+              <th className="px-3 py-2 text-left">계정과목</th>
+              <th className="px-3 py-2 text-left">현장약칭</th>
+              <th className="px-3 py-2 text-left">공종</th>
+              <th className="px-3 py-2 text-right">우선순위</th>
+              <th className="px-3 py-2 text-center">활성</th>
+              <th className="px-3 py-2 text-right w-28">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">로딩...</td></tr>
+            ) : rules.length === 0 ? (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                등록된 룰이 없습니다. 위 "+ 룰 추가"로 첫 룰을 등록해보세요.
+              </td></tr>
+            ) : (
+              rules.map((r) => (
+                <tr key={r.id} className={`border-t hover:bg-gray-50 ${!r.active ? 'opacity-50' : ''}`}>
+                  <td className="px-3 py-2 font-medium text-gray-800">{r.keyword}</td>
+                  <td className="px-3 py-2">
+                    {r.accountCode ? (
+                      <span className={`text-xs px-2 py-0.5 rounded ${accountColor(r.accountCode.groupName)}`}>
+                        {r.accountCode.code}
+                      </span>
+                    ) : <span className="text-gray-300">-</span>}
+                  </td>
+                  <td className="px-3 py-2 text-gray-600">{r.siteCode || <span className="text-gray-300">-</span>}</td>
+                  <td className="px-3 py-2 text-gray-600">{r.workCategory || <span className="text-gray-300">-</span>}</td>
+                  <td className="px-3 py-2 text-right text-gray-700 tabular-nums">{r.priority}</td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      onClick={() => toggleActive(r)}
+                      className={`text-xs px-2 py-0.5 rounded border ${
+                        r.active
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}
+                      title="클릭하여 토글"
+                    >
+                      {r.active ? 'ON' : 'OFF'}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2 text-right space-x-1">
+                    <button
+                      onClick={() => setEditing(r)}
+                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                    >수정</button>
+                    <button
+                      onClick={() => remove(r)}
+                      className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
+                    >삭제</button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {(adding || editing) && (
+        <RuleModal
+          rule={editing}
+          accountCodes={accountCodes}
+          onClose={() => { setAdding(false); setEditing(null); }}
+          onSaved={() => { setAdding(false); setEditing(null); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RuleModal({ rule, accountCodes, onClose, onSaved }) {
+  const isEdit = !!rule;
+  const [form, setForm] = useState({
+    keyword: rule?.keyword || '',
+    accountCodeId: rule?.accountCodeId || '',
+    siteCode: rule?.siteCode || '',
+    workCategory: rule?.workCategory || '',
+    priority: rule?.priority ?? 0,
+    active: rule?.active ?? true,
+  });
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!form.keyword.trim()) { alert('키워드는 필수입니다'); return; }
+    const payload = {
+      keyword: form.keyword.trim(),
+      accountCodeId: form.accountCodeId || null,
+      siteCode: form.siteCode.trim() || null,
+      workCategory: form.workCategory.trim() || null,
+      priority: Number(form.priority) || 0,
+      active: form.active,
+    };
+    setBusy(true);
+    try {
+      if (isEdit) await expenseRulesApi.update(rule.id, payload);
+      else await expenseRulesApi.create(payload);
+      onSaved();
+    } catch (e) {
+      alert('저장 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+        <div className="px-5 py-4 border-b flex items-center justify-between">
+          <div className="font-semibold text-navy-800">{isEdit ? '룰 수정' : '룰 추가'}</div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <div className="p-5 space-y-3">
+          <Field label="키워드 *">
+            <input
+              value={form.keyword}
+              onChange={(e) => setForm({ ...form, keyword: e.target.value })}
+              placeholder='예: "한국전력공사", "S-OIL", "강남102"'
+              className="input"
+              autoFocus
+            />
+            <div className="text-xs text-gray-500 mt-1">거래처 또는 내역에 이 키워드가 포함되면 매칭됩니다 (대소문자 무시)</div>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="계정과목">
+              <select
+                value={form.accountCodeId}
+                onChange={(e) => setForm({ ...form, accountCodeId: e.target.value })}
+                className="input"
+              >
+                <option value="">(미지정)</option>
+                {accountCodes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.code}{c.groupName ? ` (${c.groupName})` : ''}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="우선순위">
+              <input
+                type="number"
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                placeholder="0"
+                className="input"
+              />
+              <div className="text-xs text-gray-500 mt-1">높을수록 먼저 매칭. 디폴트 0</div>
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="현장약칭 (선택)">
+              <input
+                value={form.siteCode}
+                onChange={(e) => setForm({ ...form, siteCode: e.target.value })}
+                placeholder='예: "강남102"'
+                className="input"
+              />
+            </Field>
+            <Field label="공종 (선택)">
+              <input
+                value={form.workCategory}
+                onChange={(e) => setForm({ ...form, workCategory: e.target.value })}
+                placeholder='예: "도배"'
+                className="input"
+              />
+            </Field>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+              className="h-4 w-4"
+            />
+            활성 (체크 해제 시 매칭에서 제외)
+          </label>
+        </div>
+        <div className="px-5 py-3 border-t flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 text-sm border rounded">취소</button>
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="px-4 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+          >
+            {busy ? '저장중...' : (isEdit ? '저장' : '추가')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
