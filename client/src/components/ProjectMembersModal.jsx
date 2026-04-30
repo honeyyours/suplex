@@ -3,9 +3,10 @@ import { projectsApi } from '../api/projects';
 import { teamApi, ROLE_META } from '../api/team';
 import { useAuth } from '../contexts/AuthContext';
 
-// 프로젝트 멤버(LEAD/MEMBER) 관리 모달 — 출구정리 정책 Step 4
-// OWNER 또는 LEAD가 같은 회사 멤버를 추가/제거/역할 변경.
-// OWNER는 ProjectMember 행 없어도 풀권한(우회 룰).
+// 프로젝트 멤버(LEAD/MEMBER) 관리 모달 — 오픈 디폴트 (2026-04-30)
+// 정책: 같은 회사 멤버는 모든 프로젝트 보기·작업 가능 (오픈 디폴트).
+// 이 모달은 "LEAD 지정"과 "DELETE/멤버관리 권한 부여"용. LEAD가 같은 회사 멤버를 추가/제거/역할 변경.
+// OWNER는 행 없어도 자동 풀권한(우회 룰). 정식 출시 후 팀 단위 분리 시 진화.
 export default function ProjectMembersModal({ projectId, onClose }) {
   const { auth } = useAuth();
   const [members, setMembers] = useState([]);
@@ -97,7 +98,7 @@ export default function ProjectMembersModal({ projectId, onClose }) {
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-navy-800">프로젝트 팀</h2>
           <div className="text-xs text-gray-500 mt-1">
-            LEAD는 멤버를 추가·제거할 수 있습니다. 회사 대표(OWNER)는 모든 프로젝트에 풀권한이 있습니다.
+            회사 멤버 모두 모든 프로젝트를 볼 수 있습니다. 이 화면에서 지정한 LEAD는 해당 프로젝트의 멤버 추가·제거와 삭제 권한을 갖습니다. 회사 대표(OWNER)는 자동 풀권한.
           </div>
         </div>
 

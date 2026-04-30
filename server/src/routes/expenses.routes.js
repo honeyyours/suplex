@@ -5,7 +5,6 @@ const { authRequired } = require('../middlewares/auth');
 const { requireFeature, loadPermissionsMap } = require('../middlewares/requireFeature');
 const { F, hasFeature } = require('../services/features');
 const { classifyOne } = require('../services/autoClassify');
-const { getAccessibleProjectIds } = require('../middlewares/projectAccess');
 
 // 출구정리 정책: 손익(PnL)은 OWNER만. summary 응답에서 권한 없으면 pnl 빼기.
 async function canViewPnl(req) {
@@ -22,19 +21,19 @@ async function canViewPnl(req) {
   return hasFeature({ role: req.user.role, plan, permissions }, F.EXPENSES_VIEW_PNL);
 }
 
-// 직원이 그 거래의 projectId에 접근 가능한지 (없는 거래 = 본사/미분류 → 직원 거부, OWNER만)
+// 오픈 디폴트(2026-04-30): 같은 회사 프로젝트면 직원도 접근. 본사/미분류(projectId=null)만 OWNER 전용.
 async function assertProjectAccess(req, res, projectId) {
   if (req.user.role === 'OWNER') return true;
   if (!projectId) {
     res.status(403).json({ error: 'Forbidden — non-project transactions are owner-only' });
     return false;
   }
-  const member = await prisma.projectMember.findFirst({
-    where: { projectId, userId: req.user.id, project: { companyId: req.user.companyId } },
+  const p = await prisma.project.findFirst({
+    where: { id: projectId, companyId: req.user.companyId },
     select: { id: true },
   });
-  if (!member) {
-    res.status(403).json({ error: 'Forbidden — not a project member' });
+  if (!p) {
+    res.status(404).json({ error: 'Project not found' });
     return false;
   }
   return true;
@@ -75,20 +74,16 @@ router.get('/', async (req, res, next) => {
     const { projectId, dateFrom, dateTo, accountCodeId, accountGroup, type, vendor, vendorId, q } = req.query;
     const where = { companyId: req.user.companyId };
 
-    // 직원(DESIGNER/FIELD)은 본인 멤버 프로젝트 거래만. 본사/미분류(projectId=null)는 OWNER만.
-    const accessibleIds = await getAccessibleProjectIds(req);
-    if (accessibleIds !== null) {
-      if (projectId === 'NONE') return res.json({ expenses: [] }); // 직원에게 본사 거래 차단
-      if (projectId) {
-        if (!accessibleIds.includes(projectId)) {
-          return res.status(403).json({ error: 'Forbidden — not a project member' });
-        }
-        where.projectId = projectId;
-      } else {
-        where.projectId = { in: accessibleIds };
-      }
-    } else if (projectId === 'NONE') where.projectId = null;
-    else if (projectId) where.projectId = projectId;
+    // 오픈 디폴트(2026-04-30): 회사 프로젝트는 직원도 모두 조회. 단, 본사/미분류(projectId=null)는 OWNER만.
+    if (projectId === 'NONE') {
+      if (req.user.role !== 'OWNER') return res.json({ expenses: [] });
+      where.projectId = null;
+    } else if (projectId) {
+      where.projectId = projectId;
+    } else {
+      // 전체 조회 — 직원은 본사/미분류 제외
+      if (req.user.role !== 'OWNER') where.projectId = { not: null };
+    }
 
     if (accountCodeId === 'NONE') where.accountCodeId = null;
     else if (accountCodeId) where.accountCodeId = accountCodeId;
@@ -137,9 +132,8 @@ router.get('/summary', async (req, res, next) => {
     const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // 직원은 멤버 프로젝트 거래만 합산. OWNER는 전체.
-    const accessibleIds = await getAccessibleProjectIds(req);
-    const projectScope = accessibleIds !== null ? { projectId: { in: accessibleIds } } : {};
+    // 오픈 디폴트(2026-04-30): 직원도 회사 프로젝트 거래는 모두 합산. 본사/미분류(projectId=null)만 OWNER 전용.
+    const projectScope = req.user.role === 'OWNER' ? {} : { projectId: { not: null } };
 
     // 지출만 집계 (TRANSFER 제외, INCOME 별도)
     const expenseWhere = { companyId, type: 'EXPENSE', ...projectScope };

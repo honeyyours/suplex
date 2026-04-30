@@ -14,8 +14,8 @@ const router = express.Router();
 
 router.use(authRequired);
 
-// :id 라우트들 (GET 상세·프로세스 오버뷰·phase-detail / PATCH / DELETE)에 멤버십 가드.
-// 정책: OWNER는 회사 내 모든 프로젝트 접근 가능(우회). DESIGNER/FIELD는 ProjectMember 행 있을 때만.
+// :id 라우트들 (GET 상세·프로세스 오버뷰·phase-detail / PATCH / DELETE)에 회사 일치 가드.
+// 정책 (2026-04-30 오픈 디폴트): 같은 회사 멤버면 누구나 접근. ProjectMember는 LEAD 식별 + DELETE 가드용.
 const pmGuard = requireProjectMember('id');
 
 // ============================================
@@ -277,7 +277,7 @@ router.get('/:id/phase-detail', pmGuard, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// GET /api/projects — OWNER는 회사 전체, DESIGNER/FIELD는 ProjectMember인 프로젝트만
+// GET /api/projects — 오픈 디폴트: 같은 회사 멤버라면 모두 회사 프로젝트 전체 조회 (2026-04-30 변경)
 router.get('/', async (req, res, next) => {
   try {
     const { status } = req.query;
