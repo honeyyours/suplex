@@ -684,22 +684,25 @@ def s_14_cta(prs):
     rect(s, Inches(0.7), Inches(1.95), Inches(0.6), Inches(0.04), AMBER)
 
     actions = [
-        ("데모 요청",
-         "현장에서 직접 시연 — 1시간 안에 핵심 기능 모두 보여드립니다"),
-        ("베타 시범 도입",
-         "2개월 무료 + 평생 20% — 일단 회사 1곳에서 첫 현장부터"),
-        ("일반 문의",
-         "기능·요금·도입 절차 등"),
+        ("이메일",
+         "데모 · 베타 시범 도입 · 일반 문의",
+         "hello@suplex.kr"),
+        ("인스타그램",
+         "최신 기능 업데이트 · 시범 사례 공유",
+         "@suplex.kr"),
+        ("카카오톡 채널",
+         "법인 등록 후 개설 예정",
+         "준비 중"),
     ]
     y = Inches(2.6)
-    for label, desc in actions:
+    for label, desc, value in actions:
         rrect(s, Inches(0.7), y, Inches(12.15), Inches(1.05), NAVY_MID)
         text(s, Inches(1.0), y + Inches(0.18), Inches(4), Inches(0.4),
              label, size=18, bold=True, color=AMBER)
         text(s, Inches(1.0), y + Inches(0.6), Inches(8), Inches(0.4),
              desc, size=12, color=GRAY_200)
         text(s, Inches(8.4), y + Inches(0.32), Inches(4.4), Inches(0.5),
-             "_______________________", size=14, color=GRAY_400, align=PP_ALIGN.RIGHT)
+             value, size=14, bold=True, color=AMBER, align=PP_ALIGN.RIGHT)
         y += Inches(1.2)
 
     text(s, Inches(0.7), Inches(6.4), Inches(12), Inches(0.4),

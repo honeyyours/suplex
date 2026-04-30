@@ -90,13 +90,13 @@ export default function ReportTab({ projectId }) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-3">
-        <div className="text-sm text-gray-600">
+      <div className="flex justify-between items-center mb-3 gap-2">
+        <div className="text-xs sm:text-sm text-gray-600">
           총 {reports.length}건
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-navy-700 hover:bg-navy-800 text-white text-sm px-4 py-2 rounded-md"
+          className="bg-navy-700 hover:bg-navy-800 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-md whitespace-nowrap"
         >
           + 오늘 작업 보고
         </button>
@@ -109,7 +109,7 @@ export default function ReportTab({ projectId }) {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {reports.map((r) => (
           <ReportCard
             key={r.id}
@@ -243,41 +243,41 @@ function ReportCard({ report, project, company, user, uploadProgress, onOpenLigh
   }
 
   return (
-    <div className="bg-white border rounded-lg p-4">
+    <div className="bg-white border rounded-lg p-3 sm:p-4">
       <div className="flex justify-between items-start mb-2 gap-2">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
               {displayPhase(report.category)}
             </span>
-            <span className={`text-xs px-2 py-0.5 rounded font-semibold ${statusBg}`}>
+            <span className={`text-[11px] sm:text-xs px-2 py-0.5 rounded font-semibold ${statusBg}`}>
               {status}
             </span>
             {report.workerCount != null && (
-              <span className="text-xs text-gray-500">· 작업 {report.workerCount}명</span>
+              <span className="text-[11px] sm:text-xs text-gray-500">· 작업 {report.workerCount}명</span>
             )}
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-[11px] sm:text-xs text-gray-500 mt-1">
             {dateLabel} · {report.author?.name} · {relativeTime(report.createdAt)}
           </div>
         </div>
-        <button onClick={onDelete} className="text-xs text-gray-400 hover:text-rose-600">삭제</button>
+        <button onClick={onDelete} className="text-[11px] sm:text-xs text-gray-400 hover:text-rose-600 whitespace-nowrap">삭제</button>
       </div>
 
       {report.caption && (
-        <div className="text-sm text-gray-800 mt-2">
+        <div className="text-sm text-gray-800 mt-2 break-words">
           {report.caption}
         </div>
       )}
 
       {photos.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-3">
+        <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-3">
           {photos.map((p, idx) => (
             <button
               key={p.id}
               type="button"
               onClick={() => onOpenLightbox(photos, idx)}
-              className="block w-20 h-20 rounded overflow-hidden border hover:opacity-80 transition"
+              className="block w-16 h-16 sm:w-20 sm:h-20 rounded overflow-hidden border hover:opacity-80 transition"
             >
               <img src={p.thumbnailUrl || p.url} alt="" className="w-full h-full object-cover" />
             </button>
@@ -302,23 +302,23 @@ function ReportCard({ report, project, company, user, uploadProgress, onOpenLigh
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-3 pt-3 border-t">
         <button
           onClick={copyMessage}
-          className={`text-xs px-3 py-1.5 rounded border transition ${copied
+          className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-2 sm:py-1.5 rounded border transition ${copied
             ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
             : 'bg-navy-50 border-navy-200 text-navy-700 hover:bg-navy-100'
           }`}
         >
-          {copied ? '✓ 복사됨' : '📋 카톡 메시지 복사'}
+          {copied ? '✓ 복사됨' : '📋 카톡 복사'}
         </button>
         {photos.length > 0 && (
           <button
             onClick={downloadAll}
             disabled={downloading}
-            className="text-xs px-3 py-1.5 rounded border bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+            className="text-[11px] sm:text-xs px-2.5 sm:px-3 py-2 sm:py-1.5 rounded border bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 disabled:opacity-60"
           >
-            {downloading ? '⏳ 다운로드 중...' : `📷 사진 ${photos.length}장 일괄 다운`}
+            {downloading ? '⏳ 다운로드 중...' : `📷 사진 ${photos.length}장 다운`}
           </button>
         )}
       </div>
@@ -364,16 +364,16 @@ function ReportFormModal({ projectId, onClose, onCreated }) {
   }
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg my-8">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-navy-800">오늘 작업 보고</h2>
-          <p className="text-xs text-gray-500 mt-1">
+    <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg my-4 sm:my-8">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b">
+          <h2 className="text-base sm:text-lg font-bold text-navy-800">오늘 작업 보고</h2>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">
             보고 올리면 즉시 카드가 생기고, 사진은 백그라운드에서 업로드됩니다.
           </p>
         </div>
-        <div className="px-6 py-5 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <L label="보고 날짜">
               <input type="date" value={form.reportDate} onChange={upd('reportDate')} className="input" />
             </L>
@@ -402,9 +402,9 @@ function ReportFormModal({ projectId, onClose, onCreated }) {
           </L>
           {err && <div className="text-sm text-rose-600">{err}</div>}
         </div>
-        <div className="px-6 py-3 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border rounded-md text-sm">취소</button>
-          <button onClick={submit} disabled={busy} className="px-5 py-2 bg-navy-700 text-white rounded-md text-sm disabled:opacity-50">
+        <div className="px-4 sm:px-6 py-3 border-t flex justify-end gap-2">
+          <button onClick={onClose} className="px-3 sm:px-4 py-2 border rounded-md text-sm">취소</button>
+          <button onClick={submit} disabled={busy} className="px-4 sm:px-5 py-2 bg-navy-700 text-white rounded-md text-sm disabled:opacity-50">
             {busy ? '저장 중...' : '보고 올리기'}
           </button>
         </div>
