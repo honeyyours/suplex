@@ -5,7 +5,6 @@ import {
   expensesApi, EXPENSE_TYPE_META, EXPENSE_TYPE_KEYS,
   PAYMENT_METHOD_META, PAYMENT_METHOD_KEYS,
 } from '../api/expenses';
-import { accountCodesApi, accountColor } from '../api/accountCodes';
 import { expenseRulesApi } from '../api/expenseRules';
 import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/quotes';
@@ -28,12 +27,9 @@ export default function Expenses() {
   const { auth } = useAuth();
   const canViewPnl = hasFeature(auth, F.EXPENSES_VIEW_PNL);
 
-  const [accountCodes, setAccountCodes] = useState([]);
   const [view, setView] = useState(VIEW_LIST);
   const [filters, setFilters] = useState({
     projectId: initialProjectId,
-    accountCodeId: 'ALL',
-    accountGroup: 'ALL',
     type: 'EXPENSE', // 기본 지출만
     dateFrom: '',
     dateTo: '',
@@ -48,8 +44,6 @@ export default function Expenses() {
   const queryParams = useMemo(() => {
     const p = {};
     if (filters.projectId !== 'ALL') p.projectId = filters.projectId;
-    if (filters.accountCodeId !== 'ALL') p.accountCodeId = filters.accountCodeId;
-    if (filters.accountGroup !== 'ALL') p.accountGroup = filters.accountGroup;
     if (filters.type !== 'ALL') p.type = filters.type;
     if (filters.dateFrom) p.dateFrom = filters.dateFrom;
     if (filters.dateTo) p.dateTo = filters.dateTo;
@@ -116,16 +110,14 @@ export default function Expenses() {
   }, [queryClient, queryParams]);
 
   // 인라인 신규 거래 — optimistic update로 저장 즉시 UI 반영, 서버 응답은 백그라운드.
-  // projects/accountCodes에서 join 정보 미리 채워 ListRow가 즉시 정상 표시.
+  // projects에서 join 정보 미리 채워 ListRow가 즉시 정상 표시.
   const handleAddSave = useCallback((payload) => {
     const tempId = '__temp_' + Date.now() + Math.random().toString(36).slice(2, 6);
     const proj = payload.projectId ? projects.find((p) => p.id === payload.projectId) : null;
-    const ac = payload.accountCodeId ? accountCodes.find((c) => c.id === payload.accountCodeId) : null;
     const optimistic = {
       id: tempId,
       ...payload,
       project: proj ? { id: proj.id, name: proj.name, siteCode: proj.siteCode || null } : null,
-      accountCode: ac ? { id: ac.id, code: ac.code, groupName: ac.groupName || null } : null,
       vendorEntity: null,
       createdBy: null,
       createdAt: new Date().toISOString(),
@@ -150,38 +142,27 @@ export default function Expenses() {
       });
       alert('저장 실패: ' + (err.response?.data?.error || err.message));
     });
-  }, [queryClient, queryParams, projects, accountCodes]);
+  }, [queryClient, queryParams, projects]);
 
   const handleAddCancel = useCallback(() => setAdding(false), []);
-
-  useEffect(() => {
-    accountCodesApi.list().then((r) => setAccountCodes(r.codes || []));
-  }, []);
 
   const totalFiltered = useMemo(
     () => expenses.reduce((s, e) => s + Number(e.amount || 0), 0),
     [expenses]
   );
 
-  const accountGroups = useMemo(() => {
-    const set = new Set();
-    for (const c of accountCodes) if (c.groupName) set.add(c.groupName);
-    return [...set];
-  }, [accountCodes]);
-
   function handleExport() {
     if (expenses.length === 0) {
       alert('내보낼 거래가 없습니다');
       return;
     }
-    const header = ['날짜', '종류', '프로젝트', '계정과목', '공종', '거래처', '내역', '금액', '결제수단'];
+    const header = ['날짜', '종류', '프로젝트', '공종', '거래처', '내역', '금액', '결제수단'];
     const rows = [header];
     for (const e of expenses) {
       rows.push([
         e.date ? String(e.date).slice(0, 10) : '',
         EXPENSE_TYPE_META[e.type]?.label || e.type,
         e.project?.name || '(미지정)',
-        e.accountCode?.code || '',
         e.workCategory || '',
         e.vendor || '',
         e.description || '',
@@ -202,7 +183,7 @@ export default function Expenses() {
       // 헤더 자동 탐지 — 신한 등 상단에 메타(계좌번호·기간·총건수) 있는 케이스 대응
       const detected = detectCsvHeader(allRows);
       const rows = [detected.header, ...detected.dataRows];
-      setImporting({ rows, projects, accountCodes });
+      setImporting({ rows, projects });
     } catch (e) {
       alert('파일 읽기 실패: ' + e.message);
     } finally {
@@ -238,24 +219,6 @@ export default function Expenses() {
         </div>
       )}
 
-      {view !== VIEW_RULES && summary?.byGroup && summary.byGroup.length > 0 && (
-        <div className="bg-white border rounded-lg p-4">
-          <div className="text-xs text-gray-500 mb-2">계정 그룹별 누적 지출</div>
-          <div className="flex gap-2 flex-wrap">
-            {summary.byGroup.map((g) => (
-              <button
-                key={g.group_name || 'none'}
-                onClick={() => setFilters({ ...filters, accountGroup: g.group_name || 'ALL' })}
-                className={`text-xs px-3 py-1.5 rounded-full border ${accountColor(g.group_name)}`}
-              >
-                {g.group_name || '(미지정)'} <span className="font-semibold ml-1">{formatWon(g.total)}원</span>
-                <span className="ml-1 opacity-70">({g.count}건)</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="bg-white border rounded-lg overflow-hidden">
         <div className="flex border-b text-sm">
           <ViewTab active={view === VIEW_LIST}    onClick={() => setView(VIEW_LIST)}    label="📋 리스트" />
@@ -271,8 +234,6 @@ export default function Expenses() {
         {view !== VIEW_PNL && view !== VIEW_RULES && (
           <FilterBar
             projects={projects}
-            accountCodes={accountCodes}
-            accountGroups={accountGroups}
             filters={filters}
             onChange={setFilters}
           />
@@ -287,7 +248,6 @@ export default function Expenses() {
               pageSize={PAGE_SIZE}
               total={totalFiltered}
               projects={projects}
-              accountCodes={accountCodes}
               adding={adding}
               onAddCancel={handleAddCancel}
               onAddSave={handleAddSave}
@@ -307,7 +267,7 @@ export default function Expenses() {
             <PnLTable pnl={summary.pnl} onChanged={reload} />
           )}
           {view === VIEW_RULES && (
-            <RulesManager accountCodes={accountCodes} />
+            <RulesManager />
           )}
         </div>
       </div>
@@ -317,7 +277,6 @@ export default function Expenses() {
         <ExpenseModal
           expense={editing}
           projects={projects}
-          accountCodes={accountCodes}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); reload(); }}
         />
@@ -326,7 +285,6 @@ export default function Expenses() {
         <ImportModal
           rows={importing.rows}
           projects={importing.projects}
-          accountCodes={importing.accountCodes}
           onClose={() => setImporting(false)}
           onSaved={() => { setImporting(false); reload(); }}
         />
@@ -371,10 +329,10 @@ function ViewTab({ active, onClick, label }) {
   );
 }
 
-function FilterBar({ projects, accountCodes, accountGroups, filters, onChange }) {
+function FilterBar({ projects, filters, onChange }) {
   function set(k, v) { onChange({ ...filters, [k]: v }); }
   return (
-    <div className="px-4 py-3 bg-gray-50 grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
+    <div className="px-4 py-3 bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
       <select value={filters.projectId} onChange={(e) => set('projectId', e.target.value)} className="px-2 py-1.5 border rounded bg-white">
         <option value="ALL">모든 프로젝트</option>
         <option value="NONE">현장 미지정 (본사/대표)</option>
@@ -384,17 +342,6 @@ function FilterBar({ projects, accountCodes, accountGroups, filters, onChange })
         <option value="ALL">모든 거래</option>
         {EXPENSE_TYPE_KEYS.map((k) => <option key={k} value={k}>{EXPENSE_TYPE_META[k].label}만</option>)}
       </select>
-      <select value={filters.accountGroup} onChange={(e) => set('accountGroup', e.target.value)} className="px-2 py-1.5 border rounded bg-white">
-        <option value="ALL">모든 계정 그룹</option>
-        {accountGroups.map((g) => <option key={g} value={g}>{g}</option>)}
-      </select>
-      <select value={filters.accountCodeId} onChange={(e) => set('accountCodeId', e.target.value)} className="px-2 py-1.5 border rounded bg-white">
-        <option value="ALL">모든 계정과목</option>
-        <option value="NONE">계정 미지정</option>
-        {accountCodes
-          .filter((c) => filters.accountGroup === 'ALL' || c.groupName === filters.accountGroup)
-          .map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
-      </select>
       <input type="date" value={filters.dateFrom} onChange={(e) => set('dateFrom', e.target.value)} className="px-2 py-1.5 border rounded bg-white" />
       <input type="date" value={filters.dateTo} onChange={(e) => set('dateTo', e.target.value)} className="px-2 py-1.5 border rounded bg-white" />
       <input type="text" value={filters.q} onChange={(e) => set('q', e.target.value)} placeholder="검색 (내역·거래처)" className="md:col-span-2 px-2 py-1.5 border rounded bg-white" />
@@ -402,13 +349,8 @@ function FilterBar({ projects, accountCodes, accountGroups, filters, onChange })
   );
 }
 
-const ListView = memo(function ListView({ expenses, totalCount, pageSize, total, projects, accountCodes, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
+const ListView = memo(function ListView({ expenses, totalCount, pageSize, total, projects, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
   const [selected, setSelected] = useState(() => new Set());
-  // ListView 안에서 메모이즈 — NewRow와 ListRow가 같은 ref 공유
-  const accountOptions = useMemo(
-    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
-    [accountCodes]
-  );
   const projectOptions = useMemo(
     () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
     [projects]
@@ -468,7 +410,6 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
               <th className="text-left px-3 py-2">내역</th>
               <th className="text-left px-3 py-2 w-40">메모</th>
               <th className="text-right px-3 py-2 w-32">금액</th>
-              <th className="text-left px-3 py-2 w-44">계정과목</th>
               <th className="text-left px-3 py-2 w-36">프로젝트</th>
               <th className="text-left px-3 py-2 w-28">공종</th>
               <th className="px-3 py-2 w-12"></th>
@@ -478,7 +419,6 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
             {adding && (
               <NewRow
                 projects={projects}
-                accountOptions={accountOptions}
                 projectOptions={projectOptions}
                 onSave={onAddSave}
                 onCancel={onAddCancel}
@@ -491,7 +431,6 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
                 selected={selected.has(e.id)}
                 onToggleSelect={() => toggleOne(e.id)}
                 projects={projects}
-                accountCodes={accountCodes}
                 onEdit={onEdit}
                 onPatch={onPatch}
                 onRemove={onRemove}
@@ -502,14 +441,14 @@ const ListView = memo(function ListView({ expenses, totalCount, pageSize, total,
             <tr>
               <td colSpan={5} className="px-3 py-2.5">필터 합계 ({expenses.length}건)</td>
               <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(total)}</td>
-              <td colSpan={4} />
+              <td colSpan={3} />
             </tr>
           </tfoot>
         </table>
       </div>
       {totalCount > pageSize && (
         <div className="px-5 py-2 border-t bg-gray-50 text-xs text-gray-500 text-center">
-          전체 <b>{totalCount.toLocaleString('ko-KR')}건</b> 중 최근 <b>{pageSize}건</b> 표시 — 더 보려면 위 필터(프로젝트·계정과목·날짜·검색) 사용
+          전체 <b>{totalCount.toLocaleString('ko-KR')}건</b> 중 최근 <b>{pageSize}건</b> 표시 — 더 보려면 위 필터(프로젝트·날짜·검색) 사용
         </div>
       )}
     </div>
@@ -528,27 +467,20 @@ function parseAmount(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-// 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
-// memo로 감싸서 다른 행 변경에 의한 불필요한 re-render 차단 (입력 중 깜빡임 방지).
-const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, projects, accountCodes, onEdit, onPatch, onRemove }) {
+// 거래 1행 — 메모·금액·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
+// 계정과목은 회계 영역 폐기(2026-04-30)로 제거. 프로젝트별 비용·공종 분석만.
+const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, projects, onEdit, onPatch, onRemove }) {
   const [memoVal, setMemo] = useState(e.memo || '');
   const [amount, setAmount] = useState(formatAmount(e.amount));
-  const [accountCodeId, setAccountCodeId] = useState(e.accountCodeId || '');
   const [projectId, setProjectId] = useState(e.projectId || '');
   const [workCategory, setWorkCategory] = useState(e.workCategory || '');
-  // options ref 안정화 — InlineCombobox에 새 배열 전달되어 내부 useMemo가 매번 재계산되는 것 방지
-  const accountOptions = useMemo(
-    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
-    [accountCodes]
-  );
   const projectOptions = useMemo(
     () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
     [projects]
   );
-  // expense 새 데이터로 동기화 (다른 행 변경·필터 갱신 후)
+  // expense 새 데이터로 동기화
   useEffect(() => { setMemo(e.memo || ''); }, [e.id, e.memo]);
   useEffect(() => { setAmount(formatAmount(e.amount)); }, [e.id, e.amount]);
-  useEffect(() => { setAccountCodeId(e.accountCodeId || ''); }, [e.id, e.accountCodeId]);
   useEffect(() => { setProjectId(e.projectId || ''); }, [e.id, e.projectId]);
   useEffect(() => { setWorkCategory(e.workCategory || ''); }, [e.id, e.workCategory]);
 
@@ -602,16 +534,6 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
           className={`${inputCls} text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}
         />
       </td>
-      <td className="px-3 py-1.5 text-xs">
-        <InlineCombobox
-          value={accountCodeId}
-          options={accountOptions}
-          onChange={(id) => { setAccountCodeId(id || ''); commitField('accountCodeId', id || '', e.accountCodeId); }}
-          placeholder="검색…"
-          emptyLabel="(미분류)"
-          inputClassName={inputCls}
-        />
-      </td>
       <td className="px-3 py-1.5">
         <InlineCombobox
           value={projectId}
@@ -644,13 +566,12 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
 // 입력 중 끊김 방지를 위해 형식 단순화 (2026-04-30):
 //   - 자동분류는 명시 버튼 클릭 시에만 (디바운스 useEffect 제거 = 입력 중 작업 0)
 //   - outside click handler는 formRef로 최신 값 추적 (deps = onSave/onCancel만)
-function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) {
+function NewRow({ projects, projectOptions, onSave, onCancel }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [type, setType] = useState('EXPENSE');
   const [description, setDescription] = useState('');
   const [memoVal, setMemo] = useState('');
   const [amount, setAmount] = useState('');
-  const [accountCodeId, setAccountCodeId] = useState('');
   const [projectId, setProjectId] = useState('');
   const [workCategory, setWorkCategory] = useState('');
   const [classifying, setClassifying] = useState(false);
@@ -658,9 +579,9 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
   const busyRef = useRef(false);
   // 입력값을 ref로 추적 — useEffect deps 변동 줄여 outside click 리스너 한 번만 등록
   const formRef = useRef({});
-  formRef.current = { date, type, description, memoVal, amount, accountCodeId, projectId, workCategory };
+  formRef.current = { date, type, description, memoVal, amount, projectId, workCategory };
 
-  // 자동분류 — 사용자가 🏷️ 버튼 클릭 시에만 classify API 호출
+  // 자동분류 — 🏷️ 버튼 클릭 시 룰의 공종·현장만 적용 (계정과목 무시)
   async function applyClassify() {
     const desc = description.trim();
     if (!desc) return;
@@ -669,7 +590,6 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       const { results } = await expenseRulesApi.classify([desc]);
       const g = results?.[0];
       if (!g) return;
-      if (g.accountCodeId) setAccountCodeId(g.accountCodeId);
       if (g.workCategory) setWorkCategory(g.workCategory);
       if (g.siteCode) {
         const proj = projects.find((p) => p.siteCode === g.siteCode);
@@ -696,7 +616,6 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           description: desc,
           vendor: desc,
           memo: f.memoVal.trim() || null,
-          accountCodeId: f.accountCodeId || null,
           projectId: f.projectId || null,
           workCategory: f.workCategory.trim() || null,
         });
@@ -770,16 +689,6 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       </td>
       <td className="px-3 py-1.5">
         <InlineCombobox
-          value={accountCodeId}
-          options={accountOptions}
-          onChange={(id) => setAccountCodeId(id || '')}
-          placeholder="검색…"
-          emptyLabel="(미분류)"
-          inputClassName={inputCls}
-        />
-      </td>
-      <td className="px-3 py-1.5">
-        <InlineCombobox
           value={projectId}
           options={projectOptions}
           onChange={(id) => setProjectId(id || '')}
@@ -802,7 +711,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           onClick={applyClassify}
           disabled={!description.trim() || classifying}
           className="text-[10px] px-1.5 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-100 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="자동분류 룰 적용 — 클릭 시 계정과목·공종·현장 채움"
+          title="자동분류 룰 적용 — 클릭 시 공종·현장 채움"
         >{classifying ? '…' : '🏷️'}</button>
       </td>
     </tr>
@@ -840,7 +749,7 @@ function GroupedView({ expenses, groupBy }) {
               {g.items.map((e) => (
                 <tr key={e.id} className="border-b last:border-b-0">
                   <td className="py-1 w-24 text-gray-500 tabular-nums">{String(e.date).slice(0, 10)}</td>
-                  <td className="py-1 w-32"><span className={`px-1.5 py-0.5 rounded ${accountColor(e.accountCode?.groupName)}`}>{e.accountCode?.code || '미분류'}</span></td>
+                  <td className="py-1 w-32 text-xs text-gray-500">{e.workCategory || ''}</td>
                   <td className="py-1 text-gray-700">{e.description || e.vendor || ''}</td>
                   <td className="py-1 text-right tabular-nums w-28">{formatWon(e.amount)}</td>
                 </tr>
@@ -972,14 +881,13 @@ function ContractAmountCell({ project, onSaved }) {
 // ============================================
 // 거래 추가/편집 모달
 // ============================================
-function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
+function ExpenseModal({ expense, projects, onClose, onSaved }) {
   const isNew = !expense;
   const [form, setForm] = useState(() => ({
     projectId: expense?.projectId || '',
     type: expense?.type || 'EXPENSE',
     date: expense?.date ? String(expense.date).slice(0, 10) : new Date().toISOString().slice(0, 10),
     amount: expense?.amount != null ? String(expense.amount) : '',
-    accountCodeId: expense?.accountCodeId || '',
     workCategory: expense?.workCategory || '',
     vendor: expense?.vendor || '',
     vendorId: expense?.vendorEntity?.id || expense?.vendorId || null,
@@ -989,8 +897,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     purchaseOrderId: expense?.purchaseOrderId || null,
   }));
   const [busy, setBusy] = useState(false);
-  const [classifyHint, setClassifyHint] = useState(null); // 자동분류 룰 매칭 결과
-  const [poCandidates, setPoCandidates] = useState(null);  // 발주 매칭 후보
+  const [poCandidates, setPoCandidates] = useState(null);
   const [searchingCandidates, setSearchingCandidates] = useState(false);
   function set(k, v) { setForm((p) => ({ ...p, [k]: v })); }
 
@@ -998,28 +905,8 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
     [projects]
   );
-  const accountOptions = useMemo(
-    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
-    [accountCodes]
-  );
 
-  // 자동분류 룰 미리보기 — vendor 또는 description 변경 시 키워드 매칭 호출 (debounce)
-  useEffect(() => {
-    const text = [form.vendor, form.description].filter(Boolean).join(' ').trim();
-    if (!text || form.accountCodeId) { setClassifyHint(null); return; }
-    let alive = true;
-    const t = setTimeout(async () => {
-      try {
-        const { results } = await expenseRulesApi.classify([text]);
-        if (!alive) return;
-        const g = results?.[0];
-        setClassifyHint(g || null);
-      } catch (e) { /* noop */ }
-    }, 350);
-    return () => { alive = false; clearTimeout(t); };
-  }, [form.vendor, form.description, form.accountCodeId]);
-
-  // 발주 매칭 후보 — 거래처/금액/날짜 충분하면 (수동 호출)
+  // 발주 매칭 후보 — 사후 라벨링 케이스 (편집 시점)
   async function searchPoCandidates() {
     const amount = Number(form.amount);
     if (!amount || !form.date) { alert('금액·날짜 입력 후 검색해주세요'); return; }
@@ -1045,21 +932,6 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     setPoCandidates(null);
   }
 
-  function applyClassifyHint() {
-    if (!classifyHint) return;
-    setForm((p) => ({
-      ...p,
-      accountCodeId: classifyHint.accountCodeId || p.accountCodeId,
-      workCategory: classifyHint.workCategory || p.workCategory,
-    }));
-    // siteCode → projectId 매핑
-    if (classifyHint.siteCode) {
-      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
-      if (proj) setForm((p) => ({ ...p, projectId: proj.id }));
-    }
-    setClassifyHint(null);
-  }
-
   async function save() {
     if (!form.amount || isNaN(Number(form.amount))) { alert('금액을 입력해주세요'); return; }
     if (!form.date) { alert('날짜를 입력해주세요'); return; }
@@ -1070,7 +942,6 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
         type: form.type,
         date: form.date,
         amount: Number(form.amount),
-        accountCodeId: form.accountCodeId || null,
         workCategory: form.workCategory.trim() || null,
         vendor: form.vendor.trim() || null,
         vendorId: form.vendorId || null,
@@ -1116,27 +987,6 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
               emptyLabel="(현장 미지정 — 본사/대표)"
               inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
             />
-          </Field>
-          <Field label="계정과목">
-            <div className="flex gap-2 items-start">
-              <div className="flex-1">
-                <InlineCombobox
-                  value={form.accountCodeId}
-                  options={accountOptions}
-                  onChange={(id) => set('accountCodeId', id || '')}
-                  placeholder="계정과목 검색…"
-                  emptyLabel="(미분류)"
-                  inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={applyClassifyHint}
-                disabled={!classifyHint}
-                title={classifyHint ? `룰 매칭: '${classifyHint.keyword}'` : '거래처/내역 입력 후 룰 매칭 시 활성화'}
-                className="text-xs px-3 py-2 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-              >🏷️ 자동분류 적용</button>
-            </div>
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="공종 (선택)">
@@ -1247,7 +1097,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
 // ============================================
 // CSV 가져오기 (자동분류 적용)
 // ============================================
-function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
+function ImportModal({ rows, projects, onClose, onSaved }) {
   const header = rows[0].map((h) => h.trim());
   const dataRows = rows.slice(1);
 
@@ -1270,7 +1120,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
   });
 
   const [perRow, setPerRow] = useState(() =>
-    dataRows.map(() => ({ projectId: '', accountCodeId: '', workCategory: '', memo: '', type: 'EXPENSE', skip: false, candidates: null }))
+    dataRows.map(() => ({ projectId: '', workCategory: '', memo: '', type: 'EXPENSE', skip: false, candidates: null }))
   );
   const [classifying, setClassifying] = useState(false);
   const [inferringIdx, setInferringIdx] = useState(null);
@@ -1379,7 +1229,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
         return {
           ...r,
           projectId: r.projectId || siteToProject[g.siteCode] || '',
-          accountCodeId: r.accountCodeId || g.accountCodeId || '',
           workCategory: r.workCategory || g.workCategory || '',
         };
       }));
@@ -1392,9 +1241,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
 
   function setRow(i, k, v) {
     setPerRow((arr) => arr.map((r, idx) => idx === i ? { ...r, [k]: v } : r));
-  }
-  function bulkSetAcct(id) {
-    setPerRow((arr) => arr.map((r) => r.skip ? r : { ...r, accountCodeId: id }));
   }
   function bulkSetProject(pid) {
     setPerRow((arr) => arr.map((r) => r.skip ? r : { ...r, projectId: pid }));
@@ -1471,7 +1317,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
         date,
         amount,
         vendor: vendorText,
-        accountCodeId: perRow[i].accountCodeId || null,
         workCategory: perRow[i].workCategory || null,
         description: getCell(r, mapping.description) || null,
         memo: perRow[i].memo || null,
@@ -1574,10 +1419,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
             <option value="">(현장 미지정)</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <select onChange={(e) => bulkSetAcct(e.target.value)} className="text-xs border rounded px-2 py-1 bg-white" defaultValue="">
-            <option value="" disabled>모든 행 → 계정과목</option>
-            {accountCodes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
-          </select>
         </div>
 
         <div className="flex-1 overflow-auto">
@@ -1597,7 +1438,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                 <th className="text-left px-2 py-1.5">내역</th>
                 <th className="px-2 py-1.5 w-32">메모</th>
                 <th className="px-2 py-1.5 w-44">프로젝트</th>
-                <th className="px-2 py-1.5 w-44">계정과목</th>
                 <th className="px-2 py-1.5 w-24">공종</th>
                 <th className="px-2 py-1.5 w-20">발주 매칭</th>
               </tr>
@@ -1659,19 +1499,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                       )}
                     </td>
                     <td className="px-2 py-1">
-                      {skipped ? (
-                        <span className="text-xs text-gray-400">{accountCodes.find((c) => c.id === perRow[i].accountCodeId)?.code || '(미분류)'}</span>
-                      ) : (
-                        <InlineCombobox
-                          value={perRow[i].accountCodeId}
-                          options={accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName }))}
-                          onChange={(id) => setRow(i, 'accountCodeId', id || '')}
-                          placeholder="검색…"
-                          emptyLabel="(미분류)"
-                        />
-                      )}
-                    </td>
-                    <td className="px-2 py-1">
                       <input value={perRow[i].workCategory} onChange={(e) => setRow(i, 'workCategory', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5" />
                     </td>
                     <td className="px-2 py-1 text-center">
@@ -1691,7 +1518,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                   </tr>
                   {cands && cands.length > 0 && (
                     <tr key={`${i}-cands`} className="bg-violet-50/40">
-                      <td colSpan={9} className="px-3 py-2">
+                      <td colSpan={8} className="px-3 py-2">
                         <div className="text-xs text-violet-800 mb-1">
                           출구정리 추론엔진 — 발주 매칭 후보 {cands.length}건 (1-클릭 컨펌)
                         </div>
@@ -1739,7 +1566,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                   )}
                   {cands && cands.length === 0 && (
                     <tr className="bg-gray-50">
-                      <td colSpan={9} className="px-3 py-1.5 text-xs text-gray-500">
+                      <td colSpan={8} className="px-3 py-1.5 text-xs text-gray-500">
                         매칭되는 발주 후보 없음 (점수 30점 이상 없음)
                         <button
                           type="button"
@@ -1800,7 +1627,7 @@ function ModalStyles() {
 // 자동분류 룰 관리 — 출구정리 추론엔진 워크플로 첫 단계
 // (은행 CSV import → 자동분류기 통과 → 출구정리 추론엔진 후보 제시)
 // ============================================================
-function RulesManager({ accountCodes }) {
+function RulesManager() {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // rule 객체 또는 null
@@ -1836,7 +1663,7 @@ function RulesManager({ accountCodes }) {
   return (
     <div className="p-4 sm:p-5">
       <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-4">
-        💡 <b>자동분류 룰</b>은 통장 CSV 가져오기 시 거래 텍스트(거래처·내역)에 키워드가 포함되면 자동으로 계정과목·현장·공종을 라벨링합니다. 우선순위가 높을수록 먼저 매칭되며, 같은 우선순위에선 긴 키워드부터.
+        💡 <b>자동분류 룰</b>은 통장 CSV 가져오기·수기 입력 시 거래 텍스트(거래처·내역)에 키워드가 포함되면 자동으로 <b>현장·공종</b>을 라벨링합니다. 우선순위가 높을수록 먼저 매칭되며, 같은 우선순위에선 긴 키워드부터.
         <br />반복 지출(공과금·임대료·통신비 등)을 등록해두면 매번 손으로 분류하지 않아도 됩니다.
       </div>
 
@@ -1855,7 +1682,6 @@ function RulesManager({ accountCodes }) {
           <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
             <tr>
               <th className="px-3 py-2 text-left">키워드</th>
-              <th className="px-3 py-2 text-left">계정과목</th>
               <th className="px-3 py-2 text-left">현장약칭</th>
               <th className="px-3 py-2 text-left">공종</th>
               <th className="px-3 py-2 text-right">우선순위</th>
@@ -1865,22 +1691,15 @@ function RulesManager({ accountCodes }) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">로딩...</td></tr>
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-400">로딩...</td></tr>
             ) : rules.length === 0 ? (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-400">
                 등록된 룰이 없습니다. 위 "+ 룰 추가"로 첫 룰을 등록해보세요.
               </td></tr>
             ) : (
               rules.map((r) => (
                 <tr key={r.id} className={`border-t hover:bg-gray-50 ${!r.active ? 'opacity-50' : ''}`}>
                   <td className="px-3 py-2 font-medium text-gray-800">{r.keyword}</td>
-                  <td className="px-3 py-2">
-                    {r.accountCode ? (
-                      <span className={`text-xs px-2 py-0.5 rounded ${accountColor(r.accountCode.groupName)}`}>
-                        {r.accountCode.code}
-                      </span>
-                    ) : <span className="text-gray-300">-</span>}
-                  </td>
                   <td className="px-3 py-2 text-gray-600">{r.siteCode || <span className="text-gray-300">-</span>}</td>
                   <td className="px-3 py-2 text-gray-600">{r.workCategory || <span className="text-gray-300">-</span>}</td>
                   <td className="px-3 py-2 text-right text-gray-700 tabular-nums">{r.priority}</td>
@@ -1917,7 +1736,6 @@ function RulesManager({ accountCodes }) {
       {(adding || editing) && (
         <RuleModal
           rule={editing}
-          accountCodes={accountCodes}
           onClose={() => { setAdding(false); setEditing(null); }}
           onSaved={() => { setAdding(false); setEditing(null); load(); }}
         />
@@ -1926,11 +1744,10 @@ function RulesManager({ accountCodes }) {
   );
 }
 
-function RuleModal({ rule, accountCodes, onClose, onSaved }) {
+function RuleModal({ rule, onClose, onSaved }) {
   const isEdit = !!rule;
   const [form, setForm] = useState({
     keyword: rule?.keyword || '',
-    accountCodeId: rule?.accountCodeId || '',
     siteCode: rule?.siteCode || '',
     workCategory: rule?.workCategory || '',
     priority: rule?.priority ?? 0,
@@ -1942,7 +1759,6 @@ function RuleModal({ rule, accountCodes, onClose, onSaved }) {
     if (!form.keyword.trim()) { alert('키워드는 필수입니다'); return; }
     const payload = {
       keyword: form.keyword.trim(),
-      accountCodeId: form.accountCodeId || null,
       siteCode: form.siteCode.trim() || null,
       workCategory: form.workCategory.trim() || null,
       priority: Number(form.priority) || 0,
@@ -1977,18 +1793,6 @@ function RuleModal({ rule, accountCodes, onClose, onSaved }) {
             <div className="text-xs text-gray-500 mt-1">거래처 또는 내역에 이 키워드가 포함되면 매칭됩니다 (대소문자 무시)</div>
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="계정과목">
-              <select
-                value={form.accountCodeId}
-                onChange={(e) => setForm({ ...form, accountCodeId: e.target.value })}
-                className="input"
-              >
-                <option value="">(미지정)</option>
-                {accountCodes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.code}{c.groupName ? ` (${c.groupName})` : ''}</option>
-                ))}
-              </select>
-            </Field>
             <Field label="우선순위">
               <input
                 type="number"
@@ -1999,8 +1803,6 @@ function RuleModal({ rule, accountCodes, onClose, onSaved }) {
               />
               <div className="text-xs text-gray-500 mt-1">높을수록 먼저 매칭. 디폴트 0</div>
             </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
             <Field label="현장약칭 (선택)">
               <input
                 value={form.siteCode}
