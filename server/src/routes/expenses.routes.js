@@ -323,6 +323,12 @@ router.post('/', async (req, res, next) => {
         rawText: data.rawText?.trim() || null,
         createdById: req.user.id,
       },
+      include: {
+        project: { select: { id: true, name: true, siteCode: true } },
+        accountCode: { select: { id: true, code: true, groupName: true } },
+        vendorEntity: { select: { id: true, name: true, category: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
     });
     res.status(201).json({ expense });
   } catch (e) {
@@ -460,7 +466,16 @@ router.patch('/:id', async (req, res, next) => {
     if (data.receiptUrl !== undefined) updateData.receiptUrl = data.receiptUrl?.trim() || null;
     if (data.purchaseOrderId !== undefined) updateData.purchaseOrderId = data.purchaseOrderId || null;
 
-    const expense = await prisma.expense.update({ where: { id: req.params.id }, data: updateData });
+    const expense = await prisma.expense.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: {
+        project: { select: { id: true, name: true, siteCode: true } },
+        accountCode: { select: { id: true, code: true, groupName: true } },
+        vendorEntity: { select: { id: true, name: true, category: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+    });
     res.json({ expense });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
