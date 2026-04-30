@@ -574,7 +574,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
   );
 });
 
-// 신규 거래 입력 행 — 인라인 (모달 X)
+// 신규 거래 입력 행 — 인라인 (모달 X). 외부 클릭 시 자동 저장 (필수 필드 있으면).
 function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [type, setType] = useState('EXPENSE');
@@ -585,9 +585,10 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
   const [projectId, setProjectId] = useState('');
   const [workCategory, setWorkCategory] = useState('');
   const [classifyHint, setClassifyHint] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const rowRef = useRef(null);
+  const busyRef = useRef(false);
 
-  // 자동분류 룰 미리보기 — description 또는 vendor 입력 시 디바운스로 룰 매칭
+  // 자동분류 룰 미리보기 — description 입력 시 디바운스로 룰 매칭. 룰 매칭되면 자동 채움.
   useEffect(() => {
     if (!description.trim()) { setClassifyHint(null); return; }
     let alive = true;
@@ -595,66 +596,81 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
       try {
         const { results } = await expenseRulesApi.classify([description]);
         if (!alive) return;
-        setClassifyHint(results?.[0] || null);
+        const g = results?.[0];
+        setClassifyHint(g || null);
+        // 자동 적용 — 사용자가 빈 필드만 채움 (이미 직접 입력한 값은 보존)
+        if (g) {
+          if (g.accountCodeId) setAccountCodeId((cur) => cur || g.accountCodeId);
+          if (g.workCategory) setWorkCategory((cur) => cur || g.workCategory);
+          if (g.siteCode) {
+            const proj = projects.find((p) => p.siteCode === g.siteCode);
+            if (proj) setProjectId((cur) => cur || proj.id);
+          }
+        }
       } catch (e) { /* noop */ }
-    }, 300);
+    }, 350);
     return () => { alive = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [description]);
 
-  function applyClassify() {
-    if (!classifyHint) return;
-    if (classifyHint.accountCodeId) setAccountCodeId(classifyHint.accountCodeId);
-    if (classifyHint.workCategory) setWorkCategory(classifyHint.workCategory);
-    if (classifyHint.siteCode) {
-      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
-      if (proj) setProjectId(proj.id);
+  // 행 밖 클릭 시 자동 저장 (필수 필드 충족 시) 또는 조용히 닫기.
+  useEffect(() => {
+    function onDoc(e) {
+      if (!rowRef.current) return;
+      if (rowRef.current.contains(e.target)) return;
+      // 콤보박스 dropdown 등 portal 외부 요소에 클릭한 경우도 — 닫는 게 정상
+      if (busyRef.current) return;
+      const num = Number(String(amount).replace(/[^\d.-]/g, ''));
+      const hasRequired = Number.isFinite(num) && num > 0 && date && description.trim();
+      if (hasRequired) {
+        busyRef.current = true;
+        onSave({
+          date,
+          type,
+          amount: num,
+          description: description.trim(),
+          vendor: description.trim(),
+          memo: memoVal.trim() || null,
+          accountCodeId: accountCodeId || null,
+          projectId: projectId || null,
+          workCategory: workCategory.trim() || null,
+        }).catch((err) => {
+          alert('저장 실패: ' + (err.response?.data?.error || err.message));
+          busyRef.current = false;
+        });
+      } else {
+        // 필수 미충족 — 빈 입력이면 조용히 닫음, 일부 입력 상태면 그대로 유지
+        const anyInput = description.trim() || amount || memoVal.trim() || accountCodeId || projectId;
+        if (!anyInput) onCancel();
+      }
     }
-  }
-
-  async function save() {
-    if (!amount || isNaN(Number(amount))) { alert('금액을 입력해주세요'); return; }
-    if (!date) { alert('날짜를 입력해주세요'); return; }
-    if (!description.trim()) { alert('내역(거래처)을 입력해주세요'); return; }
-    setBusy(true);
-    try {
-      await onSave({
-        date,
-        type,
-        amount: Number(amount),
-        description: description.trim(),
-        // 거래처 텍스트도 description으로 (회계서류·통장 패턴 — 별도 vendor 컬럼 없음)
-        vendor: description.trim(),
-        memo: memoVal.trim() || null,
-        accountCodeId: accountCodeId || null,
-        projectId: projectId || null,
-        workCategory: workCategory.trim() || null,
-      });
-    } catch (e) {
-      alert('저장 실패: ' + (e.response?.data?.error || e.message));
-    } finally { setBusy(false); }
-  }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [date, type, description, memoVal, amount, accountCodeId, projectId, workCategory, onSave, onCancel]);
 
   function handleKey(e) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
-    else if (e.key === 'Escape') onCancel();
+    if (e.key === 'Escape') onCancel();
   }
 
+  // ListRow 인풋 스타일과 매칭 — 평소엔 transparent border, hover/focus 시 회색/네이비
+  const inputCls = 'w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent';
+
   return (
-    <tr className="bg-amber-50/60 border-b-2 border-amber-300" onKeyDown={handleKey}>
+    <tr ref={rowRef} className="bg-amber-50/60" onKeyDown={handleKey}>
       <td className="px-3 py-1.5 text-center text-xs text-amber-700 font-medium">+</td>
       <td className="px-3 py-1.5">
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          className={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          className={`${inputCls} bg-transparent`}
         >
           {EXPENSE_TYPE_KEYS.map((k) => <option key={k} value={k}>{EXPENSE_TYPE_META[k].label}</option>)}
         </select>
@@ -663,8 +679,8 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="거래처명·내역 (예: OO상사 / 이체이체)"
-          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          placeholder="거래처명·내역"
+          className={inputCls}
           autoFocus
         />
       </td>
@@ -673,7 +689,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           value={memoVal}
           onChange={(e) => setMemo(e.target.value)}
           placeholder="자재·세부"
-          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          className={inputCls}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -682,7 +698,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
-          className="w-full text-xs text-right tabular-nums border border-gray-300 rounded px-1 py-0.5 bg-white"
+          className={`${inputCls} text-right tabular-nums font-medium`}
         />
       </td>
       <td className="px-3 py-1.5">
@@ -692,7 +708,6 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           onChange={(id) => setAccountCodeId(id || '')}
           placeholder="검색…"
           emptyLabel="(미분류)"
-          inputClassName="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
         />
       </td>
       <td className="px-3 py-1.5">
@@ -702,7 +717,6 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           onChange={(id) => setProjectId(id || '')}
           placeholder="검색…"
           emptyLabel="(미지정)"
-          inputClassName="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
         />
       </td>
       <td className="px-3 py-1.5">
@@ -710,29 +724,16 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
           value={workCategory}
           onChange={(e) => setWorkCategory(e.target.value)}
           placeholder="—"
-          className="w-full text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+          className={inputCls}
         />
       </td>
-      <td className="px-3 py-1.5 text-right space-x-1 whitespace-nowrap">
+      <td className="px-3 py-1.5 text-center">
         {classifyHint && (
-          <button
-            type="button"
-            onClick={applyClassify}
-            className="text-xs px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded hover:bg-emerald-100"
-            title={`자동분류 룰: '${classifyHint.keyword}'`}
-          >🏷️ 자동분류</button>
+          <span
+            className="text-[10px] text-emerald-700"
+            title={`자동분류 룰 '${classifyHint.keyword}' 매칭 — 빈 필드 자동 채움`}
+          >🏷️</span>
         )}
-        <button
-          onClick={save}
-          disabled={busy}
-          className="text-xs px-2 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
-          title="저장 (Ctrl+Enter)"
-        >{busy ? '...' : '💾'}</button>
-        <button
-          onClick={onCancel}
-          className="text-xs px-1.5 py-1 text-gray-500 hover:text-rose-500"
-          title="취소 (Esc)"
-        >✕</button>
       </td>
     </tr>
   );
