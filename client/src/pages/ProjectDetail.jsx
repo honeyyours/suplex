@@ -7,6 +7,7 @@ import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectActionsMenu from '../components/ProjectActionsMenu';
 import ExtractModal from '../components/ExtractModal';
 import ChangesModal from '../components/ChangesModal';
+import PhotoArchiveModal from '../components/PhotoArchiveModal';
 import { backupApi, downloadJson } from '../api/backup';
 import { simpleQuotesApi } from '../api/simpleQuotes';
 
@@ -20,6 +21,7 @@ export default function ProjectDetail() {
   const [editing, setEditing] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
+  const [showPhotoArchive, setShowPhotoArchive] = useState(false);
   const [activeQuote, setActiveQuote] = useState(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
@@ -99,6 +101,8 @@ export default function ProjectDetail() {
     { divider: true },
     { icon: '💾', label: 'JSON 내보내기', onClick: handleExport },
     { icon: '📥', label: 'JSON 복원', onClick: triggerImport },
+    { divider: true },
+    { icon: '📦', label: '사진 외부 보관', onClick: () => setShowPhotoArchive(true) },
   ];
 
   const headerActions = <ProjectActionsMenu items={menuItems} />;
@@ -142,6 +146,13 @@ export default function ProjectDetail() {
       {/* 일정 탭 모달 — 햄버거 메뉴에서 트리거 */}
       {showExtract && <ExtractModal projectId={id} project={project} onClose={() => setShowExtract(false)} />}
       {showChanges && <ChangesModal projectId={id} onClose={() => setShowChanges(false)} />}
+      {showPhotoArchive && (
+        <PhotoArchiveModal
+          project={project}
+          onClose={() => setShowPhotoArchive(false)}
+          onArchived={() => reload()}
+        />
+      )}
 
       {/* 일정 탭 백업 import용 hidden input */}
       <input

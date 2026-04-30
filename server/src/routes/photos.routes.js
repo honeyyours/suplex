@@ -61,7 +61,7 @@ projectRouter.post('/', upload.array('photos', 10), async (req, res, next) => {
     const folder = `suplex/${projectId}/${source.toLowerCase()}`;
     const uploaded = [];
     for (const f of files) {
-      const { url, thumbnailUrl } = await uploadBuffer(f.buffer, { folder });
+      const { url, thumbnailUrl, publicId } = await uploadBuffer(f.buffer, { folder });
       const photo = await prisma.projectPhoto.create({
         data: {
           projectId,
@@ -69,6 +69,7 @@ projectRouter.post('/', upload.array('photos', 10), async (req, res, next) => {
           sourceId,
           url,
           thumbnailUrl,
+          publicId,
           caption: caption || null,
           uploadedById: req.user.id,
         },
