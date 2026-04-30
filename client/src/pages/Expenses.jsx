@@ -66,8 +66,8 @@ export default function Expenses() {
     queryFn: () => expensesApi.summary(),
   });
   const expenses = listData?.expenses || [];
-  // 표시 행 제한 — fiber tree 부담 줄여 입력 lag 제거 (30,000 hooks → 3,400 hooks)
-  const PAGE_SIZE = 200;
+  // 표시 행 제한 — fiber tree 부담 줄여 입력 lag 제거. 그 이상은 필터·검색으로 좁힘.
+  const PAGE_SIZE = 50;
   const displayedExpenses = useMemo(() => expenses.slice(0, PAGE_SIZE), [expenses]);
   // 입력 우선순위 높이고 리스트 업데이트 deferred — 입력 중 cascade re-render 방지
   const deferredExpenses = useDeferredValue(displayedExpenses);
