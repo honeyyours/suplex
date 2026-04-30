@@ -509,7 +509,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
   const t = EXPENSE_TYPE_META[e.type] || EXPENSE_TYPE_META.EXPENSE;
   const rowClass = selected ? 'bg-navy-50' : 'hover:bg-gray-50';
   return (
-    <tr className={rowClass}>
+    <tr className={`${rowClass} h-9 align-middle`}>
       <td className="px-3 py-1.5 text-center">
         <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       </td>
@@ -656,7 +656,7 @@ function NewRow({ projects, accountOptions, projectOptions, onSave, onCancel }) 
   const inputCls = 'w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent';
 
   return (
-    <tr ref={rowRef} className="bg-amber-50/60" onKeyDown={handleKey}>
+    <tr ref={rowRef} className="bg-amber-50/60 h-9 align-middle" onKeyDown={handleKey}>
       <td className="px-3 py-1.5 text-center text-xs text-amber-700 font-medium">+</td>
       <td className="px-3 py-1.5">
         <input
