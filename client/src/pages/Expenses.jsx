@@ -1,4 +1,4 @@
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -66,6 +66,11 @@ export default function Expenses() {
     queryFn: () => expensesApi.summary(),
   });
   const expenses = listData?.expenses || [];
+  // 표시 행 제한 — fiber tree 부담 줄여 입력 lag 제거 (30,000 hooks → 3,400 hooks)
+  const PAGE_SIZE = 200;
+  const displayedExpenses = useMemo(() => expenses.slice(0, PAGE_SIZE), [expenses]);
+  // 입력 우선순위 높이고 리스트 업데이트 deferred — 입력 중 cascade re-render 방지
+  const deferredExpenses = useDeferredValue(displayedExpenses);
   const loading = listLoading || summaryLoading;
 
   const { data: projectsData } = useQuery({
@@ -277,7 +282,9 @@ export default function Expenses() {
           {loading && expenses.length === 0 && view !== VIEW_RULES && <div className="p-6 text-sm text-gray-400">불러오는 중...</div>}
           {view === VIEW_LIST && (!loading || expenses.length > 0) && (
             <ListView
-              expenses={expenses}
+              expenses={deferredExpenses}
+              totalCount={expenses.length}
+              pageSize={PAGE_SIZE}
               total={totalFiltered}
               projects={projects}
               accountCodes={accountCodes}
@@ -395,7 +402,7 @@ function FilterBar({ projects, accountCodes, accountGroups, filters, onChange })
   );
 }
 
-function ListView({ expenses, total, projects, accountCodes, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
+const ListView = memo(function ListView({ expenses, totalCount, pageSize, total, projects, accountCodes, adding, onAddSave, onAddCancel, onEdit, onPatch, onRemove, onBulkRemove }) {
   const [selected, setSelected] = useState(() => new Set());
   // ListView 안에서 메모이즈 — NewRow와 ListRow가 같은 ref 공유
   const accountOptions = useMemo(
@@ -500,9 +507,14 @@ function ListView({ expenses, total, projects, accountCodes, adding, onAddSave, 
           </tfoot>
         </table>
       </div>
+      {totalCount > pageSize && (
+        <div className="px-5 py-2 border-t bg-gray-50 text-xs text-gray-500 text-center">
+          전체 <b>{totalCount.toLocaleString('ko-KR')}건</b> 중 최근 <b>{pageSize}건</b> 표시 — 더 보려면 위 필터(프로젝트·계정과목·날짜·검색) 사용
+        </div>
+      )}
     </div>
   );
-}
+});
 
 // 거래 1행 — 메모·금액·계정과목·프로젝트·공종 인라인 편집. 변경 시 자동 PATCH.
 // memo로 감싸서 다른 행 변경에 의한 불필요한 re-render 차단 (입력 중 깜빡임 방지).
