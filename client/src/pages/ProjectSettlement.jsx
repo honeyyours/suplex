@@ -28,15 +28,21 @@ export default function ProjectSettlement() {
     return m;
   }, [notesData]);
 
-  // 견적 (활성/최신 ACCEPTED 우선)
+  // 견적 — 1단계: list (lines 미포함, count만), 2단계: 활성 견적 id로 get (lines 포함)
   const { data: quotesData } = useQuery({
     queryKey: ['simpleQuotes', 'list', projectId],
     queryFn: () => simpleQuotesApi.list(projectId),
   });
-  const primaryQuote = useMemo(() => {
+  const primaryQuoteHeader = useMemo(() => {
     const list = quotesData?.quotes || [];
     return list.find((q) => q.status === 'ACCEPTED') || list[0] || null;
   }, [quotesData]);
+  const { data: quoteFull } = useQuery({
+    queryKey: ['simpleQuotes', 'get', projectId, primaryQuoteHeader?.id],
+    queryFn: () => simpleQuotesApi.get(projectId, primaryQuoteHeader.id),
+    enabled: !!primaryQuoteHeader?.id,
+  });
+  const primaryQuote = quoteFull?.quote || null;
 
   // 견적 라인을 공정별 합계로 집계 (간편 견적 lines)
   const quoteByPhase = useMemo(() => {
