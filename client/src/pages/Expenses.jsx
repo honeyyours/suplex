@@ -320,11 +320,12 @@ function ListView({ expenses, total, onEdit, onRemove }) {
           <tr>
             <th className="text-left px-3 py-2 w-24">날짜</th>
             <th className="text-left px-3 py-2 w-16">종류</th>
-            <th className="text-left px-3 py-2 w-36">프로젝트</th>
-            <th className="text-left px-3 py-2 w-44">계정과목</th>
-            <th className="text-left px-3 py-2 w-28">공종</th>
             <th className="text-left px-3 py-2">내역</th>
+            <th className="text-left px-3 py-2 w-40">메모</th>
             <th className="text-right px-3 py-2 w-32">금액</th>
+            <th className="text-left px-3 py-2 w-44">계정과목</th>
+            <th className="text-left px-3 py-2 w-36">프로젝트</th>
+            <th className="text-left px-3 py-2 w-28">공종</th>
             <th className="px-3 py-2 w-12"></th>
           </tr>
         </thead>
@@ -336,22 +337,25 @@ function ListView({ expenses, total, onEdit, onRemove }) {
                 <td className="px-3 py-1.5 tabular-nums text-gray-600 text-xs">{String(e.date).slice(0, 10)}</td>
                 <td className="px-3 py-1.5"><span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded border ${t.color}`}>{t.label}</span></td>
                 <td className="px-3 py-1.5">
-                  {e.project ? (
-                    <Link to={`/projects/${e.project.id}/expenses`} className="text-navy-700 hover:underline text-xs">{e.project.name}</Link>
-                  ) : <span className="text-gray-400 text-xs">미지정</span>}
+                  <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs">{e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}</button>
+                </td>
+                <td className="px-3 py-1.5 text-xs text-gray-600 truncate max-w-[10rem]" title={e.memo || ''}>
+                  {e.memo || <span className="text-gray-300">—</span>}
+                </td>
+                <td className={`px-3 py-1.5 text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}>
+                  {e.type === 'INCOME' ? '+' : e.type === 'TRANSFER' ? '↔' : ''}{formatWon(e.amount)}
                 </td>
                 <td className="px-3 py-1.5 text-xs">
                   {e.accountCode ? (
                     <span className={`px-1.5 py-0.5 rounded ${accountColor(e.accountCode.groupName)}`}>{e.accountCode.code}</span>
                   ) : <span className="text-gray-300">—</span>}
                 </td>
-                <td className="px-3 py-1.5 text-xs text-gray-600">{e.workCategory || ''}</td>
                 <td className="px-3 py-1.5">
-                  <button onClick={() => onEdit(e)} className="text-navy-800 hover:underline text-left text-xs">{e.description || e.vendor || <span className="text-gray-400">(설명 없음)</span>}</button>
+                  {e.project ? (
+                    <Link to={`/projects/${e.project.id}/expenses`} className="text-navy-700 hover:underline text-xs">{e.project.name}</Link>
+                  ) : <span className="text-gray-400 text-xs">미지정</span>}
                 </td>
-                <td className={`px-3 py-1.5 text-right tabular-nums font-medium ${e.type === 'INCOME' ? 'text-emerald-700' : ''}`}>
-                  {e.type === 'INCOME' ? '+' : e.type === 'TRANSFER' ? '↔' : ''}{formatWon(e.amount)}
-                </td>
+                <td className="px-3 py-1.5 text-xs text-gray-600">{e.workCategory || ''}</td>
                 <td className="px-3 py-1.5 text-center">
                   <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
                 </td>
@@ -361,9 +365,9 @@ function ListView({ expenses, total, onEdit, onRemove }) {
         </tbody>
         <tfoot className="bg-gray-50 font-semibold text-navy-800">
           <tr>
-            <td colSpan={6} className="px-3 py-2.5">필터 합계 ({expenses.length}건)</td>
+            <td colSpan={4} className="px-3 py-2.5">필터 합계 ({expenses.length}건)</td>
             <td className="px-3 py-2.5 text-right tabular-nums">{formatWon(total)}</td>
-            <td />
+            <td colSpan={4} />
           </tr>
         </tfoot>
       </table>
@@ -546,6 +550,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     vendor: expense?.vendor || '',
     vendorId: expense?.vendorEntity?.id || expense?.vendorId || null,
     description: expense?.description || '',
+    memo: expense?.memo || '',
     paymentMethod: expense?.paymentMethod || '',
   }));
   const [busy, setBusy] = useState(false);
@@ -566,6 +571,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
         vendor: form.vendor.trim() || null,
         vendorId: form.vendorId || null,
         description: form.description.trim() || null,
+        memo: form.memo.trim() || null,
         paymentMethod: form.paymentMethod || null,
       };
       if (isNew) await expensesApi.create(payload);
@@ -631,6 +637,9 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
           </Field>
           <Field label="내역(적요)">
             <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} placeholder="장판 자재 입금" className="input resize-y" />
+          </Field>
+          <Field label="메모 (자재 종류·기타 보강)">
+            <input value={form.memo} onChange={(e) => set('memo', e.target.value)} placeholder="예: 데코타일, 도배지" className="input" />
           </Field>
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">

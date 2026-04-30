@@ -101,10 +101,38 @@ async function main() {
   console.log(`  ${vatUpdated}건 갱신 / ${vatUnchanged}건 이미 동일 / ${vatSkipped}건 프로젝트 매칭 실패`);
 
   // ============================================
-  // STEP 2: DB.비고 → Expense.description 보강
+  // STEP 2a: 기존 description에 박힌 (메모: ...) → memo 필드로 이동 + description 정리
+  // 이전 버전 스크립트가 description 끝에 " (메모: ...)" 붙인 케이스 정리.
   // ============================================
-  console.log('\n[2/3] 거래 메모 보강...');
-  const memoTag = '메모:';
+  console.log('\n[2a/3] 기존 description 안 (메모: ...) 추출 → memo 필드로 이동...');
+  const memoPattern = / \(메모: ([^)]+)\)$/;
+  const dirtied = await prisma.expense.findMany({
+    where: { companyId, description: { contains: '(메모: ' } },
+    select: { id: true, description: true, memo: true },
+  });
+  let extractedCount = 0;
+  for (const exp of dirtied) {
+    const m = exp.description && exp.description.match(memoPattern);
+    if (!m) continue;
+    const memoText = m[1].trim();
+    const cleanDesc = exp.description.replace(memoPattern, '').trim() || null;
+    // memo 이미 있으면 그대로 두고 description만 정리
+    const nextMemo = exp.memo || memoText;
+    if (!dryRun) {
+      await prisma.expense.update({
+        where: { id: exp.id },
+        data: { description: cleanDesc, memo: nextMemo },
+        select: { id: true },
+      });
+    }
+    extractedCount++;
+  }
+  console.log(`  ${extractedCount}건 추출 완료 (description 정리 + memo 필드로 이동)`);
+
+  // ============================================
+  // STEP 2b: DB.비고 → Expense.memo 보강
+  // ============================================
+  console.log('\n[2b/3] 거래 메모 보강...');
   let memoMatched = 0, memoUpdated = 0, memoMulti = 0, memoNoMatch = 0, memoAlready = 0;
 
   for (const row of dbRows) {
@@ -121,7 +149,7 @@ async function main() {
     // 매칭: 같은 회사 + 같은 날짜 + 같은 금액 + description 정확 일치
     const matches = await prisma.expense.findMany({
       where: { companyId, date, amount, description: content || undefined },
-      select: { id: true, description: true },
+      select: { id: true, description: true, memo: true },
     });
 
     if (matches.length === 0) {
@@ -137,22 +165,19 @@ async function main() {
     memoMatched++;
 
     const exp = matches[0];
-    // 이미 같은 메모 들어가 있으면 스킵 (idempotent)
-    if (exp.description && exp.description.includes(`${memoTag} ${memo}`)) {
+    // 이미 memo 들어가 있으면 스킵 (idempotent)
+    if (exp.memo === memo) {
       memoAlready++;
       continue;
     }
-    const nextDesc = exp.description
-      ? `${exp.description} (${memoTag} ${memo})`
-      : `(${memoTag} ${memo})`;
     if (!dryRun) {
       await prisma.expense.update({
         where: { id: exp.id },
-        data: { description: nextDesc },
+        data: { memo },
         select: { id: true },
       });
     }
-    if (dryRun) console.log(`  · ${date.toISOString().slice(0,10)} · ${content?.slice(0,15)}: "${exp.description?.slice(0, 30)}" → +${memoTag} ${memo}`);
+    if (dryRun) console.log(`  · ${date.toISOString().slice(0,10)} · ${content?.slice(0,15)}: memo "${exp.memo || ''}" → "${memo}"`);
     memoUpdated++;
   }
   console.log(`  ${memoUpdated}건 보강 / ${memoAlready}건 이미 반영 / ${memoMatched}건 매칭 / ${memoMulti}건 다중매칭 스킵 / ${memoNoMatch}건 매칭실패`);

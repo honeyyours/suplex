@@ -1085,7 +1085,8 @@ model Expense {
   vendorId      String? // 협력업체 마스터 연결 (선택)
   accountCodeId String? // 계정과목 (회사 마스터에서 선택)
   workCategory  String? // 공종 (자유 string, 예: "전기/조명공사")
-  description   String? // 내역(적요)
+  description   String? // 내역(적요) — 통장 텍스트 또는 사용자 직접 입력
+  memo          String? // 자유 메모 (자재 종류 등 사장 보강 정보)
   paymentMethod PaymentMethod?
   receiptUrl    String? // 영수증 사진 URL
 

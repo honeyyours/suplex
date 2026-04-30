@@ -249,6 +249,7 @@ const createSchema = z.object({
   accountCodeId: z.string().optional().nullable(),
   workCategory: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  memo: z.string().optional().nullable(),
   paymentMethod: z.enum(PAYMENT_METHODS).optional().nullable(),
   receiptUrl: z.string().optional().nullable(),
   purchaseOrderId: z.string().optional().nullable(),
@@ -314,6 +315,7 @@ router.post('/', async (req, res, next) => {
         accountCodeId: accountCodeId || null,
         workCategory: workCategory?.trim() || null,
         description: data.description?.trim() || null,
+        memo: data.memo?.trim() || null,
         paymentMethod: data.paymentMethod || null,
         receiptUrl: data.receiptUrl?.trim() || null,
         purchaseOrderId: data.purchaseOrderId || null,
@@ -380,6 +382,7 @@ router.post('/bulk', async (req, res, next) => {
         || (it.vendorId && vendorMap.has(it.vendorId) ? vendorMap.get(it.vendorId) : null),
       workCategory: it.workCategory ? String(it.workCategory).trim() : null,
       description: it.description ? String(it.description).trim() : null,
+      memo: it.memo ? String(it.memo).trim() : null,
       paymentMethod: PAYMENT_METHODS.includes(it.paymentMethod) ? it.paymentMethod : null,
       importedFrom: it.importedFrom ? String(it.importedFrom).trim() : 'CSV',
       rawText: it.rawText ? String(it.rawText).trim() : null,
@@ -425,6 +428,7 @@ router.patch('/:id', async (req, res, next) => {
     if (data.accountCodeId !== undefined) updateData.accountCodeId = data.accountCodeId || null;
     if (data.workCategory !== undefined) updateData.workCategory = data.workCategory?.trim() || null;
     if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+    if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
     if (data.paymentMethod !== undefined) updateData.paymentMethod = data.paymentMethod || null;
     if (data.receiptUrl !== undefined) updateData.receiptUrl = data.receiptUrl?.trim() || null;
     if (data.purchaseOrderId !== undefined) updateData.purchaseOrderId = data.purchaseOrderId || null;
