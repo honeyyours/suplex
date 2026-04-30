@@ -389,8 +389,35 @@ router.post('/bulk', async (req, res, next) => {
       createdById: req.user.id,
     }));
 
-    const result = await prisma.expense.createMany({ data: rows });
-    res.status(201).json({ ok: true, created: result.count });
+    // 중복 감지 — 기존 거래와 같은 (date, amount, description, vendor) 지문(fingerprint) 비교
+    // 출구정리 정책상 통장이 진실. 같은 날짜·금액·내역·거래처 거래 둘 다 등록되면 안 됨 (덮어쓰기 X, 스킵).
+    let skippedDuplicates = 0;
+    let dedupedRows = rows;
+    if (rows.length > 0) {
+      const dates = rows.map((r) => r.date.getTime());
+      const minDate = new Date(Math.min(...dates));
+      const maxDate = new Date(Math.max(...dates));
+      const existing = await prisma.expense.findMany({
+        where: { companyId: req.user.companyId, date: { gte: minDate, lte: maxDate } },
+        select: { date: true, amount: true, description: true, vendor: true },
+      });
+      const fp = (r) => `${r.date.toISOString().slice(0, 10)}|${Number(r.amount)}|${(r.description || '').trim()}|${(r.vendor || '').trim()}`;
+      const existingSet = new Set(existing.map(fp));
+      dedupedRows = rows.filter((r) => {
+        if (existingSet.has(fp(r))) { skippedDuplicates++; return false; }
+        return true;
+      });
+    }
+
+    const result = dedupedRows.length > 0
+      ? await prisma.expense.createMany({ data: dedupedRows })
+      : { count: 0 };
+    res.status(201).json({
+      ok: true,
+      created: result.count,
+      skippedDuplicates,
+      total: rows.length,
+    });
   } catch (e) { next(e); }
 });
 

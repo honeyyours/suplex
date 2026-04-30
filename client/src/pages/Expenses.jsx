@@ -687,11 +687,43 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
   });
 
   const [perRow, setPerRow] = useState(() =>
-    dataRows.map(() => ({ projectId: '', accountCodeId: '', workCategory: '', type: 'EXPENSE', skip: false, candidates: null }))
+    dataRows.map(() => ({ projectId: '', accountCodeId: '', workCategory: '', memo: '', type: 'EXPENSE', skip: false, candidates: null }))
   );
   const [classifying, setClassifying] = useState(false);
   const [inferringIdx, setInferringIdx] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  // 날짜 범위 필터 — 데이터에서 min/max 자동 추출 후 사용자 조정
+  const dateBounds = useMemo(() => {
+    const ds = [];
+    for (const r of dataRows) {
+      const d = normalizeDate((r[mapping.date] ?? '').toString().trim());
+      if (d) ds.push(d);
+    }
+    ds.sort();
+    return { min: ds[0] || '', max: ds[ds.length - 1] || '' };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapping.date]);
+  const [dateFilter, setDateFilter] = useState({ from: '', to: '' });
+
+  function isOutOfRange(i) {
+    if (!dateFilter.from && !dateFilter.to) return false;
+    const d = normalizeDate((dataRows[i][mapping.date] ?? '').toString().trim());
+    if (!d) return false;
+    if (dateFilter.from && d < dateFilter.from) return true;
+    if (dateFilter.to && d > dateFilter.to) return true;
+    return false;
+  }
+  function effectiveSkip(i) { return perRow[i].skip || isOutOfRange(i); }
+
+  const eligibleCount = dataRows.filter((_, i) => !effectiveSkip(i)).length;
+  const allEligibleSelected = dataRows.length > 0
+    && dataRows.every((_, i) => isOutOfRange(i) || !perRow[i].skip);
+
+  function toggleSelectAll() {
+    const next = !allEligibleSelected;
+    setPerRow((arr) => arr.map((r, i) => isOutOfRange(i) ? r : { ...r, skip: next }));
+  }
 
   // 자동분류 (룰 적용 — 클릭 트리거)
   async function autoClassify() {
@@ -789,7 +821,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
     const items = [];
     const errors = [];
     for (let i = 0; i < dataRows.length; i++) {
-      if (perRow[i].skip) continue;
+      if (effectiveSkip(i)) continue;
       const r = dataRows[i];
       const outAmt = getCellNum(r, mapping.amount);
       const inAmt = getCellNum(r, mapping.inAmt);
@@ -797,7 +829,6 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
       if (amount === 0) continue;
       const date = normalizeDate(getCell(r, mapping.date));
       if (!date) { errors.push(`${i + 1}행: 날짜 인식 실패 ("${getCell(r, mapping.date)}")`); continue; }
-      // vendor 텍스트 — vendor 컬럼 우선, 없으면 description 사용 (신한·국민 등 vendor 컬럼 없는 케이스)
       const vendorText = getCell(r, mapping.vendor) || getCell(r, mapping.description) || null;
       items.push({
         projectId: perRow[i].projectId || null,
@@ -808,8 +839,9 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
         accountCodeId: perRow[i].accountCodeId || null,
         workCategory: perRow[i].workCategory || null,
         description: getCell(r, mapping.description) || null,
+        memo: perRow[i].memo || null,
         purchaseOrderId: perRow[i].purchaseOrderId || null,
-        importedFrom: '통장 CSV',
+        importedFrom: '통장 가져오기',
         rawText: r.join(' | '),
       });
     }
@@ -818,11 +850,14 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
       return;
     }
     if (items.length === 0) { alert('가져올 행이 없습니다'); return; }
-    if (!confirm(`${items.length}건을 추가합니다. 계속할까요?`)) return;
+    if (!confirm(`${items.length}건을 추가합니다. 기존 거래와 같은 (날짜·금액·내역·거래처) 조합은 자동 스킵됩니다. 계속할까요?`)) return;
     setBusy(true);
     try {
-      const { created } = await expensesApi.bulk(items);
-      alert(`✅ ${created}건 추가됨`);
+      const { created, skippedDuplicates = 0, total = items.length } = await expensesApi.bulk(items);
+      let msg = `✅ ${created}건 추가됨`;
+      if (skippedDuplicates > 0) msg += `\n🔁 ${skippedDuplicates}건 중복 스킵 (기존 거래 보존, 덮어쓰기 X)`;
+      if (created + skippedDuplicates !== total) msg += `\n⚠ ${total - created - skippedDuplicates}건 처리 실패`;
+      alert(msg);
       onSaved();
     } catch (e) {
       alert('저장 실패: ' + (e.response?.data?.error || e.message));
@@ -857,6 +892,29 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
           ))}
         </div>
 
+        {/* 날짜 범위 필터 — 데이터 기간 자동 표시, 사용자 조정 가능 */}
+        <div className="px-6 py-2 border-b bg-sky-50 text-xs flex items-center gap-2 flex-wrap">
+          <span className="text-gray-700 font-medium">📅 날짜 범위:</span>
+          <input
+            type="date"
+            value={dateFilter.from}
+            onChange={(e) => setDateFilter((d) => ({ ...d, from: e.target.value }))}
+            className="text-xs border rounded px-2 py-1 bg-white"
+          />
+          <span className="text-gray-400">~</span>
+          <input
+            type="date"
+            value={dateFilter.to}
+            onChange={(e) => setDateFilter((d) => ({ ...d, to: e.target.value }))}
+            className="text-xs border rounded px-2 py-1 bg-white"
+          />
+          {(dateFilter.from || dateFilter.to) && (
+            <button onClick={() => setDateFilter({ from: '', to: '' })} className="text-xs px-2 py-1 border rounded hover:bg-white">초기화</button>
+          )}
+          <span className="text-gray-500 ml-2">파일 기간: {dateBounds.min || '?'} ~ {dateBounds.max || '?'}</span>
+          <span className="ml-auto text-gray-700 font-medium">대상 {eligibleCount} / 전체 {dataRows.length}</span>
+        </div>
+
         <div className="px-6 py-2 border-b bg-amber-50 text-xs flex items-center gap-2 flex-wrap">
           <button
             onClick={autoClassify}
@@ -881,10 +939,18 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-500 sticky top-0">
               <tr>
-                <th className="px-2 py-1.5 w-10">스킵</th>
+                <th className="px-2 py-1.5 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allEligibleSelected}
+                    onChange={toggleSelectAll}
+                    title="전체 선택/해제 (날짜 범위 안)"
+                  />
+                </th>
                 <th className="text-left px-2 py-1.5 w-20">날짜</th>
                 <th className="text-right px-2 py-1.5 w-24">금액</th>
                 <th className="text-left px-2 py-1.5">내역</th>
+                <th className="px-2 py-1.5 w-32">메모</th>
                 <th className="px-2 py-1.5 w-44">프로젝트</th>
                 <th className="px-2 py-1.5 w-44">계정과목</th>
                 <th className="px-2 py-1.5 w-24">공종</th>
@@ -897,21 +963,39 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                 const inn = getCellNum(r, mapping.inAmt);
                 const amt = Math.max(Math.abs(out || 0), Math.abs(inn || 0));
                 const dateRaw = getCell(r, mapping.date);
-                const skipped = perRow[i].skip;
+                const skipped = effectiveSkip(i);
+                const outOfRange = isOutOfRange(i);
                 const isIncome = inn && inn > 0;
                 const cands = perRow[i].candidates;
                 const linkedPo = perRow[i].purchaseOrderId;
+                const rowClass = outOfRange
+                  ? 'opacity-30 bg-gray-50'
+                  : (skipped ? 'opacity-40' : 'hover:bg-gray-50');
                 return (
                   <Fragment key={i}>
-                  <tr className={skipped ? 'opacity-40' : 'hover:bg-gray-50'}>
+                  <tr className={rowClass} title={outOfRange ? '날짜 범위 밖 — 자동 스킵' : undefined}>
                     <td className="px-2 py-1 text-center">
-                      <input type="checkbox" checked={skipped} onChange={(e) => setRow(i, 'skip', e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        checked={!perRow[i].skip}
+                        onChange={(e) => setRow(i, 'skip', !e.target.checked)}
+                        disabled={outOfRange}
+                      />
                     </td>
                     <td className="px-2 py-1">{dateRaw}</td>
                     <td className="px-2 py-1 text-right tabular-nums">
                       {amt ? <span className={isIncome ? 'text-emerald-700' : ''}>{isIncome && '+'}{formatWon(amt)}</span> : <span className="text-rose-500">없음</span>}
                     </td>
                     <td className="px-2 py-1 text-gray-700 truncate max-w-xs">{getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}</td>
+                    <td className="px-2 py-1">
+                      <input
+                        value={perRow[i].memo}
+                        onChange={(e) => setRow(i, 'memo', e.target.value)}
+                        disabled={skipped}
+                        placeholder="자재·세부"
+                        className="w-full text-xs border rounded px-1 py-0.5"
+                      />
+                    </td>
                     <td className="px-2 py-1">
                       <select value={perRow[i].projectId} onChange={(e) => setRow(i, 'projectId', e.target.value)} disabled={skipped} className="w-full text-xs border rounded px-1 py-0.5">
                         <option value="">(미지정)</option>
@@ -944,7 +1028,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                   </tr>
                   {cands && cands.length > 0 && (
                     <tr key={`${i}-cands`} className="bg-violet-50/40">
-                      <td colSpan={8} className="px-3 py-2">
+                      <td colSpan={9} className="px-3 py-2">
                         <div className="text-xs text-violet-800 mb-1">
                           출구정리 추론엔진 — 발주 매칭 후보 {cands.length}건 (1-클릭 컨펌)
                         </div>
@@ -992,7 +1076,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
                   )}
                   {cands && cands.length === 0 && (
                     <tr className="bg-gray-50">
-                      <td colSpan={8} className="px-3 py-1.5 text-xs text-gray-500">
+                      <td colSpan={9} className="px-3 py-1.5 text-xs text-gray-500">
                         매칭되는 발주 후보 없음 (점수 30점 이상 없음)
                         <button
                           type="button"
@@ -1012,7 +1096,7 @@ function ImportModal({ rows, projects, accountCodes, onClose, onSaved }) {
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">취소</button>
           <button onClick={save} disabled={busy} className="text-sm px-5 py-2 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50">
-            {busy ? '저장 중...' : `${dataRows.filter((_, i) => !perRow[i].skip).length}건 가져오기`}
+            {busy ? '저장 중...' : `${eligibleCount}건 가져오기`}
           </button>
         </div>
         <ModalStyles />
