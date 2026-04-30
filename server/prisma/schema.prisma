@@ -91,8 +91,15 @@ model User {
   isSuperAdmin Boolean   @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
   lastSeenAt   DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
   tokenVersion Int       @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+
+  // 2FA (TOTP) — 슈퍼어드민만 사용. setup 시 totpSecret 채워지고 totpEnabled=false,
+  // enable 검증 통과 시 totpEnabled=true. 백업 코드는 SHA-256 해시로 저장 (1회용).
+  totpSecret      String?
+  totpEnabled     Boolean  @default(false)
+  totpBackupCodes String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   memberships     Membership[]
   createdProjects Project[]         @relation("ProjectCreatedBy")

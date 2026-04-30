@@ -36,6 +36,11 @@ async function authRequired(req, res, next) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
+  // TOTP 1단계 임시 토큰은 일반 인증으로 통과 X — 오직 /auth/totp/verify에서만 사용
+  if (payload.purpose === 'totp-pending') {
+    return res.status(401).json({ error: 'TOTP not completed', needsTotp: true });
+  }
+
   // DB에서 사용자의 tokenVersion + isSuperAdmin fresh 조회 (사용자 삭제·강제 로그아웃 즉시 반영)
   let dbUser;
   try {

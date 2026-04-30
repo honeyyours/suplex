@@ -138,6 +138,38 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+// 정식 로그인 응답 — 한 번 더 사용하므로 헬퍼화
+async function buildLoginResponse(user, membership) {
+  const token = jwt.sign(
+    {
+      sub: user.id,
+      companyId: membership?.companyId || null,
+      role: membership?.role || null,
+      isSuperAdmin: user.isSuperAdmin,
+      tv: user.tokenVersion || 0,
+    },
+    env.jwt.secret,
+    { expiresIn: env.jwt.expiresIn }
+  );
+  const permissions = membership ? await loadPermissionMap(membership.id) : {};
+  return {
+    token,
+    user: { id: user.id, email: user.email, name: user.name },
+    company: membership
+      ? {
+          id: membership.company.id,
+          name: membership.company.name,
+          hideExpenses: membership.company.hideExpenses,
+          approvalStatus: membership.company.approvalStatus,
+          plan: membership.company.plan,
+        }
+      : null,
+    role: membership?.role || null,
+    isSuperAdmin: user.isSuperAdmin,
+    permissions,
+  };
+}
+
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
@@ -165,17 +197,25 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       return res.status(403).json({ error: '소속된 회사가 없습니다' });
     }
 
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        companyId: membership?.companyId || null,
-        role: membership?.role || null,
-        isSuperAdmin: user.isSuperAdmin,
-        tv: user.tokenVersion || 0,
-      },
-      env.jwt.secret,
-      { expiresIn: env.jwt.expiresIn }
-    );
+    // 2FA 활성 사용자(슈퍼어드민 한정)는 임시 토큰 + needsTotp:true 응답.
+    // 클라이언트는 6자리 코드 또는 백업 코드를 /auth/totp/verify에 제출해야 정식 토큰 받음.
+    if (user.totpEnabled) {
+      const pendingToken = jwt.sign(
+        { sub: user.id, purpose: 'totp-pending', tv: user.tokenVersion || 0 },
+        env.jwt.secret,
+        { expiresIn: '5m' }
+      );
+      audit(
+        { user: { id: user.id, isSuperAdmin: user.isSuperAdmin }, headers: req.headers, ip: req.ip },
+        'auth.login-totp-pending',
+        { companyId: membership?.companyId || null }
+      );
+      return res.json({
+        needsTotp: true,
+        pendingToken,
+        email: user.email,
+      });
+    }
 
     audit(
       { user: { id: user.id, isSuperAdmin: user.isSuperAdmin, role: membership?.role }, headers: req.headers, ip: req.ip },
@@ -183,30 +223,193 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       { companyId: membership?.companyId || null }
     );
 
-    const permissions = membership ? await loadPermissionMap(membership.id) : {};
-
-    res.json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name },
-      company: membership
-        ? {
-            id: membership.company.id,
-            name: membership.company.name,
-            hideExpenses: membership.company.hideExpenses,
-            approvalStatus: membership.company.approvalStatus,
-            plan: membership.company.plan,
-          }
-        : null,
-      role: membership?.role || null,
-      isSuperAdmin: user.isSuperAdmin,
-      permissions,
-    });
+    const response = await buildLoginResponse(user, membership);
+    res.json(response);
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
     }
     next(e);
   }
+});
+
+// ============================================
+// 2FA (TOTP) — 슈퍼어드민 전용. 일반 사용자는 정식 출시 6-B로 미룸.
+// ============================================
+const totp = require('../services/totp');
+
+// POST /auth/totp/verify — login 임시 토큰 + 6자리 코드(또는 백업 코드) → 정식 토큰
+const totpVerifySchema = z.object({
+  pendingToken: z.string().min(1),
+  code: z.string().min(1),
+});
+
+router.post('/totp/verify', loginLimiter, async (req, res, next) => {
+  try {
+    const data = totpVerifySchema.parse(req.body);
+
+    let payload;
+    try {
+      payload = jwt.verify(data.pendingToken, env.jwt.secret);
+    } catch {
+      return res.status(401).json({ error: '인증 시간이 만료되었습니다. 다시 로그인하세요' });
+    }
+    if (payload.purpose !== 'totp-pending') {
+      return res.status(400).json({ error: '잘못된 토큰입니다' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        memberships: {
+          include: {
+            company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } },
+          },
+        },
+      },
+    });
+    if (!user || !user.totpEnabled) return res.status(401).json({ error: '인증 실패' });
+    if ((user.tokenVersion || 0) !== (payload.tv || 0)) {
+      return res.status(401).json({ error: '토큰이 무효화되었습니다. 다시 로그인하세요' });
+    }
+
+    const code = data.code.trim();
+    let usedBackupHash = null;
+
+    // 1) TOTP 6자리 코드 검증
+    let ok = totp.verifyCode(user.totpSecret, code);
+    // 2) 실패 시 백업 코드 매칭 시도 (xxxxx-xxxxx 또는 10자 영숫자)
+    if (!ok) {
+      usedBackupHash = totp.findMatchingBackupHash(user.totpBackupCodes || [], code);
+      if (usedBackupHash) ok = true;
+    }
+    if (!ok) {
+      return res.status(401).json({ error: '인증 코드가 올바르지 않습니다' });
+    }
+
+    // 백업 코드 사용 시 해당 해시 제거 (1회용)
+    if (usedBackupHash) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { totpBackupCodes: { set: (user.totpBackupCodes || []).filter((h) => h !== usedBackupHash) } },
+      });
+    }
+
+    audit(
+      { user: { id: user.id, isSuperAdmin: user.isSuperAdmin }, headers: req.headers, ip: req.ip },
+      'auth.login-totp',
+      { metadata: { usedBackup: !!usedBackupHash } }
+    );
+
+    const membership = user.memberships[0];
+    const response = await buildLoginResponse(user, membership);
+    res.json({ ...response, usedBackupCode: !!usedBackupHash });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// POST /auth/totp/setup — 시크릿·QR 발급 (아직 활성 X). 슈퍼어드민만.
+router.post('/totp/setup', authRequired, async (req, res, next) => {
+  try {
+    if (!req.user.isSuperAdmin) return res.status(403).json({ error: '슈퍼어드민만 사용할 수 있습니다' });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, totpEnabled: true },
+    });
+    if (user.totpEnabled) {
+      return res.status(400).json({ error: '이미 2FA가 활성화되어 있습니다. 먼저 비활성 후 재설정하세요' });
+    }
+    const secret = totp.generateSecret();
+    const otpauthUrl = totp.buildOtpauthUrl(user.email, secret);
+    const qrDataUrl = await totp.buildQrDataUrl(otpauthUrl);
+    // 시크릿은 enable 전까지만 DB에 저장 (활성화 시 검증에 사용)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { totpSecret: secret, totpEnabled: false },
+    });
+    res.json({ secret, otpauthUrl, qrDataUrl });
+  } catch (e) { next(e); }
+});
+
+// POST /auth/totp/enable — 6자리 코드 검증 + 활성 + 백업 코드 발급 (한 번만 노출)
+const totpEnableSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
+
+router.post('/totp/enable', authRequired, async (req, res, next) => {
+  try {
+    if (!req.user.isSuperAdmin) return res.status(403).json({ error: '슈퍼어드민만 사용할 수 있습니다' });
+    const data = totpEnableSchema.parse(req.body);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, totpSecret: true, totpEnabled: true },
+    });
+    if (user.totpEnabled) return res.status(400).json({ error: '이미 활성화되어 있습니다' });
+    if (!user.totpSecret) return res.status(400).json({ error: '먼저 setup을 호출하세요' });
+    if (!totp.verifyCode(user.totpSecret, data.code)) {
+      return res.status(401).json({ error: '인증 코드가 올바르지 않습니다' });
+    }
+    const backupCodes = totp.generateBackupCodes(8);
+    const hashes = backupCodes.map((c) => totp.hashBackupCode(c));
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { totpEnabled: true, totpBackupCodes: { set: hashes } },
+    });
+    audit(req, 'auth.totp-enable', {});
+    // 백업 코드는 평문 1회 노출 (DB엔 해시만)
+    res.json({ ok: true, backupCodes });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// POST /auth/totp/disable — 본인 비번 + 6자리 코드 모두 검증 후 비활성
+const totpDisableSchema = z.object({
+  password: z.string().min(1),
+  code: z.string().min(1),
+});
+
+router.post('/totp/disable', authRequired, async (req, res, next) => {
+  try {
+    if (!req.user.isSuperAdmin) return res.status(403).json({ error: '슈퍼어드민만 사용할 수 있습니다' });
+    const data = totpDisableSchema.parse(req.body);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, passwordHash: true, totpSecret: true, totpEnabled: true, totpBackupCodes: true },
+    });
+    if (!user.totpEnabled) return res.status(400).json({ error: '활성화되어 있지 않습니다' });
+    const okPw = await bcrypt.compare(data.password, user.passwordHash);
+    if (!okPw) return res.status(401).json({ error: '비밀번호가 올바르지 않습니다' });
+    const code = data.code.trim();
+    let ok = totp.verifyCode(user.totpSecret, code);
+    if (!ok) ok = !!totp.findMatchingBackupHash(user.totpBackupCodes || [], code);
+    if (!ok) return res.status(401).json({ error: '인증 코드가 올바르지 않습니다' });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { totpEnabled: false, totpSecret: null, totpBackupCodes: { set: [] } },
+    });
+    audit(req, 'auth.totp-disable', {});
+    res.json({ ok: true });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// GET /auth/totp/status — 슈퍼어드민 본인 2FA 상태 조회
+router.get('/totp/status', authRequired, async (req, res, next) => {
+  try {
+    if (!req.user.isSuperAdmin) return res.status(403).json({ error: '슈퍼어드민만 사용할 수 있습니다' });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { totpEnabled: true, totpBackupCodes: true },
+    });
+    res.json({
+      enabled: user.totpEnabled,
+      backupCodesRemaining: (user.totpBackupCodes || []).length,
+    });
+  } catch (e) { next(e); }
 });
 
 const updateMeSchema = z.object({

@@ -87,6 +87,15 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const { data } = await api.post('/auth/login', { email, password });
+    // TOTP 활성 사용자(슈퍼어드민) — 정식 토큰 X, 임시 토큰만 받음
+    if (data.needsTotp) return data;
+    setAuth(data);
+    return data;
+  }
+
+  // TOTP 1단계 임시 토큰 + 6자리 코드(또는 백업 코드) → 정식 토큰
+  async function verifyTotp(pendingToken, code) {
+    const { data } = await api.post('/auth/totp/verify', { pendingToken, code });
     setAuth(data);
     return data;
   }
@@ -178,7 +187,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );

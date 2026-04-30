@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { adminApi } from '../api/admin';
+import { totpApi } from '../api/totp';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
@@ -50,6 +51,7 @@ export default function Admin() {
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
         <TabBtn active={tab === 'announcements'} onClick={() => setTab('announcements')}>📢 공지</TabBtn>
         <TabBtn active={tab === 'ops'} onClick={() => setTab('ops')}>🩺 운영</TabBtn>
+        <TabBtn active={tab === 'security'} onClick={() => setTab('security')}>🔐 보안</TabBtn>
         <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
       </div>
 
@@ -60,6 +62,7 @@ export default function Admin() {
       {tab === 'stats' && <StatsTab />}
       {tab === 'announcements' && <AnnouncementsTab />}
       {tab === 'ops' && <OpsTab />}
+      {tab === 'security' && <SecurityTab />}
       {tab === 'audit' && <AuditTab />}
     </div>
   );
@@ -1586,6 +1589,228 @@ function MigrationsSection() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 🔐 보안 탭 — 슈퍼어드민 본인 2FA(TOTP) 셋업/비활성
+// ============================================================
+function SecurityTab() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [setupData, setSetupData] = useState(null); // { secret, otpauthUrl, qrDataUrl }
+  const [enableCode, setEnableCode] = useState('');
+  const [enabling, setEnabling] = useState(false);
+  const [backupCodes, setBackupCodes] = useState(null); // 활성 직후 1회 노출
+  const [showDisable, setShowDisable] = useState(false);
+
+  async function loadStatus() {
+    setLoading(true);
+    try {
+      const s = await totpApi.status();
+      setStatus(s);
+    } catch (e) {
+      alert('상태 로드 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { loadStatus(); }, []);
+
+  async function startSetup() {
+    setSetupData(null);
+    setEnableCode('');
+    try {
+      const d = await totpApi.setup();
+      setSetupData(d);
+    } catch (e) {
+      alert('셋업 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function confirmEnable() {
+    if (!/^\d{6}$/.test(enableCode)) {
+      alert('6자리 숫자를 입력하세요');
+      return;
+    }
+    setEnabling(true);
+    try {
+      const r = await totpApi.enable(enableCode);
+      setBackupCodes(r.backupCodes);
+      setSetupData(null);
+      setEnableCode('');
+      await loadStatus();
+    } catch (e) {
+      alert('활성화 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setEnabling(false); }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-base font-semibold text-gray-800">🔐 2단계 인증 (2FA)</h3>
+            <div className="text-xs text-gray-500 mt-1">
+              슈퍼어드민 계정에 한해 적용됩니다. 비밀번호 외에 인증 앱의 6자리 코드가 추가로 필요합니다.
+            </div>
+          </div>
+          {!loading && status && (
+            <span className={`text-xs px-3 py-1 rounded ${
+              status.enabled
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-gray-100 text-gray-500'
+            }`}>{status.enabled ? '✓ 활성' : '○ 비활성'}</span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="text-sm text-gray-400">로딩...</div>
+        ) : status?.enabled ? (
+          <div>
+            <div className="text-sm text-gray-700 mb-3">
+              현재 활성화되어 있습니다. 백업 코드 잔여: <b>{status.backupCodesRemaining}개</b>
+              {status.backupCodesRemaining <= 2 && (
+                <span className="ml-2 text-amber-600">⚠️ 곧 소진됩니다. 비활성 후 재설정으로 새 백업 코드를 발급받으세요</span>
+              )}
+            </div>
+            <button
+              onClick={() => setShowDisable(true)}
+              className="text-sm px-4 py-2 border rounded-md text-rose-600 border-rose-300 hover:bg-rose-50"
+            >2FA 비활성화</button>
+          </div>
+        ) : !setupData ? (
+          <div>
+            <ol className="text-sm text-gray-700 space-y-2 mb-4 list-decimal pl-5">
+              <li>휴대폰에 인증 앱 설치 (Google Authenticator / Authy / 1Password 등)</li>
+              <li>아래 "2FA 셋업 시작" 클릭 → QR 코드 표시</li>
+              <li>인증 앱으로 QR 스캔 → 6자리 숫자 등록됨</li>
+              <li>그 6자리 숫자를 입력해 활성화 확인</li>
+              <li>발급된 백업 코드 8개를 안전한 곳에 저장 (1회만 노출)</li>
+            </ol>
+            <button
+              onClick={startSetup}
+              className="text-sm px-4 py-2 bg-navy-700 text-white rounded-md hover:bg-navy-800"
+            >2FA 셋업 시작</button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="text-sm font-medium text-gray-700 mb-2">1️⃣ 인증 앱으로 아래 QR 스캔</div>
+              <img src={setupData.qrDataUrl} alt="2FA QR" className="bg-white p-2 rounded border inline-block" />
+              <div className="text-xs text-gray-500 mt-2">
+                또는 시크릿 키 직접 입력:&nbsp;
+                <code className="bg-white px-2 py-1 rounded border text-[11px]">{setupData.secret}</code>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">2️⃣ 앱에 표시된 6자리 숫자</label>
+              <input
+                inputMode="numeric"
+                autoFocus
+                value={enableCode}
+                onChange={(e) => setEnableCode(e.target.value)}
+                placeholder="000000"
+                className="w-40 border rounded-md px-3 py-2 text-center text-xl tracking-widest font-mono"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmEnable}
+                disabled={enabling || !/^\d{6}$/.test(enableCode)}
+                className="text-sm px-4 py-2 bg-navy-700 text-white rounded-md disabled:opacity-50"
+              >{enabling ? '활성화 중...' : '활성화'}</button>
+              <button
+                onClick={() => { setSetupData(null); setEnableCode(''); }}
+                className="text-sm px-4 py-2 border rounded-md"
+              >취소</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {backupCodes && (
+        <BackupCodesDialog codes={backupCodes} onClose={() => setBackupCodes(null)} />
+      )}
+      {showDisable && (
+        <DisableTotpDialog
+          onClose={() => setShowDisable(false)}
+          onDisabled={() => { setShowDisable(false); loadStatus(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BackupCodesDialog({ codes, onClose }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(codes.join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) { alert('복사 실패: ' + e.message); }
+  }
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-bold text-rose-700 mb-2">⚠️ 백업 코드 — 단 한 번만 표시됩니다</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          휴대폰을 잃거나 인증 앱이 망가졌을 때 이 코드로 로그인할 수 있습니다.
+          각 코드는 <b>1회만</b> 사용 가능합니다. 안전한 곳(비밀번호 매니저 등)에 저장하세요.
+        </p>
+        <div className="bg-gray-50 border rounded p-3 font-mono text-sm grid grid-cols-2 gap-2 mb-4">
+          {codes.map((c) => <div key={c}>{c}</div>)}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={copy} className="flex-1 text-sm px-4 py-2 border rounded-md">
+            {copied ? '✓ 복사됨' : '📋 모두 복사'}
+          </button>
+          <button onClick={onClose} className="flex-1 text-sm px-4 py-2 bg-navy-700 text-white rounded-md">저장 완료</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DisableTotpDialog({ onClose, onDisabled }) {
+  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!password || !code) { alert('비밀번호·코드 모두 입력하세요'); return; }
+    setBusy(true);
+    try {
+      await totpApi.disable(password, code);
+      alert('2FA가 비활성화되었습니다');
+      onDisabled();
+    } catch (e) {
+      alert('비활성화 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-2">2FA 비활성화</h2>
+        <p className="text-sm text-gray-600 mb-4">본인 비밀번호와 현재 6자리 코드(또는 백업 코드)를 입력하세요.</p>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="block text-xs font-medium text-gray-600 mb-1">비밀번호</span>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border rounded px-3 py-2 text-sm" />
+          </label>
+          <label className="block">
+            <span className="block text-xs font-medium text-gray-600 mb-1">6자리 코드 또는 백업 코드</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} className="w-full border rounded px-3 py-2 text-sm font-mono" placeholder="123456 또는 xxxxx-xxxxx" />
+          </label>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <button onClick={onClose} className="flex-1 text-sm px-4 py-2 border rounded-md">취소</button>
+          <button onClick={submit} disabled={busy} className="flex-1 text-sm px-4 py-2 bg-rose-600 text-white rounded-md disabled:opacity-50">
+            {busy ? '처리 중...' : '비활성화'}
+          </button>
+        </div>
       </div>
     </div>
   );
