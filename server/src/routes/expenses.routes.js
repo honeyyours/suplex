@@ -164,37 +164,29 @@ router.get('/summary', async (req, res, next) => {
         where: expenseWhere,
         _sum: { amount: true },
       }),
-      // byGroup: 직원에게는 멤버 프로젝트 거래의 그룹별 합. 단순화: 직원이면 prisma.expense.groupBy로 계정 그룹 직접 집계.
-      accessibleIds !== null
-        ? (async () => {
-            const grouped = await prisma.expense.groupBy({
-              by: ['accountCodeId'],
-              where: { companyId, type: 'EXPENSE', projectId: { in: accessibleIds } },
-              _sum: { amount: true }, _count: true,
-            });
-            const codeIds = grouped.map((g) => g.accountCodeId).filter(Boolean);
-            const codes = codeIds.length > 0
-              ? await prisma.accountCode.findMany({ where: { id: { in: codeIds } }, select: { id: true, groupName: true } })
-              : [];
-            const groupMap = new Map(codes.map((c) => [c.id, c.groupName]));
-            const aggMap = new Map();
-            for (const g of grouped) {
-              const gName = g.accountCodeId ? (groupMap.get(g.accountCodeId) || null) : null;
-              const cur = aggMap.get(gName) || { group_name: gName, total: 0, count: 0 };
-              cur.total += Number(g._sum.amount || 0);
-              cur.count += g._count;
-              aggMap.set(gName, cur);
-            }
-            return Array.from(aggMap.values()).sort((a, b) => b.total - a.total);
-          })()
-        : prisma.$queryRaw`
-        SELECT ac."groupName" AS group_name, SUM(e.amount)::float AS total, COUNT(*)::int AS count
-        FROM "expenses" e
-        LEFT JOIN "account_codes" ac ON e."accountCodeId" = ac.id
-        WHERE e."companyId" = ${companyId} AND e."type" = 'EXPENSE'
-        GROUP BY ac."groupName"
-        ORDER BY total DESC
-      `,
+      // byGroup — 오픈 디폴트(2026-04-30): 회사 전체 거래 그룹별 합.
+      // 비-OWNER는 본사/미분류(projectId=null) 제외 (projectScope 일관 적용).
+      (async () => {
+        const grouped = await prisma.expense.groupBy({
+          by: ['accountCodeId'],
+          where: { companyId, type: 'EXPENSE', ...projectScope },
+          _sum: { amount: true }, _count: true,
+        });
+        const codeIds = grouped.map((g) => g.accountCodeId).filter(Boolean);
+        const codes = codeIds.length > 0
+          ? await prisma.accountCode.findMany({ where: { id: { in: codeIds } }, select: { id: true, groupName: true } })
+          : [];
+        const groupMap = new Map(codes.map((c) => [c.id, c.groupName]));
+        const aggMap = new Map();
+        for (const g of grouped) {
+          const gName = g.accountCodeId ? (groupMap.get(g.accountCodeId) || null) : null;
+          const cur = aggMap.get(gName) || { group_name: gName, total: 0, count: 0 };
+          cur.total += Number(g._sum.amount || 0);
+          cur.count += g._count;
+          aggMap.set(gName, cur);
+        }
+        return Array.from(aggMap.values()).sort((a, b) => b.total - a.total);
+      })(),
     ]);
 
     const allowPnl = await canViewPnl(req);
