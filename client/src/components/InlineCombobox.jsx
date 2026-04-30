@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
  *  - emptyLabel: 빈 옵션 라벨 (예: "(미지정)" / "(미분류)")
  *  - allowEmpty: emptyLabel 옵션 노출 여부 (default true)
  *  - className: 입력 추가 클래스
+ *  - inputClassName: input 자체 클래스 (모달용 일반 사이즈로 override 가능)
  */
 export default function InlineCombobox({
   value,
@@ -21,6 +22,7 @@ export default function InlineCombobox({
   emptyLabel = '(미지정)',
   allowEmpty = true,
   className = '',
+  inputClassName,
 }) {
   const selected = value ? options.find((o) => o.id === value) : null;
   const [text, setText] = useState('');
@@ -88,7 +90,7 @@ export default function InlineCombobox({
         onFocus={() => { setOpen(true); setHighlight(0); }}
         onKeyDown={handleKey}
         placeholder={selected ? '' : placeholder}
-        className={`w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent ${selected ? '' : 'text-gray-400'}`}
+        className={inputClassName ?? `w-full text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 py-0.5 bg-transparent ${selected ? '' : 'text-gray-400'}`}
       />
       {open && (
         <div className="absolute z-30 left-0 right-0 mt-0.5 bg-white border rounded shadow-lg max-h-64 overflow-y-auto min-w-[180px]">

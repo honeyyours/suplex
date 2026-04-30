@@ -721,9 +721,79 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
     description: expense?.description || '',
     memo: expense?.memo || '',
     paymentMethod: expense?.paymentMethod || '',
+    purchaseOrderId: expense?.purchaseOrderId || null,
   }));
   const [busy, setBusy] = useState(false);
+  const [classifyHint, setClassifyHint] = useState(null); // 자동분류 룰 매칭 결과
+  const [poCandidates, setPoCandidates] = useState(null);  // 발주 매칭 후보
+  const [searchingCandidates, setSearchingCandidates] = useState(false);
   function set(k, v) { setForm((p) => ({ ...p, [k]: v })); }
+
+  const projectOptions = useMemo(
+    () => projects.map((p) => ({ id: p.id, label: p.name, hint: p.siteCode || '' })),
+    [projects]
+  );
+  const accountOptions = useMemo(
+    () => accountCodes.map((c) => ({ id: c.id, label: c.code, hint: c.groupName })),
+    [accountCodes]
+  );
+
+  // 자동분류 룰 미리보기 — vendor 또는 description 변경 시 키워드 매칭 호출 (debounce)
+  useEffect(() => {
+    const text = [form.vendor, form.description].filter(Boolean).join(' ').trim();
+    if (!text || form.accountCodeId) { setClassifyHint(null); return; }
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const { results } = await expenseRulesApi.classify([text]);
+        if (!alive) return;
+        const g = results?.[0];
+        setClassifyHint(g || null);
+      } catch (e) { /* noop */ }
+    }, 350);
+    return () => { alive = false; clearTimeout(t); };
+  }, [form.vendor, form.description, form.accountCodeId]);
+
+  // 발주 매칭 후보 — 거래처/금액/날짜 충분하면 (수동 호출)
+  async function searchPoCandidates() {
+    const amount = Number(form.amount);
+    if (!amount || !form.date) { alert('금액·날짜 입력 후 검색해주세요'); return; }
+    setSearchingCandidates(true);
+    try {
+      const vendorText = form.vendor || form.description || '';
+      const { candidates } = await expensesApi.inferenceCandidates({
+        amount, date: form.date, vendorText, projectId: form.projectId || undefined,
+      });
+      setPoCandidates(candidates);
+    } catch (e) {
+      alert('후보 검색 실패: ' + (e.response?.data?.error || e.message));
+    } finally { setSearchingCandidates(false); }
+  }
+
+  function applyPoCandidate(c) {
+    const po = c.purchaseOrder;
+    setForm((p) => ({
+      ...p,
+      purchaseOrderId: po.id,
+      projectId: po.projectId || p.projectId,
+    }));
+    setPoCandidates(null);
+  }
+
+  function applyClassifyHint() {
+    if (!classifyHint) return;
+    setForm((p) => ({
+      ...p,
+      accountCodeId: classifyHint.accountCodeId || p.accountCodeId,
+      workCategory: classifyHint.workCategory || p.workCategory,
+    }));
+    // siteCode → projectId 매핑
+    if (classifyHint.siteCode) {
+      const proj = projects.find((p) => p.siteCode === classifyHint.siteCode);
+      if (proj) setForm((p) => ({ ...p, projectId: proj.id }));
+    }
+    setClassifyHint(null);
+  }
 
   async function save() {
     if (!form.amount || isNaN(Number(form.amount))) { alert('금액을 입력해주세요'); return; }
@@ -742,6 +812,7 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
         description: form.description.trim() || null,
         memo: form.memo.trim() || null,
         paymentMethod: form.paymentMethod || null,
+        purchaseOrderId: form.purchaseOrderId || null,
       };
       if (isNew) await expensesApi.create(payload);
       else await expensesApi.update(expense.id, payload);
@@ -772,16 +843,36 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
             </Field>
           </div>
           <Field label="프로젝트">
-            <select value={form.projectId} onChange={(e) => set('projectId', e.target.value)} className="input">
-              <option value="">(현장 미지정 — 본사/대표)</option>
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}{p.siteCode && ` (${p.siteCode})`}</option>)}
-            </select>
+            <InlineCombobox
+              value={form.projectId}
+              options={projectOptions}
+              onChange={(id) => set('projectId', id || '')}
+              placeholder="현장 검색…"
+              emptyLabel="(현장 미지정 — 본사/대표)"
+              inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+            />
           </Field>
           <Field label="계정과목">
-            <select value={form.accountCodeId} onChange={(e) => set('accountCodeId', e.target.value)} className="input">
-              <option value="">(미분류)</option>
-              {accountCodes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
-            </select>
+            <InlineCombobox
+              value={form.accountCodeId}
+              options={accountOptions}
+              onChange={(id) => set('accountCodeId', id || '')}
+              placeholder="계정과목 검색…"
+              emptyLabel="(미분류)"
+              inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+            />
+            {classifyHint && (
+              <button
+                type="button"
+                onClick={applyClassifyHint}
+                className="mt-1 w-full text-xs px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded hover:bg-emerald-100 text-left"
+              >
+                🔮 자동분류 룰 매칭: <b>{classifyHint.keyword}</b>
+                {classifyHint.workCategory && <span className="text-gray-600"> · 공종 {classifyHint.workCategory}</span>}
+                {classifyHint.siteCode && <span className="text-gray-600"> · 현장 {classifyHint.siteCode}</span>}
+                <span className="ml-2 text-emerald-700 font-medium">→ 적용</span>
+              </button>
+            )}
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="공종 (선택)">
@@ -810,6 +901,74 @@ function ExpenseModal({ expense, projects, accountCodes, onClose, onSaved }) {
           <Field label="메모 (자재 종류·기타 보강)">
             <input value={form.memo} onChange={(e) => set('memo', e.target.value)} placeholder="예: 데코타일, 도배지" className="input" />
           </Field>
+
+          {/* 출구정리 추론엔진 — 발주 매칭 후보 */}
+          <div className="border-t pt-3">
+            {form.purchaseOrderId ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded p-2 text-xs flex items-center justify-between">
+                <span className="text-emerald-800">🔗 발주에 연결됨</span>
+                <button
+                  type="button"
+                  onClick={() => set('purchaseOrderId', null)}
+                  className="text-rose-600 hover:underline"
+                >연결 해제</button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={searchPoCandidates}
+                  disabled={searchingCandidates}
+                  className="text-xs px-3 py-1.5 border border-violet-300 text-violet-700 rounded hover:bg-violet-50 disabled:opacity-50"
+                >
+                  {searchingCandidates ? '검색 중…' : '✨ 발주 매칭 후보 검색'}
+                </button>
+                <span className="text-xs text-gray-400 ml-2">금액·날짜·거래처 입력 후 클릭</span>
+                {poCandidates && poCandidates.length === 0 && (
+                  <div className="mt-2 text-xs text-gray-500 bg-gray-50 border rounded p-2">
+                    매칭되는 발주 없음 (점수 30점 미만).
+                    <button
+                      type="button"
+                      onClick={() => setPoCandidates(null)}
+                      className="ml-2 text-gray-400 hover:underline"
+                    >닫기</button>
+                  </div>
+                )}
+                {poCandidates && poCandidates.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-violet-800">출구정리 추론엔진 — 후보 {poCandidates.length}건 (1-클릭 컨펌)</div>
+                    {poCandidates.map((c) => {
+                      const po = c.purchaseOrder;
+                      const proj = projects.find((p) => p.id === po.projectId);
+                      return (
+                        <button
+                          key={po.id}
+                          type="button"
+                          onClick={() => applyPoCandidate(c)}
+                          className="w-full text-left bg-white border border-violet-200 rounded px-3 py-1.5 hover:bg-violet-50"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-navy-800 text-sm">{po.itemName}</span>
+                              {po.spec && <span className="text-gray-500 text-xs ml-2">{po.spec}</span>}
+                              {po.vendorEntity?.name && <span className="text-gray-500 text-xs ml-2">@ {po.vendorEntity.name}</span>}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="tabular-nums text-navy-700 text-sm font-medium">{formatWon(po.totalPrice || 0)}</div>
+                              <div className="text-gray-400 text-[10px]">{po.expectedDate ? String(po.expectedDate).slice(0, 10) : ''}</div>
+                            </div>
+                            <div className="shrink-0 text-violet-700 font-bold tabular-nums text-sm">{c.score}점</div>
+                          </div>
+                          {proj && <div className="text-gray-500 text-[10px] mt-0.5">현장: {proj.name}</div>}
+                          {c.alreadyLinked && <div className="text-amber-600 text-[10px] mt-0.5">⚠ 이미 다른 거래에 연결됨 (분할 결제 가능)</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">취소</button>
