@@ -12,6 +12,10 @@ const { authRequired, requireSuperAdmin } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { normalizePhase } = require('../services/phases');
 const { seedDemoProject } = require('../services/seedDemoProject');
+const {
+  grantLoungeMembershipsForCompany,
+  backfillLoungeMemberships,
+} = require('../services/lounge');
 
 const router = express.Router();
 router.use(authRequired);
@@ -836,11 +840,13 @@ router.post('/companies/:id/approve', async (req, res, next) => {
       return res.json({ ok: true, alreadyApproved: true });
     }
     await prisma.company.update({ where: { id }, data: { approvalStatus: 'APPROVED' } });
+    // 회사 승인 시 그 회사의 모든 멤버에게 라운지 멤버십 부여 (퇴사 후에도 유지됨).
+    const granted = await grantLoungeMembershipsForCompany(prisma, id, `회사 ${company.name} 승인`);
     audit(req, 'company.approve', {
       targetType: 'COMPANY', targetId: id,
-      metadata: { name: company.name, prevStatus: company.approvalStatus },
+      metadata: { name: company.name, prevStatus: company.approvalStatus, loungeGranted: granted },
     });
-    res.json({ ok: true });
+    res.json({ ok: true, loungeGranted: granted });
   } catch (e) { next(e); }
 });
 
@@ -863,6 +869,16 @@ router.patch('/companies/:id/plan', async (req, res, next) => {
       metadata: { name: company.name, prevPlan: company.plan, newPlan: plan },
     });
     res.json({ ok: true, plan });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/lounge/backfill-memberships — 모든 APPROVED 회사 멤버에게 라운지 멤버십 보강.
+// 멱등. 베타 초기 1회 실행 + 정책 변경 시 재실행.
+router.post('/lounge/backfill-memberships', async (req, res, next) => {
+  try {
+    const { scanned, granted } = await backfillLoungeMemberships(prisma);
+    audit(req, 'lounge.backfill', { metadata: { scanned, granted } });
+    res.json({ ok: true, scanned, granted });
   } catch (e) { next(e); }
 });
 

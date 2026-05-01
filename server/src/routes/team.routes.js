@@ -5,6 +5,7 @@ const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { TOGGLEABLE_FEATURES } = require('../services/features');
+const { grantIfCompanyApproved } = require('../services/lounge');
 
 const router = express.Router();
 router.use(authRequired);
@@ -69,6 +70,8 @@ router.post('/members', requireRole('OWNER'), async (req, res, next) => {
       const membership = await tx.membership.create({
         data: { userId: user.id, companyId: req.user.companyId, role: data.role },
       });
+      // 라운지 멤버십 — 회사가 APPROVED일 때만
+      await grantIfCompanyApproved(tx, user.id, req.user.companyId, 'OWNER가 직접 추가');
       return { user, membership };
     });
 

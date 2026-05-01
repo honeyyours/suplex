@@ -124,6 +124,13 @@ model User {
   projectMemberships      ProjectMember[]
   systemAnnouncements     SystemAnnouncement[]  @relation("AnnouncementCreatedBy")
 
+  // 라운지 (커뮤니티) — 회사 탈퇴 후에도 LoungeMembership 통해 살아남음
+  loungeMembership LoungeMembership?
+  loungePosts      LoungePost[]      @relation("LoungePostAuthor")
+  loungeComments   LoungeComment[]   @relation("LoungeCommentAuthor")
+  loungeReactions  LoungeReaction[]  @relation("LoungeReactionUser")
+  loungeReports    LoungeReport[]    @relation("LoungeReportReporter")
+
   @@map("users")
 }
 
@@ -1384,4 +1391,159 @@ model ApplianceSpec {
   @@index([category, brand])
   @@index([modelCode])
   @@map("appliance_specs")
+}
+
+// ============================================
+// 11. 라운지 (커뮤니티) — docs/커뮤니티_기획서.md
+// 디자이너·현장팀·운영진 클로즈드 커뮤니티.
+// 핵심: LoungeMembership은 User에 종속, 회사 탈퇴 후에도 살아남음 (인테리어 생태계 자산화).
+// 카테고리 6개: knowhow | usage | ruby | free | jobs | notice
+// ============================================
+
+model LoungeMembership {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  status        String    @default("active") // active | suspended | banned
+  selfLabel     String? // 본인 표시 라벨 (예: "디자이너 / 5년차")
+  jobRole       String? // designer | site | ops | etc
+  grantedAt     DateTime  @default(now())
+  grantedReason String // "회사 OO 승인 시 자동 부여" 등 감사용 메모
+  suspendedAt   DateTime?
+  suspendedById String? // 슈퍼어드민 user id (감사)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("lounge_memberships")
+}
+
+model LoungePost {
+  id              String    @id @default(cuid())
+  authorId        String
+  category        String // knowhow | usage | ruby | free | jobs | notice
+  title           String
+  body            String    @db.Text // 마크다운 (코드 블록 포함)
+  showCompanyName Boolean   @default(false)
+  status          String    @default("active") // active | hidden | deleted
+  pinnedToHome    Boolean   @default(false) // 홈 "오늘의 팁" 큐레이션
+  homePinnedAt    DateTime?
+  homePinnedById  String? // 슈퍼어드민 (감사)
+  reactionCount   Int       @default(0) // 캐시 (LoungeReaction 변동 시 갱신)
+  commentCount    Int       @default(0) // 캐시
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  author      User               @relation("LoungePostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comments    LoungeComment[]
+  reactions   LoungeReaction[]
+  tags        LoungePostTag[]
+  attachments LoungeAttachment[]
+
+  @@index([category, status, createdAt])
+  @@index([pinnedToHome, homePinnedAt])
+  @@index([authorId])
+  @@map("lounge_posts")
+}
+
+// 첨부파일 — 이미지 + .rb 통합. kind=image|ruby|other
+// 스케치업 루비 카테고리: kind=ruby, 글당 3개·1MB 상한 (백엔드 검증)
+model LoungeAttachment {
+  id            String   @id @default(cuid())
+  postId        String
+  kind          String // image | ruby | other
+  fileName      String
+  fileSize      Int
+  storageKey    String // Cloudinary publicId 또는 외부 저장 키
+  mimeType      String?
+  downloadCount Int      @default(0) // .rb 다운로드 카운터 (인기도 지표 v2)
+  createdAt     DateTime @default(now())
+
+  post LoungePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("lounge_attachments")
+}
+
+model LoungeComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String   @db.Text
+  status    String   @default("active") // active | hidden | deleted
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   LoungePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User       @relation("LoungeCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, status, createdAt])
+  @@index([authorId])
+  @@map("lounge_comments")
+}
+
+model LoungeReaction {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  type      String   @default("like") // v1: like 단일. v2 확장 가능
+  createdAt DateTime @default(now())
+
+  post LoungePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation("LoungeReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("lounge_reactions")
+}
+
+// 태그 마스터 — 화이트리스트만 허용. 어드민이 관리.
+// kind=role: [디자이너] [현장팀] [운영]
+// kind=topic: [프리셋추천] [견적] [루비공유] 등 (기획서 6장)
+model LoungeTag {
+  id        String   @id @default(cuid())
+  key       String   @unique // 영문 키 (예: "ruby_share")
+  label     String // 표시 라벨 (예: "[루비공유]")
+  kind      String // role | topic
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  posts LoungePostTag[]
+
+  @@index([kind, isActive, sortOrder])
+  @@map("lounge_tags")
+}
+
+model LoungePostTag {
+  postId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  post LoungePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  LoungeTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+  @@map("lounge_post_tags")
+}
+
+// 신고 — 슈퍼어드민이 큐로 처리. reason: spam | abuse | client_info | malicious_code | other
+model LoungeReport {
+  id          String    @id @default(cuid())
+  targetType  String // post | comment
+  targetId    String
+  reporterId  String
+  reason      String
+  detail      String?   @db.Text
+  status      String    @default("pending") // pending | resolved | dismissed
+  handledById String? // 슈퍼어드민 (감사)
+  handledAt   DateTime?
+  resolution  String? // 처리 메모 ("글 숨김" 등)
+  createdAt   DateTime  @default(now())
+
+  reporter User @relation("LoungeReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("lounge_reports")
 }
