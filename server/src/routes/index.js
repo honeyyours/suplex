@@ -34,6 +34,7 @@ const backupRoutes = require('./backup.routes');
 const activityRoutes = require('./activity.routes');
 const applianceSpecsRoutes = require('./applianceSpecs.routes');
 const announcementsRoutes = require('./announcements.routes');
+const loungeRoutes = require('./lounge.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -50,7 +51,8 @@ router.use('/auth', authRoutes);
 // authRequired는 각 하위 라우터가 이미 호출하므로(req.user 채움), 여기선 가드만 추가.
 router.use((req, res, next) => {
   // /admin, /backup은 별도 라우터에서 super admin 체크. 여기선 통과.
-  if (req.path.startsWith('/admin') || req.path.startsWith('/backup')) return next();
+  // /lounge는 회사 미승인·퇴사자도 접근 가능 (라운지 자체 멤버십 가드 사용).
+  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge')) return next();
   // 그 외는 인증 + 승인 가드 적용
   authRequired(req, res, (err) => {
     if (err || res.headersSent) return;
@@ -99,6 +101,7 @@ router.use('/vendors', vendorRoutes);
 router.use('/activity', activityRoutes);
 router.use('/appliance-specs', applianceSpecsRoutes);
 router.use('/announcements', announcementsRoutes);
+router.use('/lounge', loungeRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
