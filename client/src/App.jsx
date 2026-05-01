@@ -34,6 +34,8 @@ import ProjectSettlement from './pages/ProjectSettlement';
 import ProjectQuoteConsultations from './pages/ProjectQuoteConsultations';
 import ProjectProcessOverview from './pages/ProjectProcessOverview';
 import ProjectUtilities from './pages/ProjectUtilities';
+import Lounge from './pages/Lounge';
+import LoungePost from './pages/LoungePost';
 
 export default function App() {
   return (
@@ -59,6 +61,9 @@ export default function App() {
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin" element={<Admin />} />
+
+        <Route path="/lounge" element={<Lounge />} />
+        <Route path="/lounge/:postId" element={<LoungePost />} />
 
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/new" element={<NewProject />} />

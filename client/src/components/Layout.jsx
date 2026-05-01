@@ -15,6 +15,7 @@ const NAV = [
   { to: '/expenses', label: '지출관리', feature: F.EXPENSES_VIEW },
   { to: '/ai-assistant', label: 'AI비서', feature: F.AI_ASSISTANT },
   { to: '/team', label: '팀관리' },
+  { to: '/lounge', label: '라운지' },
   { to: '/settings', label: '설정' },
 ];
 
