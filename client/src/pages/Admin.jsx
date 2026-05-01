@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { adminApi } from '../api/admin';
 import { totpApi } from '../api/totp';
+import AdminLoungeTab from '../components/AdminLoungeTab';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
@@ -52,6 +53,7 @@ export default function Admin() {
         <TabBtn active={tab === 'plans'} onClick={() => setTab('plans')}>📋 등급/권한</TabBtn>
         <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')}>📊 통계</TabBtn>
         <TabBtn active={tab === 'announcements'} onClick={() => setTab('announcements')}>📢 공지</TabBtn>
+        <TabBtn active={tab === 'lounge'} onClick={() => setTab('lounge')}>💬 라운지</TabBtn>
         <TabBtn active={tab === 'ops'} onClick={() => setTab('ops')}>🩺 운영</TabBtn>
         <TabBtn active={tab === 'security'} onClick={() => setTab('security')}>🔐 보안</TabBtn>
         <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')}>📜 로그</TabBtn>
@@ -63,6 +65,7 @@ export default function Admin() {
       {tab === 'plans' && <PlanFeaturesTab />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'announcements' && <AnnouncementsTab />}
+      {tab === 'lounge' && <AdminLoungeTab />}
       {tab === 'ops' && <OpsTab />}
       {tab === 'security' && <SecurityTab />}
       {tab === 'audit' && <AuditTab />}

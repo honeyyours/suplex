@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext';
 import HomeWeekSchedule from '../components/HomeWeekSchedule';
 import HomeProjectCards from '../components/HomeProjectCards';
 import HomeActivityFeed from '../components/HomeActivityFeed';
+import HomeLoungeTip from '../components/HomeLoungeTip';
 
 export default function Dashboard() {
   const { auth } = useAuth();
@@ -18,6 +19,8 @@ export default function Dashboard() {
           {formatToday()}
         </div>
       </div>
+
+      <HomeLoungeTip />
 
       <HomeWeekSchedule />
 

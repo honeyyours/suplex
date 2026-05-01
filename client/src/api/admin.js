@@ -42,5 +42,24 @@ export const adminApi = {
   deleteAnnouncement: (id) => api.delete(`/admin/announcements/${id}`).then((r) => r.data),
   // 백업 상태
   backupStatus: () => api.get('/admin/backup-status').then((r) => r.data),
+
+  // 라운지 모더레이션
+  loungeBackfill: () => api.post('/admin/lounge/backfill-memberships').then((r) => r.data),
+  loungeReports: (status = 'pending') =>
+    api.get('/admin/lounge/reports', { params: { status } }).then((r) => r.data),
+  loungeResolveReport: (id, action, note) =>
+    api.post(`/admin/lounge/reports/${id}/resolve`, { action, note }).then((r) => r.data),
+  loungePinHome: (postId) =>
+    api.post(`/admin/lounge/posts/${postId}/pin-home`).then((r) => r.data),
+  loungeUnpinHome: (postId) =>
+    api.delete(`/admin/lounge/posts/${postId}/pin-home`).then((r) => r.data),
+  loungeHidePost: (postId) =>
+    api.post(`/admin/lounge/posts/${postId}/hide`).then((r) => r.data),
+  loungeUnhidePost: (postId) =>
+    api.post(`/admin/lounge/posts/${postId}/unhide`).then((r) => r.data),
+  loungeSuspend: (userId, note) =>
+    api.post(`/admin/lounge/memberships/${userId}/suspend`, { note }).then((r) => r.data),
+  loungeUnsuspend: (userId) =>
+    api.post(`/admin/lounge/memberships/${userId}/unsuspend`).then((r) => r.data),
 };
 

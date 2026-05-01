@@ -882,6 +882,158 @@ router.post('/lounge/backfill-memberships', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ============================================
+// 라운지 모더레이션
+// ============================================
+
+// GET /api/admin/lounge/reports?status=pending|all
+router.get('/lounge/reports', async (req, res, next) => {
+  try {
+    const status = (req.query.status || 'pending').toString();
+    const where = status === 'all' ? {} : { status };
+    const reports = await prisma.loungeReport.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: {
+        reporter: { select: { id: true, name: true, email: true } },
+      },
+    });
+    // target 정보 join (post/comment)
+    const out = await Promise.all(
+      reports.map(async (r) => {
+        let target = null;
+        if (r.targetType === 'post') {
+          const p = await prisma.loungePost.findUnique({
+            where: { id: r.targetId },
+            select: { id: true, title: true, body: true, status: true, category: true, authorId: true, author: { select: { name: true, email: true } } },
+          });
+          target = p;
+        } else {
+          const c = await prisma.loungeComment.findUnique({
+            where: { id: r.targetId },
+            select: { id: true, body: true, status: true, postId: true, authorId: true, author: { select: { name: true, email: true } } },
+          });
+          target = c;
+        }
+        return { ...r, target };
+      })
+    );
+    res.json({ reports: out });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/lounge/reports/:id/resolve
+// body: { action: 'hide' | 'dismiss', note?: string }
+router.post('/lounge/reports/:id/resolve', async (req, res, next) => {
+  try {
+    const { action, note } = req.body || {};
+    if (!['hide', 'dismiss'].includes(action)) {
+      return res.status(400).json({ error: 'action은 hide 또는 dismiss' });
+    }
+    const r = await prisma.loungeReport.findUnique({ where: { id: req.params.id } });
+    if (!r) return res.status(404).json({ error: '신고를 찾을 수 없습니다' });
+    if (r.status !== 'pending') return res.status(400).json({ error: '이미 처리된 신고입니다' });
+
+    await prisma.$transaction(async (tx) => {
+      if (action === 'hide') {
+        if (r.targetType === 'post') {
+          await tx.loungePost.update({ where: { id: r.targetId }, data: { status: 'hidden' } });
+        } else {
+          await tx.loungeComment.update({ where: { id: r.targetId }, data: { status: 'hidden' } });
+        }
+      }
+      await tx.loungeReport.update({
+        where: { id: r.id },
+        data: {
+          status: action === 'hide' ? 'resolved' : 'dismissed',
+          handledById: req.user.id,
+          handledAt: new Date(),
+          resolution: note || (action === 'hide' ? '글 숨김' : '기각'),
+        },
+      });
+    });
+    audit(req, `lounge.report_${action}`, {
+      targetType: 'LOUNGE_REPORT', targetId: r.id,
+      metadata: { reportTargetType: r.targetType, reportTargetId: r.targetId, reason: r.reason, note },
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/lounge/posts/:id/pin-home — "오늘의 팁" 큐레이션
+router.post('/lounge/posts/:id/pin-home', async (req, res, next) => {
+  try {
+    const post = await prisma.loungePost.findUnique({ where: { id: req.params.id } });
+    if (!post || post.status !== 'active') return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    await prisma.loungePost.update({
+      where: { id: post.id },
+      data: { pinnedToHome: true, homePinnedAt: new Date(), homePinnedById: req.user.id },
+    });
+    audit(req, 'lounge.pin_home', { targetType: 'LOUNGE_POST', targetId: post.id });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.delete('/lounge/posts/:id/pin-home', async (req, res, next) => {
+  try {
+    await prisma.loungePost.update({
+      where: { id: req.params.id },
+      data: { pinnedToHome: false, homePinnedAt: null, homePinnedById: null },
+    });
+    audit(req, 'lounge.unpin_home', { targetType: 'LOUNGE_POST', targetId: req.params.id });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/lounge/posts/:id/hide / unhide — 직접 숨김 토글 (신고 없이도)
+router.post('/lounge/posts/:id/hide', async (req, res, next) => {
+  try {
+    await prisma.loungePost.update({ where: { id: req.params.id }, data: { status: 'hidden' } });
+    audit(req, 'lounge.post_hide', { targetType: 'LOUNGE_POST', targetId: req.params.id });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+router.post('/lounge/posts/:id/unhide', async (req, res, next) => {
+  try {
+    await prisma.loungePost.update({ where: { id: req.params.id }, data: { status: 'active' } });
+    audit(req, 'lounge.post_unhide', { targetType: 'LOUNGE_POST', targetId: req.params.id });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/lounge/memberships/:userId/suspend
+router.post('/lounge/memberships/:userId/suspend', async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    const { note } = req.body || {};
+    const m = await prisma.loungeMembership.update({
+      where: { userId },
+      data: {
+        status: 'suspended',
+        suspendedAt: new Date(),
+        suspendedById: req.user.id,
+      },
+    });
+    audit(req, 'lounge.membership_suspend', {
+      targetType: 'USER', targetId: userId, metadata: { note },
+    });
+    res.json({ ok: true, membership: m });
+  } catch (e) { next(e); }
+});
+
+router.post('/lounge/memberships/:userId/unsuspend', async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    const m = await prisma.loungeMembership.update({
+      where: { userId },
+      data: { status: 'active', suspendedAt: null, suspendedById: null },
+    });
+    audit(req, 'lounge.membership_unsuspend', { targetType: 'USER', targetId: userId });
+    res.json({ ok: true, membership: m });
+  } catch (e) { next(e); }
+});
+
 // GET /api/admin/plan-features — 등급별 권한 매트릭스 (읽기 전용 표시용)
 // 코드의 PLAN_FEATURES와 모든 feature 식별자/라벨을 함께 내림.
 router.get('/plan-features', (req, res) => {
