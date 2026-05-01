@@ -110,6 +110,40 @@ export default function LoungePost() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] }),
   });
 
+  const { data: attachData, refetch: refetchAttachments } = useQuery({
+    queryKey: ['lounge', 'attachments', postId],
+    queryFn: () => loungeApi.listAttachments(postId),
+    enabled: !!post && (post.attachmentCount > 0 || post.author?.id === myUserId || isSuperAdmin),
+  });
+  const attachments = attachData?.attachments || [];
+  const images = attachments.filter((a) => a.kind === 'image');
+  const rubies = attachments.filter((a) => a.kind === 'ruby');
+
+  const removeAttachmentMutation = useMutation({
+    mutationFn: (id) => loungeApi.removeAttachment(id),
+    onSuccess: () => {
+      refetchAttachments();
+      queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
+    },
+  });
+  async function downloadRuby(att) {
+    try {
+      const r = await loungeApi.downloadRuby(att.id);
+      // 새 창으로 다운로드
+      const a = document.createElement('a');
+      a.href = r.url;
+      a.download = r.fileName;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      refetchAttachments();
+    } catch (e) {
+      alert('다운로드 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   if (isLoading) {
     return <div className="text-center py-12 text-sm text-gray-500">불러오는 중...</div>;
   }
@@ -169,6 +203,25 @@ export default function LoungePost() {
         </div>
 
         <div className="text-sm">{renderBody(post.body)}</div>
+
+        {/* 첨부 — 이미지 + .rb */}
+        {(images.length > 0 || rubies.length > 0 || canEdit) && (
+          <AttachmentSection
+            postId={post.id}
+            images={images}
+            rubies={rubies}
+            canEdit={canEdit}
+            isRubyCategory={post.category === 'ruby'}
+            onUploaded={() => {
+              refetchAttachments();
+              queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
+            }}
+            onRemove={(id) => {
+              if (confirm('첨부를 삭제할까요?')) removeAttachmentMutation.mutate(id);
+            }}
+            onDownloadRuby={downloadRuby}
+          />
+        )}
 
         <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-800">
           <button
@@ -270,6 +323,105 @@ export default function LoungePost() {
             alert('신고가 접수되었습니다.');
           }}
         />
+      )}
+    </div>
+  );
+}
+
+function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, onUploaded, onRemove, onDownloadRuby }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleUpload(kind, fileList) {
+    if (!fileList || fileList.length === 0) return;
+    setBusy(true);
+    setError('');
+    try {
+      await loungeApi.uploadAttachments(postId, kind, Array.from(fileList));
+      onUploaded();
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3 border-t border-gray-200 dark:border-gray-800 pt-3">
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {images.map((img) => (
+            <div key={img.id} className="relative group">
+              <img src={img.url} alt={img.fileName} className="w-full rounded border border-gray-200 dark:border-gray-800" />
+              {canEdit && (
+                <button
+                  onClick={() => onRemove(img.id)}
+                  className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100"
+                >
+                  삭제
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {rubies.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-xs font-medium text-gray-500">스케치업 루비 (.rb) 첨부</div>
+          {rubies.map((rb) => (
+            <div
+              key={rb.id}
+              className="flex items-center gap-2 p-2 rounded border border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20"
+            >
+              <span className="text-sm flex-1 truncate font-mono">{rb.fileName}</span>
+              <span className="text-xs text-gray-500">{Math.round(rb.fileSize / 1024)}KB</span>
+              <span className="text-xs text-gray-400">↓ {rb.downloadCount}</span>
+              <button
+                onClick={() => onDownloadRuby(rb)}
+                className="text-xs px-2 py-0.5 rounded bg-amber-700 text-white hover:bg-amber-800"
+              >
+                다운로드
+              </button>
+              {canEdit && (
+                <button onClick={() => onRemove(rb.id)} className="text-xs text-gray-500 hover:text-rose-600">✕</button>
+              )}
+            </div>
+          ))}
+          <div className="text-[11px] text-amber-700 dark:text-amber-400">
+            ⚠ 사용자가 만든 스크립트입니다. 본인 책임으로 실행하세요.
+          </div>
+        </div>
+      )}
+      {canEdit && (
+        <div className="flex items-center gap-2 text-xs">
+          <label className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+            🖼 이미지 첨부
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleUpload('image', e.target.files)}
+            />
+          </label>
+          {(isRubyCategory || rubies.length > 0) && (
+            <label className="px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer">
+              💎 .rb 첨부
+              <input
+                type="file"
+                accept=".rb"
+                multiple
+                className="hidden"
+                onChange={(e) => handleUpload('ruby', e.target.files)}
+              />
+            </label>
+          )}
+          {busy && <span className="text-gray-500">업로드 중...</span>}
+          {error && <span className="text-rose-600">{error}</span>}
+          <span className="text-gray-400 ml-auto">
+            이미지 5MB×5장 / .rb 1MB×3개
+          </span>
+        </div>
       )}
     </div>
   );

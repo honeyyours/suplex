@@ -27,4 +27,21 @@ export const loungeApi = {
     api.post(`/lounge/comments/${id}/reports`, payload).then((r) => r.data),
 
   homePinned: () => api.get('/lounge/home-pinned').then((r) => r.data),
+
+  listAttachments: (postId) =>
+    api.get(`/lounge/posts/${postId}/attachments`).then((r) => r.data),
+  uploadAttachments: (postId, kind, files) => {
+    const fd = new FormData();
+    fd.append('kind', kind);
+    for (const f of files) fd.append('files', f);
+    return api
+      .post(`/lounge/posts/${postId}/attachments`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
+  removeAttachment: (id) =>
+    api.delete(`/lounge/attachments/${id}`).then((r) => r.data),
+  downloadRuby: (id) =>
+    api.get(`/lounge/attachments/${id}/download`).then((r) => r.data),
 };

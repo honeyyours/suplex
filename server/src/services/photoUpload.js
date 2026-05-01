@@ -65,4 +65,46 @@ async function deleteByPublicId(publicId) {
   }
 }
 
-module.exports = { uploadBuffer, deleteByPublicId, isConfigured };
+// raw 파일(.rb 등) 업로드 — image와 별도 함수. resource_type='raw'.
+async function uploadRawBuffer(buffer, { folder = 'suplex', filename } = {}) {
+  if (!ensureConfigured()) {
+    const err = new Error('Cloudinary가 설정되지 않았습니다');
+    err.status = 503;
+    throw err;
+  }
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: filename,
+        resource_type: 'raw',
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+          bytes: result.bytes,
+        });
+      }
+    );
+    uploadStream.end(buffer);
+  });
+}
+
+async function deleteRawByPublicId(publicId) {
+  if (!ensureConfigured()) return;
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+  } catch (e) {
+    // 무시
+  }
+}
+
+module.exports = {
+  uploadBuffer,
+  uploadRawBuffer,
+  deleteByPublicId,
+  deleteRawByPublicId,
+  isConfigured,
+};

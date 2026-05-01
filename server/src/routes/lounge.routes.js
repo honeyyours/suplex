@@ -8,6 +8,7 @@
 // 첨부(이미지/.rb)는 task #8에서 추가.
 
 const express = require('express');
+const multer = require('multer');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
@@ -16,12 +17,30 @@ const {
   LOUNGE_CATEGORY_KEYS,
   canAccessLounge,
 } = require('../services/lounge');
+const {
+  uploadBuffer,
+  uploadRawBuffer,
+  deleteByPublicId,
+  deleteRawByPublicId,
+  isConfigured,
+} = require('../services/photoUpload');
 
 const router = express.Router();
 router.use(authRequired);
 
 const REPORT_REASONS = ['spam', 'abuse', 'client_info', 'malicious_code', 'other'];
 const JOB_ROLES = ['designer', 'site', 'ops', 'etc'];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_RUBY_SIZE = 1 * 1024 * 1024;  // 1MB
+const MAX_IMAGES_PER_POST = 5;
+const MAX_RUBY_PER_POST = 3;
+
+// multer 설정 — 이미지/.rb 모두 메모리 스토리지. 개별 size는 핸들러에서 검증.
+const attachmentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 5 },
+});
 
 // ============================================
 // 미들웨어 — 라운지 멤버십 가드
@@ -679,6 +698,163 @@ async function createReport(req, res, next, targetType) {
 
 router.post('/posts/:id/reports', (req, res, next) => createReport(req, res, next, 'post'));
 router.post('/comments/:id/reports', (req, res, next) => createReport(req, res, next, 'comment'));
+
+// ============================================
+// 첨부 — POST /api/lounge/posts/:id/attachments (multipart, files[])
+// kind 필드: image | ruby. 본인 글에만 첨부 가능.
+// 이미지 5MB·글당 5장, .rb 1MB·글당 3개.
+// ============================================
+
+router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async (req, res, next) => {
+  try {
+    const post = await prisma.loungePost.findUnique({
+      where: { id: req.params.id },
+      include: { attachments: { select: { id: true, kind: true } } },
+    });
+    if (!post || post.status === 'deleted') {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
+    if (post.authorId !== req.user.id && !req.user.isSuperAdmin) {
+      return res.status(403).json({ error: '본인 글에만 첨부할 수 있습니다' });
+    }
+    const files = req.files || [];
+    if (files.length === 0) return res.status(400).json({ error: '파일이 없습니다' });
+
+    const kind = (req.body.kind || 'image').toString();
+    if (!['image', 'ruby'].includes(kind)) {
+      return res.status(400).json({ error: 'kind는 image 또는 ruby' });
+    }
+    if (!isConfigured()) {
+      return res.status(503).json({ error: 'Cloudinary가 설정되지 않았습니다' });
+    }
+
+    // 글당 첨부 개수 제한
+    const existing = post.attachments.filter((a) => a.kind === kind).length;
+    const max = kind === 'ruby' ? MAX_RUBY_PER_POST : MAX_IMAGES_PER_POST;
+    if (existing + files.length > max) {
+      return res.status(400).json({
+        error: `${kind === 'ruby' ? '.rb' : '이미지'}는 글당 ${max}개까지 첨부 가능합니다 (현재 ${existing}개)`,
+      });
+    }
+
+    if (kind === 'ruby') {
+      for (const f of files) {
+        if (f.size > MAX_RUBY_SIZE) {
+          return res.status(400).json({ error: `.rb 파일은 최대 ${MAX_RUBY_SIZE / 1024 / 1024}MB까지 가능합니다 (${f.originalname})` });
+        }
+        const lower = (f.originalname || '').toLowerCase();
+        if (!lower.endsWith('.rb')) {
+          return res.status(400).json({ error: `.rb 확장자만 허용됩니다 (${f.originalname})` });
+        }
+      }
+    } else {
+      // image 검증 — multer가 이미 fileSize 제한
+      for (const f of files) {
+        if (!/^image\//.test(f.mimetype || '')) {
+          return res.status(400).json({ error: `이미지 파일만 허용됩니다 (${f.originalname})` });
+        }
+      }
+    }
+
+    const folder = `suplex/lounge/${post.id}/${kind}`;
+    const created = [];
+    for (const f of files) {
+      let storageKey;
+      if (kind === 'ruby') {
+        const r = await uploadRawBuffer(f.buffer, { folder });
+        storageKey = r.publicId;
+      } else {
+        const r = await uploadBuffer(f.buffer, { folder });
+        storageKey = r.publicId;
+      }
+      const att = await prisma.loungeAttachment.create({
+        data: {
+          postId: post.id,
+          kind,
+          fileName: f.originalname || 'file',
+          fileSize: f.size,
+          storageKey,
+          mimeType: f.mimetype || null,
+        },
+      });
+      created.push(att);
+    }
+    res.status(201).json({ attachments: created });
+  } catch (e) {
+    if (e.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: '파일 크기 제한 초과' });
+    }
+    next(e);
+  }
+});
+
+// GET /api/lounge/posts/:id/attachments — 첨부 목록 (이미지 url 포함)
+router.get('/posts/:id/attachments', async (req, res, next) => {
+  try {
+    const post = await prisma.loungePost.findUnique({ where: { id: req.params.id } });
+    if (!post || post.status === 'deleted') {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
+    const items = await prisma.loungeAttachment.findMany({
+      where: { postId: post.id },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, kind: true, fileName: true, fileSize: true, storageKey: true, downloadCount: true, createdAt: true },
+    });
+    // 이미지는 storageKey(publicId)를 그대로 Cloudinary URL로 변환해 노출. .rb는 다운로드 엔드포인트로.
+    const cloudName = require('../config/env').cloudinary.cloudName;
+    const out = items.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      fileName: a.fileName,
+      fileSize: a.fileSize,
+      downloadCount: a.downloadCount,
+      createdAt: a.createdAt,
+      url:
+        a.kind === 'image' && cloudName
+          ? `https://res.cloudinary.com/${cloudName}/image/upload/${a.storageKey}`
+          : null,
+    }));
+    res.json({ attachments: out });
+  } catch (e) { next(e); }
+});
+
+// GET /api/lounge/attachments/:id/download — .rb 다운로드 + 카운트
+router.get('/attachments/:id/download', async (req, res, next) => {
+  try {
+    const a = await prisma.loungeAttachment.findUnique({ where: { id: req.params.id } });
+    if (!a) return res.status(404).json({ error: '첨부를 찾을 수 없습니다' });
+    if (a.kind !== 'ruby') {
+      return res.status(400).json({ error: '이 엔드포인트는 .rb 파일 전용입니다' });
+    }
+    await prisma.loungeAttachment.update({
+      where: { id: a.id },
+      data: { downloadCount: { increment: 1 } },
+    });
+    const cloudName = require('../config/env').cloudinary.cloudName;
+    if (!cloudName) return res.status(503).json({ error: 'Cloudinary 미설정' });
+    const url = `https://res.cloudinary.com/${cloudName}/raw/upload/${a.storageKey}`;
+    // 클라이언트가 새 탭으로 열거나 fetch해 저장하도록 URL 반환 (서버 프록시 다운로드는 v2)
+    res.json({ url, fileName: a.fileName });
+  } catch (e) { next(e); }
+});
+
+// DELETE /api/lounge/attachments/:id — 첨부 삭제 (본인 글 + 슈퍼어드민)
+router.delete('/attachments/:id', async (req, res, next) => {
+  try {
+    const a = await prisma.loungeAttachment.findUnique({
+      where: { id: req.params.id },
+      include: { post: { select: { authorId: true } } },
+    });
+    if (!a) return res.status(404).json({ error: '첨부를 찾을 수 없습니다' });
+    if (a.post.authorId !== req.user.id && !req.user.isSuperAdmin) {
+      return res.status(403).json({ error: '본인 첨부만 삭제할 수 있습니다' });
+    }
+    if (a.kind === 'ruby') await deleteRawByPublicId(a.storageKey);
+    else await deleteByPublicId(a.storageKey);
+    await prisma.loungeAttachment.delete({ where: { id: a.id } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
 
 // ============================================
 // GET /api/lounge/home-pinned — 홈 "오늘의 팁" 카드 1개
