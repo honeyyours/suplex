@@ -3,6 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
+const { deleteByPublicId, isConfigured } = require('../services/photoUpload');
 
 const router = express.Router({ mergeParams: true });
 router.use(authRequired);
@@ -37,7 +38,22 @@ router.get('/', async (req, res, next) => {
       where,
       orderBy: [{ pinned: 'desc' }, { orderIndex: 'asc' }, { createdAt: 'desc' }],
     });
-    res.json({ memos });
+
+    const memoIds = memos.map((m) => m.id);
+    const photos = memoIds.length
+      ? await prisma.projectPhoto.findMany({
+          where: { projectId, source: 'MEMO', sourceId: { in: memoIds } },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, sourceId: true, url: true, thumbnailUrl: true, caption: true, createdAt: true },
+        })
+      : [];
+    const photosByMemo = {};
+    for (const p of photos) {
+      (photosByMemo[p.sourceId] ||= []).push(p);
+    }
+    const enriched = memos.map((m) => ({ ...m, photos: photosByMemo[m.id] || [] }));
+
+    res.json({ memos: enriched });
   } catch (e) { next(e); }
 });
 
@@ -70,7 +86,7 @@ router.post('/', async (req, res, next) => {
         orderIndex: (last?.orderIndex ?? -1) + 1,
       },
     });
-    res.status(201).json({ memo });
+    res.status(201).json({ memo: { ...memo, photos: [] } });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
@@ -103,7 +119,12 @@ router.patch('/:id', async (req, res, next) => {
     if (data.orderIndex !== undefined) updateData.orderIndex = data.orderIndex;
 
     const memo = await prisma.projectMemo.update({ where: { id }, data: updateData });
-    res.json({ memo });
+    const photos = await prisma.projectPhoto.findMany({
+      where: { projectId, source: 'MEMO', sourceId: id },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, sourceId: true, url: true, thumbnailUrl: true, caption: true, createdAt: true },
+    });
+    res.json({ memo: { ...memo, photos } });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
@@ -119,6 +140,22 @@ router.delete('/:id', async (req, res, next) => {
     const existing = await prisma.projectMemo.findFirst({ where: { id, projectId } });
     if (!existing) return res.status(404).json({ error: 'Memo not found' });
 
+    const attached = await prisma.projectPhoto.findMany({
+      where: { projectId, source: 'MEMO', sourceId: id },
+      select: { id: true, publicId: true, url: true },
+    });
+    if (attached.length && isConfigured()) {
+      for (const p of attached) {
+        if (p.publicId) {
+          try { await deleteByPublicId(p.publicId); } catch (_) { /* best-effort */ }
+        }
+      }
+    }
+    if (attached.length) {
+      await prisma.projectPhoto.deleteMany({
+        where: { id: { in: attached.map((p) => p.id) } },
+      });
+    }
     await prisma.projectMemo.delete({ where: { id } });
     res.json({ ok: true });
   } catch (e) { next(e); }

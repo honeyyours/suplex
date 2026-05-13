@@ -12,7 +12,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024, files: 10 }, // 10MB x 10
 });
 
-const SOURCES = ['REPORT', 'MATERIAL_REQUEST', 'CHECKLIST'];
+const SOURCES = ['REPORT', 'MATERIAL_REQUEST', 'CHECKLIST', 'MEMO'];
 
 async function assertProjectAccess(projectId, companyId) {
   return prisma.project.findFirst({ where: { id: projectId, companyId } });
@@ -27,6 +27,9 @@ async function assertSourceExists(source, sourceId, projectId) {
   }
   if (source === 'CHECKLIST') {
     return prisma.projectChecklist.findFirst({ where: { id: sourceId, projectId } });
+  }
+  if (source === 'MEMO') {
+    return prisma.projectMemo.findFirst({ where: { id: sourceId, projectId } });
   }
   return null;
 }
@@ -109,12 +112,13 @@ projectRouter.get('/', async (req, res, next) => {
       take: Number(req.query.limit) || 200,
     });
 
-    // 출처 레이블 추가 (체크리스트 항목명 / 작업보고 날짜 / 자재요청 항목명)
+    // 출처 레이블 추가 (체크리스트 항목명 / 작업보고 날짜 / 자재요청 항목명 / 메모 제목)
     const checklistIds = [...new Set(photos.filter((p) => p.source === 'CHECKLIST').map((p) => p.sourceId))];
     const reportIds = [...new Set(photos.filter((p) => p.source === 'REPORT').map((p) => p.sourceId))];
     const requestIds = [...new Set(photos.filter((p) => p.source === 'MATERIAL_REQUEST').map((p) => p.sourceId))];
+    const memoIds = [...new Set(photos.filter((p) => p.source === 'MEMO').map((p) => p.sourceId))];
 
-    const [checks, reports, reqs] = await Promise.all([
+    const [checks, reports, reqs, memos] = await Promise.all([
       checklistIds.length
         ? prisma.projectChecklist.findMany({
             where: { id: { in: checklistIds } },
@@ -133,10 +137,17 @@ projectRouter.get('/', async (req, res, next) => {
             select: { id: true, itemName: true },
           })
         : [],
+      memoIds.length
+        ? prisma.projectMemo.findMany({
+            where: { id: { in: memoIds } },
+            select: { id: true, title: true, content: true, tag: true },
+          })
+        : [],
     ]);
     const checkMap = Object.fromEntries(checks.map((c) => [c.id, c]));
     const reportMap = Object.fromEntries(reports.map((r) => [r.id, r]));
     const reqMap = Object.fromEntries(reqs.map((r) => [r.id, r]));
+    const memoMap = Object.fromEntries(memos.map((m) => [m.id, m]));
 
     const enriched = photos.map((p) => {
       let sourceLabel = null;
@@ -147,6 +158,9 @@ projectRouter.get('/', async (req, res, next) => {
         sourceLabel = `${new Date(reportMap[p.sourceId].date).toLocaleDateString('ko-KR')} 작업`;
       } else if (p.source === 'MATERIAL_REQUEST' && reqMap[p.sourceId]) {
         sourceLabel = reqMap[p.sourceId].itemName;
+      } else if (p.source === 'MEMO' && memoMap[p.sourceId]) {
+        const m = memoMap[p.sourceId];
+        sourceLabel = m.title || (m.content || '').split('\n')[0].slice(0, 30) || '메모';
       }
       return { ...p, sourceLabel };
     });

@@ -78,7 +78,8 @@ async function loadAllPhotos(projectId) {
   const requestIds = [
     ...new Set(projectPhotos.filter((p) => p.source === 'MATERIAL_REQUEST').map((p) => p.sourceId)),
   ];
-  const [reports, checklists, requests] = await Promise.all([
+  const memoIds = [...new Set(projectPhotos.filter((p) => p.source === 'MEMO').map((p) => p.sourceId))];
+  const [reports, checklists, requests, memos] = await Promise.all([
     reportIds.length
       ? prisma.dailyReport.findMany({ where: { id: { in: reportIds } }, select: { id: true, date: true } })
       : [],
@@ -94,10 +95,17 @@ async function loadAllPhotos(projectId) {
           select: { id: true, itemName: true },
         })
       : [],
+    memoIds.length
+      ? prisma.projectMemo.findMany({
+          where: { id: { in: memoIds } },
+          select: { id: true, title: true, content: true },
+        })
+      : [],
   ]);
   const rMap = Object.fromEntries(reports.map((r) => [r.id, r]));
   const cMap = Object.fromEntries(checklists.map((c) => [c.id, c]));
   const qMap = Object.fromEntries(requests.map((r) => [r.id, r]));
+  const mMap = Object.fromEntries(memos.map((m) => [m.id, m]));
 
   const flat = [];
   let idx = 0;
@@ -114,6 +122,10 @@ async function loadAllPhotos(projectId) {
     } else if (p.source === 'MATERIAL_REQUEST' && qMap[p.sourceId]) {
       folder = 'material';
       label = qMap[p.sourceId].itemName;
+    } else if (p.source === 'MEMO' && mMap[p.sourceId]) {
+      folder = 'memo';
+      const m = mMap[p.sourceId];
+      label = m.title || (m.content || '').split('\n')[0].slice(0, 30) || '메모';
     }
     idx += 1;
     const filename = `${folder}/${safe(label)}/${String(idx).padStart(4, '0')}.${extFromUrl(p.url)}`;

@@ -777,13 +777,14 @@ enum PhotoSource {
   REPORT
   MATERIAL_REQUEST
   CHECKLIST
+  MEMO
 }
 
 model ProjectPhoto {
   id           String      @id @default(cuid())
   projectId    String
   source       PhotoSource
-  sourceId     String // DailyReport / MaterialRequest / ProjectChecklist id
+  sourceId     String // DailyReport / MaterialRequest / ProjectChecklist / ProjectMemo id
   url          String // Cloudinary URL (원본)
   thumbnailUrl String? // Cloudinary 변환 URL (썸네일)
   publicId     String? // Cloudinary public_id — purge(외부 보관) 시 안정적 삭제용. 기존 행은 null (URL 파싱 fallback)

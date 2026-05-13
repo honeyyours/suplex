@@ -9,4 +9,16 @@ export const projectMemosApi = {
     api.patch(`/projects/${projectId}/memos/${id}`, payload).then((r) => r.data),
   remove: (projectId, id) =>
     api.delete(`/projects/${projectId}/memos/${id}`).then((r) => r.data),
+
+  uploadPhotos: (projectId, memoId, files) => {
+    const fd = new FormData();
+    fd.append('source', 'MEMO');
+    fd.append('sourceId', memoId);
+    files.forEach((f) => fd.append('photos', f));
+    return api.post(`/projects/${projectId}/photos`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data);
+  },
+  removePhoto: (projectId, photoId) =>
+    api.delete(`/projects/${projectId}/photos/${photoId}`).then((r) => r.data),
 };

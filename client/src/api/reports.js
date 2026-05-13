@@ -55,6 +55,7 @@ export const PHOTO_SOURCE_META = {
   REPORT:           { label: '작업 보고', color: 'bg-navy-100 text-navy-700' },
   MATERIAL_REQUEST: { label: '자재 요청', color: 'bg-amber-100 text-amber-800' },
   CHECKLIST:        { label: '체크리스트', color: 'bg-emerald-100 text-emerald-700' },
+  MEMO:             { label: '메모',       color: 'bg-violet-100 text-violet-800' },
 };
 
 export const CATEGORIES = [

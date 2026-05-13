@@ -42,6 +42,7 @@ export default function PhotoTimelineTab({ projectId }) {
             { k: 'REPORT', l: '작업 보고' },
             { k: 'MATERIAL_REQUEST', l: '자재 요청' },
             { k: 'CHECKLIST', l: '체크리스트' },
+            { k: 'MEMO', l: '메모' },
           ].map((t) => (
             <button
               key={t.k}

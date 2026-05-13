@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { projectMemosApi } from '../api/projectMemos';
+import ImageLightbox from '../components/ImageLightbox';
 
 const SAVE_DELAY = 800;
 
@@ -122,10 +123,19 @@ export default function ProjectMemo() {
     /* eslint-disable-next-line */
   }, [projectId]);
 
-  async function handleCreate(payload) {
+  async function handleCreate(payload, files) {
     try {
       const { memo } = await projectMemosApi.create(projectId, payload);
-      setMemos((prev) => [...prev, memo]);
+      let final = memo;
+      if (files && files.length > 0) {
+        try {
+          const { photos } = await projectMemosApi.uploadPhotos(projectId, memo.id, files);
+          final = { ...memo, photos };
+        } catch (upErr) {
+          alert('메모는 저장됐지만 사진 업로드에 실패했습니다: ' + (upErr.response?.data?.error || upErr.message));
+        }
+      }
+      setMemos((prev) => [...prev, final]);
       setCreateOpen(false);
     } catch (e) {
       alert('저장 실패: ' + (e.response?.data?.error || e.message));
@@ -141,8 +151,34 @@ export default function ProjectMemo() {
     }
   }
 
+  async function handleAddPhotos(memoId, files) {
+    try {
+      const { photos } = await projectMemosApi.uploadPhotos(projectId, memoId, files);
+      setMemos((prev) =>
+        prev.map((m) => (m.id === memoId ? { ...m, photos: [...(m.photos || []), ...photos] } : m)),
+      );
+    } catch (e) {
+      alert('사진 업로드 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
+  async function handleRemovePhoto(memoId, photoId) {
+    try {
+      await projectMemosApi.removePhoto(projectId, photoId);
+      setMemos((prev) =>
+        prev.map((m) =>
+          m.id === memoId
+            ? { ...m, photos: (m.photos || []).filter((p) => p.id !== photoId) }
+            : m,
+        ),
+      );
+    } catch (e) {
+      alert('사진 삭제 실패: ' + (e.response?.data?.error || e.message));
+    }
+  }
+
   async function handleRemove(id) {
-    if (!confirm('이 메모를 삭제할까요?')) return;
+    if (!confirm('이 메모를 삭제할까요? 첨부된 사진도 함께 삭제됩니다.')) return;
     try {
       await projectMemosApi.remove(projectId, id);
       setMemos((prev) => prev.filter((m) => m.id !== id));
@@ -232,6 +268,8 @@ export default function ProjectMemo() {
                   memo={m}
                   onUpdate={(patch) => handleUpdate(m.id, patch)}
                   onRemove={() => handleRemove(m.id)}
+                  onAddPhotos={(files) => handleAddPhotos(m.id, files)}
+                  onRemovePhoto={(photoId) => handleRemovePhoto(m.id, photoId)}
                 />
               </div>
             );
@@ -284,17 +322,52 @@ function CreateMemoModal({ onClose, onSave }) {
   const [tag, setTag] = useState('일반');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [files, setFiles] = useState([]); // File[]
+  const [previews, setPreviews] = useState([]); // string[] (object URLs)
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef(null);
 
   const s = tagStyle(tag);
+
+  useEffect(() => () => {
+    previews.forEach((u) => URL.revokeObjectURL(u));
+  }, [previews]);
+
+  function addFiles(picked) {
+    const arr = Array.from(picked || []).filter((f) => f.type.startsWith('image/'));
+    if (arr.length === 0) return;
+    setFiles((prev) => [...prev, ...arr]);
+    setPreviews((prev) => [...prev, ...arr.map((f) => URL.createObjectURL(f))]);
+  }
+
+  function removeAt(idx) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => {
+      URL.revokeObjectURL(prev[idx]);
+      return prev.filter((_, i) => i !== idx);
+    });
+  }
+
+  function onPaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const imgs = [];
+    for (const it of items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) imgs.push(f);
+      }
+    }
+    if (imgs.length > 0) addFiles(imgs);
+  }
 
   async function submit() {
     const t = title.trim();
     const c = content.trim();
-    if (!t && !c) return;
+    if (!t && !c && files.length === 0) return;
     setBusy(true);
     try {
-      await onSave({ title: t, content, tag });
+      await onSave({ title: t, content, tag }, files);
     } finally {
       setBusy(false);
     }
@@ -351,16 +424,54 @@ function CreateMemoModal({ onClose, onSave }) {
               rows={5}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={`예: ${s.examples[1] || s.examples[0]}`}
+              onPaste={onPaste}
+              placeholder={`예: ${s.examples[1] || s.examples[0]}  (이미지 붙여넣기도 가능합니다)`}
               className="input resize-y"
             />
+          </L>
+
+          <L label={`사진 (${files.length}장)`}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                addFiles(e.target.files);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+            />
+            <div className="flex flex-wrap gap-2">
+              {previews.map((url, i) => (
+                <div key={i} className="relative w-20 h-20 rounded overflow-hidden border bg-gray-100 group">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeAt(i)}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs leading-none hover:bg-rose-600"
+                    title="제거"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-20 h-20 rounded border-2 border-dashed border-gray-300 text-gray-400 hover:border-navy-500 hover:text-navy-700 text-xs flex flex-col items-center justify-center"
+              >
+                <span className="text-lg leading-none">+</span>
+                <span>사진 추가</span>
+              </button>
+            </div>
           </L>
         </div>
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 border rounded-md text-sm">취소</button>
           <button
             onClick={submit}
-            disabled={busy || (!title.trim() && !content.trim())}
+            disabled={busy || (!title.trim() && !content.trim() && files.length === 0)}
             className="px-5 py-2 bg-navy-700 text-white rounded-md text-sm disabled:opacity-50"
           >
             {busy ? '저장 중...' : '저장'}
@@ -387,14 +498,19 @@ function L({ label, children }) {
 // ===========================================
 // 메모 카드 (현장보고 카드 패턴) — 흰 배경 + 태그 chip + 인라인 편집(자동 저장)
 // ===========================================
-function MemoCard({ memo, onUpdate, onRemove }) {
+function MemoCard({ memo, onUpdate, onRemove, onAddPhotos, onRemovePhoto }) {
   const [title, setTitle] = useState(memo.title || '');
   const [content, setContent] = useState(memo.content || '');
   const [tag, setTag] = useState(memo.tag || '일반');
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(null);
   const titleTimer = useRef(null);
   const contentTimer = useRef(null);
   const copiedTimer = useRef(null);
+  const photoInputRef = useRef(null);
+
+  const photos = memo.photos || [];
 
   useEffect(() => { setTitle(memo.title || ''); }, [memo.title]);
   useEffect(() => { setContent(memo.content || ''); }, [memo.content]);
@@ -404,6 +520,33 @@ function MemoCard({ memo, onUpdate, onRemove }) {
     if (contentTimer.current) clearTimeout(contentTimer.current);
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
   }, []);
+
+  async function pickedFiles(picked) {
+    const arr = Array.from(picked || []).filter((f) => f.type.startsWith('image/'));
+    if (arr.length === 0) return;
+    setUploading(true);
+    try {
+      await onAddPhotos(arr);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onContentPaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const imgs = [];
+    for (const it of items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) imgs.push(f);
+      }
+    }
+    if (imgs.length > 0) {
+      e.preventDefault();
+      await pickedFiles(imgs);
+    }
+  }
 
   function handleTitleChange(v) {
     setTitle(v);
@@ -442,6 +585,25 @@ function MemoCard({ memo, onUpdate, onRemove }) {
       <div className="flex items-center justify-between gap-2 mb-2">
         <TagSelect value={tag} onChange={handleTagChange} />
         <div className="flex items-center gap-1 text-xs">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              pickedFiles(e.target.files);
+              if (photoInputRef.current) photoInputRef.current.value = '';
+            }}
+          />
+          <button
+            onClick={() => photoInputRef.current?.click()}
+            disabled={uploading}
+            title="사진 추가"
+            className="px-2 py-1 text-gray-400 hover:text-navy-700 hover:bg-gray-50 rounded sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50"
+          >
+            {uploading ? '⏳' : '📷'}
+          </button>
           <button
             onClick={copyAll}
             className={`px-2 py-1 rounded transition ${copied
@@ -470,10 +632,45 @@ function MemoCard({ memo, onUpdate, onRemove }) {
       <textarea
         value={content}
         onChange={(e) => handleContentChange(e.target.value)}
-        placeholder="메모 작성..."
+        onPaste={onContentPaste}
+        placeholder="메모 작성... (이미지 붙여넣기 가능)"
         rows={Math.min(20, Math.max(3, content.split('\n').length + 1))}
         className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed text-gray-700 placeholder:text-gray-300"
       />
+
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-1.5 mt-2">
+          {photos.map((p, idx) => (
+            <div key={p.id} className="relative aspect-square rounded overflow-hidden border bg-gray-100 group/photo">
+              <button
+                type="button"
+                onClick={() => setLightboxIdx(idx)}
+                className="w-full h-full"
+              >
+                <img src={p.thumbnailUrl || p.url} alt="" className="w-full h-full object-cover" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('이 사진을 삭제할까요?')) onRemovePhoto(p.id);
+                }}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs leading-none hover:bg-rose-600 opacity-0 group-hover/photo:opacity-100 transition"
+                title="삭제"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {lightboxIdx !== null && photos.length > 0 && (
+        <ImageLightbox
+          photos={photos}
+          index={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
+      )}
     </div>
   );
 }
