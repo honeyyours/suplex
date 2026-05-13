@@ -7,9 +7,19 @@ import { formatDateDot } from '../utils/date';
 // 간편견적 lines: [그룹 헤더, 라인…, 그룹 끝 마커, 평면 라인…] 혼합
 // 출력용으로는 그룹 한 묶음을 한 행으로 합침.
 //   항목 = 그룹 헤더의 itemName (= 공정명)
-//   시공내용 = 그룹 안 라인들의 itemName(spec) 을 ' / ' 로 join
+//   시공내용 = 그룹 안 각 라인의 "name(spec) — notes" 를 줄바꿈으로 join (notes 가 핵심 정보)
 //   금액 = 그룹 안 라인들의 quantity * unitPrice 합
 // 그룹 밖 평면 라인은 한 줄씩 단독 행으로.
+function buildLineDetail(line) {
+  const name = (line.itemName || '').trim();
+  const spec = (line.spec || '').trim();
+  const notes = (line.notes || '').trim();
+  const head = name && spec ? `${name}(${spec})` : (name || spec);
+  // 비고 자체가 핵심 설명 — head 가 비어있어도 notes 만 노출
+  if (head && notes) return `${head} — ${notes}`;
+  return head || notes;
+}
+
 export function buildPrintRows(lines = []) {
   const rows = [];
   let group = null;
@@ -34,14 +44,8 @@ export function buildPrintRows(lines = []) {
   closeGroup();
   return rows.map((r, i) => {
     const detail = r.kind === 'group'
-      ? r.items.map((it) => {
-          const name = (it.itemName || '').trim();
-          const spec = (it.spec || '').trim();
-          if (!name && !spec) return '';
-          if (name && spec) return `${name}(${spec})`;
-          return name || spec;
-        }).filter(Boolean).join(' / ')
-      : ((r.items[0]?.spec || '').trim() || '');
+      ? r.items.map(buildLineDetail).filter(Boolean).join('\n')
+      : buildLineDetail(r.items[0] || {});
     return {
       no: String(i + 1).padStart(2, '0'),
       category: r.category,
@@ -267,13 +271,13 @@ const CLASSIC_CSS = `
   padding: 8px 6px; text-align: center; border: 1px solid var(--c-primary);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .qpt-classic__items tbody td { border: 1px solid var(--c-border); padding: 7px 10px;
-  vertical-align: middle; }
+  vertical-align: top; line-height: 1.5; }
 .qpt-classic__items tbody tr:nth-child(even) td { background: var(--c-alt);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 /* 컬럼 너비는 thead/tbody 공통, 색·정렬은 tbody만 — thead 헤더는 흰색+가운데 일괄 유지 */
 .qpt-classic__items .col-no { width: 7%; }
 .qpt-classic__items .col-category { width: 13%; }
-.qpt-classic__items .col-detail { width: 56%; }
+.qpt-classic__items .col-detail { width: 56%; white-space: pre-line; line-height: 1.5; }
 .qpt-classic__items .col-unit { width: 8%; }
 .qpt-classic__items .col-amount { width: 16%; }
 .qpt-classic__items tbody td.col-no { text-align: center; color: var(--c-gray); }
@@ -544,7 +548,7 @@ const SIDEBAR_CSS = `
   vertical-align: top; line-height: 1.5; }
 .qpt-side__items .col-no { width: 7%; color: var(--c-gray); font-size: var(--fs-xs); }
 .qpt-side__items .col-category { width: 15%; font-weight: 700; color: var(--c-primary); }
-.qpt-side__items .col-detail { width: 65%; }
+.qpt-side__items .col-detail { width: 65%; white-space: pre-line; }
 .qpt-side__items .col-amount { width: 13%; text-align: right; color: var(--c-text); }
 .qpt-side__empty { text-align: center; color: var(--c-gray); padding: 24px; }
 
@@ -803,7 +807,7 @@ const EDITORIAL_CSS = `
 /* 컬럼 너비 공통 + 색·정렬은 tbody 만 (헤더는 위 thead th 규칙으로 통일) */
 .qpt-edit__items .col-no { width: 7%; }
 .qpt-edit__items .col-category { width: 16%; }
-.qpt-edit__items .col-detail { width: 64%; }
+.qpt-edit__items .col-detail { width: 64%; white-space: pre-line; }
 .qpt-edit__items .col-amount { width: 13%; }
 .qpt-edit__items tbody td.col-no { color: var(--c-gray); font-size: var(--fs-xs); padding-top: 10px; }
 .qpt-edit__items tbody td.col-category { font-weight: 700; color: var(--c-primary); }
