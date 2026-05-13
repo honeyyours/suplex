@@ -388,6 +388,31 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     setTimeout(() => focusCell(newIdx, 'itemName'), 30);
   }
 
+  // 그룹 헤더 idx 기준 그 그룹 콘텐츠의 마지막 위치에 새 라인 삽입.
+  // - 명시적 isGroupEnd 마커가 있으면 그 직전
+  // - 마커 없이 다음 그룹 헤더 직전이면 그 직전
+  // - 둘 다 없으면 배열 끝
+  function addLineInGroup(headerIdx) {
+    let focusIdx = 0;
+    setLines((prev) => {
+      const ranges = computeGroupRanges(prev);
+      const me = ranges.find((r) => r.start === headerIdx);
+      if (!me) return prev;
+      // 끼울 위치: end 가 group-end 마커면 end, 아니면 end + 1
+      const endLine = prev[me.end];
+      const insertAt = endLine && endLine.isGroup && endLine.isGroupEnd ? me.end : me.end + 1;
+      const next = [...prev];
+      next.splice(insertAt, 0, {
+        _key: `tmp-${Date.now()}-${Math.random()}`,
+        isGroup: false, itemName: '', spec: '', quantity: 1, unit: '식', unitPrice: 0, notes: '',
+      });
+      focusIdx = insertAt;
+      scheduleLineSave(next);
+      return next;
+    });
+    setTimeout(() => focusCell(focusIdx, 'itemName'), 30);
+  }
+
   function addGroupEnd() {
     setLines((prev) => {
       const next = [
@@ -492,10 +517,29 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     const target = e.target;
     if (e.key === 'Enter') {
       e.preventDefault();
-      const next = document.querySelector(`[data-quote-cell="${rowIdx + 1}-${col}"]`);
-      if (next) {
-        next.focus();
-        if (typeof next.select === 'function') next.select();
+      // 그룹 안에서 다음 행이 그룹 종료 마커거나 다른 그룹 헤더면, 같은 그룹 안에 새 라인 추가
+      const current = lines[rowIdx];
+      const nextLine = lines[rowIdx + 1];
+      const inGroupNow = (() => {
+        // current 가 일반 라인일 때만 의미 있음
+        if (!current || current.isGroup) return null;
+        const ranges = computeGroupRanges(lines);
+        return ranges.find((r) => rowIdx >= r.start && rowIdx <= r.end) || null;
+      })();
+      if (inGroupNow && nextLine && nextLine.isGroup) {
+        // 다음 행이 그룹 경계(종료 마커 또는 새 그룹 시작) → 현재 그룹 끝에 새 라인 + 그 셀로 포커스
+        addLineInGroup(inGroupNow.start);
+        // addLineInGroup 이 첫 셀로 포커스하지만, 현재 컬럼을 보존
+        setTimeout(() => {
+          // 새로 추가된 라인 위치는 (그룹 종료마커 자리) === rowIdx + 1
+          focusCell(rowIdx + 1, col);
+        }, 35);
+        return;
+      }
+      const nextEl = document.querySelector(`[data-quote-cell="${rowIdx + 1}-${col}"]`);
+      if (nextEl) {
+        nextEl.focus();
+        if (typeof nextEl.select === 'function') nextEl.select();
       } else if (rowIdx + 1 < lines.length) {
         // 다음 행이 있긴 한데 같은 col 셀이 없음 (그룹 헤더) → 그 행의 itemName으로
         focusCell(rowIdx + 1, 'itemName');
@@ -803,6 +847,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                     onChange={(patch) => patchLine(idx, patch)}
                     onRemove={() => removeLine(idx)}
                     onCellKeyDown={handleCellKeyDown}
+                    onAddInGroup={isGroupHeader ? () => addLineInGroup(idx) : null}
                     isDragging={dragging?.fromIdx === idx}
                     dropPos={dragOver?.idx === idx ? dragOver.pos : null}
                     onDragStart={() => setDragging({ fromIdx: idx, isGroupHeader })}
@@ -1036,7 +1081,7 @@ function DragHandle({ onDragStart, onDragEnd, title }) {
 }
 
 function LineRow({
-  line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown,
+  line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown, onAddInGroup,
   isDragging, dropPos, onDragStart, onDragEnd, onDragOver, onDrop,
 }) {
   // dropPos: 'before' → 행 상단 indicator, 'after' → 하단 indicator (정밀도 ↑)
@@ -1112,6 +1157,16 @@ function LineRow({
               placeholder="그룹 이름 (예: 도배·타일·목공 — 표준 25개로 자동 흡수)"
             />
             <PhasePreviewBadge text={line.itemName} />
+            {onAddInGroup && (
+              <button
+                onClick={onAddInGroup}
+                tabIndex={-1}
+                className="text-[11px] px-1.5 py-0.5 border border-dashed border-navy-300 rounded text-navy-600 hover:bg-navy-50 hover:border-navy-500 whitespace-nowrap flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                title="이 그룹 끝에 항목 추가"
+              >
+                + 항목
+              </button>
+            )}
           </div>
         </td>
         <td className="px-1">
