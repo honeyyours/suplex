@@ -131,6 +131,9 @@ model User {
   loungeReactions  LoungeReaction[]  @relation("LoungeReactionUser")
   loungeReports    LoungeReport[]    @relation("LoungeReportReporter")
 
+  // AI 비서 대화 기록
+  aiChatThreads AiChatThread[]
+
   @@map("users")
 }
 
@@ -1546,4 +1549,40 @@ model LoungeReport {
   @@index([status, createdAt])
   @@index([targetType, targetId])
   @@map("lounge_reports")
+}
+
+// ============================================
+// AI 비서 대화 기록 (2026-05-13)
+// 정책: DB엔 전부 보존하되, Claude API엔 최근 3턴(직전 1~2 질문+답)만 슬라이딩 윈도우로 송신.
+// 도구 결과 JSON은 DB에 저장 X — 어시스턴트 최종 텍스트만 저장하므로 컨텍스트 토큰도 절감.
+// 스레드 = 한 묶음 대화. 사용자가 "+ 새 대화"로 명시 분리.
+// ============================================
+model AiChatThread {
+  id        String    @id @default(cuid())
+  companyId String
+  userId    String
+  title     String? // 첫 질문 30자 자동 생성 (null이면 "(제목 없음)" 표시)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  archivedAt DateTime? // 사용자가 삭제 누르면 채워짐 (soft delete — 복구는 미지원, 단순 숨김용)
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiChatMessage[]
+
+  @@index([companyId, userId, archivedAt, updatedAt])
+  @@map("ai_chat_threads")
+}
+
+model AiChatMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  role      String // 'user' | 'assistant'
+  content   String   @db.Text // user: 질문 텍스트 / assistant: 최종 응답 텍스트
+  toolCalls Json? // assistant turn 한정 — 화면 칩 복원용 [{name, input, resultPreview}]
+  createdAt DateTime @default(now())
+
+  thread AiChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@map("ai_chat_messages")
 }

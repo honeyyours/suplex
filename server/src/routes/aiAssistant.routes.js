@@ -35,20 +35,93 @@ const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "수플렉스(S
 - "이번 달", "작년", "올해" 같은 상대 시간은 오늘 날짜 기준으로 ISO 형식(YYYY-MM-DD)으로 변환해서 도구에 전달.
 - 여러 정보가 필요하면 여러 도구를 순차/병렬로 호출.`;
 
+// 신 스키마 — 단일 사용자 입력 + 기존 thread 참조
+// threadId 없으면 새 thread 생성. 단일 message 만 받고 히스토리는 서버가 DB에서 슬라이드.
 const chatSchema = z.object({
-  messages: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string(),
-  })).min(1),
+  threadId: z.string().nullish(),
+  message: z.string().min(1).max(8000),
 });
+
+// 슬라이딩 윈도우 크기 — 최근 N개 user/assistant pair (= 2N messages)
+// 토큰 비용 절감 핵심: DB엔 무한 보존, Claude API엔 최근 3턴만 전달.
+const CONTEXT_WINDOW_TURNS = 3;
 
 function getClient() {
   if (!env.anthropic.apiKey) return null;
   return new Anthropic({ apiKey: env.anthropic.apiKey });
 }
 
-// POST /api/ai-assistant/chat — SSE 스트리밍
-// 이벤트: text {text}, tool {name,input,resultPreview}, done {stopReason,usage,model}, error {error}
+function autoTitle(text) {
+  const t = String(text || '').trim().replace(/\s+/g, ' ');
+  if (t.length <= 30) return t || '(제목 없음)';
+  return t.slice(0, 30) + '…';
+}
+
+// ============================================
+// Thread CRUD
+// ============================================
+
+// GET /api/ai-assistant/threads — 최근 활성 스레드 목록
+router.get('/threads', async (req, res, next) => {
+  try {
+    const threads = await prisma.aiChatThread.findMany({
+      where: {
+        companyId: req.user.companyId,
+        userId: req.user.id,
+        archivedAt: null,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 30,
+      select: { id: true, title: true, updatedAt: true, createdAt: true },
+    });
+    res.json({ threads });
+  } catch (e) { next(e); }
+});
+
+// GET /api/ai-assistant/threads/:id — 단일 스레드 + 메시지
+router.get('/threads/:id', async (req, res, next) => {
+  try {
+    const thread = await prisma.aiChatThread.findFirst({
+      where: { id: req.params.id, companyId: req.user.companyId, userId: req.user.id, archivedAt: null },
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!thread) return res.status(404).json({ error: '대화를 찾을 수 없습니다' });
+    res.json({ thread });
+  } catch (e) { next(e); }
+});
+
+// PATCH /api/ai-assistant/threads/:id — 이름 변경
+router.patch('/threads/:id', async (req, res, next) => {
+  try {
+    const title = String(req.body?.title || '').trim().slice(0, 100);
+    if (!title) return res.status(400).json({ error: '제목이 비어있습니다' });
+    const t = await prisma.aiChatThread.updateMany({
+      where: { id: req.params.id, companyId: req.user.companyId, userId: req.user.id, archivedAt: null },
+      data: { title },
+    });
+    if (t.count === 0) return res.status(404).json({ error: '대화를 찾을 수 없습니다' });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// DELETE /api/ai-assistant/threads/:id — soft delete (archivedAt)
+router.delete('/threads/:id', async (req, res, next) => {
+  try {
+    const t = await prisma.aiChatThread.updateMany({
+      where: { id: req.params.id, companyId: req.user.companyId, userId: req.user.id, archivedAt: null },
+      data: { archivedAt: new Date() },
+    });
+    if (t.count === 0) return res.status(404).json({ error: '대화를 찾을 수 없습니다' });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// POST /api/ai-assistant/chat — SSE 스트리밍 + DB 저장 + 슬라이딩 윈도우
+// 본문: { threadId?, message }
+// threadId 없거나 못 찾으면 새 스레드 생성. 첫 sse 이벤트로 thread {id,title} 송신.
+// 이벤트: thread {id,title}, text {text}, tool {name,input,resultPreview}, done {stopReason,usage,model}, error {error}
 router.post('/chat', async (req, res, next) => {
   // 검증·셋업 단계 에러는 200 이전이므로 그냥 JSON 응답
   let data;
@@ -91,10 +164,45 @@ router.post('/chat', async (req, res, next) => {
 
   const system = `${SYSTEM_PROMPT}\n\n오늘 날짜: ${todayKR} (ISO: ${todayISO})\n${roleNote}`;
 
-  const messages = data.messages.map((m) => ({
-    role: m.role,
-    content: [{ type: 'text', text: m.content }],
-  }));
+  // ===== Thread 결정 (없으면 생성) + 슬라이딩 윈도우 히스토리 로드 =====
+  let thread = null;
+  if (data.threadId) {
+    thread = await prisma.aiChatThread.findFirst({
+      where: { id: data.threadId, companyId: req.user.companyId, userId: req.user.id, archivedAt: null },
+      select: { id: true, title: true },
+    });
+  }
+  if (!thread) {
+    thread = await prisma.aiChatThread.create({
+      data: {
+        companyId: req.user.companyId,
+        userId: req.user.id,
+        title: autoTitle(data.message),
+      },
+      select: { id: true, title: true },
+    });
+  }
+
+  // 새 사용자 메시지 저장 (DB는 무한 보존)
+  await prisma.aiChatMessage.create({
+    data: { threadId: thread.id, role: 'user', content: data.message },
+  });
+
+  // 슬라이딩 윈도우: 최근 CONTEXT_WINDOW_TURNS 턴(= user+assistant 쌍) 만 Claude 로 전달.
+  // 새로 추가된 현재 user 메시지 포함해 최근 2N + 1 정도를 잡으면 충분 (시간순 take).
+  const historyRows = await prisma.aiChatMessage.findMany({
+    where: { threadId: thread.id },
+    orderBy: { createdAt: 'desc' },
+    take: CONTEXT_WINDOW_TURNS * 2 + 1,
+  });
+  // 시간순으로 뒤집고 role 순서 정리. DB엔 tool_result/tool_use 블록 X — 단순 text 만 보냄.
+  const messages = historyRows
+    .slice()
+    .reverse()
+    .map((m) => ({
+      role: m.role,
+      content: [{ type: 'text', text: m.content }],
+    }));
 
   // SSE 헤더
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -107,6 +215,13 @@ router.post('/chat', async (req, res, next) => {
   function sendEvent(event, payload) {
     res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
   }
+
+  // 첫 이벤트: 클라이언트가 threadId 알 수 있게 thread 정보 송신
+  sendEvent('thread', { id: thread.id, title: thread.title });
+
+  // 어시스턴트 최종 텍스트 + 도구 호출 미리보기 누적 (DB 저장용)
+  const assistantTextChunks = [];
+  const assistantToolCalls = [];
 
   // 클라이언트 abort 시 루프 빨리 종료
   let aborted = false;
@@ -131,9 +246,10 @@ router.post('/chat', async (req, res, next) => {
         messages,
       });
 
-      // 텍스트 델타 즉시 송신 (사용자에게 안내 문장이 빠르게 보이도록)
+      // 텍스트 델타 즉시 송신 + DB 저장용 누적
       stream.on('text', (delta) => {
         if (aborted) return;
+        assistantTextChunks.push(delta);
         sendEvent('text', { text: delta });
       });
 
@@ -145,6 +261,21 @@ router.post('/chat', async (req, res, next) => {
       const toolUseBlocks = finalMessage.content.filter((b) => b.type === 'tool_use');
 
       if (finalMessage.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
+        // ===== 종료 — DB 저장 + done 이벤트 =====
+        const finalText = assistantTextChunks.join('');
+        await prisma.aiChatMessage.create({
+          data: {
+            threadId: thread.id,
+            role: 'assistant',
+            content: finalText,
+            toolCalls: assistantToolCalls.length ? assistantToolCalls : undefined,
+          },
+        });
+        // updatedAt 자동 갱신 (스레드 최근 사용 시각)
+        await prisma.aiChatThread.update({
+          where: { id: thread.id },
+          data: { updatedAt: new Date() },
+        });
         sendEvent('done', {
           stopReason: finalMessage.stop_reason,
           usage: finalMessage.usage,
@@ -156,6 +287,7 @@ router.post('/chat', async (req, res, next) => {
       if (finalMessage.stop_reason === 'pause_turn') continue;
 
       // 다음 모델 턴 전에 줄바꿈 1회 (안내 문장과 결과가 붙어보이지 않게)
+      assistantTextChunks.push('\n\n');
       sendEvent('text', { text: '\n\n' });
 
       // 각 tool_use 실행 → 즉시 SSE로 알리고 tool_result 모음
@@ -163,11 +295,10 @@ router.post('/chat', async (req, res, next) => {
       for (const block of toolUseBlocks) {
         if (aborted) return;
         const result = await executeTool(block.name, block.input, ctx);
-        sendEvent('tool', {
-          name: block.name,
-          input: block.input,
-          resultPreview: summarize(result),
-        });
+        const preview = summarize(result);
+        const toolMeta = { name: block.name, input: block.input, resultPreview: preview };
+        assistantToolCalls.push(toolMeta);
+        sendEvent('tool', toolMeta);
         toolResults.push({
           type: 'tool_result',
           tool_use_id: block.id,
@@ -177,13 +308,41 @@ router.post('/chat', async (req, res, next) => {
       messages.push({ role: 'user', content: toolResults });
     }
 
-    sendEvent('done', { stopReason: 'max_iterations', reply: '⚠️ 도구 호출이 너무 많아서 중단했습니다. 질문을 좀 더 구체적으로 다시 해주세요.' });
+    // 루프 한도 — 부분 결과라도 DB 저장 (사용자가 새로고침해도 잃지 않도록)
+    const partialText = assistantTextChunks.join('') ||
+      '⚠️ 도구 호출이 너무 많아서 중단했습니다. 질문을 좀 더 구체적으로 다시 해주세요.';
+    await prisma.aiChatMessage.create({
+      data: {
+        threadId: thread.id,
+        role: 'assistant',
+        content: partialText,
+        toolCalls: assistantToolCalls.length ? assistantToolCalls : undefined,
+      },
+    });
+    await prisma.aiChatThread.update({
+      where: { id: thread.id },
+      data: { updatedAt: new Date() },
+    });
+    sendEvent('done', { stopReason: 'max_iterations' });
     res.end();
   } catch (e) {
     console.error('[aiAssistant] stream error', e?.status, e?.message);
     const msg = e?.status === 401
       ? 'Anthropic API 키가 잘못되었거나 만료됨'
       : (e?.status ? `Claude API 에러 (${e.status}): ${e.message}` : (e.message || '응답 실패'));
+    // 부분 텍스트가 있으면 그것까지는 보존 (없으면 사용자 질문만 DB에 남음)
+    if (assistantTextChunks.length > 0) {
+      try {
+        await prisma.aiChatMessage.create({
+          data: {
+            threadId: thread.id,
+            role: 'assistant',
+            content: assistantTextChunks.join('') + `\n\n⚠️ ${msg}`,
+            toolCalls: assistantToolCalls.length ? assistantToolCalls : undefined,
+          },
+        });
+      } catch { /* 저장 실패는 무시 */ }
+    }
     try { sendEvent('error', { error: msg }); } catch {}
     res.end();
   }
