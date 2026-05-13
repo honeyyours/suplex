@@ -646,9 +646,10 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
     return s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
   }, 0);
   const liveDesignFee = Math.round(liveSubtotal * (Number(quote.designFeeRate) / 100));
-  const liveSubAfterDesign = liveSubtotal + liveDesignFee + (Number(quote.roundAdjustment) || 0);
+  // 단수조정은 총합계에 직접 가산 — 부가세 계산엔 영향 X (서버 computeTotals 와 동일)
+  const liveSubAfterDesign = liveSubtotal + liveDesignFee;
   const liveVat = Math.round(liveSubAfterDesign * (Number(quote.vatRate) / 100));
-  const liveTotal = liveSubAfterDesign + liveVat;
+  const liveTotal = liveSubAfterDesign + liveVat + (Number(quote.roundAdjustment) || 0);
 
   return (
     <div className="space-y-4">
@@ -946,21 +947,6 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           />
           <SumRow
             label={
-              <span className="flex items-center gap-2 text-gray-500">
-                단수조정
-                <input
-                  type="number"
-                  value={quote.roundAdjustment}
-                  onChange={(e) => scheduleHeaderSave({ roundAdjustment: Number(e.target.value) || 0 })}
-                  className="w-24 px-1 py-0.5 border rounded text-right text-xs"
-                />
-              </span>
-            }
-            value={Number(quote.roundAdjustment) || 0}
-            neutral
-          />
-          <SumRow
-            label={
               <span className="flex items-center gap-2">
                 부가세
                 <label className="flex items-center gap-1 text-xs cursor-pointer select-none ml-1">
@@ -1001,6 +987,24 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               </span>
             }
             value={liveVat}
+          />
+          <SumRow
+            label={
+              <span className="flex items-center gap-2 text-gray-500">
+                단수조정
+                <input
+                  type="number"
+                  value={quote.roundAdjustment}
+                  onChange={(e) => scheduleHeaderSave({ roundAdjustment: Number(e.target.value) || 0 })}
+                  className="w-24 px-1 py-0.5 border rounded text-right text-xs"
+                  title={Number(quote.vatRate) > 0
+                    ? '총합계에 직접 가산됩니다 (부가세 영향 X)'
+                    : '총합계에 직접 가산됩니다'}
+                />
+              </span>
+            }
+            value={Number(quote.roundAdjustment) || 0}
+            neutral
           />
           <div className="border-t pt-2">
             <SumRow label={<span className="font-bold text-navy-800">총합계</span>} value={liveTotal} highlight />
