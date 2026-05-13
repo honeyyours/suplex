@@ -40,7 +40,7 @@ export const WORK_TYPES = [
   { key: 'FILM',       label: '필름' },
   { key: 'WALLPAPER',  label: '도배' },
   { key: 'FURNITURE',  label: '가구' },
-  { key: 'FLOORING',   label: '마루/장판' },
+  { key: 'FLOORING',   label: '바닥' },
   { key: 'FINISHING',  label: '공사 마무리' },
 ];
 export const WORK_TYPE_LABEL = Object.fromEntries(

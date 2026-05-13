@@ -51,8 +51,8 @@ const STANDARD_ADVICES = [
   { phase: '필름', daysBefore: 0,  title: '필름 시공 전 사진',             category: '사진', requiresPhoto: true },
   { phase: '필름', daysBefore: 0,  title: '필름 시공 완료 사진',           category: '사진', requiresPhoto: true },
   // 마루
-  { phase: '마루·장판', daysBefore: 0,  title: '마루 시공 전 바닥 사진',        category: '사진', requiresPhoto: true },
-  { phase: '마루·장판', daysBefore: 0,  title: '마루 시공 완료 사진',           category: '사진', requiresPhoto: true },
+  { phase: '바닥', daysBefore: 0,  title: '시공 전 바닥 사진',        category: '사진', requiresPhoto: true },
+  { phase: '바닥', daysBefore: 0,  title: '시공 완료 사진',           category: '사진', requiresPhoto: true },
   // 마무리 (입주청소·실리콘·점검 통합)
   { phase: '마무리(입주청소·실리콘 등)', daysBefore: 0, title: '준공 청소 완료 사진',   category: '사진', requiresPhoto: true },
   { phase: '마무리(입주청소·실리콘 등)', daysBefore: 0, title: '준공 전체 공간별 사진', category: '사진', requiresPhoto: true },

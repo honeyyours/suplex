@@ -101,13 +101,14 @@ const ROWS = [
   { phase: '가구', keyword: '붙박이장' },
   { phase: '가구', keyword: '인조대리석' },
 
-  // 마루·장판
-  { phase: '마루·장판', keyword: '마루' },
-  { phase: '마루·장판', keyword: '장판' },
-  { phase: '마루·장판', keyword: '강마루' },
-  { phase: '마루·장판', keyword: '강화마루' },
-  { phase: '마루·장판', keyword: '원목마루' },
-  { phase: '마루·장판', keyword: '데코타일' },
+  // 바닥 (구 마루·장판 — 2026-05-13 리네임)
+  { phase: '바닥', keyword: '바닥' },
+  { phase: '바닥', keyword: '마루' },
+  { phase: '바닥', keyword: '장판' },
+  { phase: '바닥', keyword: '강마루' },
+  { phase: '바닥', keyword: '강화마루' },
+  { phase: '바닥', keyword: '원목마루' },
+  { phase: '바닥', keyword: '데코타일' },
 
   // 시스템에어컨
   { phase: '시스템에어컨', keyword: '시스템에어컨' },

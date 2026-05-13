@@ -82,7 +82,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     { phase: '타일',                lines: [['욕실 벽·바닥 타일', '식', 1, 4500000], ['주방 타일',         '식', 1, 1200000]] },
     { phase: '욕실',                lines: [['도기·수전 셋트',    '식', 1, 2800000], ['거울/조명',         '식', 1, 600000]] },
     { phase: '도배',                lines: [['실크벽지 일식',     '식', 1, 3200000]] },
-    { phase: '마루·장판',            lines: [['강마루 32평',       '식', 1, 5800000]] },
+    { phase: '바닥',            lines: [['강마루 32평',       '식', 1, 5800000]] },
     { phase: '마무리(입주청소·실리콘 등)', lines: [['실리콘·점검 일식', '식', 1, 600000]] },
   ];
 
@@ -144,7 +144,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     ['욕실',       '욕실 거울',                  null,            '600x800 LED 매립형',              'UNDECIDED', 2,   '개',    null],
     ['도배',       '거실 실크벽지',              'LG하우시스',    'LX월 베니션 화이트',              'CONFIRMED', 14,  '롤',    '거실+주방 통일'],
     ['도배',       '침실 실크벽지',              '신한벽지',      null,                              'UNDECIDED', 8,   '롤',    null],
-    ['마루·장판',  '강마루',                     '동화자연마루',  '나투스진 카르마',                  'REUSED',    32,  '평',    '마루 보양 시트 별도 / 기존 평탄도 확인'],
+    ['바닥',  '강마루',                     '동화자연마루',  '나투스진 카르마',                  'REUSED',    32,  '평',    '마루 보양 시트 별도 / 기존 평탄도 확인'],
   ];
 
   const materialByName = {};
@@ -197,8 +197,8 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     ['욕실',                 '욕실 거울·조명 설치',             25],
     ['도배',                 '거실·주방 도배',                  26],
     ['도배',                 '침실 도배',                       28],
-    ['마루·장판',            '강마루 시공',                     31],
-    ['마루·장판',            '걸레받이 마무리',                 33],
+    ['바닥',            '강마루 시공',                     31],
+    ['바닥',            '걸레받이 마무리',                 33],
     ['마무리(입주청소·실리콘 등)', '실리콘 작업',                    39],
     ['마무리(입주청소·실리콘 등)', '전체 점검',                       41],
     ['마무리(입주청소·실리콘 등)', '입주청소',                        43],
@@ -277,7 +277,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     ['철거',                 'GENERAL', '철거 폐기물 차량 진입 동선 점검', true,  -1],
     ['단열',                 'GENERAL', '단열재 도착 확인',                true,  4],
     ['도배',                 'GENERAL', '도배 풀 종류 확인',               false, 23],
-    ['마루·장판',            'GENERAL', '마루 시공 전 평탄도 확인',        false, 30],
+    ['바닥',            'GENERAL', '마루 시공 전 평탄도 확인',        false, 30],
     ['마무리(입주청소·실리콘 등)', 'GENERAL', '가전 사이즈 재확인',              false, 36],
   ];
   for (let i = 0; i < checklists.length; i++) {

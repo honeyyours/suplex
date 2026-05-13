@@ -23,7 +23,7 @@ export const STANDARD_PHASES = Object.freeze([
   { key: 'PAINTING',        label: '도장',                order: 18 },
   { key: 'FILM',            label: '필름',                order: 19 },
   { key: 'FURNITURE',       label: '가구',                order: 20, hint: '싱크대·인조대리석 상판 포함' },
-  { key: 'FLOORING',        label: '마루·장판',           order: 21 },
+  { key: 'FLOORING',        label: '바닥',                          order: 21, hint: '마루·장판·데코타일 등' },
   { key: 'SYSTEM_AC',       label: '시스템에어컨',                  order: 22 },
   { key: 'FINISHING',       label: '마무리(입주청소·실리콘 등)',     order: 24 },
   { key: 'OTHER',           label: '기타',                          order: 99, hint: '표준 외 — 통합 기능 미작동' },
@@ -44,7 +44,9 @@ const BUILT_IN_ALIASES = Object.freeze({
   '마무리': '마무리(입주청소·실리콘 등)',
   // 구 라벨 backward-compat (DB 기존 row 대응)
   '마무리(점검, 실리콘)': '마무리(입주청소·실리콘 등)',
-  '마루': '마루·장판', '장판': '마루·장판', '데코타일': '마루·장판', '강마루': '마루·장판', '강화마루': '마루·장판',
+  // 바닥 — 마루/장판/데코타일 통합 (2026-05-13 리네임). 구 라벨 backward-compat 포함.
+  '마루': '바닥', '장판': '바닥', '데코타일': '바닥', '강마루': '바닥', '강화마루': '바닥', '원목마루': '바닥',
+  '마루·장판': '바닥', '마루/장판': '바닥',
   '보양': '시작', '자재반입': '시작', '철거공사': '철거',
   '도기': '욕실', '수전': '욕실', '욕실시공': '욕실',
   '거울': '유리·거울', '유리': '유리·거울', '파티션': '유리·거울',
