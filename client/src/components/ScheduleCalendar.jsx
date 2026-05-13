@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
@@ -22,6 +22,34 @@ export default function ScheduleCalendar({ projectId, project }) {
 
   const startKey = grid.length ? toDateKey(grid[0]) : null;
   const endKey = grid.length ? toDateKey(grid[grid.length - 1]) : null;
+
+  // 주 단위로 묶고, 월이 바뀌는 주(또는 첫 주)에 월 band 메타 부여.
+  // 긴 프로젝트(3~6월 등)에서 월 경계를 놓치지 않도록.
+  const weeks = useMemo(() => {
+    if (!grid.length || !projStartKey) return [];
+    const out = [];
+    let prevMonthKey = null;
+    for (let i = 0; i < grid.length; i += 7) {
+      const days = grid.slice(i, i + 7);
+      let bandLabel = null;
+      if (i === 0) {
+        // 첫 주: 프로젝트 시작일의 월 (그리드의 일요일이 전월일 수 있어서)
+        const ps = new Date(projStartKey);
+        const mk = `${ps.getFullYear()}-${ps.getMonth()}`;
+        bandLabel = `${ps.getFullYear()}년 ${ps.getMonth() + 1}월`;
+        prevMonthKey = mk;
+      } else {
+        const sat = days[6];
+        const mk = `${sat.getFullYear()}-${sat.getMonth()}`;
+        if (mk !== prevMonthKey) {
+          bandLabel = `${sat.getFullYear()}년 ${sat.getMonth() + 1}월`;
+          prevMonthKey = mk;
+        }
+      }
+      out.push({ days, bandLabel });
+    }
+    return out;
+  }, [grid, projStartKey]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['schedules', 'project', projectId, startKey, endKey],
@@ -225,29 +253,37 @@ export default function ScheduleCalendar({ projectId, project }) {
           ))}
         </div>
         <div className="grid grid-cols-7">
-          {grid.map((date) => {
-            const key = toDateKey(date);
-            const dayEntries = byDate[key] || [];
-            const inRange = key >= projStartKey && key <= projEndKey;
-            const isToday = key === todayKey;
-            const dayOfWeek = date.getDay();
+          {weeks.map((wk, wi) => (
+            <Fragment key={wi}>
+              {wk.bandLabel && (
+                <div className="col-span-7 px-3 py-1.5 bg-navy-50 dark:bg-slate-800 text-navy-800 dark:text-slate-200 text-xs sm:text-sm font-semibold border-b border-navy-200 dark:border-slate-700">
+                  {wk.bandLabel}
+                </div>
+              )}
+              {wk.days.map((date) => {
+                const key = toDateKey(date);
+                const dayEntries = byDate[key] || [];
+                const inRange = key >= projStartKey && key <= projEndKey;
+                const isToday = key === todayKey;
+                const dayOfWeek = date.getDay();
+                const isFirstOfMonth = date.getDate() === 1;
 
-            const isActive = activeCellKey === key;
-            return (
-              <div
-                key={key}
-                onClick={(e) => handleCellClick(e, key, inRange)}
-                className={`group border-r border-b last:border-r-0 min-h-[96px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
-                  inRange ? 'bg-white' : 'bg-gray-100/70 dark:bg-slate-900/40 cursor-default'
-                }`}
-              >
-                <div className={`flex items-center justify-between px-1 py-1 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
-                  !inRange ? 'text-gray-300' :
-                  dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
-                }`}>
-                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''}`}>
-                    {date.getDate()}
-                  </span>
+                const isActive = activeCellKey === key;
+                return (
+                  <div
+                    key={key}
+                    onClick={(e) => handleCellClick(e, key, inRange)}
+                    className={`group border-r border-b last:border-r-0 min-h-[96px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
+                      inRange ? 'bg-white' : 'bg-gray-100/70 dark:bg-slate-900/40 cursor-default'
+                    } ${isFirstOfMonth && inRange ? 'border-t-2 border-t-navy-400' : ''}`}
+                  >
+                    <div className={`flex items-center justify-between px-1 py-1 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
+                      !inRange ? 'text-gray-300' :
+                      dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
+                    }`}>
+                      <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''} ${isFirstOfMonth && inRange && !isToday ? 'font-semibold text-navy-700' : ''}`}>
+                        {isFirstOfMonth && inRange ? `${date.getMonth() + 1}/1` : date.getDate()}
+                      </span>
                   {inRange && (
                     <button
                       onClick={() => setActiveCellKey(isActive ? null : key)}
@@ -293,6 +329,8 @@ export default function ScheduleCalendar({ projectId, project }) {
               </div>
             );
           })}
+            </Fragment>
+          ))}
         </div>
       </div>
     </div>
