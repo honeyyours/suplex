@@ -227,35 +227,38 @@ html.dark .bg-black\/50 { background-color: rgb(0 0 0 / 0.7); }
 /* ============================================
    인쇄 (견적서 PDF 출력용)
    - body.print-quote: 인쇄 모드 활성 (모달이 토글)
-   - .quote-printable: 레거시 인쇄 영역 (테두리·배경 강제 적용)
-   - .quote-styled-printable: 자체 CSS 가진 양식형 인쇄 영역 (강제 스타일 X — 양식이 모두 결정)
    - body.print-styled: 양식형 인쇄임을 표시 (페이지 마진 0 등)
+   - .quote-print-host: <body> 직속 portal 호스트 (양식형 — 멀티페이지 정상 페이지네이션)
+   - .quote-printable: 레거시 인쇄 영역 (구 ProjectQuotes.jsx 인라인 모드)
    ============================================ */
+
+/* 화면에선 portal 호스트 숨김 — 모달이 미리보기 담당 */
+.quote-print-host { display: none; }
+
 @media print {
   body { background: white !important; }
 
-  /* 기본: 모든 요소 숨김 */
-  body.print-quote * { visibility: hidden; }
+  /* ===== 양식형(print-styled) — portal 기반 ===== */
+  /* #root 안의 화면 트리는 통째로 숨김 → portal 만 인쇄 흐름에 남음 */
+  body.print-quote.print-styled > #root { display: none !important; }
+  body.print-quote.print-styled .quote-print-host {
+    display: block !important;
+    background: white;
+  }
 
-  /* 출력 영역만 표시 — 레거시 + 양식형 모두 */
-  body.print-quote .quote-printable,
-  body.print-quote .quote-printable *,
-  body.print-quote .quote-styled-printable,
-  body.print-quote .quote-styled-printable * { visibility: visible; }
+  /* 인쇄 시 숨길 요소 — 양식형 안의 도구바·버튼 보강용 */
+  .no-print, .no-print * { display: none !important; }
 
-  body.print-quote .quote-printable,
-  body.print-quote .quote-styled-printable {
+  /* ===== 레거시 모드 — 기존 visibility 트릭 유지 ===== */
+  body.print-quote:not(.print-styled) * { visibility: hidden; }
+  body.print-quote:not(.print-styled) .quote-printable,
+  body.print-quote:not(.print-styled) .quote-printable * { visibility: visible; }
+  body.print-quote:not(.print-styled) .quote-printable {
     position: absolute;
     left: 0; top: 0; right: 0;
     padding: 0;
     background: white;
   }
-
-  /* 인쇄 시 숨길 요소 (편집 컨트롤, 액션 버튼 등) */
-  .no-print, .no-print * { display: none !important; }
-
-  /* 레거시 인쇄 영역(.quote-printable) — 14mm 페이지 마진 + 표 강제 스타일 */
-  body.print-quote:not(.print-styled) { /* 레거시 모드 */ }
   body.print-quote:not(.print-styled) .quote-printable input,
   body.print-quote:not(.print-styled) .quote-printable select,
   body.print-quote:not(.print-styled) .quote-printable textarea {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '../api/simpleQuotes';
 import { formatDateDot } from '../utils/date';
@@ -1328,45 +1329,57 @@ function PrintModal({ quote, lines, totals, onClose }) {
   const TemplateComponent = tpl.Component;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-auto">
-        <div className="sticky top-0 bg-gray-100 border-b px-4 py-2 flex items-center justify-between gap-3 no-print">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="text-sm font-medium">PDF 미리보기</div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">양식</span>
-              {QUOTE_PRINT_TEMPLATES.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => changeTemplate(t.key)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition ${
-                    t.key === templateKey
-                      ? 'bg-navy-700 text-white border-navy-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-navy-500 hover:text-navy-700'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+    <>
+      {/* 화면 미리보기 모달 — 인쇄 시엔 통째로 숨김 */}
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto no-print">
+        <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-auto">
+          <div className="sticky top-0 bg-gray-100 border-b px-4 py-2 flex items-center justify-between gap-3 no-print">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-sm font-medium">PDF 미리보기</div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 mr-1">양식</span>
+                {QUOTE_PRINT_TEMPLATES.map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => changeTemplate(t.key)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                      t.key === templateKey
+                        ? 'bg-navy-700 text-white border-navy-700'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-navy-500 hover:text-navy-700'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={handlePrint}
+                className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
+              >
+                🖨 인쇄 / PDF 저장
+              </button>
+              <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">
+                닫기
+              </button>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <button
-              onClick={handlePrint}
-              className="text-sm px-4 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
-            >
-              🖨 인쇄 / PDF 저장
-            </button>
-            <button onClick={onClose} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">
-              닫기
-            </button>
+          <div className="bg-gray-200 p-4 flex justify-center">
+            <TemplateComponent quote={quote} lines={lines} totals={totals} />
           </div>
         </div>
-        <div className="bg-gray-200 p-4 flex justify-center quote-styled-printable">
-          <TemplateComponent quote={quote} lines={lines} totals={totals} />
-        </div>
       </div>
-    </div>
+
+      {/* 인쇄 전용 portal — <body> 직속에 박혀 페이지네이션이 정상 동작.
+          화면에선 .quote-print-host { display: none } 으로 숨김, 인쇄 시에만 노출. */}
+      {createPortal(
+        <div className="quote-print-host">
+          <TemplateComponent quote={quote} lines={lines} totals={totals} />
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
