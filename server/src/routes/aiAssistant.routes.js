@@ -24,6 +24,8 @@ const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "수플렉스(S
 
 지침:
 - 항상 한국어로 답해.
+- **도구를 호출하기 직전에, 무엇을 찾고 있는지 한 문장으로 짧게 안내해.** 예: "네, 이번 달 자재비를 조회해 볼게요." / "잠시만요, 미확정 마감재가 있는 현장을 찾아보겠습니다." 사용자가 대기 동안 응답이 즉시 보여야 하니 안내 → 도구 호출 → 결과 답변 순서를 지켜. (안내 문장 ≤ 1줄, 인사말·중복 금지)
+- 도구 결과를 받은 뒤의 최종 답변에서는 다시 안내 문장을 반복하지 마. 바로 결과로 시작.
 - 사용자가 프로젝트(현장) 이름을 언급하면 가장 먼저 search_projects로 ID를 찾아.
 - 금액은 천 단위 콤마와 "원"으로 표기 (예: "1,234,500원").
 - 날짜는 한국식 (예: "2026년 3월 15일" 또는 "3/15").
@@ -45,64 +47,82 @@ function getClient() {
   return new Anthropic({ apiKey: env.anthropic.apiKey });
 }
 
-// POST /api/ai-assistant/chat
+// POST /api/ai-assistant/chat — SSE 스트리밍
+// 이벤트: text {text}, tool {name,input,resultPreview}, done {stopReason,usage,model}, error {error}
 router.post('/chat', async (req, res, next) => {
+  // 검증·셋업 단계 에러는 200 이전이므로 그냥 JSON 응답
+  let data;
   try {
-    const data = chatSchema.parse(req.body);
-    const client = getClient();
-    if (!client) {
-      return res.status(503).json({
-        error: 'Anthropic API 키가 설정되지 않았습니다 (.env의 ANTHROPIC_API_KEY)',
-      });
-    }
-
-    const company = await prisma.company.findUnique({
-      where: { id: req.user.companyId },
-      select: { hideExpenses: true },
+    data = chatSchema.parse(req.body);
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    return next(e);
+  }
+  const client = getClient();
+  if (!client) {
+    return res.status(503).json({
+      error: 'Anthropic API 키가 설정되지 않았습니다 (.env의 ANTHROPIC_API_KEY)',
     });
-    const hideExpenses = !!company?.hideExpenses;
+  }
 
-    const role = req.user.role;
-    const ctx = {
-      companyId: req.user.companyId,
-      userId: req.user.id,
-      role,
-      hideExpenses,
-    };
-    const tools = getToolSchemas({ hideExpenses, role });
+  const company = await prisma.company.findUnique({
+    where: { id: req.user.companyId },
+    select: { hideExpenses: true },
+  });
+  const hideExpenses = !!company?.hideExpenses;
 
-    // 시스템에 오늘 날짜 동적 주입 (시간 변환 도움)
-    const todayKR = new Date().toLocaleDateString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-    });
-    const todayISO = new Date().toISOString().slice(0, 10);
+  const role = req.user.role;
+  const ctx = {
+    companyId: req.user.companyId,
+    userId: req.user.id,
+    role,
+    hideExpenses,
+  };
+  const tools = getToolSchemas({ hideExpenses, role });
 
-    // 역할 안내: OWNER 외에는 회계 도구가 도구 목록에서 제외되므로,
-    // 사용자가 회계/지출 질문을 했을 때 거절 사유를 명확히 답하도록 시스템에 알림.
-    const roleNote = role === 'OWNER'
-      ? '사용자 역할: OWNER (대표) — 모든 도구 사용 가능.'
-      : `사용자 역할: ${role} — 지출·매출·회계·계정과목·프로젝트 손익(PnL) 도구는 이 사용자에게 제공되지 않았어. 사용자가 그쪽 질문을 하면 "회계 정보는 대표(OWNER) 권한 사용자만 조회할 수 있어요"라고 정중히 안내하고, 가능한 마감재·일정·체크리스트·발주·견적·프로젝트 기본 정보 쪽 질문으로 안내해.`;
+  const todayKR = new Date().toLocaleDateString('ko-KR', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const todayISO = new Date().toISOString().slice(0, 10);
 
-    const system = `${SYSTEM_PROMPT}\n\n오늘 날짜: ${todayKR} (ISO: ${todayISO})\n${roleNote}`;
+  const roleNote = role === 'OWNER'
+    ? '사용자 역할: OWNER (대표) — 모든 도구 사용 가능.'
+    : `사용자 역할: ${role} — 지출·매출·회계·계정과목·프로젝트 손익(PnL) 도구는 이 사용자에게 제공되지 않았어. 사용자가 그쪽 질문을 하면 "회계 정보는 대표(OWNER) 권한 사용자만 조회할 수 있어요"라고 정중히 안내하고, 가능한 마감재·일정·체크리스트·발주·견적·프로젝트 기본 정보 쪽 질문으로 안내해.`;
 
-    // 메시지 변환 (text 단일 블록)
-    const messages = data.messages.map((m) => ({
-      role: m.role,
-      content: [{ type: 'text', text: m.content }],
-    }));
+  const system = `${SYSTEM_PROMPT}\n\n오늘 날짜: ${todayKR} (ISO: ${todayISO})\n${roleNote}`;
 
-    const toolCalls = []; // 최종 응답에 메타로 첨부
+  const messages = data.messages.map((m) => ({
+    role: m.role,
+    content: [{ type: 'text', text: m.content }],
+  }));
 
-    // 모델별 옵션: Haiku는 effort/thinking 미지원 → 추가 안 함
-    //              Sonnet/Opus는 adaptive thinking + effort 추가
-    const isPremium = MODEL.startsWith('claude-opus') || MODEL.startsWith('claude-sonnet');
-    const extraOpts = isPremium
-      ? { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } }
-      : {};
+  // SSE 헤더
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // nginx/프록시 buffering 끔 — 토큰 단위 즉시 전달
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
 
-    // Manual agentic loop
+  function sendEvent(event, payload) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+  }
+
+  // 클라이언트 abort 시 루프 빨리 종료
+  let aborted = false;
+  req.on('close', () => { aborted = true; });
+
+  // 모델별 옵션: Haiku는 effort/thinking 미지원
+  const isPremium = MODEL.startsWith('claude-opus') || MODEL.startsWith('claude-sonnet');
+  const extraOpts = isPremium
+    ? { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } }
+    : {};
+
+  try {
     for (let i = 0; i < MAX_ITERATIONS; i++) {
-      const response = await client.messages.create({
+      if (aborted) return;
+
+      const stream = client.messages.stream({
         model: MODEL,
         max_tokens: MAX_TOKENS,
         ...extraOpts,
@@ -111,38 +131,41 @@ router.post('/chat', async (req, res, next) => {
         messages,
       });
 
-      // 응답을 history에 추가
-      messages.push({ role: 'assistant', content: response.content });
+      // 텍스트 델타 즉시 송신 (사용자에게 안내 문장이 빠르게 보이도록)
+      stream.on('text', (delta) => {
+        if (aborted) return;
+        sendEvent('text', { text: delta });
+      });
 
-      // tool_use 블록 모으기
-      const toolUseBlocks = response.content.filter((b) => b.type === 'tool_use');
+      const finalMessage = await stream.finalMessage();
+      if (aborted) return;
 
-      if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
-        // 끝 — 텍스트 추출해서 반환
-        const textBlocks = response.content.filter((b) => b.type === 'text');
-        const reply = textBlocks.map((b) => b.text).join('\n');
-        return res.json({
-          reply,
-          toolCalls,
-          stopReason: response.stop_reason,
-          usage: response.usage,
+      messages.push({ role: 'assistant', content: finalMessage.content });
+
+      const toolUseBlocks = finalMessage.content.filter((b) => b.type === 'tool_use');
+
+      if (finalMessage.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
+        sendEvent('done', {
+          stopReason: finalMessage.stop_reason,
+          usage: finalMessage.usage,
           model: MODEL,
         });
+        return res.end();
       }
 
-      if (response.stop_reason === 'pause_turn') {
-        // Server-side tool 일시정지 — 그대로 다음 iteration
-        continue;
-      }
+      if (finalMessage.stop_reason === 'pause_turn') continue;
 
-      // 각 tool_use 실행 → tool_result 메시지로 회신
+      // 다음 모델 턴 전에 줄바꿈 1회 (안내 문장과 결과가 붙어보이지 않게)
+      sendEvent('text', { text: '\n\n' });
+
+      // 각 tool_use 실행 → 즉시 SSE로 알리고 tool_result 모음
       const toolResults = [];
       for (const block of toolUseBlocks) {
+        if (aborted) return;
         const result = await executeTool(block.name, block.input, ctx);
-        toolCalls.push({
+        sendEvent('tool', {
           name: block.name,
           input: block.input,
-          // 결과 미리보기만 (전체 결과는 응답에 포함 안 함 — 너무 큼)
           resultPreview: summarize(result),
         });
         toolResults.push({
@@ -154,27 +177,15 @@ router.post('/chat', async (req, res, next) => {
       messages.push({ role: 'user', content: toolResults });
     }
 
-    // 루프 한도 도달
-    return res.status(200).json({
-      reply: '⚠️ 도구 호출이 너무 많아서 중단했습니다. 질문을 좀 더 구체적으로 다시 해주세요.',
-      toolCalls,
-      stopReason: 'max_iterations',
-    });
+    sendEvent('done', { stopReason: 'max_iterations', reply: '⚠️ 도구 호출이 너무 많아서 중단했습니다. 질문을 좀 더 구체적으로 다시 해주세요.' });
+    res.end();
   } catch (e) {
-    if (e.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation failed', details: e.errors });
-    }
-    // Anthropic SDK 에러 처리
-    if (e?.status) {
-      console.error('[aiAssistant] API error', e.status, e.message);
-      const status = e.status === 401 ? 503 : (e.status >= 500 ? 502 : e.status);
-      return res.status(status).json({
-        error: e.status === 401
-          ? 'Anthropic API 키가 잘못되었거나 만료됨'
-          : `Claude API 에러 (${e.status}): ${e.message}`,
-      });
-    }
-    next(e);
+    console.error('[aiAssistant] stream error', e?.status, e?.message);
+    const msg = e?.status === 401
+      ? 'Anthropic API 키가 잘못되었거나 만료됨'
+      : (e?.status ? `Claude API 에러 (${e.status}): ${e.message}` : (e.message || '응답 실패'));
+    try { sendEvent('error', { error: msg }); } catch {}
+    res.end();
   }
 });
 

@@ -44,27 +44,58 @@ export default function AIAssistant() {
     setInput('');
     setBusy(true);
 
+    // 스트리밍 응답을 채워 넣을 빈 어시스턴트 버블 추가
+    setMessages((prev) => [...prev, {
+      role: 'assistant', content: '', toolCalls: [], streaming: true,
+    }]);
+
+    function updateLast(patch) {
+      setMessages((prev) => {
+        if (prev.length === 0) return prev;
+        const copy = prev.slice();
+        copy[copy.length - 1] = { ...copy[copy.length - 1], ...patch };
+        return copy;
+      });
+    }
+
     try {
-      // 백엔드에는 role/content만 전달 (toolCalls는 클라 표시용)
       const payload = next.map(({ role, content }) => ({ role, content }));
-      const data = await aiAssistantApi.chat(payload);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: data.reply || '(응답 없음)',
-          toolCalls: data.toolCalls || [],
+      await aiAssistantApi.chatStream(payload, {
+        onText: (delta) => {
+          setMessages((prev) => {
+            if (prev.length === 0) return prev;
+            const copy = prev.slice();
+            const last = copy[copy.length - 1];
+            copy[copy.length - 1] = { ...last, content: (last.content || '') + delta };
+            return copy;
+          });
         },
-      ]);
+        onTool: (tc) => {
+          setMessages((prev) => {
+            if (prev.length === 0) return prev;
+            const copy = prev.slice();
+            const last = copy[copy.length - 1];
+            copy[copy.length - 1] = { ...last, toolCalls: [...(last.toolCalls || []), tc] };
+            return copy;
+          });
+        },
+        onDone: () => {
+          updateLast({ streaming: false });
+        },
+        onError: (err) => {
+          updateLast({
+            content: '⚠️ ' + (err.error || '응답 실패'),
+            error: true,
+            streaming: false,
+          });
+        },
+      });
     } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: '⚠️ ' + (e.response?.data?.error || e.message || '응답 실패'),
-          error: true,
-        },
-      ]);
+      updateLast({
+        content: '⚠️ ' + (e.message || '응답 실패'),
+        error: true,
+        streaming: false,
+      });
     } finally {
       setBusy(false);
       inputRef.current?.focus();
@@ -126,7 +157,6 @@ export default function AIAssistant() {
 
         <div className="space-y-3">
           {messages.map((m, i) => <Bubble key={i} message={m} />)}
-          {busy && <ThinkingBubble />}
         </div>
       </div>
 
@@ -162,6 +192,10 @@ export default function AIAssistant() {
 
 function Bubble({ message }) {
   const isUser = message.role === 'user';
+  // 스트리밍 중 + 본문 비어있을 때만 점 3개 (첫 토큰 대기). 한 글자라도 오면 본문 + 깜빡이는 커서.
+  const awaitingFirstToken = message.streaming && !message.content;
+  const showCursor = message.streaming && !!message.content;
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[80%] ${isUser ? 'order-2' : ''}`}>
@@ -188,21 +222,21 @@ function Bubble({ message }) {
                 : 'bg-white border rounded-bl-sm text-gray-800'
           }`}
         >
-          {message.content}
+          {awaitingFirstToken ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+          ) : (
+            <>
+              {message.content}
+              {showCursor && (
+                <span className="inline-block w-[2px] h-3 bg-gray-500 ml-0.5 align-baseline animate-pulse" />
+              )}
+            </>
+          )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ThinkingBubble() {
-  return (
-    <div className="flex justify-start">
-      <div className="bg-white border rounded-2xl rounded-bl-sm px-4 py-2.5 inline-flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-        <span className="text-xs text-gray-500 ml-2">데이터 조회 중...</span>
       </div>
     </div>
   );
