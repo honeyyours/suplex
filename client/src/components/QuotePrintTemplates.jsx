@@ -158,10 +158,10 @@ function ClassicTemplate({ quote, lines, totals }) {
               {designFeeOn && (
                 <tr><th>설계 및 감리비 ({Number(quote.designFeeRate)}%)</th><td>{formatWon(totals.designFeeAmount)} <span className="unit">원</span></td></tr>
               )}
-              <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
               {round !== 0 && (
                 <tr><th>단수조정</th><td>{round < 0 ? '-' : ''}{formatWon(Math.abs(round))} <span className="unit">원</span></td></tr>
               )}
+              <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
               <tr className="qpt-classic__sum--total">
                 <th>총  금  액</th>
                 <td>{formatWon(totals.total)} <span className="unit">원</span></td>
@@ -413,10 +413,10 @@ function SidebarTemplate({ quote, lines, totals }) {
                 {designFeeOn && (
                   <tr><th>설계 및 감리비 ({Number(quote.designFeeRate)}%)</th><td>{formatWon(totals.designFeeAmount)} <span className="unit">원</span></td></tr>
                 )}
-                <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
                 {round !== 0 && (
                   <tr><th>단수조정</th><td>{round < 0 ? '-' : ''}{formatWon(Math.abs(round))} <span className="unit">원</span></td></tr>
                 )}
+                <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
                 <tr className="qpt-side__sum--total">
                   <th>총  금  액</th>
                   <td>{formatWon(totals.total)} <span className="unit">원</span></td>
@@ -661,10 +661,10 @@ function EditorialTemplate({ quote, lines, totals }) {
               {designFeeOn && (
                 <tr><th>설계 및 감리비 ({Number(quote.designFeeRate)}%)</th><td>{formatWon(totals.designFeeAmount)} <span className="unit">원</span></td></tr>
               )}
-              <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
               {round !== 0 && (
                 <tr><th>단수조정</th><td>{round < 0 ? '-' : ''}{formatWon(Math.abs(round))} <span className="unit">원</span></td></tr>
               )}
+              <tr><th>부가세 ({Number(quote.vatRate) || 0}%)</th><td>{formatWon(totals.vatAmount)} <span className="unit">원</span></td></tr>
               <tr className="qpt-edit__sum--total">
                 <th>총  금  액</th>
                 <td>{formatWon(totals.total)} <span className="unit">원</span></td>

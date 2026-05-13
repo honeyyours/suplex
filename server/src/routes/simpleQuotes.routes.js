@@ -33,14 +33,14 @@ function computeTotals(lines, q) {
   }
   const designFeeRate = Number(q.designFeeRate) / 100;
   const vatRate = Number(q.vatRate) / 100;
+  // 단수조정은 항상 차감 — 클라 입력에서 자동 음수화되어 저장됨.
+  // 부가세 계산 일관성을 위해 공급가액 단계에서 가감 → 부가세는 (공급가액 + 단수조정) × 부가세율.
   const round = Number(q.roundAdjustment) || 0;
 
-  // 단수조정은 "총합계" 라인에 직접 가산 — 부가세 계산엔 영향 X.
-  // 부가세 포함 1,000,100원 → -100 단수조정 → 최종 1,000,000원 (사용자 직관과 일치).
   const designFeeAmount = Math.round(subtotal * designFeeRate);
-  const subAfterDesign = subtotal + designFeeAmount;
+  const subAfterDesign = subtotal + designFeeAmount + round;
   const vatAmount = Math.round(subAfterDesign * vatRate);
-  const total = subAfterDesign + vatAmount + round;
+  const total = subAfterDesign + vatAmount;
 
   return { subtotal, designFeeAmount, vatAmount, total };
 }
