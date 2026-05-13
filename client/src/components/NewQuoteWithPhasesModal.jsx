@@ -17,6 +17,9 @@ export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [busy, setBusy] = useState(false);
   const [prefillCount, setPrefillCount] = useState(0); // 견적상담에서 자동 사전체크된 개수
+  // 노션식 드래그 상태 — fromIdx, dragOver = { idx, pos: 'before' | 'after' }
+  const [dragFromIdx, setDragFromIdx] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
 
   // 견적상담 메모 있는 공정 자동 사전체크 — 표준 공종 순서대로
   useEffect(() => {
@@ -28,7 +31,7 @@ export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }
         (notes || []).filter((n) => n.phase !== GENERAL_PHASE).map((n) => n.phase)
       );
       if (phaseSet.size === 0) return;
-      // 표준 공종 정의 순서대로 정렬해서 사전체크 (사용자가 우측에서 ▲▼로 재정렬 가능)
+      // 표준 공종 정의 순서대로 정렬해서 사전체크 (사용자가 우측에서 드래그로 재정렬 가능)
       const ordered = SELECTABLE_PHASES.filter((p) => phaseSet.has(p.label)).map((p) => p.label);
       setSelectedLabels(ordered);
       setPrefillCount(ordered.length);
@@ -46,18 +49,23 @@ export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }
     });
   }
 
-  function move(idx, dir) {
-    setSelectedLabels((prev) => {
-      const target = idx + dir;
-      if (target < 0 || target >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[target]] = [next[target], next[idx]];
-      return next;
-    });
-  }
-
   function remove(idx) {
     setSelectedLabels((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  // 드롭 위치(toIdx, before/after 합산)가 사실상 제자리면 no-op
+  function reorder(fromIdx, idx, pos) {
+    const toIdx = pos === 'after' ? idx + 1 : idx;
+    if (fromIdx === toIdx || fromIdx === toIdx - 1) return;
+    setSelectedLabels((prev) => {
+      if (fromIdx < 0 || fromIdx >= prev.length) return prev;
+      const moving = prev[fromIdx];
+      const next = [...prev];
+      next.splice(fromIdx, 1);
+      const adjustedTo = toIdx > fromIdx ? toIdx - 1 : toIdx;
+      next.splice(adjustedTo, 0, moving);
+      return next;
+    });
   }
 
   async function submit(withPhases) {
@@ -133,34 +141,77 @@ export default function NewQuoteWithPhasesModal({ projectId, onClose, onCreate }
               </div>
             ) : (
               <div className="space-y-1">
-                {selectedLabels.map((label, i) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-1 px-2 py-1 border border-navy-200 bg-navy-50/40 rounded text-sm"
-                  >
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-navy-700 text-white text-[11px] font-bold flex-shrink-0">
-                      {i + 1}
-                    </span>
-                    <span className="flex-1 truncate text-navy-800">{displayPhase(label)}</span>
-                    <button
-                      onClick={() => move(i, -1)}
-                      disabled={i === 0}
-                      className="text-xs text-gray-500 hover:text-navy-700 disabled:opacity-30 px-1"
-                      title="위로"
-                    >▲</button>
-                    <button
-                      onClick={() => move(i, +1)}
-                      disabled={i === selectedLabels.length - 1}
-                      className="text-xs text-gray-500 hover:text-navy-700 disabled:opacity-30 px-1"
-                      title="아래로"
-                    >▼</button>
-                    <button
-                      onClick={() => remove(i)}
-                      className="text-xs text-gray-400 hover:text-rose-600 px-1"
-                      title="제거"
-                    >✕</button>
-                  </div>
-                ))}
+                {selectedLabels.map((label, i) => {
+                  const isDragging = dragFromIdx === i;
+                  const showBefore = dragOver?.idx === i && dragOver.pos === 'before';
+                  const showAfter = dragOver?.idx === i && dragOver.pos === 'after';
+                  return (
+                    <div
+                      key={label}
+                      className={`group relative flex items-center gap-1 pl-1 pr-2 py-1 border border-navy-200 bg-navy-50/40 rounded text-sm transition-opacity ${
+                        isDragging ? 'opacity-30' : ''
+                      }`}
+                      onDragOver={(e) => {
+                        if (dragFromIdx == null) return;
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        // 제자리 드롭이면 indicator 숨김
+                        const toIdx = pos === 'after' ? i + 1 : i;
+                        if (toIdx === dragFromIdx || toIdx === dragFromIdx + 1) {
+                          setDragOver(null);
+                          return;
+                        }
+                        setDragOver({ idx: i, pos });
+                      }}
+                      onDragLeave={(e) => {
+                        // 같은 행 내부 자식으로 이동한 경우는 무시
+                        if (e.currentTarget.contains(e.relatedTarget)) return;
+                        setDragOver((d) => (d?.idx === i ? null : d));
+                      }}
+                      onDrop={(e) => {
+                        if (dragFromIdx == null) return;
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        reorder(dragFromIdx, i, pos);
+                        setDragFromIdx(null);
+                        setDragOver(null);
+                      }}
+                    >
+                      {showBefore && (
+                        <span className="pointer-events-none absolute -top-0.5 left-0 right-0 h-0.5 bg-navy-500 rounded" />
+                      )}
+                      {showAfter && (
+                        <span className="pointer-events-none absolute -bottom-0.5 left-0 right-0 h-0.5 bg-navy-500 rounded" />
+                      )}
+                      <div
+                        draggable={true}
+                        onDragStart={(e) => {
+                          setDragFromIdx(i);
+                          // FF 호환 — 드래그 데이터가 없으면 일부 브라우저에서 dragstart 무시
+                          try { e.dataTransfer.setData('text/plain', String(i)); } catch {}
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => { setDragFromIdx(null); setDragOver(null); }}
+                        title="드래그해서 순서 변경"
+                        className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-navy-700 select-none px-0.5 leading-none text-[12px] sm:opacity-40 sm:group-hover:opacity-100 transition-opacity"
+                        style={{ touchAction: 'none' }}
+                      >
+                        ⠿
+                      </div>
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-navy-700 text-white text-[11px] font-bold flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1 truncate text-navy-800">{displayPhase(label)}</span>
+                      <button
+                        onClick={() => remove(i)}
+                        className="text-xs text-gray-400 hover:text-rose-600 px-1"
+                        title="제거"
+                      >✕</button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

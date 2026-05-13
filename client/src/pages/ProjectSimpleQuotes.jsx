@@ -244,9 +244,10 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [showGuide, setShowGuide] = useState(true);
   // 활성 라인 인덱스 — 드로어가 그 라인의 그룹 헤더 공정을 자동 추적
   const [activeLineIdx, setActiveLineIdx] = useState(null);
-  // drag-and-drop 상태 — { fromIdx, isGroupHeader } / dragOverIdx (drop indicator 표시용)
+  // drag-and-drop 상태 — { fromIdx, isGroupHeader } / dragOver = { idx, pos: 'before'|'after' }
+  // pos 는 커서 Y 가 행 중앙 위쪽이면 'before', 아래쪽이면 'after' — 행 절반을 hit-zone으로 써서 정밀도 ↑
   const [dragging, setDragging] = useState(null);
-  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
 
   // 디바운스 타이머 ref
   const linesTimer = useRef(null);
@@ -803,28 +804,42 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                     onRemove={() => removeLine(idx)}
                     onCellKeyDown={handleCellKeyDown}
                     isDragging={dragging?.fromIdx === idx}
-                    showDropIndicator={dragOverIdx === idx}
+                    dropPos={dragOver?.idx === idx ? dragOver.pos : null}
                     onDragStart={() => setDragging({ fromIdx: idx, isGroupHeader })}
-                    onDragEnd={() => { setDragging(null); setDragOverIdx(null); }}
+                    onDragEnd={() => { setDragging(null); setDragOver(null); }}
                     onDragOver={(e) => {
                       if (!dragging) return;
                       e.preventDefault();
-                      // 자기 자신 또는 자기 그룹 안쪽 위로 drag면 indicator 숨김
-                      if (dragging.fromIdx === idx) { setDragOverIdx(null); return; }
+                      // 커서 Y → 행 절반 hit-zone → before/after 자동 판정 (정밀 위치 잡기 X)
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                      const toIdx = pos === 'after' ? idx + 1 : idx;
+                      // 그룹 헤더 드래그 → 자기 그룹 영역 안쪽으론 드롭 X
                       if (dragging.isGroupHeader) {
                         const ranges = computeGroupRanges(lines);
                         const me = ranges.find((r) => r.start === dragging.fromIdx);
-                        if (me && idx >= me.start && idx <= me.end) { setDragOverIdx(null); return; }
+                        if (me && toIdx >= me.start && toIdx <= me.end + 1) {
+                          setDragOver(null);
+                          return;
+                        }
+                      } else {
+                        // 단일 라인 — 제자리 드롭은 indicator 숨김
+                        if (toIdx === dragging.fromIdx || toIdx === dragging.fromIdx + 1) {
+                          setDragOver(null);
+                          return;
+                        }
                       }
-                      setDragOverIdx(idx);
+                      setDragOver({ idx, pos });
                     }}
                     onDrop={(e) => {
                       if (!dragging) return;
                       e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
                       const from = dragging.fromIdx;
-                      const to = idx;
+                      const to = pos === 'after' ? idx + 1 : idx;
                       setDragging(null);
-                      setDragOverIdx(null);
+                      setDragOver(null);
                       if (dragging.isGroupHeader) reorderGroup(from, to);
                       else reorderLine(from, to);
                     }}
@@ -1022,8 +1037,14 @@ function DragHandle({ onDragStart, onDragEnd, title }) {
 
 function LineRow({
   line, rowIdx, inGroup, onChange, onRemove, onCellKeyDown,
-  isDragging, showDropIndicator, onDragStart, onDragEnd, onDragOver, onDrop,
+  isDragging, dropPos, onDragStart, onDragEnd, onDragOver, onDrop,
 }) {
+  // dropPos: 'before' → 행 상단 indicator, 'after' → 하단 indicator (정밀도 ↑)
+  const dropCls = dropPos === 'before'
+    ? 'border-t-2 border-navy-500'
+    : dropPos === 'after'
+    ? 'border-b-2 border-navy-500'
+    : '';
   const amount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
 
   // 0일 때 빈칸으로 보이게 — type="number" value={0} 일 때 사용자가 새 값을 치면 leading 0 문제 발생
@@ -1041,7 +1062,7 @@ function LineRow({
   if (line.isGroup && line.isGroupEnd) {
     return (
       <tr
-        className={`group bg-gray-50 ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+        className={`group bg-gray-50 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
         data-row-idx={rowIdx}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -1072,7 +1093,7 @@ function LineRow({
   if (line.isGroup) {
     return (
       <tr
-        className={`group bg-navy-50/40 ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+        className={`group bg-navy-50/40 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
         data-row-idx={rowIdx}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -1108,7 +1129,7 @@ function LineRow({
   // ===== 일반 라인 행 =====
   return (
     <tr
-      className={`group hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''} ${isDragging ? 'opacity-30' : ''} ${showDropIndicator ? 'border-t-2 border-navy-500' : ''}`}
+      className={`group hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''} ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
       data-row-idx={rowIdx}
       onDragOver={onDragOver}
       onDrop={onDrop}
