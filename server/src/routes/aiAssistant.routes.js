@@ -19,7 +19,7 @@ const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 const MAX_ITERATIONS = 8;          // tool-use loop 안전 가드
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "슈플렉스(Suplex)"의 AI 비서야.
+const SYSTEM_PROMPT = `너는 한국 인테리어 업체용 SaaS "수플렉스(Suplex)"의 AI 비서야.
 사용자(인테리어 업체 대표/직원)의 질문에 답하기 위해 제공된 도구로 회사 데이터를 조회해. 지출·발주·마감재·일정·견적·메모 등 회사 운영 전반을 자연어로 검색·분석해줘.
 
 지침:

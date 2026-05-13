@@ -90,7 +90,7 @@ export default function AIAssistant() {
       <header className="px-5 py-3 border-b bg-navy-800 text-white flex items-center justify-between">
         <div>
           <div className="font-bold">🤖 AI 비서</div>
-          <div className="text-xs text-navy-100">슈플렉스 데이터 기반 운영 질문 어시스턴트</div>
+          <div className="text-xs text-navy-100">수플렉스 데이터 기반 운영 질문 어시스턴트</div>
         </div>
         <button
           onClick={reset}
@@ -108,7 +108,7 @@ export default function AIAssistant() {
             <div className="text-5xl mb-3">💬</div>
             <div className="text-navy-800 font-medium mb-1">무엇을 도와드릴까요?</div>
             <div className="text-xs text-gray-500 mb-6">
-              슈플렉스에 저장된 프로젝트·지출·마감재·발주·견적·일정 데이터를 검색해서 답해드려요.
+              수플렉스에 저장된 프로젝트·지출·마감재·발주·견적·일정 데이터를 검색해서 답해드려요.
             </div>
             <div className="space-y-2 max-w-md mx-auto">
               {SUGGESTED.map((q) => (
