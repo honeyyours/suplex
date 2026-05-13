@@ -783,10 +783,10 @@ function PhaseLabelsSection({ canEdit }) {
     <Section
       title="공정 표시 라벨 (회사 커스터마이즈)"
       collapsible
-      hint="표준 25개 공정의 화면 표시명만 회사 마음대로 바꿀 수 있어요. 매칭/그룹핑은 표준 라벨 기준으로 그대로 유지됩니다."
+      hint="표준 24개 공정의 화면 표시명만 회사 마음대로 바꿀 수 있어요. 매칭/그룹핑은 표준 라벨 기준으로 그대로 유지됩니다."
     >
       <div className="text-xs text-gray-500 mb-3 leading-relaxed">
-        💡 예: "마무리(점검, 실리콘)" → "마무리" / "창호·샷시" → "샷시" / "유리·거울" → "유리"<br />
+        💡 예: "마무리(입주청소·실리콘 등)" → "마무리" / "창호·샷시" → "샷시" / "유리·거울" → "유리"<br />
         💡 비워두면 표준 라벨이 표시됩니다. 자동 인식 키워드는 별도 섹션에서 관리하세요.
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

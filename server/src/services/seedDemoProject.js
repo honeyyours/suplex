@@ -83,7 +83,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     { phase: '욕실',                lines: [['도기·수전 셋트',    '식', 1, 2800000], ['거울/조명',         '식', 1, 600000]] },
     { phase: '도배',                lines: [['실크벽지 일식',     '식', 1, 3200000]] },
     { phase: '마루·장판',            lines: [['강마루 32평',       '식', 1, 5800000]] },
-    { phase: '마무리(점검, 실리콘)', lines: [['실리콘·점검 일식', '식', 1, 600000]] },
+    { phase: '마무리(입주청소·실리콘 등)', lines: [['실리콘·점검 일식', '식', 1, 600000]] },
   ];
 
   let order = 0;
@@ -199,9 +199,9 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     ['도배',                 '침실 도배',                       28],
     ['마루·장판',            '강마루 시공',                     31],
     ['마루·장판',            '걸레받이 마무리',                 33],
-    ['마무리(점검, 실리콘)', '실리콘 작업',                    39],
-    ['마무리(점검, 실리콘)', '전체 점검',                       41],
-    ['입주청소',             '입주청소',                        43],
+    ['마무리(입주청소·실리콘 등)', '실리콘 작업',                    39],
+    ['마무리(입주청소·실리콘 등)', '전체 점검',                       41],
+    ['마무리(입주청소·실리콘 등)', '입주청소',                        43],
   ];
 
   const scheduleData = schedules.map(([category, content, dayOffset], i) => {
@@ -278,7 +278,7 @@ async function seedDemoProject(prisma, { companyId, ownerUserId }) {
     ['단열',                 'GENERAL', '단열재 도착 확인',                true,  4],
     ['도배',                 'GENERAL', '도배 풀 종류 확인',               false, 23],
     ['마루·장판',            'GENERAL', '마루 시공 전 평탄도 확인',        false, 30],
-    ['입주청소',             'GENERAL', '가전 사이즈 재확인',              false, 36],
+    ['마무리(입주청소·실리콘 등)', 'GENERAL', '가전 사이즈 재확인',              false, 36],
   ];
   for (let i = 0; i < checklists.length; i++) {
     const [phase, category, title, isDone, dueOffset] = checklists[i];

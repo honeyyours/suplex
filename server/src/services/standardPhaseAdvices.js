@@ -17,8 +17,8 @@ const STANDARD_ADVICES = [
   { phase: '도배', daysBefore: 1,  title: '벽면 보수 / 퍼티 마감 점검',              category: '사전 준비',  requiresPhoto: false },
   { phase: '도장', daysBefore: 3,  title: '도장 색상 컨펌 + 시너 환기 계획',         category: '안전',       requiresPhoto: false },
   { phase: '필름', daysBefore: 2,  title: '필름 도착 확인 + 기존 실리콘 제거 준비',  category: '사전 준비',  requiresPhoto: false },
-  { phase: '입주청소',             daysBefore: 7, title: '청소 업체 예약 + 입주 전 사진 점검 일정', category: '사전 준비', requiresPhoto: false },
-  { phase: '마무리(점검, 실리콘)', daysBefore: 1, title: '잔손 리스트 확정 + 전기·가스 검침',       category: '사전 준비', requiresPhoto: false },
+  { phase: '마무리(입주청소·실리콘 등)', daysBefore: 7, title: '청소 업체 예약 + 입주 전 사진 점검 일정', category: '사전 준비', requiresPhoto: false },
+  { phase: '마무리(입주청소·실리콘 등)', daysBefore: 1, title: '잔손 리스트 확정 + 전기·가스 검침',       category: '사전 준비', requiresPhoto: false },
 
   // ===== 시공 사진 증거 (옛 ChecklistTemplate) — daysBefore=0, requiresPhoto=true =====
   // 철거
@@ -53,9 +53,9 @@ const STANDARD_ADVICES = [
   // 마루
   { phase: '마루·장판', daysBefore: 0,  title: '마루 시공 전 바닥 사진',        category: '사진', requiresPhoto: true },
   { phase: '마루·장판', daysBefore: 0,  title: '마루 시공 완료 사진',           category: '사진', requiresPhoto: true },
-  // 입주청소 / 마무리
-  { phase: '입주청소',             daysBefore: 0, title: '준공 청소 완료 사진',   category: '사진', requiresPhoto: true },
-  { phase: '마무리(점검, 실리콘)', daysBefore: 0, title: '준공 전체 공간별 사진', category: '사진', requiresPhoto: true },
+  // 마무리 (입주청소·실리콘·점검 통합)
+  { phase: '마무리(입주청소·실리콘 등)', daysBefore: 0, title: '준공 청소 완료 사진',   category: '사진', requiresPhoto: true },
+  { phase: '마무리(입주청소·실리콘 등)', daysBefore: 0, title: '준공 전체 공간별 사진', category: '사진', requiresPhoto: true },
 ];
 
 // ===== 시스템 룰 (미확정 알림) — 회사마다 항상 보장되는 고정 룰 =====

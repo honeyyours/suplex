@@ -25,8 +25,10 @@ const PHASE_DEADLINE_DAYS = {
   가구: 14,        // 싱크대·붙박이 제작 보통 2주
   '마루·장판': 3,
   시스템에어컨: 7, // 실외기·실내기 발송
+  // 마무리 — '마무리' substring 으로 신·구 라벨 모두 흡수
+  마무리: 0,
+  // 구 라벨 backward-compat (DB 기존 row·구 회사 룰 대응)
   입주청소: 0,
-  '마무리(점검, 실리콘)': 0,
 };
 
 const DEFAULT_DEADLINE_DAYS = 3;

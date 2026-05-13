@@ -114,17 +114,15 @@ const ROWS = [
   { phase: '시스템에어컨', keyword: '에어컨' },
   { phase: '시스템에어컨', keyword: 'SAC' },
 
-  // 입주청소
-  { phase: '입주청소', keyword: '입주청소' },
-  { phase: '입주청소', keyword: '준공청소' },
-  { phase: '입주청소', keyword: '청소' },
-
-  // 마무리(점검, 실리콘)
-  { phase: '마무리(점검, 실리콘)', keyword: '실리콘' },
-  { phase: '마무리(점검, 실리콘)', keyword: '점검' },
-  { phase: '마무리(점검, 실리콘)', keyword: '하자점검' },
-  { phase: '마무리(점검, 실리콘)', keyword: '하자보수' },
-  { phase: '마무리(점검, 실리콘)', keyword: '준공' },
+  // 마무리(입주청소·실리콘 등) — 청소/실리콘/점검을 한 공정에 통합 (2026-05-13)
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '입주청소' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '준공청소' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '청소' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '실리콘' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '점검' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '하자점검' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '하자보수' },
+  { phase: '마무리(입주청소·실리콘 등)', keyword: '준공' },
 ];
 
 function buildSeedRows() {
