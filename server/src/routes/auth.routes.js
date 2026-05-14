@@ -273,10 +273,8 @@ router.post('/login', loginLimiter, async (req, res, next) => {
 
     const membership = user.memberships[0];
 
-    // 일반 사용자는 회사 멤버십 필요. 슈퍼 어드민은 회사 없이도 로그인 OK.
-    if (!membership && !user.isSuperAdmin) {
-      return res.status(403).json({ error: '소속된 회사가 없습니다' });
-    }
+    // 일반회원(회사 없이 가입)·슈퍼어드민도 회사 없이 로그인 OK.
+    // 라운지·IntroHome만 접근 가능, 회사 메뉴는 BetaGate / requireApprovedCompany에서 차단.
 
     // 2FA 활성 사용자(슈퍼어드민 한정)는 임시 토큰 + needsTotp:true 응답.
     // 클라이언트는 6자리 코드 또는 백업 코드를 /auth/totp/verify에 제출해야 정식 토큰 받음.
