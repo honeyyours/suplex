@@ -32,16 +32,24 @@ export default function Layout() {
   // 일반 사용자가 /admin 접근 시 홈으로 자동 이동
   // isAuthChecked가 true가 된 뒤에만 결정 — 새로고침 직후 isSuperAdmin이 아직
   // 보강되지 않은 시점에 잘못 리다이렉트되는 것을 방지.
+  // 어드민도 라운지는 일반 사용자와 동일한 화면 이용 가능 (모더레이션은 /admin 콘솔)
+  const isLoungeRoute = location.pathname === '/lounge' || location.pathname.startsWith('/lounge/');
   useEffect(() => {
     if (!auth || !isAuthChecked) return;
-    if (isAdmin && !isAdminRoute) {
+    if (isAdmin && !isAdminRoute && !isLoungeRoute) {
       navigate('/admin', { replace: true });
     } else if (!isAdmin && isAdminRoute) {
       navigate('/', { replace: true });
     }
-  }, [auth, isAuthChecked, isAdmin, isAdminRoute, navigate]);
+  }, [auth, isAuthChecked, isAdmin, isAdminRoute, isLoungeRoute, navigate]);
 
-  const navItems = isAdmin ? [] : NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
+  // 일반회원(회사 없음)은 홈·라운지만 노출 — 회사 기능 메뉴는 숨김 (2026-05-14)
+  const isGeneralMember = !isAdmin && !auth?.company;
+  const navItems = isAdmin
+    ? NAV.filter((n) => n.to === '/lounge')
+    : isGeneralMember
+    ? NAV.filter((n) => n.to === '/' || n.to === '/lounge')
+    : NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
   const hasMultipleCompanies = !isAdmin && (memberships?.length || 0) >= 2;
 
   // 브라우저 기본 우클릭 메뉴 전역 차단. 앱 내부 React onContextMenu는 그대로 발화.
