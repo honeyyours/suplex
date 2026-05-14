@@ -436,7 +436,7 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
 
         {isRuby && (
           <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
-            ⚠ 첨부된 .rb 스크립트는 사용자가 만든 것입니다. 본인 책임 하에 실행하세요.
+            ⚠ 사용자가 만든 루비 파일입니다. 사용에 주의해주세요.
           </div>
         )}
 

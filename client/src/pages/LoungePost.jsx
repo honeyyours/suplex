@@ -405,7 +405,7 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
             </div>
           ))}
           <div className="text-[11px] text-amber-700 dark:text-amber-400">
-            ⚠ 사용자가 만든 스크립트입니다. 본인 책임으로 실행하세요.
+            ⚠ 사용자가 만든 루비 파일입니다. 사용에 주의해주세요.
           </div>
         </div>
       )}
