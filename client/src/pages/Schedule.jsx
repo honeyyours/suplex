@@ -14,7 +14,7 @@ import ProjectChecklist from './ProjectChecklist';
 const SUBTABS = [
   { key: 'site',    label: '현장 일정',  status: 'IN_PROGRESS' },
   { key: 'planned', label: '견적 일정',  status: 'PLANNED' },
-  { key: 'all',     label: '전체 일정',  status: null },
+  { key: 'all',     label: '전체',       status: null },
 ];
 
 export default function Schedule() {
