@@ -107,7 +107,10 @@ export default function Lounge() {
               className="text-sm px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               title="내 라운지 프로필"
             >
-              {meData.membership.selfLabel || jobRoleLabel(meData.membership.jobRole) || '내 프로필'}
+              {auth?.user?.nickname || '내 프로필'}
+              {meData.membership.jobRole && (
+                <span className="ml-1 text-gray-400">· {jobRoleLabel(meData.membership.jobRole)}</span>
+              )}
             </button>
           )}
           <button
@@ -196,6 +199,7 @@ export default function Lounge() {
       {showMeEdit && meData?.membership && (
         <MeEditModal
           me={meData.membership}
+          currentNickname={auth?.user?.nickname || ''}
           onClose={() => setShowMeEdit(false)}
           onSaved={() => {
             setShowMeEdit(false);
@@ -210,6 +214,7 @@ export default function Lounge() {
 function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
   const catLabel = categories.find((c) => c.key === p.category)?.label || p.category;
   const authorName = p.author?.nickname || p.author?.name || '—';
+  const jobLabel = jobRoleLabel(p.author?.jobRole);
   const dateStr = formatDate(p.createdAt);
   const rowClass = isNotice
     ? 'bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/40'
@@ -236,11 +241,12 @@ function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
         </Link>
         {/* 모바일: 메타 정보 한 줄로 노출 */}
         <div className="sm:hidden text-[11px] text-gray-500 mt-0.5">
-          {authorName} · {dateStr} · 조회 {p.viewCount || 0} · ♥ {p.reactionCount}
+          {authorName}{jobLabel ? ` · ${jobLabel}` : ''} · {dateStr} · 조회 {p.viewCount || 0} · ♥ {p.reactionCount}
         </div>
       </td>
-      <td className="px-3 py-2 text-center text-xs text-gray-700 dark:text-gray-300 hidden sm:table-cell truncate">
-        {authorName}
+      <td className="px-3 py-2 text-center text-xs hidden sm:table-cell">
+        <div className="text-gray-700 dark:text-gray-300 truncate">{authorName}</div>
+        {jobLabel && <div className="text-[10px] text-gray-400 mt-0.5">{jobLabel}</div>}
       </td>
       <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums hidden md:table-cell">
         {dateStr}
@@ -521,22 +527,53 @@ function NicknameSetupModal({ onSaved }) {
   );
 }
 
-function MeEditModal({ me, onClose, onSaved }) {
-  const [selfLabel, setSelfLabel] = useState(me.selfLabel || '');
+function MeEditModal({ me, currentNickname, onClose, onSaved }) {
+  const { updateMe } = useAuth();
+  const [nickname, setNickname] = useState(currentNickname || '');
   const [jobRole, setJobRole] = useState(me.jobRole || '');
   const [error, setError] = useState('');
-  const mutation = useMutation({
-    mutationFn: (payload) => loungeApi.updateMe(payload),
-    onSuccess: () => onSaved(),
-    onError: (e) => setError(e.response?.data?.error || e.message),
-  });
-  function submit(e) {
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
     e.preventDefault();
-    mutation.mutate({ selfLabel: selfLabel.trim() || null, jobRole: jobRole || null });
+    setError('');
+    const v = nickname.trim();
+    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(v)) {
+      setError('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+      return;
+    }
+    setBusy(true);
+    try {
+      // 직군은 라운지 멤버십, 닉네임은 User — 둘 다 변경 시 병렬 호출
+      const tasks = [];
+      if ((me.jobRole || '') !== (jobRole || '')) {
+        tasks.push(loungeApi.updateMe({ jobRole: jobRole || null }));
+      }
+      if ((currentNickname || '') !== v) {
+        tasks.push(updateMe({ nickname: v }));
+      }
+      await Promise.all(tasks);
+      onSaved();
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+      setBusy(false);
+    }
   }
+
   return (
     <Modal title="라운지 프로필" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium mb-1">닉네임 (라운지·댓글에 표시)</label>
+          <input
+            type="text"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="2~20자, 한글·영문·숫자·_·-"
+            maxLength={20}
+            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+          />
+        </div>
         <div>
           <label className="block text-xs font-medium mb-1">직군</label>
           <select
@@ -550,22 +587,11 @@ function MeEditModal({ me, onClose, onSaved }) {
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-xs font-medium mb-1">표시 라벨 (선택, 최대 40자)</label>
-          <input
-            type="text"
-            value={selfLabel}
-            onChange={(e) => setSelfLabel(e.target.value)}
-            placeholder="예: 디자이너 / 5년차"
-            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-            maxLength={40}
-          />
-        </div>
         {error && <div className="text-sm text-rose-600">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-700">취소</button>
-          <button type="submit" disabled={mutation.isPending} className="px-4 py-2 text-sm rounded bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50">
-            {mutation.isPending ? '저장 중...' : '저장'}
+          <button type="submit" disabled={busy} className="px-4 py-2 text-sm rounded bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50">
+            {busy ? '저장 중...' : '저장'}
           </button>
         </div>
       </form>
