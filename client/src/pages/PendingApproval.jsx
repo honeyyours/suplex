@@ -40,7 +40,8 @@ export default function PendingApproval() {
 
         <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-4">
           📞 빠른 승인이 필요하시면<br/>
-          <b className="text-amber-900">대표 연락처로 문의</b>해주세요.
+          <b className="text-amber-900">대표 메일 또는 인스타그램</b>을 통해<br/>
+          문의해주세요.
         </div>
 
         {otherApproved.length > 0 && (

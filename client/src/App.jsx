@@ -41,20 +41,17 @@ import LoungePost from './pages/LoungePost';
 import IntroHome from './pages/IntroHome';
 
 // 홈 라우트 분기:
-// - 일반회원(회사 없음): IntroHome (수플렉스 소개·CTA)
-// - 회사 미승인: /lounge로 (베타 깔때기)
+// - 일반회원(회사 없음) + 회사 미승인: IntroHome (수플렉스 소개·CTA + 라운지 페인 포인트)
 // - 회사 승인·슈퍼어드민: Dashboard
 function HomeRoute() {
   const { auth, isAuthChecked } = useAuth();
   if (isAuthChecked && auth && !auth.isSuperAdmin) {
-    if (!auth.company) {
-      return <IntroHome />;
-    }
+    if (!auth.company) return <IntroHome />;
     if (
       auth.company.approvalStatus &&
       auth.company.approvalStatus !== 'APPROVED'
     ) {
-      return <Navigate to="/lounge" replace />;
+      return <IntroHome />;
     }
   }
   return <Dashboard />;

@@ -111,7 +111,10 @@ export default function IntroHome() {
       {/* 푸터 */}
       <div className="pt-6 border-t border-gray-200 dark:border-gray-800 text-center text-xs text-gray-500 space-y-2">
         <p>
-          현재 일반회원으로 로그인되어 있습니다. 회사 대표로 가입하시려면 별도 문의해주세요.
+          {auth?.company
+            ? <>현재 <b>{auth.company.name}</b> 베타 승인 대기 중입니다. 빠른 승인은 대표 메일 또는 인스타그램으로 문의해주세요.</>
+            : <>현재 일반회원으로 로그인되어 있습니다. 회사 대표로 가입하시려면 대표 메일 또는 인스타그램으로 문의해주세요.</>
+          }
         </p>
         <div className="flex justify-center gap-3 text-xs">
           <Link to="/lounge" className="text-navy-700 hover:underline">라운지</Link>
