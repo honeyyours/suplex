@@ -241,12 +241,15 @@ function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
         </Link>
         {/* 모바일: 메타 정보 한 줄로 노출 */}
         <div className="sm:hidden text-[11px] text-gray-500 mt-0.5">
-          {authorName}{jobLabel ? ` · ${jobLabel}` : ''} · {dateStr} · 조회 {p.viewCount || 0} · ♥ {p.reactionCount}
+          {jobLabel && <span className="text-gray-400">[{jobLabel}] </span>}
+          {authorName} · {dateStr} · 조회 {p.viewCount || 0} · ♥ {p.reactionCount}
         </div>
       </td>
       <td className="px-3 py-2 text-center text-xs hidden sm:table-cell">
-        <div className="text-gray-700 dark:text-gray-300 truncate">{authorName}</div>
-        {jobLabel && <div className="text-[10px] text-gray-400 mt-0.5">{jobLabel}</div>}
+        <span className="text-gray-700 dark:text-gray-300">
+          {jobLabel && <span className="text-gray-400 mr-1">[{jobLabel}]</span>}
+          {authorName}
+        </span>
       </td>
       <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums hidden md:table-cell">
         {dateStr}
