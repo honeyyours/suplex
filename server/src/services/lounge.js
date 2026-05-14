@@ -89,11 +89,11 @@ async function grantLoungeMembershipsForCompany(client, companyId, reason) {
   return granted;
 }
 
-// 일괄 보강 — 모든 APPROVED 회사 멤버 중 라운지 멤버십 미보유자 부여.
+// 일괄 보강 — 모든 회사 멤버 중 라운지 멤버십 미보유자 부여.
+// 2026-05-14 변경: 회사 승인 여부와 무관. 베타 진입 통제(approvalStatus)는 라운지 외 메뉴에만 적용.
 // 어드민 endpoint와 boot 시 1회 호출 가능.
 async function backfillLoungeMemberships(client) {
   const memberships = await client.membership.findMany({
-    where: { company: { approvalStatus: 'APPROVED' } },
     select: { userId: true, companyId: true },
   });
   const seen = new Set();

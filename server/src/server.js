@@ -1,7 +1,7 @@
 const app = require('./app');
 const env = require('./config/env');
 const prisma = require('./config/prisma');
-const { seedLoungeTags } = require('./services/lounge');
+const { seedLoungeTags, backfillLoungeMemberships } = require('./services/lounge');
 
 const server = app.listen(env.port, '0.0.0.0', () => {
   console.log(`[suplex] API listening on port ${env.port}`);
@@ -10,6 +10,10 @@ const server = app.listen(env.port, '0.0.0.0', () => {
   seedLoungeTags(prisma)
     .then((n) => console.log(`[suplex] lounge tags seeded: ${n}`))
     .catch((e) => console.error('[suplex] seedLoungeTags failed:', e.message));
+  // 라운지 멤버십 멱등 백필 — 회사 승인 무관 (2026-05-14 정책 변경: 미승인 회사도 라운지 OK)
+  backfillLoungeMemberships(prisma)
+    .then(({ scanned, granted }) => console.log(`[suplex] lounge memberships backfilled: ${granted}/${scanned}`))
+    .catch((e) => console.error('[suplex] backfillLoungeMemberships failed:', e.message));
 });
 
 process.on('SIGINT', () => {

@@ -12,7 +12,7 @@ const { authRequired, requireRole } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { checkPasswordPolicy } = require('../services/passwordPolicy');
 const { inviteTokenLimiter } = require('../middlewares/rateLimit');
-const { grantIfCompanyApproved } = require('../services/lounge');
+const { ensureLoungeMembership } = require('../services/lounge');
 const { addUserToAllCompanyProjects } = require('../services/projectMembership');
 
 const router = express.Router();
@@ -234,8 +234,8 @@ router.post('/accept', async (req, res, next) => {
             data: { phone: data.phone.trim() },
           });
         }
-        // 라운지 멤버십 — 회사가 APPROVED일 때만 부여 (퇴사 후에도 유지)
-        await grantIfCompanyApproved(tx, existingUser.id, inv.companyId, '초대 합류 (좀비 복구)');
+        // 라운지 멤버십 즉시 부여 — 회사 승인 무관 (베타 진입 통제는 라운지 외 메뉴에만 적용)
+        await ensureLoungeMembership(tx, existingUser.id, '초대 합류 (좀비 복구)');
         // 회사 모든 기존 프로젝트에 자동 MEMBER로 합류
         await addUserToAllCompanyProjects(tx, { userId: existingUser.id, companyId: inv.companyId });
       });
@@ -268,8 +268,8 @@ router.post('/accept', async (req, res, next) => {
           where: { id: inv.id },
           data: { acceptedAt: new Date() },
         });
-        // 라운지 멤버십 — 회사가 APPROVED일 때만
-        await grantIfCompanyApproved(tx, user.id, inv.companyId, '초대 신규 가입');
+        // 라운지 멤버십 즉시 부여 — 회사 승인 무관 (베타 진입 통제는 라운지 외 메뉴에만 적용)
+        await ensureLoungeMembership(tx, user.id, '초대 신규 가입');
         // 회사 모든 기존 프로젝트에 자동 MEMBER로 합류
         await addUserToAllCompanyProjects(tx, { userId: user.id, companyId: inv.companyId });
         return user;
@@ -360,8 +360,8 @@ router.post('/join', authRequired, async (req, res, next) => {
         where: { id: inv.id },
         data: { acceptedAt: new Date() },
       });
-      // 라운지 멤버십 — 회사가 APPROVED일 때만
-      await grantIfCompanyApproved(tx, me.id, inv.companyId, '초대 합류 (로그인 후)');
+      // 라운지 멤버십 즉시 부여 — 회사 승인 무관 (베타 진입 통제는 라운지 외 메뉴에만 적용)
+      await ensureLoungeMembership(tx, me.id, '초대 합류 (로그인 후)');
       // 회사 모든 기존 프로젝트에 자동 MEMBER로 합류
       await addUserToAllCompanyProjects(tx, { userId: me.id, companyId: inv.companyId });
     });

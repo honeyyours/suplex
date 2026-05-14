@@ -1,20 +1,16 @@
-// 베타 진입 통제 — 회사가 APPROVED가 아닐 때 표시되는 안내 페이지.
-// 정책: PENDING과 REJECTED 모두 동일한 "승인 대기 중" 메시지 (거절 사유 미공개).
-// SUSPENDED도 동일 처리.
+// 베타 준비중 안내 — 회사가 APPROVED 외일 때 라운지 외 메뉴 접근 시 표시.
+// 2026-05-14 정책: 미승인 회사도 내부 진입·라운지 활동 OK. 본 페이지는 라운지 외 메뉴 차단용.
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function PendingApproval() {
   const { auth, logout, switchCompany, memberships } = useAuth();
   const [switching, setSwitching] = useState(null);
 
-  // 베타 동안에는 자동 폴링으로 승인 상태 갱신 — 어드민이 승인하면 페이지 새로고침 없이 입장
+  // 60초마다 me 새로 받아 approvalStatus 변경 시 자동 진입
   useEffect(() => {
-    const handler = () => window.location.reload();
-    const id = setInterval(() => {
-      // 60초마다 페이지 reload — me 새로 받아 approvalStatus 변경 시 자동 진입
-      handler();
-    }, 60_000);
+    const id = setInterval(() => { window.location.reload(); }, 60_000);
     return () => clearInterval(id);
   }, []);
 
@@ -24,15 +20,25 @@ export default function PendingApproval() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white border rounded-xl shadow-sm p-8 text-center">
-        <div className="text-5xl mb-4">⏳</div>
-        <h1 className="text-xl font-bold text-navy-800 mb-2">승인 대기 중입니다</h1>
-        <p className="text-sm text-gray-600 leading-relaxed mb-6">
-          현재 수플렉스는 <b>클로즈 베타</b> 운영 중입니다.<br/>
-          관리자가 회사 가입을 검토하고 있으며, 승인되면 자동으로 입장됩니다.
+        <div className="text-5xl mb-4">🚧</div>
+        <h1 className="text-xl font-bold text-navy-800 mb-2">베타 준비중입니다</h1>
+        <p className="text-sm text-gray-600 leading-relaxed mb-5">
+          이 메뉴는 <b>회사 승인 후</b> 사용 가능합니다.<br/>
+          관리자가 회사 가입을 검토하는 동안<br/>
+          <b className="text-navy-700">라운지</b>에서 동료 인테리어 분들과<br/>
+          노하우·루비·스케치업 자료를 자유롭게 즐겨보세요.
         </p>
-        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-6">
+
+        <Link
+          to="/lounge"
+          className="inline-block w-full text-sm font-medium px-4 py-2.5 bg-navy-700 text-white rounded hover:bg-navy-800 mb-3"
+        >
+          → 라운지로 이동
+        </Link>
+
+        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-4">
           📞 빠른 승인이 필요하시면<br/>
           <b className="text-amber-900">대표 연락처로 문의</b>해주세요.
         </div>

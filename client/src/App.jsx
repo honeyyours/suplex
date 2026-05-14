@@ -1,8 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import BetaGate from './components/BetaGate';
 import FeatureGate from './components/FeatureGate';
 import { F } from './utils/features';
+import { useAuth } from './contexts/AuthContext';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -37,6 +39,21 @@ import ProjectUtilities from './pages/ProjectUtilities';
 import Lounge from './pages/Lounge';
 import LoungePost from './pages/LoungePost';
 
+// 홈 라우트 — 미승인 회사 사용자는 라운지로 즉시 안내 (베타 진입 통제 우회 경로).
+function HomeRoute() {
+  const { auth, isAuthChecked } = useAuth();
+  if (
+    isAuthChecked &&
+    auth &&
+    !auth.isSuperAdmin &&
+    auth.company?.approvalStatus &&
+    auth.company.approvalStatus !== 'APPROVED'
+  ) {
+    return <Navigate to="/lounge" replace />;
+  }
+  return <Dashboard />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -53,22 +70,28 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/schedule" element={<Schedule />} />
-        <Route path="/expenses" element={<FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate>} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/ai-assistant" element={<FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate>} />
-        <Route path="/team" element={<TeamManagement />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/admin" element={<Admin />} />
-
+        {/* 라운지 — 베타 진입 통제 우회. 미승인 회사도 자유롭게 접근/활동 */}
         <Route path="/lounge" element={<Lounge />} />
         <Route path="/lounge/:postId" element={<LoungePost />} />
 
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/new" element={<NewProject />} />
+        {/* 어드민 — 슈퍼어드민 전용이므로 BetaGate 불필요 (어드민 자체가 isSuperAdmin 체크) */}
+        <Route path="/admin" element={<Admin />} />
 
-        <Route path="/projects/:id" element={<ProjectDetail />}>
+        {/* 홈 — 미승인은 /lounge로 자동, 승인은 Dashboard */}
+        <Route path="/" element={<HomeRoute />} />
+
+        {/* 그 외 메뉴는 미승인이면 BetaGate가 베타 준비중 화면으로 차단 */}
+        <Route path="/schedule" element={<BetaGate><Schedule /></BetaGate>} />
+        <Route path="/expenses" element={<BetaGate><FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate></BetaGate>} />
+        <Route path="/orders" element={<BetaGate><Orders /></BetaGate>} />
+        <Route path="/ai-assistant" element={<BetaGate><FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate></BetaGate>} />
+        <Route path="/team" element={<BetaGate><TeamManagement /></BetaGate>} />
+        <Route path="/settings" element={<BetaGate><Settings /></BetaGate>} />
+
+        <Route path="/projects" element={<BetaGate><Projects /></BetaGate>} />
+        <Route path="/projects/new" element={<BetaGate><NewProject /></BetaGate>} />
+
+        <Route path="/projects/:id" element={<BetaGate><ProjectDetail /></BetaGate>}>
           <Route index element={<Navigate to="schedule" replace />} />
           <Route path="quotes" element={<ProjectSimpleQuotes />} />
           <Route path="quotes-detail" element={<ProjectQuotes />} />

@@ -11,6 +11,7 @@ const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdv
 const { seedAllBundlesFromPresetIfAvailable } = require('../services/phasePreset');
 const { checkPasswordPolicy } = require('../services/passwordPolicy');
 const { loginLimiter, signupLimiter, passwordChangeLimiter } = require('../middlewares/rateLimit');
+const { ensureLoungeMembership } = require('../services/lounge');
 
 const router = express.Router();
 
@@ -96,6 +97,9 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
       }
       // 시스템 룰(미확정 알림 D-14/D-7) 자동 보장 — 프리셋 적용 여부와 무관하게 항상 시드
       await ensureSystemDefaultsForCompany(tx, company.id);
+      // 라운지 멤버십 즉시 부여 — 베타 진입 통제와 무관하게 자가 가입자가 라운지·루비 다운로드 접근 가능.
+      // 회사 승인은 라운지 외 메뉴(견적/일정/지출 등)에서만 게이트.
+      await ensureLoungeMembership(tx, user.id, '자가 가입 (회사 승인 무관)');
       return { user, company };
     });
 

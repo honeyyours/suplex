@@ -1,19 +1,10 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import PendingApproval from '../pages/PendingApproval';
 
+// 로그인 가드만. 베타 승인은 BetaGate에서 라우트별로 분기 (2026-05-14 정책 변경).
+// 미승인 사용자도 내부에 진입 가능 — 라운지는 통과, 다른 메뉴는 BetaGate가 PendingApproval 표시.
 export default function ProtectedRoute({ children }) {
-  const { auth, isAuthChecked } = useAuth();
+  const { auth } = useAuth();
   if (!auth) return <Navigate to="/login" replace />;
-  // 베타 진입 통제 — 회사가 APPROVED 외이면 PendingApproval로 차단.
-  // 슈퍼어드민은 우회. isAuthChecked 전에는 깜빡임 방지 위해 일단 통과 (me 응답 후 결정).
-  if (
-    isAuthChecked &&
-    !auth.isSuperAdmin &&
-    auth.company?.approvalStatus &&
-    auth.company.approvalStatus !== 'APPROVED'
-  ) {
-    return <PendingApproval />;
-  }
   return children;
 }
