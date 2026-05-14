@@ -9,7 +9,7 @@ import PlanBadge from './PlanBadge';
 
 const NAV = [
   { to: '/', label: '홈', exact: true },
-  { to: '/schedule', label: '일정' },
+  { to: '/schedule', label: '전체 일정' },
   { to: '/projects', label: '프로젝트' },
   { to: '/orders', label: '발주' },
   { to: '/expenses', label: '지출관리', feature: F.EXPENSES_VIEW },

@@ -119,19 +119,20 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             const isCurrentMonth = date.getMonth() === current.getMonth();
             const isToday = key === todayKey;
             const dayOfWeek = date.getDay();
+            const isFirstOfMonth = date.getDate() === 1;
 
             return (
               <div
                 key={key}
                 className={`border-r border-b last:border-r-0 min-h-[80px] sm:min-h-28 flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
-                }`}
+                } ${isFirstOfMonth ? 'border-t-2 border-t-navy-400' : ''}`}
               >
                 <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
-                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}`}>
-                    {date.getDate()}
+                  <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''} ${isFirstOfMonth && !isToday ? 'font-semibold text-navy-700' : ''}`}>
+                    {isFirstOfMonth ? `${date.getMonth() + 1}/1` : date.getDate()}
                   </span>
                 </div>
                 <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">

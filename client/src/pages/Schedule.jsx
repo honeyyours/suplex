@@ -56,7 +56,7 @@ export default function Schedule() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold text-navy-800">일정</h1>
+        <h1 className="text-2xl font-bold text-navy-800">전체 일정</h1>
       </div>
 
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
