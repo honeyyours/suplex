@@ -78,7 +78,7 @@ export default function IntroHome() {
       <section className="space-y-6">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">수플렉스가 잡습니다</h2>
-          <p className="text-sm text-gray-500">한국 인테리어 표준 5묶음이 가입 첫날부터 깔려있는 도구입니다.</p>
+          <p className="text-sm text-gray-500">현장에서 사무실에 전화하지 마세요. 마감재·일정·발주, 까먹지도 잃지도 않습니다.</p>
         </div>
 
         <SolutionBlock
@@ -99,10 +99,10 @@ export default function IntroHome() {
           title="시스템이 데드라인을 챙깁니다"
           desc={
             <>
-              가입 첫날부터 한국 인테리어 표준 5묶음(공정·키워드·D-N 룰·체크리스트·견적 가이드)이 회사에 깔려있습니다. 빈 도구가 아닙니다.
-              <br/><br/>
               일정에 "도배"를 입력하면 D-3에 "벽지 도착 확인", D-1에 "초벌 풀칠 준비"가 <b>자동으로</b> 체크리스트에 추가됩니다.
               사람이 까먹어도 시스템이 까먹지 않습니다.
+              <br/><br/>
+              공정·키워드·D-N 룰·체크리스트·견적 가이드까지 — 공통 기준이 회사에 깔려있어 누가 일을 받아도 같은 품질로 굴러갑니다.
             </>
           }
         />
