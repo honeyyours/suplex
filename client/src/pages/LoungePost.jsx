@@ -117,8 +117,8 @@ export default function LoungePost() {
   });
   const attachments = attachData?.attachments || [];
   const images = attachments.filter((a) => a.kind === 'image');
-  const rubies = attachments.filter((a) => a.kind === 'ruby');
-  const files = attachments.filter((a) => a.kind === 'file');
+  // 일반 파일 + 기존 .rb 첨부(호환)를 한 목록으로 통합
+  const files = attachments.filter((a) => a.kind !== 'image');
 
   const removeAttachmentMutation = useMutation({
     mutationFn: (id) => loungeApi.removeAttachment(id),
@@ -216,16 +216,14 @@ export default function LoungePost() {
           {renderBody(post.body)}
         </div>
 
-        {/* 첨부 — 이미지 + .rb + 일반파일 */}
-        {(images.length > 0 || rubies.length > 0 || files.length > 0 || canEdit) && (
+        {/* 첨부 — 이미지 + 일반 파일 */}
+        {(images.length > 0 || files.length > 0 || canEdit) && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
             <AttachmentSection
               postId={post.id}
               images={images}
-              rubies={rubies}
               files={files}
               canEdit={canEdit}
-              isRubyCategory={post.category === 'ruby'}
               onUploaded={() => {
                 refetchAttachments();
                 queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
@@ -346,7 +344,7 @@ export default function LoungePost() {
   );
 }
 
-function AttachmentSection({ postId, images, rubies, files, canEdit, isRubyCategory, onUploaded, onRemove, onDownload }) {
+function AttachmentSection({ postId, images, files, canEdit, onUploaded, onRemove, onDownload }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -383,7 +381,7 @@ function AttachmentSection({ postId, images, rubies, files, canEdit, isRubyCateg
           ))}
         </div>
       )}
-      {files && files.length > 0 && (
+      {files.length > 0 && (
         <div className="space-y-1.5">
           <div className="text-xs font-medium text-gray-500">첨부 파일</div>
           {files.map((f) => (
@@ -408,33 +406,6 @@ function AttachmentSection({ postId, images, rubies, files, canEdit, isRubyCateg
           ))}
         </div>
       )}
-      {rubies.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="text-xs font-medium text-gray-500">스케치업 루비 (.rb) 첨부</div>
-          {rubies.map((rb) => (
-            <div
-              key={rb.id}
-              className="flex items-center gap-2 p-2 rounded border border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20"
-            >
-              <span className="text-sm flex-1 truncate font-mono">{rb.fileName}</span>
-              <span className="text-xs text-gray-500">{Math.round(rb.fileSize / 1024)}KB</span>
-              <span className="text-xs text-gray-400">↓ {rb.downloadCount}</span>
-              <button
-                onClick={() => onDownload(rb)}
-                className="text-xs px-2 py-0.5 rounded bg-amber-700 text-white hover:bg-amber-800"
-              >
-                다운로드
-              </button>
-              {canEdit && (
-                <button onClick={() => onRemove(rb.id)} className="text-xs text-gray-500 hover:text-rose-600">✕</button>
-              )}
-            </div>
-          ))}
-          <div className="text-[11px] text-amber-700 dark:text-amber-400">
-            ⚠ 사용자가 만든 루비 파일입니다. 사용에 주의해주세요.
-          </div>
-        </div>
-      )}
       {canEdit && (
         <div className="flex items-center gap-2 text-xs flex-wrap">
           <label className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
@@ -456,22 +427,10 @@ function AttachmentSection({ postId, images, rubies, files, canEdit, isRubyCateg
               onChange={(e) => handleUpload('file', e.target.files)}
             />
           </label>
-          {(isRubyCategory || rubies.length > 0) && (
-            <label className="px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer">
-              💎 .rb 첨부
-              <input
-                type="file"
-                accept=".rb"
-                multiple
-                className="hidden"
-                onChange={(e) => handleUpload('ruby', e.target.files)}
-              />
-            </label>
-          )}
           {busy && <span className="text-gray-500">업로드 중...</span>}
           {error && <span className="text-rose-600">{error}</span>}
           <span className="text-gray-400 ml-auto">
-            이미지 5MB×5장 / 파일 20MB×5개 / .rb 1MB×3개 (실행파일 제외)
+            이미지 5MB×5장 / 파일 20MB×5개 (실행파일 제외)
           </span>
         </div>
       )}

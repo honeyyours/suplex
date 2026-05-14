@@ -32,21 +32,18 @@ const REPORT_REASONS = ['spam', 'abuse', 'client_info', 'malicious_code', 'other
 const JOB_ROLES = ['designer', 'site', 'ops', 'etc'];
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;  // 5MB
-const MAX_RUBY_SIZE = 1 * 1024 * 1024;   // 1MB
 const MAX_FILE_SIZE = 20 * 1024 * 1024;  // 20MB
 const MAX_IMAGES_PER_POST = 5;
-const MAX_RUBY_PER_POST = 3;
 const MAX_FILES_PER_POST = 5;
 
-// 실행파일 차단 — 확장자·MIME 모두 검사. 인테리어 도면(.dwg/.skp)·문서·zip은 허용.
+// 실행파일 차단 — 확장자 기반. 인테리어 도면(.dwg/.skp)·문서·zip 등은 허용.
 const BLOCKED_FILE_EXTS = [
   '.exe', '.bat', '.cmd', '.com', '.sh', '.ps1', '.vbs', '.vbe',
   '.scr', '.msi', '.msp', '.jar', '.app', '.dll', '.cpl', '.pif',
   '.gadget', '.wsf', '.wsh', '.hta', '.lnk',
 ];
 
-// multer 설정 — 이미지/.rb/일반파일 모두 메모리 스토리지. 상한은 가장 큰 일반파일 기준,
-// 종류별 추가 검증은 핸들러에서.
+// multer 설정 — 메모리 스토리지. 상한은 일반파일 기준, 종류별 추가 검증은 핸들러에서.
 const attachmentUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE, files: 5 },
@@ -694,10 +691,10 @@ router.post('/comments/:id/reports', (req, res, next) => createReport(req, res, 
 
 // ============================================
 // 첨부 — POST /api/lounge/posts/:id/attachments (multipart, files[])
-// kind: image | ruby | file. 본인 글에만 첨부 가능.
-// - 이미지 5MB · 글당 5장
-// - .rb     1MB · 글당 3개
+// kind: image | file. 본인 글에만 첨부 가능.
+// - 이미지   5MB · 글당 5장
 // - 일반파일 20MB · 글당 5개 (실행파일 확장자 차단)
+// 기존 'ruby' kind 첨부는 읽기·다운로드·삭제만 호환 유지. 신규 업로드 불가.
 // ============================================
 
 router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async (req, res, next) => {
@@ -716,8 +713,8 @@ router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async 
     if (files.length === 0) return res.status(400).json({ error: '파일이 없습니다' });
 
     const kind = (req.body.kind || 'image').toString();
-    if (!['image', 'ruby', 'file'].includes(kind)) {
-      return res.status(400).json({ error: 'kind는 image, ruby, file 중 하나여야 합니다' });
+    if (!['image', 'file'].includes(kind)) {
+      return res.status(400).json({ error: 'kind는 image 또는 file 이어야 합니다' });
     }
     if (!isConfigured()) {
       return res.status(503).json({ error: 'Cloudinary가 설정되지 않았습니다' });
@@ -725,27 +722,16 @@ router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async 
 
     // 글당 첨부 개수 제한
     const existing = post.attachments.filter((a) => a.kind === kind).length;
-    const maxByKind = { image: MAX_IMAGES_PER_POST, ruby: MAX_RUBY_PER_POST, file: MAX_FILES_PER_POST };
-    const labelByKind = { image: '이미지', ruby: '.rb', file: '파일' };
-    const max = maxByKind[kind];
+    const max = kind === 'image' ? MAX_IMAGES_PER_POST : MAX_FILES_PER_POST;
+    const label = kind === 'image' ? '이미지' : '파일';
     if (existing + files.length > max) {
       return res.status(400).json({
-        error: `${labelByKind[kind]}은(는) 글당 ${max}개까지 첨부 가능합니다 (현재 ${existing}개)`,
+        error: `${label}은(는) 글당 ${max}개까지 첨부 가능합니다 (현재 ${existing}개)`,
       });
     }
 
-    if (kind === 'ruby') {
-      for (const f of files) {
-        if (f.size > MAX_RUBY_SIZE) {
-          return res.status(400).json({ error: `.rb 파일은 최대 ${MAX_RUBY_SIZE / 1024 / 1024}MB까지 가능합니다 (${f.originalname})` });
-        }
-        const lower = (f.originalname || '').toLowerCase();
-        if (!lower.endsWith('.rb')) {
-          return res.status(400).json({ error: `.rb 확장자만 허용됩니다 (${f.originalname})` });
-        }
-      }
-    } else if (kind === 'image') {
-      // multer가 이미 fileSize 제한 — 다만 일반파일과 다른 별도 상한이므로 추가 검사
+    if (kind === 'image') {
+      // multer가 이미 20MB까지 통과시키므로 이미지 5MB 상한은 별도 검증
       for (const f of files) {
         if (f.size > MAX_IMAGE_SIZE) {
           return res.status(400).json({ error: `이미지는 최대 ${MAX_IMAGE_SIZE / 1024 / 1024}MB까지 가능합니다 (${f.originalname})` });
@@ -755,7 +741,7 @@ router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async 
         }
       }
     } else {
-      // file — 실행파일 확장자 차단, 20MB 상한 (multer가 이미 적용)
+      // file — 실행파일 확장자 차단. 이미지 MIME은 image 버튼으로 유도.
       for (const f of files) {
         const lower = (f.originalname || '').toLowerCase();
         const dotIdx = lower.lastIndexOf('.');
@@ -765,7 +751,6 @@ router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async 
             error: `실행파일은 첨부할 수 없습니다 (${f.originalname})`,
           });
         }
-        // 이미지 MIME이면 image kind로 올리도록 안내
         if (/^image\//.test(f.mimetype || '')) {
           return res.status(400).json({
             error: `이미지는 "이미지 첨부" 버튼으로 올려주세요 (${f.originalname})`,
@@ -782,7 +767,6 @@ router.post('/posts/:id/attachments', attachmentUpload.array('files', 5), async 
         const r = await uploadBuffer(f.buffer, { folder });
         storageKey = r.publicId;
       } else {
-        // ruby + file 모두 raw 업로드
         const r = await uploadRawBuffer(f.buffer, { folder });
         storageKey = r.publicId;
       }
