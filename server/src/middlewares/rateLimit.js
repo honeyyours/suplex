@@ -27,9 +27,14 @@ const inviteTokenLimiter = makeLimiter({ windowMs: 60 * 1000, max: 30, kind: 'in
 // 비밀번호 변경 — IP당 5분당 5회. 본인 비번 변경에도 brute-force 시도 가능성.
 const passwordChangeLimiter = makeLimiter({ windowMs: 5 * 60 * 1000, max: 5, kind: 'password' });
 
+// 가입 폼 실시간 가용성 체크 — IP당 분당 30회. 사용자가 입력하다 blur 여러 번 일어날 수 있어 풀어주되,
+// 이메일 enumeration 자동화에는 충분한 제동.
+const availabilityLimiter = makeLimiter({ windowMs: 60 * 1000, max: 30, kind: 'availability' });
+
 module.exports = {
   loginLimiter,
   signupLimiter,
   inviteTokenLimiter,
   passwordChangeLimiter,
+  availabilityLimiter,
 };

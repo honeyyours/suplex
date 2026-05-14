@@ -10,7 +10,7 @@ const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseK
 const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdvices');
 const { seedAllBundlesFromPresetIfAvailable } = require('../services/phasePreset');
 const { checkPasswordPolicy } = require('../services/passwordPolicy');
-const { loginLimiter, signupLimiter, passwordChangeLimiter } = require('../middlewares/rateLimit');
+const { loginLimiter, signupLimiter, passwordChangeLimiter, availabilityLimiter } = require('../middlewares/rateLimit');
 const { ensureLoungeMembership } = require('../services/lounge');
 
 const router = express.Router();
@@ -52,6 +52,38 @@ const signupSchema = z.object({
   companyAddress: z.string().optional().nullable(),
   companyPhone: z.string().optional().nullable(),
   companyEmail: z.string().email().optional().nullable().or(z.literal('')),
+});
+
+// 가입 폼 실시간 가용성 체크 — 이메일/닉네임 중 하나만 받아 사용 가능 여부 응답.
+// 형식 오류면 available=false + reason. 인증 불필요.
+router.get('/check-availability', availabilityLimiter, async (req, res, next) => {
+  try {
+    const emailRaw = (req.query.email || '').toString().trim();
+    const nicknameRaw = (req.query.nickname || '').toString().trim();
+    if (emailRaw) {
+      const parsed = emailField.safeParse(emailRaw);
+      if (!parsed.success) {
+        return res.json({ field: 'email', available: false, reason: 'invalid_format' });
+      }
+      const u = await prisma.user.findUnique({
+        where: { email: parsed.data },
+        select: { id: true },
+      });
+      return res.json({ field: 'email', available: !u });
+    }
+    if (nicknameRaw) {
+      const parsed = nicknameField.safeParse(nicknameRaw);
+      if (!parsed.success) {
+        return res.json({ field: 'nickname', available: false, reason: 'invalid_format' });
+      }
+      const u = await prisma.user.findUnique({
+        where: { nickname: parsed.data },
+        select: { id: true },
+      });
+      return res.json({ field: 'nickname', available: !u });
+    }
+    return res.status(400).json({ error: 'email 또는 nickname 쿼리 필요' });
+  } catch (e) { next(e); }
 });
 
 router.post('/signup', signupLimiter, async (req, res, next) => {

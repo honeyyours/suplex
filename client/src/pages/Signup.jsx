@@ -2,6 +2,19 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { checkPasswordPolicy } from '../utils/passwordPolicy';
+import api from '../api/client';
+
+// 가입 폼 가용성 체크 — 이메일/닉네임 단일 필드를 받아 서버에 확인.
+// 반환 status: 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
+async function checkAvailability(field, value) {
+  try {
+    const { data } = await api.get('/auth/check-availability', { params: { [field]: value } });
+    if (data.reason === 'invalid_format') return 'invalid';
+    return data.available ? 'available' : 'taken';
+  } catch {
+    return 'idle'; // 네트워크/레이트 리밋 — 가입 시점에 서버가 다시 검사
+  }
+}
 
 // 가입 흐름 (2026-05-14 분기):
 // step=0: 가입 유형 선택 (회사 대표 / 일반회원)
@@ -25,8 +38,28 @@ export default function Signup() {
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [emailStatus, setEmailStatus] = useState('idle');
+  const [nicknameStatus, setNicknameStatus] = useState('idle');
 
-  const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  // 입력이 바뀌면 가용성 결과 초기화 — 사용자가 다시 blur 할 때까지 신뢰 X
+  const update = (k) => (e) => {
+    setForm({ ...form, [k]: e.target.value });
+    if (k === 'email') setEmailStatus('idle');
+    if (k === 'nickname') setNicknameStatus('idle');
+  };
+
+  async function onBlurEmail() {
+    const v = form.email.trim();
+    if (!v) return setEmailStatus('idle');
+    setEmailStatus('checking');
+    setEmailStatus(await checkAvailability('email', v));
+  }
+  async function onBlurNickname() {
+    const v = form.nickname.trim();
+    if (!v) return setNicknameStatus('idle');
+    setNicknameStatus('checking');
+    setNicknameStatus(await checkAvailability('nickname', v));
+  }
 
   function chooseType(type) {
     setAccountType(type);
@@ -41,6 +74,9 @@ export default function Signup() {
     if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(form.nickname.trim())) {
       return '닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다';
     }
+    if (emailStatus === 'taken') return '이미 가입된 이메일입니다';
+    if (emailStatus === 'invalid') return '이메일 형식이 올바르지 않습니다';
+    if (nicknameStatus === 'taken') return '이미 사용 중인 닉네임입니다';
     const passwordErr = checkPasswordPolicy(form.password);
     if (passwordErr) return passwordErr;
     if (!agreedTerms || !agreedPrivacy) return '이용약관과 개인정보처리방침에 모두 동의해주세요';
@@ -181,16 +217,29 @@ export default function Signup() {
         {/* 1단계 — 개인 정보 (양쪽 공통) */}
         {step === 1 && (
           <form onSubmit={accountType === 'owner' ? goStep2 : submitGeneral} className="space-y-4">
-            <Field label="이메일 *" type="email" value={form.email} onChange={update('email')} required autoComplete="email" />
+            <Field
+              label="이메일 *"
+              type="email"
+              value={form.email}
+              onChange={update('email')}
+              onBlur={onBlurEmail}
+              required
+              autoComplete="email"
+              status={emailStatus}
+              statusMessage={availabilityMessage('email', emailStatus)}
+            />
             <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
             <Field label={accountType === 'owner' ? '대표자 이름 *' : '이름 *'} value={form.name} onChange={update('name')} required />
             <Field
               label="닉네임 *"
               value={form.nickname}
               onChange={update('nickname')}
+              onBlur={onBlurNickname}
               required
               placeholder="라운지에 표시될 이름 (2~20자)"
               maxLength={20}
+              status={nicknameStatus}
+              statusMessage={availabilityMessage('nickname', nicknameStatus)}
             />
             <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
 
@@ -286,14 +335,49 @@ export default function Signup() {
   );
 }
 
-function Field({ label, ...rest }) {
+function Field({ label, status, statusMessage, ...rest }) {
+  const tone =
+    status === 'available' ? 'text-emerald-600 dark:text-emerald-400' :
+    status === 'taken' || status === 'invalid' ? 'text-rose-600 dark:text-rose-400' :
+    'text-gray-400';
+  const borderTone =
+    status === 'available' ? 'border-emerald-400 focus:ring-emerald-400' :
+    status === 'taken' || status === 'invalid' ? 'border-rose-400 focus:ring-rose-400' :
+    'border focus:ring-navy-500';
   return (
     <div>
       <label className="block text-sm font-medium mb-1">{label}</label>
-      <input
-        {...rest}
-        className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-      />
+      <div className="relative">
+        <input
+          {...rest}
+          className={`w-full rounded-md px-3 py-2 outline-none focus:ring-2 ${borderTone}`}
+        />
+        {status && status !== 'idle' && (
+          <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs ${tone}`}>
+            {status === 'checking' ? '확인 중…' :
+             status === 'available' ? '✓ 사용 가능' :
+             status === 'taken' ? '✗ 사용 중' :
+             status === 'invalid' ? '✗ 형식 오류' : ''}
+          </span>
+        )}
+      </div>
+      {statusMessage && (
+        <p className={`mt-1 text-xs ${tone}`}>{statusMessage}</p>
+      )}
     </div>
   );
+}
+
+function availabilityMessage(field, status) {
+  if (status === 'taken') {
+    return field === 'email'
+      ? '이미 가입된 이메일입니다. 로그인하시거나 다른 이메일을 사용해주세요.'
+      : '이미 사용 중인 닉네임입니다.';
+  }
+  if (status === 'invalid') {
+    return field === 'email'
+      ? '올바른 이메일 형식이 아닙니다.'
+      : '닉네임은 2~20자의 한글·영문·숫자·_·- 만 가능합니다.';
+  }
+  return '';
 }
