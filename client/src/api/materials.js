@@ -22,6 +22,13 @@ export const materialsApi = {
   removeGroup: (projectId, name) =>
     api.delete(`/projects/${projectId}/materials/groups/${encodeURIComponent(name)}`).then((r) => r.data),
 
+  // 빈 마감재 그룹 — Material row 0개. Project.pendingMaterialGroups에 영속 저장.
+  // 첫 Material이 생기면 서버가 자동 제거. 사용자가 빈 그룹 추가/삭제 시 직접 호출.
+  addPendingGroup: (projectId, name, kind = 'FINISH') =>
+    api.post(`/projects/${projectId}/materials/pending-groups`, { name, kind }).then((r) => r.data),
+  removePendingGroup: (projectId, name) =>
+    api.delete(`/projects/${projectId}/materials/pending-groups/${encodeURIComponent(name)}`).then((r) => r.data),
+
   // 공정별 불러오기 — 회사 템플릿 + 다른 프로젝트 마감재
   importSuggestions: (projectId, phase) =>
     api.get(`/projects/${projectId}/materials/_import-suggestions`, { params: { phase } }).then((r) => r.data),

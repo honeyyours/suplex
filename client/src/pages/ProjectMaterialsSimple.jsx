@@ -24,32 +24,22 @@ export default function ProjectMaterialsSimple() {
   const [quoteDrawerOpen, setQuoteDrawerOpen] = useState(false);
   const [quoteDrawerGroup, setQuoteDrawerGroup] = useState(null); // 드로어 활성 spaceGroup
   // 빈 그룹 — 그룹은 추가됐지만 아직 항목이 없는 상태 (Material row 0개)
-  // 새로고침 시 사라짐 (사용자가 첫 항목 빨리 입력해야 함). [{name, kind}]
+  // 서버 Project.pendingMaterialGroups에 영속 저장 → 새로고침해도 유지. [{name, kind}]
   const [emptyGroups, setEmptyGroups] = useState([]);
   // 공정별 불러오기 모달 — { spaceGroup, kind } 또는 null
   const [importTarget, setImportTarget] = useState(null);
   // 그룹 이름 입력 모달 — { mode: 'create' | 'rename', from?: string } 또는 null
   const [groupModal, setGroupModal] = useState(null);
 
-  // 견적 → 마감재 보내기에서 넘어온 빈 그룹 자동 노출
+  // 견적 → 마감재 보내기에서 넘어왔을 때: 서버가 이미 pendingMaterialGroups에 저장했으므로
+  // 한 번 더 reload해서 새로 추가된 빈 그룹을 반영. state는 1회용으로 cleanup.
   useEffect(() => {
-    const incoming = location.state?.addedEmptyGroups;
-    if (Array.isArray(incoming) && incoming.length > 0) {
-      setEmptyGroups((prev) => {
-        const have = new Set([
-          ...prev.map((g) => g.name),
-          ...items.map((it) => it.spaceGroup),
-        ]);
-        const fresh = incoming
-          .filter((name) => !have.has(name))
-          .map((name) => ({ name, kind: 'FINISH' }));
-        return fresh.length > 0 ? [...prev, ...fresh] : prev;
-      });
-      // state는 한 번만 — 같은 페이지 내 새로고침 시 다시 추가되지 않도록 cleanup
+    if (location.state?.addedEmptyGroups) {
+      reload();
       window.history.replaceState({}, '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, items.length]);
+  }, [location.state]);
 
   // 디바운스 타이머: id별로 별도 관리
   const timersRef = useRef({}); // {id: setTimeout handle}
@@ -60,7 +50,8 @@ export default function ProjectMaterialsSimple() {
   async function reload() {
     setLoading(true);
     try {
-      const { materials } = await materialsApi.list(projectId);
+      const { materials, pendingGroups } = await materialsApi.list(projectId);
+      setEmptyGroups(Array.isArray(pendingGroups) ? pendingGroups : []);
       setItems(
         materials.map((m) => ({
           id: m.id,
@@ -497,7 +488,12 @@ export default function ProjectMaterialsSimple() {
       let finalName = base;
       let n = 2;
       while (taken.has(finalName)) finalName = `${base} ${n++}`;
-      setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'APPLIANCE' }]);
+      try {
+        await materialsApi.addPendingGroup(projectId, finalName, 'APPLIANCE');
+        setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'APPLIANCE' }]);
+      } catch (e) {
+        alert('그룹 추가 실패: ' + (e.response?.data?.error || e.message));
+      }
       return;
     }
 
@@ -506,7 +502,7 @@ export default function ProjectMaterialsSimple() {
   }
 
   // InputModal에서 새 마감재 그룹 이름 확정 시 호출 — 표준 25개 정규화 + confirm
-  function handleAddFinishGroup(name) {
+  async function handleAddFinishGroup(name) {
     if (!name) { setGroupModal(null); return; }
     const trimmed = name.trim();
     if (!trimmed) { setGroupModal(null); return; }
@@ -526,7 +522,12 @@ export default function ProjectMaterialsSimple() {
       setGroupModal(null);
       return;
     }
-    setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'FINISH' }]);
+    try {
+      await materialsApi.addPendingGroup(projectId, finalName, 'FINISH');
+      setEmptyGroups((prev) => [...prev, { name: finalName, kind: 'FINISH' }]);
+    } catch (e) {
+      alert('그룹 추가 실패: ' + (e.response?.data?.error || e.message));
+    }
     setGroupModal(null);
   }
 
@@ -566,6 +567,8 @@ export default function ProjectMaterialsSimple() {
     try {
       await materialsApi.renameGroup(projectId, from, finalName);
       setItems((prev) => prev.map((it) => (it.spaceGroup === from ? { ...it, spaceGroup: finalName } : it)));
+      // 빈 그룹 이름도 같이 갱신 (백엔드도 같은 트랜잭션에서 처리함)
+      setEmptyGroups((prev) => prev.map((g) => (g.name === from ? { ...g, name: finalName } : g)));
       setGroupModal(null);
     } catch (e) {
       alert('이름 변경 실패: ' + (e.response?.data?.error || e.message));
@@ -578,6 +581,8 @@ export default function ProjectMaterialsSimple() {
     try {
       await materialsApi.removeGroup(projectId, name);
       setItems((prev) => prev.filter((it) => it.spaceGroup !== name));
+      // 빈 그룹(아직 항목 없음)도 같이 사라지도록 — 백엔드도 pending에서 제거함
+      setEmptyGroups((prev) => prev.filter((g) => g.name !== name));
     } catch (e) {
       alert('그룹 삭제 실패: ' + (e.response?.data?.error || e.message));
     }

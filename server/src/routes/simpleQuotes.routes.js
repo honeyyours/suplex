@@ -330,11 +330,12 @@ const linesSchema = z.object({
 });
 
 // ============================================
-// 견적의 공정(라인) → 마감재 탭의 그룹(spaceGroup) 후보 산출 (생성 X)
+// 견적의 공정(라인) → 마감재 탭의 빈 그룹(pendingMaterialGroups)으로 영속화
 //   POST /:id/send-to-materials
-// 정책 (2026-04-28):
-//  - 더 이상 placeholder Material 자동 생성 안 함. 사용자가 마감재 탭에서 수동으로 1개씩 추가.
-//  - 응답: 추가할 그룹 이름 배열만 반환 → 클라이언트가 빈 그룹(emptyGroups) 상태로 노출.
+// 정책 (2026-05-14):
+//  - placeholder Material 자동 생성 X (2026-04-28 정책 유지).
+//  - 빈 그룹 메타를 Project.pendingMaterialGroups Json에 영속 저장 → 새로고침해도 유지.
+//  - 첫 Material row가 생기면 자동 제거 (materials POST 핸들러에서).
 //  - 견적 공정 후보: 표준 25개 매핑 시 표준 라벨, 매핑 실패는 원본 텍스트 보존.
 //    (사용자 정책: '기타'로 강제 흡수 X)
 // ============================================
@@ -366,7 +367,7 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
       return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });
     }
 
-    // 기존 spaceGroup (Material row 기준) — 항목이 1개 이상 있는 그룹만 "이미 있는" 것으로 본다.
+    // 이미 있는 그룹 = Material row 1개 이상 있는 그룹 OR 이미 pending 목록에 있는 그룹
     const existing = await prisma.material.findMany({
       where: { projectId },
       select: { spaceGroup: true },
@@ -374,10 +375,26 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     });
     const existingSet = new Set(existing.map((m) => m.spaceGroup));
 
-    const toAdd = candidates.filter((g) => !existingSet.has(g));
+    const currentPending = Array.isArray(project.pendingMaterialGroups)
+      ? project.pendingMaterialGroups
+      : [];
+    const pendingSet = new Set(currentPending.map((g) => g.name));
+
+    const toAdd = candidates.filter((g) => !existingSet.has(g) && !pendingSet.has(g));
+
+    if (toAdd.length > 0) {
+      const next = [
+        ...currentPending,
+        ...toAdd.map((name) => ({ name, kind: 'FINISH' })),
+      ];
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { pendingMaterialGroups: next },
+      });
+    }
 
     res.json({
-      added: 0, // 자동 생성 X — 빈 그룹은 클라이언트 emptyGroups로 노출
+      added: toAdd.length,
       total: candidates.length,
       skipped: candidates.length - toAdd.length,
       addedNames: toAdd,

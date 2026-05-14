@@ -111,6 +111,27 @@ async function syncPurchaseOrders(tx, material, oldStatus) {
   }
 }
 
+// 빈 마감재 그룹(pendingMaterialGroups Json) 헬퍼 — Project.pendingMaterialGroups에서 이름 매칭으로 제거.
+// Material POST/bulk/그룹 삭제 시 같은 트랜잭션 안에서 호출해 일관성 유지.
+async function removeFromPendingGroups(tx, projectId, names) {
+  const list = Array.isArray(names) ? names.filter(Boolean) : [];
+  if (list.length === 0) return;
+  const proj = await tx.project.findUnique({
+    where: { id: projectId },
+    select: { pendingMaterialGroups: true },
+  });
+  const current = Array.isArray(proj?.pendingMaterialGroups) ? proj.pendingMaterialGroups : [];
+  if (current.length === 0) return;
+  const nameSet = new Set(list);
+  const next = current.filter((g) => !nameSet.has(g?.name));
+  if (next.length !== current.length) {
+    await tx.project.update({
+      where: { id: projectId },
+      data: { pendingMaterialGroups: next },
+    });
+  }
+}
+
 // GET /api/projects/:projectId/materials?kind=FINISH
 router.get('/', async (req, res, next) => {
   try {
@@ -160,10 +181,74 @@ router.get('/', async (req, res, next) => {
         daysToDeadline: dl.daysToDeadline,
       };
     });
-    res.json({ materials: enriched });
+    // 빈 마감재 그룹 — 아직 Material row가 없는 그룹 메타. kind 필터가 있으면 그 kind에 한정.
+    const rawPending = Array.isArray(project.pendingMaterialGroups) ? project.pendingMaterialGroups : [];
+    const wantKind = req.query.kind && KINDS.includes(req.query.kind) ? req.query.kind : null;
+    const pendingGroups = rawPending
+      .filter((g) => g && typeof g.name === 'string' && (!wantKind || g.kind === wantKind))
+      .map((g) => ({ name: g.name, kind: KINDS.includes(g.kind) ? g.kind : 'FINISH' }));
+
+    res.json({ materials: enriched, pendingGroups });
   } catch (e) {
     next(e);
   }
+});
+
+// ============================================
+// 빈 마감재 그룹(pendingMaterialGroups) — 직접 추가/삭제
+//   POST   /pending-groups       body: { name, kind? }
+//   DELETE /pending-groups/:name
+// ============================================
+router.post('/pending-groups', async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const name = String(req.body?.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'name 필수' });
+    const kind = KINDS.includes(req.body?.kind) ? req.body.kind : 'FINISH';
+
+    // 이미 Material row가 있는 그룹이면 추가하지 않음
+    const existsMaterial = await prisma.material.findFirst({
+      where: { projectId, spaceGroup: name },
+      select: { id: true },
+    });
+    if (existsMaterial) {
+      return res.json({ ok: true, added: false, reason: 'already has materials' });
+    }
+
+    const current = Array.isArray(project.pendingMaterialGroups) ? project.pendingMaterialGroups : [];
+    if (current.some((g) => g?.name === name)) {
+      return res.json({ ok: true, added: false, reason: 'already pending' });
+    }
+    const next = [...current, { name, kind }];
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { pendingMaterialGroups: next },
+    });
+    res.json({ ok: true, added: true });
+  } catch (e) { next(e); }
+});
+
+router.delete('/pending-groups/:name', async (req, res, next) => {
+  try {
+    const { projectId, name } = req.params;
+    const project = await assertProjectAccess(projectId, req.user.companyId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const decoded = decodeURIComponent(name);
+    const current = Array.isArray(project.pendingMaterialGroups) ? project.pendingMaterialGroups : [];
+    const next = current.filter((g) => g?.name !== decoded);
+    if (next.length === current.length) {
+      return res.json({ ok: true, removed: false });
+    }
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { pendingMaterialGroups: next },
+    });
+    res.json({ ok: true, removed: true });
+  } catch (e) { next(e); }
 });
 
 // ============================================
@@ -181,9 +266,25 @@ router.post('/groups/rename', async (req, res, next) => {
     if (!from || !to) return res.status(400).json({ error: 'from / to 필수' });
     if (from === to) return res.json({ updated: 0 });
 
-    const result = await prisma.material.updateMany({
-      where: { projectId, spaceGroup: from },
-      data: { spaceGroup: to },
+    const result = await prisma.$transaction(async (tx) => {
+      const r = await tx.material.updateMany({
+        where: { projectId, spaceGroup: from },
+        data: { spaceGroup: to },
+      });
+      // 빈 마감재 그룹(pending)도 from→to로 같이 변경
+      const current = Array.isArray(project.pendingMaterialGroups) ? project.pendingMaterialGroups : [];
+      if (current.some((g) => g?.name === from)) {
+        // to가 이미 있으면 from 제거, 없으면 from의 이름만 to로 변경
+        const hasTo = current.some((g) => g?.name === to);
+        const next = hasTo
+          ? current.filter((g) => g?.name !== from)
+          : current.map((g) => (g?.name === from ? { ...g, name: to } : g));
+        await tx.project.update({
+          where: { id: projectId },
+          data: { pendingMaterialGroups: next },
+        });
+      }
+      return r;
     });
     res.json({ updated: result.count, from, to });
   } catch (e) { next(e); }
@@ -195,8 +296,13 @@ router.delete('/groups/:name', async (req, res, next) => {
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
-    const result = await prisma.material.deleteMany({
-      where: { projectId, spaceGroup: decodeURIComponent(name) },
+    const decoded = decodeURIComponent(name);
+    const result = await prisma.$transaction(async (tx) => {
+      const r = await tx.material.deleteMany({
+        where: { projectId, spaceGroup: decoded },
+      });
+      await removeFromPendingGroups(tx, projectId, [decoded]);
+      return r;
     });
     res.json({ deleted: result.count });
   } catch (e) { next(e); }
@@ -330,6 +436,8 @@ router.post('/', async (req, res, next) => {
       });
       // 처음 만들 때 status가 CONFIRMED/CHANGED면 PO 자동 생성
       await syncPurchaseOrders(tx, m, null);
+      // 빈 마감재 그룹(pending)에 같은 이름이 있으면 자동 제거 — 이제 실제 항목이 생겼으니까
+      await removeFromPendingGroups(tx, projectId, [m.spaceGroup]);
       return m;
     });
 
@@ -396,6 +504,9 @@ router.post('/bulk', async (req, res, next) => {
           newValue: `(템플릿) ${m.spaceGroup} · ${m.itemName}`,
         })),
       });
+
+      // 빈 마감재 그룹(pending)에 같은 이름들이 있으면 자동 제거
+      await removeFromPendingGroups(tx, projectId, rows.map((r) => r.spaceGroup));
 
       return created.count;
     });
@@ -642,11 +753,16 @@ router.post('/_import', async (req, res, next) => {
       orderIndex: nextOrder++,
     }));
 
-    const created = await prisma.material.createMany({ data: rows });
-    const inserted = await prisma.material.findMany({
-      where: { projectId, spaceGroup: data.spaceGroup },
-      orderBy: { orderIndex: 'desc' },
-      take: created.count,
+    const { created, inserted } = await prisma.$transaction(async (tx) => {
+      const c = await tx.material.createMany({ data: rows });
+      const ins = await tx.material.findMany({
+        where: { projectId, spaceGroup: data.spaceGroup },
+        orderBy: { orderIndex: 'desc' },
+        take: c.count,
+      });
+      // 공정별 불러오기로 항목이 생겼으니 같은 이름의 빈 그룹(pending) 제거
+      await removeFromPendingGroups(tx, projectId, [data.spaceGroup]);
+      return { created: c, inserted: ins };
     });
 
     res.status(201).json({ count: created.count, materials: inserted });

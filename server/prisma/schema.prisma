@@ -338,6 +338,9 @@ model Project {
   memo                 String? // 기타 메모
   // 사진 외부 보관(Partial Archive) 이력 — 마지막 실행 시각. UI 배지용.
   photosArchivedAt     DateTime?
+  // 빈 마감재 그룹 — 견적 → 마감재 보내기 또는 사용자가 직접 만든, 아직 항목(Material row) 0개인 그룹.
+  // 첫 항목 추가 시 자동 제거. 형식: [{ name: string, kind: 'FINISH' | 'APPLIANCE' }]
+  pendingMaterialGroups Json         @default("[]")
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
