@@ -353,8 +353,9 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
 
     const seen = new Set();
     const candidates = [];
+    // 그룹 헤더(isGroup=true)도 그룹명 후보로 포함 — 사용자가 의도한 공정명이 헤더에 있음.
+    // 그룹 종료 마커(isGroupEnd) 등 빈 itemName은 자연 스킵.
     for (const l of quote.lines) {
-      if (l.isGroup) continue;
       const raw = String(l.itemName || '').trim();
       if (!raw) continue;
       const normalized = normalizePhase(raw);
