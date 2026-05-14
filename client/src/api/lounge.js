@@ -42,6 +42,7 @@ export const loungeApi = {
   },
   removeAttachment: (id) =>
     api.delete(`/lounge/attachments/${id}`).then((r) => r.data),
-  downloadRuby: (id) =>
+  // .rb / 일반 파일 모두 같은 엔드포인트로 다운로드 URL 발급
+  downloadAttachment: (id) =>
     api.get(`/lounge/attachments/${id}/download`).then((r) => r.data),
 };

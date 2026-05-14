@@ -118,6 +118,7 @@ export default function LoungePost() {
   const attachments = attachData?.attachments || [];
   const images = attachments.filter((a) => a.kind === 'image');
   const rubies = attachments.filter((a) => a.kind === 'ruby');
+  const files = attachments.filter((a) => a.kind === 'file');
 
   const removeAttachmentMutation = useMutation({
     mutationFn: (id) => loungeApi.removeAttachment(id),
@@ -126,10 +127,9 @@ export default function LoungePost() {
       queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
     },
   });
-  async function downloadRuby(att) {
+  async function downloadAttachment(att) {
     try {
-      const r = await loungeApi.downloadRuby(att.id);
-      // 새 창으로 다운로드
+      const r = await loungeApi.downloadAttachment(att.id);
       const a = document.createElement('a');
       a.href = r.url;
       a.download = r.fileName;
@@ -216,13 +216,14 @@ export default function LoungePost() {
           {renderBody(post.body)}
         </div>
 
-        {/* 첨부 — 이미지 + .rb */}
-        {(images.length > 0 || rubies.length > 0 || canEdit) && (
+        {/* 첨부 — 이미지 + .rb + 일반파일 */}
+        {(images.length > 0 || rubies.length > 0 || files.length > 0 || canEdit) && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
             <AttachmentSection
               postId={post.id}
               images={images}
               rubies={rubies}
+              files={files}
               canEdit={canEdit}
               isRubyCategory={post.category === 'ruby'}
               onUploaded={() => {
@@ -232,7 +233,7 @@ export default function LoungePost() {
               onRemove={(id) => {
                 if (confirm('첨부를 삭제할까요?')) removeAttachmentMutation.mutate(id);
               }}
-              onDownloadRuby={downloadRuby}
+              onDownload={downloadAttachment}
             />
           </div>
         )}
@@ -345,7 +346,7 @@ export default function LoungePost() {
   );
 }
 
-function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, onUploaded, onRemove, onDownloadRuby }) {
+function AttachmentSection({ postId, images, rubies, files, canEdit, isRubyCategory, onUploaded, onRemove, onDownload }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -382,6 +383,31 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
           ))}
         </div>
       )}
+      {files && files.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-xs font-medium text-gray-500">첨부 파일</div>
+          {files.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/40"
+            >
+              <span className="text-base">📎</span>
+              <span className="text-sm flex-1 truncate">{f.fileName}</span>
+              <span className="text-xs text-gray-500">{formatFileSize(f.fileSize)}</span>
+              <span className="text-xs text-gray-400">↓ {f.downloadCount}</span>
+              <button
+                onClick={() => onDownload(f)}
+                className="text-xs px-2 py-0.5 rounded bg-navy-700 text-white hover:bg-navy-800"
+              >
+                다운로드
+              </button>
+              {canEdit && (
+                <button onClick={() => onRemove(f.id)} className="text-xs text-gray-500 hover:text-rose-600">✕</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {rubies.length > 0 && (
         <div className="space-y-1.5">
           <div className="text-xs font-medium text-gray-500">스케치업 루비 (.rb) 첨부</div>
@@ -394,7 +420,7 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
               <span className="text-xs text-gray-500">{Math.round(rb.fileSize / 1024)}KB</span>
               <span className="text-xs text-gray-400">↓ {rb.downloadCount}</span>
               <button
-                onClick={() => onDownloadRuby(rb)}
+                onClick={() => onDownload(rb)}
                 className="text-xs px-2 py-0.5 rounded bg-amber-700 text-white hover:bg-amber-800"
               >
                 다운로드
@@ -410,7 +436,7 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
         </div>
       )}
       {canEdit && (
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
           <label className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
             🖼 이미지 첨부
             <input
@@ -419,6 +445,15 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
               multiple
               className="hidden"
               onChange={(e) => handleUpload('image', e.target.files)}
+            />
+          </label>
+          <label className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+            📎 파일 첨부
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleUpload('file', e.target.files)}
             />
           </label>
           {(isRubyCategory || rubies.length > 0) && (
@@ -436,12 +471,19 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
           {busy && <span className="text-gray-500">업로드 중...</span>}
           {error && <span className="text-rose-600">{error}</span>}
           <span className="text-gray-400 ml-auto">
-            이미지 5MB×5장 / .rb 1MB×3개
+            이미지 5MB×5장 / 파일 20MB×5개 / .rb 1MB×3개 (실행파일 제외)
           </span>
         </div>
       )}
     </div>
   );
+}
+
+function formatFileSize(bytes) {
+  if (bytes == null) return '';
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
 function categoryLabel(key) {
