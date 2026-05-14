@@ -106,6 +106,13 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  // 일반회원 가입 — 회사 없이 라운지·소개만. (2026-05-14)
+  async function signupGeneral(payload) {
+    const { data } = await api.post('/auth/signup-general', payload);
+    setAuth(data);
+    return data;
+  }
+
   async function acceptInvite(payload) {
     const { data } = await api.post('/invitations/accept', payload);
     setAuth(data);
@@ -187,7 +194,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, signupGeneral, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );

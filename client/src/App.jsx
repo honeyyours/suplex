@@ -38,18 +38,24 @@ import ProjectProcessOverview from './pages/ProjectProcessOverview';
 import ProjectUtilities from './pages/ProjectUtilities';
 import Lounge from './pages/Lounge';
 import LoungePost from './pages/LoungePost';
+import IntroHome from './pages/IntroHome';
 
-// 홈 라우트 — 미승인 회사 사용자는 라운지로 즉시 안내 (베타 진입 통제 우회 경로).
+// 홈 라우트 분기:
+// - 일반회원(회사 없음): IntroHome (수플렉스 소개·CTA)
+// - 회사 미승인: /lounge로 (베타 깔때기)
+// - 회사 승인·슈퍼어드민: Dashboard
 function HomeRoute() {
   const { auth, isAuthChecked } = useAuth();
-  if (
-    isAuthChecked &&
-    auth &&
-    !auth.isSuperAdmin &&
-    auth.company?.approvalStatus &&
-    auth.company.approvalStatus !== 'APPROVED'
-  ) {
-    return <Navigate to="/lounge" replace />;
+  if (isAuthChecked && auth && !auth.isSuperAdmin) {
+    if (!auth.company) {
+      return <IntroHome />;
+    }
+    if (
+      auth.company.approvalStatus &&
+      auth.company.approvalStatus !== 'APPROVED'
+    ) {
+      return <Navigate to="/lounge" replace />;
+    }
   }
   return <Dashboard />;
 }

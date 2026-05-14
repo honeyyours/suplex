@@ -146,6 +146,74 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
   }
 });
 
+// 일반회원 가입 — 회사 없이 라운지·소개 페이지만 사용. 2026-05-14 도입.
+// 라운지에서 글 보고 소개 페이지로 회사 대표 가입 유도.
+const signupGeneralSchema = z.object({
+  email: emailField,
+  password: z.string().min(8),
+  name: z.string().min(1),
+  nickname: nicknameField,
+  phone: z.string().optional(),
+});
+
+router.post('/signup-general', signupLimiter, async (req, res, next) => {
+  try {
+    const data = signupGeneralSchema.parse(req.body);
+
+    const policyErr = checkPasswordPolicy(data.password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
+
+    const exists = await prisma.user.findUnique({ where: { email: data.email } });
+    if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
+
+    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    const user = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.create({
+        data: {
+          email: data.email,
+          passwordHash,
+          name: data.name,
+          nickname: data.nickname,
+          phone: data.phone,
+        },
+      });
+      // 라운지 즉시 활성화 — 회사 없어도 라운지 활동 가능
+      await ensureLoungeMembership(tx, u.id, '일반회원 가입');
+      return u;
+    });
+
+    // 회사 컨텍스트 없는 토큰 — companyId/role 생략
+    const token = jwt.sign(
+      { sub: user.id, tv: 0 },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn }
+    );
+
+    audit({ user: { id: user.id, role: null }, headers: req.headers, ip: req.ip }, 'auth.signup-general', {
+      targetType: 'USER',
+      targetId: user.id,
+      metadata: { email: user.email },
+    });
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname },
+      company: null,
+      role: null,
+      permissions: {},
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
 const loginSchema = z.object({
   email: emailField,
   password: z.string(),
