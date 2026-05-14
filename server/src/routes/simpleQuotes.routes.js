@@ -330,14 +330,19 @@ const linesSchema = z.object({
 });
 
 // ============================================
-// 견적의 공정(라인) → 마감재 탭의 빈 그룹(pendingMaterialGroups)으로 영속화
+// 견적(SimpleQuote) → 마감재 탭으로 내보내기
 //   POST /:id/send-to-materials
-// 정책 (2026-05-14):
-//  - placeholder Material 자동 생성 X (2026-04-28 정책 유지).
-//  - 빈 그룹 메타를 Project.pendingMaterialGroups Json에 영속 저장 → 새로고침해도 유지.
-//  - 첫 Material row가 생기면 자동 제거 (materials POST 핸들러에서).
-//  - 견적 공정 후보: 표준 25개 매핑 시 표준 라벨, 매핑 실패는 원본 텍스트 보존.
-//    (사용자 정책: '기타'로 강제 흡수 X)
+//   body: { selectedGroups?: string[] }   // 정규화 전 원본 그룹명 배열. 없으면 전체.
+//
+// 정책 (2026-05-14 재설계):
+//  - 견적의 isGroup=true 헤더 → 마감재 `spaceGroup` (공간/공정).
+//  - 그 그룹 내 isGroup=false 항목 → 그 spaceGroup 안의 Material row (itemName).
+//    수량·단위·단가·메모(notes→memo)·spec 동반 이전.
+//  - 그룹 헤더가 없는 평탄 견적(legacy) → 각 라인 itemName을 그룹으로 fallback (옛 동작).
+//  - 그룹명은 normalizePhase로 정규화 (표준 25공정 매핑 시 표준 라벨, 미매핑은 원본 보존).
+//  - selectedGroups가 주어지면 정규화 전 원본 그룹명 기준 필터.
+//  - 항목 있는 그룹 → Material row 생성, 항목 없는 그룹 → pendingMaterialGroups에 추가.
+//  - 중복: 같은 (projectId, spaceGroup, itemName) Material 행이 이미 있으면 skip.
 // ============================================
 router.post('/:id/send-to-materials', async (req, res, next) => {
   try {
@@ -351,55 +356,172 @@ router.post('/:id/send-to-materials', async (req, res, next) => {
     });
     if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
-    const seen = new Set();
-    const candidates = [];
-    // 그룹 헤더(isGroup=true)도 그룹명 후보로 포함 — 사용자가 의도한 공정명이 헤더에 있음.
-    // 그룹 종료 마커(isGroupEnd) 등 빈 itemName은 자연 스킵.
+    // 선택된 그룹 필터 (정규화 전 원본 그룹명 기준). 없거나 빈 배열이면 전체 허용.
+    const rawSelected = Array.isArray(req.body?.selectedGroups) ? req.body.selectedGroups : null;
+    const selectedSet = rawSelected && rawSelected.length > 0
+      ? new Set(rawSelected.map((s) => String(s).trim()).filter(Boolean))
+      : null; // null = 전체
+
+    // 라인 파싱 — isGroup 추적해서 그룹 트리 구성
+    // 평탄 견적(헤더 0개) 감지를 위해 hasAnyGroupHeader 추적
+    const groupsMap = new Map(); // rawName(원본) → { rawName, items: [{itemName, quantity, unit, unitPrice, spec, memo}] }
+    let currentRaw = null;
+    let hasAnyGroupHeader = false;
     for (const l of quote.lines) {
       const raw = String(l.itemName || '').trim();
-      if (!raw) continue;
-      const normalized = normalizePhase(raw);
-      const finalKey = normalized.key === 'OTHER' ? raw : normalized.label;
-      if (seen.has(finalKey)) continue;
-      seen.add(finalKey);
-      candidates.push(finalKey);
+      if (l.isGroup) {
+        if (l.isGroupEnd) {
+          currentRaw = null;
+          continue;
+        }
+        if (!raw) continue;
+        hasAnyGroupHeader = true;
+        currentRaw = raw;
+        if (!groupsMap.has(raw)) groupsMap.set(raw, { rawName: raw, items: [] });
+      } else {
+        if (!raw) continue;
+        if (!currentRaw) continue; // 그룹 외부 항목 (헤더 없는 영역) — fallback에서 처리
+        const g = groupsMap.get(currentRaw);
+        g.items.push({
+          itemName: raw,
+          quantity: l.quantity != null ? Number(l.quantity) : null,
+          unit: l.unit || null,
+          unitPrice: l.unitPrice != null ? Number(l.unitPrice) : null,
+          spec: l.spec || null,
+          memo: l.notes || null,
+        });
+      }
     }
-    if (candidates.length === 0) {
+
+    // 평탄 견적 fallback — 그룹 헤더가 하나도 없으면 각 라인 itemName을 그룹으로
+    if (!hasAnyGroupHeader) {
+      for (const l of quote.lines) {
+        const raw = String(l.itemName || '').trim();
+        if (!raw) continue;
+        if (!groupsMap.has(raw)) groupsMap.set(raw, { rawName: raw, items: [] });
+      }
+    }
+
+    if (groupsMap.size === 0) {
       return res.status(400).json({ error: '견적에 공정 라인이 없습니다.' });
     }
 
-    // 이미 있는 그룹 = Material row 1개 이상 있는 그룹 OR 이미 pending 목록에 있는 그룹
-    const existing = await prisma.material.findMany({
-      where: { projectId },
-      select: { spaceGroup: true },
-      distinct: ['spaceGroup'],
+    // selectedGroups 필터 (원본명)
+    const groups = Array.from(groupsMap.values()).filter((g) => {
+      if (!selectedSet) return true;
+      return selectedSet.has(g.rawName);
     });
-    const existingSet = new Set(existing.map((m) => m.spaceGroup));
+    if (groups.length === 0) {
+      return res.status(400).json({ error: '선택된 그룹이 없습니다.' });
+    }
+
+    // 정규화 라벨로 변환 (표준 25 매핑 시 표준 라벨, 아니면 원본)
+    for (const g of groups) {
+      const n = normalizePhase(g.rawName);
+      g.spaceGroup = n.key === 'OTHER' ? g.rawName : n.label;
+    }
+
+    // 기존 Material/pending 충돌 확인 → 빈 그룹은 pending으로, 항목 있는 그룹은 Material row 생성
+    const existingMaterials = await prisma.material.findMany({
+      where: { projectId },
+      select: { spaceGroup: true, itemName: true },
+    });
+    const existingGroupSet = new Set(existingMaterials.map((m) => m.spaceGroup));
+    const existingPairSet = new Set(existingMaterials.map((m) => `${m.spaceGroup} ${m.itemName}`));
 
     const currentPending = Array.isArray(project.pendingMaterialGroups)
       ? project.pendingMaterialGroups
       : [];
     const pendingSet = new Set(currentPending.map((g) => g.name));
 
-    const toAdd = candidates.filter((g) => !existingSet.has(g) && !pendingSet.has(g));
+    const materialRowsToCreate = [];
+    const addedPendingGroups = [];
+    let skippedDuplicateItems = 0;
 
-    if (toAdd.length > 0) {
-      const next = [
-        ...currentPending,
-        ...toAdd.map((name) => ({ name, kind: 'FINISH' })),
-      ];
-      await prisma.project.update({
-        where: { id: projectId },
-        data: { pendingMaterialGroups: next },
+    // 같은 그룹 내 orderIndex 시작값 — 기존 최대값 + 1부터
+    const maxOrderByGroup = new Map();
+    if (existingMaterials.length > 0) {
+      const maxRows = await prisma.material.groupBy({
+        by: ['spaceGroup'],
+        where: { projectId },
+        _max: { orderIndex: true },
       });
+      for (const r of maxRows) maxOrderByGroup.set(r.spaceGroup, r._max.orderIndex ?? -1);
     }
 
+    for (const g of groups) {
+      if (g.items.length === 0) {
+        // 빈 그룹 → pending에 추가 (이미 Material 1개 이상 있거나 pending에 있으면 skip)
+        if (!existingGroupSet.has(g.spaceGroup) && !pendingSet.has(g.spaceGroup)) {
+          addedPendingGroups.push(g.spaceGroup);
+          pendingSet.add(g.spaceGroup);
+        }
+      } else {
+        // 항목 있는 그룹 → Material rows 생성
+        let nextOrder = (maxOrderByGroup.get(g.spaceGroup) ?? -1) + 1;
+        for (const it of g.items) {
+          const pairKey = `${g.spaceGroup} ${it.itemName}`;
+          if (existingPairSet.has(pairKey)) {
+            skippedDuplicateItems++;
+            continue;
+          }
+          existingPairSet.add(pairKey);
+          const qty = it.quantity != null && Number.isFinite(it.quantity) ? it.quantity : null;
+          const price = it.unitPrice != null && Number.isFinite(it.unitPrice) ? it.unitPrice : null;
+          const total = qty != null && price != null ? qty * price : null;
+          materialRowsToCreate.push({
+            projectId,
+            kind: 'FINISH',
+            spaceGroup: g.spaceGroup,
+            itemName: it.itemName,
+            spec: it.spec,
+            memo: it.memo,
+            quantity: qty,
+            unit: it.unit,
+            unitPrice: price,
+            totalPrice: total,
+            orderIndex: nextOrder++,
+          });
+        }
+        maxOrderByGroup.set(g.spaceGroup, nextOrder - 1);
+        // 항목이 실제로 추가됐고 이 그룹이 pending에 남아있다면 pending에서 제거 (materials POST 핸들러와 동일 거동)
+      }
+    }
+
+    // 트랜잭션 — pending 갱신 + Material 생성
+    await prisma.$transaction(async (tx) => {
+      if (materialRowsToCreate.length > 0) {
+        await tx.material.createMany({ data: materialRowsToCreate });
+      }
+
+      // pending 목록 갱신: 새로 추가 + Material이 생긴 그룹 제거
+      let next = currentPending.slice();
+      if (addedPendingGroups.length > 0) {
+        next = [...next, ...addedPendingGroups.map((name) => ({ name, kind: 'FINISH' }))];
+      }
+      if (materialRowsToCreate.length > 0) {
+        const groupsWithNewMaterials = new Set(materialRowsToCreate.map((r) => r.spaceGroup));
+        next = next.filter((g) => !groupsWithNewMaterials.has(g.name));
+      }
+      // 변경이 있을 때만 update
+      if (
+        addedPendingGroups.length > 0 ||
+        next.length !== currentPending.length
+      ) {
+        await tx.project.update({
+          where: { id: projectId },
+          data: { pendingMaterialGroups: next },
+        });
+      }
+    });
+
     res.json({
-      added: toAdd.length,
-      total: candidates.length,
-      skipped: candidates.length - toAdd.length,
-      addedNames: toAdd,
       quoteTitle: quote.title,
+      addedItems: materialRowsToCreate.length,
+      addedEmptyGroups: addedPendingGroups.length,
+      addedEmptyGroupNames: addedPendingGroups,
+      skippedDuplicateItems,
+      processedGroups: groups.length,
     });
   } catch (e) { next(e); }
 });

@@ -5,6 +5,7 @@ import { simpleQuotesApi, SIMPLE_QUOTE_STATUS_META, formatWon, parseWon } from '
 import { formatDateDot } from '../utils/date';
 import { normalizePhase, isOther } from '../utils/phases';
 import NewQuoteWithPhasesModal from '../components/NewQuoteWithPhasesModal';
+import SendToMaterialsModal from '../components/SendToMaterialsModal';
 import QuoteGuideDrawer from '../components/QuoteGuideDrawer';
 import { QUOTE_PRINT_TEMPLATES, DEFAULT_TEMPLATE_KEY } from '../components/QuotePrintTemplates';
 
@@ -241,6 +242,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const [showImport, setShowImport] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
   // 우측 견적 가이드 드로어 — 큰 화면에선 기본 열림, 사용자가 닫으면 세션 동안 유지
   const [showGuide, setShowGuide] = useState(true);
   // 활성 라인 인덱스 — 드로어가 그 라인의 그룹 헤더 공정을 자동 추적
@@ -710,32 +712,12 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             📋 다른 견적에서 가져오기
           </button>
           <button
-            onClick={async () => {
-              if (sending) return;
-              if (!confirm('이 견적의 공정들을 마감재 탭의 빈 그룹으로 추가합니다. 계속할까요?\n(이미 항목이 있는 그룹은 자동 스킵)')) return;
-              setSending(true);
-              try {
-                const res = await simpleQuotesApi.sendToMaterials(projectId, quoteId);
-                const newCount = res.addedNames?.length || 0;
-                const msg = newCount > 0
-                  ? `✅ ${newCount}개 새 그룹 / ${res.skipped}개 중복 스킵 (총 ${res.total}개 공정).\n\n빈 그룹으로 추가되었습니다. 마감재 탭에서 직접 항목을 추가하세요.`
-                  : `이미 모든 공정(${res.total}개)이 마감재 그룹으로 등록되어 있습니다.`;
-                if (confirm(`${msg}\n\n지금 마감재 탭으로 이동할까요?`)) {
-                  navigate(`/projects/${projectId}/materials`, {
-                    state: { addedEmptyGroups: res.addedNames || [] },
-                  });
-                }
-              } catch (e) {
-                alert('마감재 추가 실패: ' + (e.response?.data?.error || e.message));
-              } finally {
-                setSending(false);
-              }
-            }}
+            onClick={() => !sending && setShowSendModal(true)}
             disabled={sending}
             className="text-sm px-3 py-1.5 border border-amber-300 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-60"
-            title="이 견적의 공정 라인들을 마감재 탭의 빈 그룹으로 자동 추가합니다"
+            title="이 견적의 그룹을 선택해 마감재 탭으로 보냅니다 (그룹→공간/공정, 항목→마감재 행)"
           >
-            {sending ? '추가 중…' : '📦 마감재로 보내기'}
+            {sending ? '보내는 중…' : '📦 마감재로 보내기'}
           </button>
           {!showGuide && (
             <button
@@ -1039,6 +1021,40 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             setShowImport(false);
             await load();
             onChange?.();
+          }}
+        />
+      )}
+
+      {/* 마감재로 보내기 모달 — 그룹 선택(디폴트 모두 체크) */}
+      {showSendModal && (
+        <SendToMaterialsModal
+          quoteTitle={quote?.title}
+          lines={lines}
+          sending={sending}
+          onCancel={() => !sending && setShowSendModal(false)}
+          onSend={async (selectedGroups) => {
+            if (sending) return;
+            setSending(true);
+            try {
+              const res = await simpleQuotesApi.sendToMaterials(projectId, quoteId, { selectedGroups });
+              const itemMsg = res.addedItems > 0 ? `${res.addedItems}개 항목` : '';
+              const groupMsg = res.addedEmptyGroups > 0 ? `${res.addedEmptyGroups}개 빈 그룹` : '';
+              const skipMsg = res.skippedDuplicateItems > 0 ? ` (${res.skippedDuplicateItems}개 중복 스킵)` : '';
+              const parts = [itemMsg, groupMsg].filter(Boolean).join(' / ');
+              const msg = parts
+                ? `✅ ${parts} 추가됨${skipMsg}.`
+                : `이미 모든 항목이 마감재에 등록되어 있습니다${skipMsg}.`;
+              setShowSendModal(false);
+              if (confirm(`${msg}\n\n지금 마감재 탭으로 이동할까요?`)) {
+                navigate(`/projects/${projectId}/materials`, {
+                  state: { addedEmptyGroups: res.addedEmptyGroupNames || [] },
+                });
+              }
+            } catch (e) {
+              alert('마감재 보내기 실패: ' + (e.response?.data?.error || e.message));
+            } finally {
+              setSending(false);
+            }
           }}
         />
       )}
