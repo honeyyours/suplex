@@ -1430,7 +1430,8 @@ model LoungePost {
   authorId        String
   category        String // free | ruby | request (2026-05-14 축소: knowhow/usage/jobs/notice 폐기)
   title           String
-  body            String    @db.Text // 마크다운 (코드 블록 포함)
+  body            String    @db.Text // bodyFormat=plain → 마크다운, html → sanitized HTML
+  bodyFormat      String    @default("plain") // plain | html (TipTap 위지윅 도입 후 신규 글은 html)
   showCompanyName Boolean   @default(false)
   status          String    @default("active") // active | hidden | deleted
   isAnnouncement  Boolean   @default(false) // 슈퍼어드민 공지 — 모든 카테고리 상단 핀 (2026-05-14)

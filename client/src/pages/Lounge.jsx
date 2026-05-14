@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { loungeApi } from '../api/lounge';
 import { useAuth } from '../contexts/AuthContext';
+import LoungeRichEditor from '../components/LoungeRichEditor';
 
 const JOB_ROLE_OPTIONS = [
   { value: 'designer', label: '디자이너' },
@@ -320,7 +321,8 @@ function formatDate(date) {
 function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
   const [category, setCategory] = useState('free');
   const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState('');         // HTML
+  const [bodyEmpty, setBodyEmpty] = useState(true);
   const [showCompanyName, setShowCompanyName] = useState(false);
   const [isAnnouncement, setIsAnnouncement] = useState(false);
   const [images, setImages] = useState([]); // File[]
@@ -369,8 +371,8 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
     setError('');
     setProgress('');
     if (!title.trim()) return setError('제목을 입력해주세요');
-    if (!body.trim()) return setError('본문을 입력해주세요');
-    mutation.mutate({ category, title, body, showCompanyName, isAnnouncement });
+    if (bodyEmpty) return setError('본문을 입력해주세요');
+    mutation.mutate({ category, title, body, bodyFormat: 'html', showCompanyName, isAnnouncement });
   }
 
   const isRuby = category === 'ruby';
@@ -404,16 +406,15 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
 
         <div>
           <label className="block text-xs font-medium mb-1">본문</label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={isRuby ? 14 : 10}
+          <LoungeRichEditor
+            initialHtml=""
+            onChange={(html, isEmpty) => { setBody(html); setBodyEmpty(isEmpty); }}
             placeholder={
               isRuby
-                ? '스케치업 버전 / 사용법 / 주의사항을 적어주세요.\n\n```ruby\n# 코드 블록 예시\n```\n\n유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.'
-                : '마크다운 지원\n\n유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.'
+                ? '스케치업 버전 / 사용법 / 주의사항을 적어주세요. 툴바의 📺 버튼으로 유튜브, 🖼 버튼으로 이미지 삽입.'
+                : '내용을 입력하세요. 툴바로 굵게·제목·리스트, 🖼 이미지, 📺 유튜브를 본문 안에 넣을 수 있습니다.'
             }
-            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 font-mono"
+            minRows={isRuby ? 14 : 10}
           />
         </div>
 

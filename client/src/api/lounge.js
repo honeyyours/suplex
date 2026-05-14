@@ -45,4 +45,15 @@ export const loungeApi = {
   // .rb / 일반 파일 모두 같은 엔드포인트로 다운로드 URL 발급
   downloadAttachment: (id) =>
     api.get(`/lounge/attachments/${id}/download`).then((r) => r.data),
+
+  // 본문(TipTap) 안에 삽입되는 인라인 이미지 — 글 ID 없이 즉시 업로드 후 URL 반환
+  uploadInlineImage: (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api
+      .post('/lounge/inline-uploads', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 };

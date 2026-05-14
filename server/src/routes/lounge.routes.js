@@ -10,6 +10,7 @@
 const express = require('express');
 const multer = require('multer');
 const { z } = require('zod');
+const sanitizeHtml = require('sanitize-html');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const {
@@ -24,6 +25,44 @@ const {
   deleteRawByPublicId,
   isConfigured,
 } = require('../services/photoUpload');
+
+// 본문 HTML sanitize 설정. TipTap이 만들 수 있는 노드만 화이트리스트.
+// img src는 Cloudinary(suplex 계정)만 허용. iframe은 유튜브(youtube/youtube-nocookie)만 허용.
+const SANITIZE_OPTS = {
+  allowedTags: [
+    'p', 'br', 'span', 'strong', 'em', 'u', 's',
+    'h2', 'h3',
+    'ul', 'ol', 'li',
+    'blockquote', 'hr',
+    'code', 'pre',
+    'a', 'img', 'iframe',
+  ],
+  allowedAttributes: {
+    a: ['href', 'target', 'rel'],
+    img: ['src', 'alt'],
+    iframe: ['src', 'frameborder', 'allow', 'allowfullscreen', 'referrerpolicy', 'title'],
+    pre: ['class'],
+    code: ['class'],
+    span: ['class'],
+  },
+  allowedSchemes: ['http', 'https', 'mailto'],
+  allowedSchemesByTag: { img: ['http', 'https'] },
+  allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com', 'youtube-nocookie.com'],
+  transformTags: {
+    a: (tagName, attribs) => ({
+      tagName: 'a',
+      attribs: {
+        href: attribs.href || '#',
+        target: '_blank',
+        rel: 'noopener noreferrer nofollow',
+      },
+    }),
+  },
+};
+
+function sanitizeBody(html) {
+  return sanitizeHtml(html || '', SANITIZE_OPTS);
+}
 
 const router = express.Router();
 router.use(authRequired);
@@ -118,7 +157,10 @@ async function serializePost(post, opts = {}) {
     attachmentCount: post._count?.attachments ?? (post.attachments?.length || 0),
     showCompanyName: post.showCompanyName,
   };
-  if (includeBody) out.body = post.body;
+  if (includeBody) {
+    out.body = post.body;
+    out.bodyFormat = post.bodyFormat || 'plain';
+  }
   if (post.showCompanyName && post.author?.id) {
     out.companyName = await getAuthorCompanyName(prisma, post.author.id);
   }
@@ -306,7 +348,8 @@ router.get('/posts', async (req, res, next) => {
 const postCreateSchema = z.object({
   category: z.enum(LOUNGE_CATEGORY_KEYS),
   title: z.string().min(1).max(200),
-  body: z.string().min(1).max(50000),
+  body: z.string().min(1).max(200000),
+  bodyFormat: z.enum(['plain', 'html']).optional().default('plain'),
   showCompanyName: z.boolean().optional().default(false),
   isAnnouncement: z.boolean().optional().default(false),
 });
@@ -320,13 +363,16 @@ router.post('/posts', async (req, res, next) => {
       return res.status(403).json({ error: '공지 글은 운영자만 작성할 수 있습니다' });
     }
 
+    const finalBody = data.bodyFormat === 'html' ? sanitizeBody(data.body) : data.body;
+
     const post = await prisma.$transaction(async (tx) => {
       const created = await tx.loungePost.create({
         data: {
           authorId: req.user.id,
           category: data.category,
           title: data.title.trim(),
-          body: data.body,
+          body: finalBody,
+          bodyFormat: data.bodyFormat,
           showCompanyName: data.showCompanyName,
           isAnnouncement: data.isAnnouncement,
         },
@@ -420,7 +466,8 @@ router.get('/posts/:id', async (req, res, next) => {
 
 const postUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  body: z.string().min(1).max(50000).optional(),
+  body: z.string().min(1).max(200000).optional(),
+  bodyFormat: z.enum(['plain', 'html']).optional(),
   showCompanyName: z.boolean().optional(),
   isAnnouncement: z.boolean().optional(),
 });
@@ -440,11 +487,22 @@ router.patch('/posts/:id', async (req, res, next) => {
       return res.status(403).json({ error: '공지 토글은 운영자만 가능합니다' });
     }
 
+    // body가 들어오면 bodyFormat 기준으로 sanitize 결정.
+    // bodyFormat 미지정 시 기존 글의 bodyFormat을 유지.
+    const effectiveFormat = data.bodyFormat || post.bodyFormat || 'plain';
+    const bodyData =
+      data.body !== undefined
+        ? effectiveFormat === 'html'
+          ? sanitizeBody(data.body)
+          : data.body
+        : undefined;
+
     await prisma.loungePost.update({
       where: { id: post.id },
       data: {
         ...(data.title !== undefined ? { title: data.title.trim() } : {}),
-        ...(data.body !== undefined ? { body: data.body } : {}),
+        ...(bodyData !== undefined ? { body: bodyData } : {}),
+        ...(data.bodyFormat !== undefined ? { bodyFormat: data.bodyFormat } : {}),
         ...(data.showCompanyName !== undefined ? { showCompanyName: data.showCompanyName } : {}),
         ...(data.isAnnouncement !== undefined ? { isAnnouncement: data.isAnnouncement } : {}),
       },
@@ -688,6 +746,40 @@ async function createReport(req, res, next, targetType) {
 
 router.post('/posts/:id/reports', (req, res, next) => createReport(req, res, next, 'post'));
 router.post('/comments/:id/reports', (req, res, next) => createReport(req, res, next, 'comment'));
+
+// ============================================
+// 인라인 이미지 업로드 — POST /api/lounge/inline-uploads (multipart, file)
+// 글 본문(TipTap 위지윅) 안에 들어갈 이미지. 글 ID 없이 바로 Cloudinary에 올리고 URL만 반환.
+// 5MB 상한, image MIME만 허용. LoungeAttachment 레코드는 만들지 않음(본문 안에서만 살아 있음).
+// ============================================
+
+const inlineImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 1 },
+});
+
+router.post('/inline-uploads', inlineImageUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!isConfigured()) {
+      return res.status(503).json({ error: 'Cloudinary가 설정되지 않았습니다' });
+    }
+    const f = req.file;
+    if (!f) return res.status(400).json({ error: '파일이 없습니다' });
+    if (f.size > MAX_IMAGE_SIZE) {
+      return res.status(400).json({ error: `이미지는 최대 ${MAX_IMAGE_SIZE / 1024 / 1024}MB까지 가능합니다` });
+    }
+    if (!/^image\//.test(f.mimetype || '')) {
+      return res.status(400).json({ error: '이미지 파일만 허용됩니다' });
+    }
+    const r = await uploadBuffer(f.buffer, { folder: `suplex/lounge/inline/${req.user.id}` });
+    res.status(201).json({ url: r.url, publicId: r.publicId, width: r.width, height: r.height });
+  } catch (e) {
+    if (e.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: '파일 크기 제한 초과' });
+    }
+    next(e);
+  }
+});
 
 // ============================================
 // 첨부 — POST /api/lounge/posts/:id/attachments (multipart, files[])

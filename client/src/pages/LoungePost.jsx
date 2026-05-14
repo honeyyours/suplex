@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { loungeApi } from '../api/lounge';
 import { useAuth } from '../contexts/AuthContext';
+import LoungeRichEditor, { plainToHtml } from '../components/LoungeRichEditor';
 
 const JOB_ROLE_LABEL = {
   designer: '디자이너',
@@ -48,7 +49,7 @@ function parseYoutubeLine(line) {
 }
 
 // 마크다운 코드 블록(```ruby ... ```)을 <pre>로 변환. 단독 줄 유튜브 URL은 iframe 임베드.
-// 그 외는 줄바꿈 보존.
+// 그 외는 줄바꿈 보존. bodyFormat='html' 글은 호출 측에서 dangerouslySetInnerHTML로 렌더.
 function renderBody(body) {
   if (!body) return null;
   const segments = [];
@@ -256,9 +257,16 @@ export default function LoungePost() {
           </div>
         </header>
 
-        {/* 본문 */}
+        {/* 본문 — bodyFormat=html이면 sanitized HTML 그대로, plain이면 기존 로직(코드블록·유튜브 임베드) */}
         <div className="px-6 py-8 min-h-[200px] text-base text-gray-800 dark:text-gray-200 leading-relaxed">
-          {renderBody(post.body)}
+          {post.bodyFormat === 'html' ? (
+            <div
+              className="lounge-prose"
+              dangerouslySetInnerHTML={{ __html: post.body || '' }}
+            />
+          ) : (
+            renderBody(post.body)
+          )}
         </div>
 
         {/* 첨부 — 이미지 + 일반 파일 */}
@@ -506,7 +514,12 @@ function categoryLabel(key) {
 
 function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
   const [title, setTitle] = useState(post.title);
-  const [body, setBody] = useState(post.body || '');
+  // 옛 plain 본문은 TipTap이 다룰 HTML로 변환(레거시 → 위지윅 마이그레이션).
+  // 신규 글은 이미 HTML.
+  const initialBodyHtml =
+    post.bodyFormat === 'html' ? (post.body || '') : plainToHtml(post.body || '');
+  const [body, setBody] = useState(initialBodyHtml);
+  const [bodyEmpty, setBodyEmpty] = useState(!initialBodyHtml);
   const [isAnnouncement, setIsAnnouncement] = useState(!!post.isAnnouncement);
   const [error, setError] = useState('');
   const mutation = useMutation({
@@ -516,8 +529,8 @@ function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
   });
   function submit(e) {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) return setError('제목·본문을 입력해주세요');
-    const payload = { title, body };
+    if (!title.trim() || bodyEmpty) return setError('제목·본문을 입력해주세요');
+    const payload = { title, body, bodyFormat: 'html' };
     if (isSuperAdmin) payload.isAnnouncement = isAnnouncement;
     mutation.mutate(payload);
   }
@@ -531,15 +544,12 @@ function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
           className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
           maxLength={200}
         />
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={12}
-          className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 font-mono"
+        <LoungeRichEditor
+          initialHtml={initialBodyHtml}
+          onChange={(html, isEmpty) => { setBody(html); setBodyEmpty(isEmpty); }}
+          placeholder="툴바로 굵게·제목·리스트, 🖼 이미지, 📺 유튜브를 본문 안에 넣을 수 있습니다."
+          minRows={12}
         />
-        <div className="text-[11px] text-gray-500">
-          유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.
-        </div>
         {isSuperAdmin && (
           <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
             <input

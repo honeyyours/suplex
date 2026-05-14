@@ -287,3 +287,59 @@ html.dark .bg-black\/50 { background-color: rgb(0 0 0 / 0.7); }
 @media print {
   @page { size: A4; margin: 14mm; }
 }
+
+/* ===== 라운지 TipTap 에디터 / HTML 본문 렌더 공통 ===== */
+.tiptap-content .ProseMirror,
+.lounge-prose {
+  outline: none;
+  line-height: 1.65;
+  word-break: break-word;
+}
+.tiptap-content .ProseMirror p,
+.lounge-prose p { margin: 0.4em 0; }
+.tiptap-content .ProseMirror h2,
+.lounge-prose h2 { font-size: 1.35em; font-weight: 700; margin: 0.8em 0 0.4em; }
+.tiptap-content .ProseMirror h3,
+.lounge-prose h3 { font-size: 1.15em; font-weight: 700; margin: 0.7em 0 0.35em; }
+.tiptap-content .ProseMirror ul,
+.lounge-prose ul { list-style: disc; padding-left: 1.4em; margin: 0.4em 0; }
+.tiptap-content .ProseMirror ol,
+.lounge-prose ol { list-style: decimal; padding-left: 1.6em; margin: 0.4em 0; }
+.tiptap-content .ProseMirror blockquote,
+.lounge-prose blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.8em;
+  color: #475569;
+  margin: 0.6em 0;
+}
+.dark .tiptap-content .ProseMirror blockquote,
+.dark .lounge-prose blockquote {
+  border-left-color: #475569;
+  color: #cbd5e1;
+}
+.tiptap-content .ProseMirror pre,
+.lounge-prose pre {
+  background: #0f172a; color: #f1f5f9; padding: 0.7em 0.9em;
+  border-radius: 6px; font-size: 0.85em; overflow-x: auto; margin: 0.6em 0;
+}
+.tiptap-content .ProseMirror a,
+.lounge-prose a { color: #1d4ed8; text-decoration: underline; }
+.dark .tiptap-content .ProseMirror a,
+.dark .lounge-prose a { color: #93c5fd; }
+.tiptap-content .ProseMirror img,
+.lounge-prose img {
+  max-width: 100%; height: auto; border-radius: 6px;
+  border: 1px solid #e5e7eb; margin: 0.4em 0;
+}
+.dark .tiptap-content .ProseMirror img,
+.dark .lounge-prose img { border-color: #374151; }
+.tiptap-content .ProseMirror iframe,
+.lounge-prose iframe {
+  width: 100%; max-width: 640px; aspect-ratio: 16 / 9; height: auto;
+  border: 1px solid #e5e7eb; border-radius: 6px; margin: 0.5em 0;
+}
+.dark .tiptap-content .ProseMirror iframe,
+.dark .lounge-prose iframe { border-color: #374151; }
+.tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af; content: attr(data-placeholder); float: left; height: 0; pointer-events: none;
+}
