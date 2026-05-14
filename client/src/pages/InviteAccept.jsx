@@ -12,7 +12,7 @@ export default function InviteAccept() {
 
   const [info, setInfo] = useState(null);
   const [loadErr, setLoadErr] = useState('');
-  const [form, setForm] = useState({ name: '', password: '', phone: '' });
+  const [form, setForm] = useState({ name: '', nickname: '', password: '', phone: '' });
   const [busy, setBusy] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
 
@@ -98,13 +98,21 @@ export default function InviteAccept() {
         setSubmitErr('이름을 입력해주세요');
         return;
       }
+      if (!form.nickname.trim()) {
+        setSubmitErr('닉네임을 입력해주세요');
+        return;
+      }
+      if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(form.nickname.trim())) {
+        setSubmitErr('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+        return;
+      }
     }
     setBusy(true);
     try {
       await acceptInvite({
         token,
-        // 좀비 복구는 name 무시 (기존 user.name 유지)
-        ...(isRecover ? {} : { name: form.name.trim() }),
+        // 좀비 복구는 name·nickname 무시 (기존 user 유지)
+        ...(isRecover ? {} : { name: form.name.trim(), nickname: form.nickname.trim() }),
         password: form.password,
         phone: form.phone.trim() || null,
       });
@@ -143,15 +151,27 @@ export default function InviteAccept() {
           />
         </Field>
         {!isRecover && (
-          <Field label="이름 *">
-            <input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-              autoFocus
-              required
-            />
-          </Field>
+          <>
+            <Field label="이름 *">
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
+                autoFocus
+                required
+              />
+            </Field>
+            <Field label="닉네임 *">
+              <input
+                value={form.nickname}
+                onChange={(e) => setForm({ ...form, nickname: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
+                placeholder="라운지에 표시될 이름 (2~20자)"
+                maxLength={20}
+                required
+              />
+            </Field>
+          </>
         )}
         <Field label={isRecover ? '비밀번호 *' : '비밀번호 (8자 이상) *'}>
           <input

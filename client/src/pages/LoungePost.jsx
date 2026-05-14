@@ -190,10 +190,11 @@ export default function LoungePost() {
         </div>
         <h1 className="text-2xl font-bold leading-snug">{post.title}</h1>
         <div className="text-sm text-gray-500 flex items-center gap-2 flex-wrap border-b border-gray-200 dark:border-gray-800 pb-3">
-          <span>{post.author?.name}</span>
+          <span className="font-medium">{post.author?.nickname || post.author?.name}</span>
           {post.author?.jobRole && <span>· {JOB_ROLE_LABEL[post.author.jobRole]}</span>}
           {post.showCompanyName && post.companyName && <span>· {post.companyName}</span>}
           <span>· {relTime(post.createdAt)}</span>
+          <span>· 조회 {post.viewCount || 0}</span>
           {canEdit && (
             <span className="ml-auto flex gap-2 text-xs">
               <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-navy-700 dark:hover:text-navy-300">수정</button>
@@ -276,7 +277,7 @@ export default function LoungePost() {
               return (
                 <div key={c.id} className="py-3">
                   <div className="text-xs text-gray-500 flex items-center gap-2">
-                    <span>{c.author?.name}</span>
+                    <span className="font-medium">{c.author?.nickname || c.author?.name}</span>
                     {c.author?.jobRole && <span>· {JOB_ROLE_LABEL[c.author.jobRole]}</span>}
                     <span>· {relTime(c.createdAt)}</span>
                     <span className="ml-auto flex gap-2">

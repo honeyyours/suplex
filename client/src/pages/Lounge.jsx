@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { loungeApi } from '../api/lounge';
+import { useAuth } from '../contexts/AuthContext';
 
 const JOB_ROLE_OPTIONS = [
   { value: 'designer', label: '디자이너' },
@@ -29,12 +30,17 @@ function jobRoleLabel(role) {
 }
 
 export default function Lounge() {
+  const { auth, updateMe } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [showWrite, setShowWrite] = useState(false);
   const [showMeEdit, setShowMeEdit] = useState(false);
   const navigate = useNavigate();
+
+  // 닉네임 없는 기존 사용자는 입력 강제 (슈퍼어드민도 동일).
+  // 회원가입 흐름 변경(2026-05-14) 이전 가입자 호환.
+  const needsNickname = !!auth && !auth.user?.nickname;
 
   const { data: catData } = useQuery({
     queryKey: ['lounge', 'categories'],
@@ -80,6 +86,11 @@ export default function Lounge() {
     );
   }
 
+  // 닉네임 미설정 사용자는 입력 강제 (모달 외 모든 UI 차단)
+  if (needsNickname) {
+    return <NicknameSetupModal onSaved={(nickname) => updateMe({ nickname })} />;
+  }
+
   return (
     <div className="space-y-4">
       <header className="flex items-start justify-between gap-3 flex-wrap">
@@ -108,126 +119,67 @@ export default function Lounge() {
         </div>
       </header>
 
-      {/* 카테고리 탭 */}
-      <nav className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-800">
-        <CategoryTab
-          label="전체"
-          count={categories.reduce((sum, c) => sum + c.count, 0)}
-          active={activeCategory === 'all'}
-          onClick={() => setActiveCategory('all')}
-        />
-        {categories.map((c) => (
-          <CategoryTab
-            key={c.key}
-            label={c.label}
-            count={c.count}
-            active={activeCategory === c.key}
-            onClick={() => setActiveCategory(c.key)}
-          />
-        ))}
-      </nav>
-
       {/* 검색 */}
-      <div className="space-y-2">
-        <form onSubmit={applySearch} className="flex gap-2">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="제목·본문 검색"
-            className="flex-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-          />
+      <form onSubmit={applySearch} className="flex gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="제목·본문 검색"
+          className="flex-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+        />
+        <button
+          type="submit"
+          className="px-4 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          검색
+        </button>
+        {search && (
           <button
-            type="submit"
-            className="px-4 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+            type="button"
+            onClick={() => { setSearch(''); setSearchInput(''); }}
+            className="px-3 py-1.5 text-sm text-gray-500 hover:underline"
           >
-            검색
+            ✕
           </button>
-          {search && (
-            <button
-              type="button"
-              onClick={() => { setSearch(''); setSearchInput(''); }}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:underline"
-            >
-              ✕
-            </button>
-          )}
-        </form>
-      </div>
-
-      {/* 공지 핀 — 카테고리 무관 항상 상단 */}
-      {(postsData?.announcements?.length || 0) > 0 && (
-        <div className="border border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20 rounded divide-y divide-amber-100 dark:divide-amber-900/40">
-          {postsData.announcements.map((p) => (
-            <Link
-              key={p.id}
-              to={`/lounge/${p.id}`}
-              className="block px-4 py-3 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 text-[11px] mb-0.5">
-                    <span className="font-semibold text-amber-700 dark:text-amber-400">📢 공지</span>
-                    <span className="text-gray-400">
-                      · {categories.find((c) => c.key === p.category)?.label || p.category}
-                    </span>
-                  </div>
-                  <div className="font-medium truncate">{p.title}</div>
-                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>{p.author?.name}</span>
-                    <span>· {relTime(p.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 flex items-center gap-3 shrink-0 mt-1">
-                  {p.attachmentCount > 0 && <span>📎 {p.attachmentCount}</span>}
-                  <span>♥ {p.reactionCount}</span>
-                  <span>💬 {p.commentCount}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* 일반 글 목록 */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded divide-y divide-gray-200 dark:divide-gray-800">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-gray-500">불러오는 중...</div>
-        ) : (postsData?.items?.length || 0) === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            아직 글이 없습니다. 첫 글을 작성해보세요.
-          </div>
-        ) : (
-          postsData.items.map((p) => (
-            <Link
-              key={p.id}
-              to={`/lounge/${p.id}`}
-              className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-900"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-0.5">
-                    <span className="font-medium text-navy-700 dark:text-navy-300">
-                      {categories.find((c) => c.key === p.category)?.label || p.category}
-                    </span>
-                  </div>
-                  <div className="font-medium truncate">{p.title}</div>
-                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>{p.author?.name}</span>
-                    {p.author?.jobRole && <span>· {jobRoleLabel(p.author.jobRole)}</span>}
-                    {p.showCompanyName && p.companyName && <span>· {p.companyName}</span>}
-                    <span>· {relTime(p.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 flex items-center gap-3 shrink-0 mt-1">
-                  {p.attachmentCount > 0 && <span>📎 {p.attachmentCount}</span>}
-                  <span>♥ {p.reactionCount}</span>
-                  <span>💬 {p.commentCount}</span>
-                </div>
-              </div>
-            </Link>
-          ))
         )}
+      </form>
+
+      {/* 게시판 표 */}
+      <div className="border border-gray-200 dark:border-gray-800 rounded overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-900/60 text-xs text-gray-600 dark:text-gray-400">
+            <tr>
+              <th className="px-3 py-2 w-16 text-center font-medium">번호</th>
+              <th className="px-3 py-2 text-left font-medium">제목</th>
+              <th className="px-3 py-2 w-32 text-center font-medium hidden sm:table-cell">글쓴이</th>
+              <th className="px-3 py-2 w-24 text-center font-medium hidden md:table-cell">작성일</th>
+              <th className="px-3 py-2 w-16 text-center font-medium hidden md:table-cell">조회</th>
+              <th className="px-3 py-2 w-16 text-center font-medium hidden md:table-cell">추천</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+            {/* 공지 — 상단 고정 */}
+            {(postsData?.announcements || []).map((p) => (
+              <PostRow key={p.id} post={p} categories={categories} isNotice />
+            ))}
+            {/* 일반 글 */}
+            {isLoading ? (
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-500">불러오는 중...</td></tr>
+            ) : (postsData?.items?.length || 0) === 0 && (postsData?.announcements?.length || 0) === 0 ? (
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-500">아직 글이 없습니다. 첫 글을 작성해보세요.</td></tr>
+            ) : (
+              (postsData?.items || []).map((p, idx) => (
+                <PostRow
+                  key={p.id}
+                  post={p}
+                  categories={categories}
+                  rowNumber={(postsData?.items?.length || 0) - idx}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {showWrite && (
@@ -255,20 +207,63 @@ export default function Lounge() {
   );
 }
 
-function CategoryTab({ label, count, active, onClick }) {
+function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
+  const catLabel = categories.find((c) => c.key === p.category)?.label || p.category;
+  const authorName = p.author?.nickname || p.author?.name || '—';
+  const dateStr = formatDate(p.createdAt);
+  const rowClass = isNotice
+    ? 'bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+    : 'hover:bg-gray-50 dark:hover:bg-gray-900';
   return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 transition ${
-        active
-          ? 'border-navy-700 text-navy-700 dark:text-navy-300 font-semibold'
-          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-      }`}
-    >
-      {label}
-      {count > 0 && <span className="ml-1 text-[10px] text-gray-400">{count}</span>}
-    </button>
+    <tr className={rowClass}>
+      <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums">
+        {isNotice ? (
+          <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-white text-[10px] font-semibold">공지</span>
+        ) : (
+          rowNumber
+        )}
+      </td>
+      <td className="px-3 py-2">
+        <Link to={`/lounge/${p.id}`} className="hover:underline text-navy-800 dark:text-navy-200">
+          <span className="text-[11px] text-gray-400 mr-1">[{catLabel}]</span>
+          <span className={isNotice ? 'font-semibold' : 'font-medium'}>{p.title}</span>
+          {p.commentCount > 0 && (
+            <span className="ml-1 text-xs text-rose-600 dark:text-rose-400">[{p.commentCount}]</span>
+          )}
+          {p.attachmentCount > 0 && (
+            <span className="ml-1 text-xs text-gray-400">📎</span>
+          )}
+        </Link>
+        {/* 모바일: 메타 정보 한 줄로 노출 */}
+        <div className="sm:hidden text-[11px] text-gray-500 mt-0.5">
+          {authorName} · {dateStr} · 조회 {p.viewCount || 0} · ♥ {p.reactionCount}
+        </div>
+      </td>
+      <td className="px-3 py-2 text-center text-xs text-gray-700 dark:text-gray-300 hidden sm:table-cell truncate">
+        {authorName}
+      </td>
+      <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums hidden md:table-cell">
+        {dateStr}
+      </td>
+      <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums hidden md:table-cell">
+        {p.viewCount || 0}
+      </td>
+      <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums hidden md:table-cell">
+        {p.reactionCount || 0}
+      </td>
+    </tr>
   );
+}
+
+function formatDate(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  const now = new Date();
+  // 같은 날이면 시:분 표시, 아니면 YY.MM.DD
+  if (d.toDateString() === now.toDateString()) {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
@@ -466,6 +461,63 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
         </div>
       </form>
     </Modal>
+  );
+}
+
+// 닉네임 미설정 사용자(베타 정책 변경 이전 가입자)에게 강제로 입력시키는 화면.
+// 라운지 진입 자체를 막아 활동 전 닉네임 확정 — 본명 노출 방지.
+function NicknameSetupModal({ onSaved }) {
+  const [nickname, setNickname] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    setError('');
+    const v = nickname.trim();
+    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(v)) {
+      setError('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+      return;
+    }
+    setBusy(true);
+    try {
+      await onSaved(v);
+    } catch (e) {
+      setError(e.response?.data?.error || '닉네임 저장 실패');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <form onSubmit={submit} className="w-full max-w-md bg-white dark:bg-gray-900 border rounded-xl shadow-sm p-6 space-y-4">
+        <div className="text-center">
+          <div className="text-4xl mb-2">✏️</div>
+          <h2 className="text-lg font-bold mb-1">라운지에서 사용할 닉네임을 정해주세요</h2>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            라운지·커뮤니티 활동에는 본명 대신 닉네임이 표시됩니다.<br/>
+            한 번 정하면 동료들이 알아볼 수 있도록 신중하게 입력해주세요.
+          </p>
+        </div>
+        <input
+          type="text"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="닉네임 (2~20자, 한글·영문·숫자·_·-)"
+          maxLength={20}
+          autoFocus
+          className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+        />
+        {error && <div className="text-sm text-rose-600">{error}</div>}
+        <button
+          type="submit"
+          disabled={busy || !nickname.trim()}
+          className="w-full px-4 py-2.5 text-sm font-medium rounded bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50"
+        >
+          {busy ? '저장 중…' : '확인하고 라운지 입장'}
+        </button>
+      </form>
+    </div>
   );
 }
 

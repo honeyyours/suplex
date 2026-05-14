@@ -35,11 +35,15 @@ async function loadPermissionMap(membershipId) {
   }
 }
 
+const nicknameField = z.string().trim().min(2).max(20)
+  .regex(/^[가-힣a-zA-Z0-9_-]+$/, '닉네임은 한글·영문·숫자·_·-만 가능합니다');
+
 const signupSchema = z.object({
   // 개인 정보 (단계 1)
   email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
+  nickname: nicknameField, // 라운지 표시명 (2026-05-14)
   phone: z.string().optional(),
   // 회사 정보 (단계 2) — 회사명만 필수, 나머지 견적 갑지·기본 정보로 미리 채움
   companyName: z.string().min(1),
@@ -61,6 +65,10 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
     const exists = await prisma.user.findUnique({ where: { email: data.email } });
     if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
 
+    // 닉네임 중복 체크
+    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+
     const passwordHash = await bcrypt.hash(data.password, 10);
 
     const result = await prisma.$transaction(async (tx) => {
@@ -81,6 +89,7 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
           email: data.email,
           passwordHash,
           name: data.name,
+          nickname: data.nickname,
           phone: data.phone,
         },
       });
@@ -118,7 +127,7 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
 
     res.status(201).json({
       token,
-      user: { id: result.user.id, email: result.user.email, name: result.user.name },
+      user: { id: result.user.id, email: result.user.email, name: result.user.name, nickname: result.user.nickname },
       company: {
         id: result.company.id,
         name: result.company.name,
@@ -158,7 +167,7 @@ async function buildLoginResponse(user, membership) {
   const permissions = membership ? await loadPermissionMap(membership.id) : {};
   return {
     token,
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname },
     company: membership
       ? {
           id: membership.company.id,
@@ -419,6 +428,7 @@ router.get('/totp/status', authRequired, async (req, res, next) => {
 const updateMeSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   phone: z.string().max(40).nullable().optional(),
+  nickname: nicknameField.optional(),
 });
 
 // GET /api/auth/me — 현재 사용자 + 모든 회사 멤버십 (다중 회사 전환용)
@@ -440,7 +450,7 @@ router.get('/me', authRequired, async (req, res, next) => {
     const currentCompany = currentMembership?.company;
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
+      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
       memberships: user.memberships.map((m) => ({
         companyId: m.companyId,
         companyName: m.company.name,
@@ -522,10 +532,17 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
 router.patch('/me', authRequired, async (req, res, next) => {
   try {
     const data = updateMeSchema.parse(req.body);
+    // 닉네임 중복 체크 (변경 요청 시)
+    if (data.nickname) {
+      const conflict = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+      if (conflict && conflict.id !== req.user.id) {
+        return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+      }
+    }
     const updated = await prisma.user.update({
       where: { id: req.user.id },
       data,
-      select: { id: true, email: true, name: true, phone: true },
+      select: { id: true, email: true, name: true, nickname: true, phone: true },
     });
     res.json({ user: updated });
   } catch (e) {

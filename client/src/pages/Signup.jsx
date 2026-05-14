@@ -12,7 +12,7 @@ export default function Signup() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     // 단계 1
-    email: '', password: '', name: '', phone: '',
+    email: '', password: '', name: '', nickname: '', phone: '',
     // 단계 2
     companyName: '',
     companyBizNumber: '',
@@ -31,8 +31,12 @@ export default function Signup() {
   function goStep2(e) {
     e.preventDefault();
     setErr('');
-    if (!form.email.trim() || !form.password || !form.name.trim()) {
-      setErr('이메일·비밀번호·이름을 모두 입력해주세요');
+    if (!form.email.trim() || !form.password || !form.name.trim() || !form.nickname.trim()) {
+      setErr('이메일·비밀번호·이름·닉네임을 모두 입력해주세요');
+      return;
+    }
+    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(form.nickname.trim())) {
+      setErr('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
       return;
     }
     const passwordErr = checkPasswordPolicy(form.password);
@@ -60,6 +64,7 @@ export default function Signup() {
         email: form.email.trim(),
         password: form.password,
         name: form.name.trim(),
+        nickname: form.nickname.trim(),
         phone: form.phone.trim() || undefined,
         companyName: form.companyName.trim(),
         companyBizNumber: form.companyBizNumber.trim() || null,
@@ -98,6 +103,14 @@ export default function Signup() {
             <Field label="이메일 *" type="email" value={form.email} onChange={update('email')} required autoComplete="email" />
             <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
             <Field label="대표자 이름 *" value={form.name} onChange={update('name')} required />
+            <Field
+              label="닉네임 *"
+              value={form.nickname}
+              onChange={update('nickname')}
+              required
+              placeholder="라운지에 표시될 이름 (2~20자)"
+              maxLength={20}
+            />
             <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
 
             <div className="space-y-2 pt-2 border-t">

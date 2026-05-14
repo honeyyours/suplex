@@ -179,6 +179,9 @@ router.get('/by-token/:token', inviteTokenLimiter, async (req, res, next) => {
 const acceptSchema = z.object({
   token: z.string().min(1),
   name: z.string().max(100).optional(), // 좀비 케이스엔 무시 (기존 user.name 유지)
+  nickname: z.string().trim().min(2).max(20)
+    .regex(/^[가-힣a-zA-Z0-9_-]+$/, '닉네임은 한글·영문·숫자·_·-만 가능합니다')
+    .optional(), // 신규 가입 시 필수, 좀비 케이스엔 무시
   password: z.string().min(1), // 신규=새 비번(8자+), 좀비=기존 비번 검증
   phone: z.string().max(40).optional().nullable(),
 });
@@ -246,10 +249,16 @@ router.post('/accept', async (req, res, next) => {
       if (!data.name?.trim()) {
         return res.status(400).json({ error: '이름을 입력해주세요' });
       }
+      if (!data.nickname?.trim()) {
+        return res.status(400).json({ error: '닉네임을 입력해주세요' });
+      }
       const policyErr = checkPasswordPolicy(data.password);
       if (policyErr) {
         return res.status(400).json({ error: policyErr });
       }
+      // 닉네임 중복 체크
+      const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+      if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
 
       const passwordHash = await bcrypt.hash(data.password, 10);
       const result = await prisma.$transaction(async (tx) => {
@@ -258,6 +267,7 @@ router.post('/accept', async (req, res, next) => {
             email: inv.email,
             passwordHash,
             name: data.name.trim(),
+            nickname: data.nickname,
             phone: data.phone?.trim() || null,
           },
         });

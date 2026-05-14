@@ -94,6 +94,7 @@ async function serializePost(post, opts = {}) {
     status: post.status,
     isAnnouncement: post.isAnnouncement || false,
     pinnedToHome: post.pinnedToHome,
+    viewCount: post.viewCount || 0,
     reactionCount: post.reactionCount,
     commentCount: post.commentCount,
     createdAt: post.createdAt,
@@ -102,6 +103,7 @@ async function serializePost(post, opts = {}) {
       ? {
           id: post.author.id,
           name: post.author.name,
+          nickname: post.author.nickname || null,
           selfLabel: post.author.loungeMembership?.selfLabel || null,
           jobRole: post.author.loungeMembership?.jobRole || null,
         }
@@ -133,6 +135,7 @@ function serializeComment(c) {
       ? {
           id: c.author.id,
           name: c.author.name,
+          nickname: c.author.nickname || null,
           selfLabel: c.author.loungeMembership?.selfLabel || null,
           jobRole: c.author.loungeMembership?.jobRole || null,
         }
@@ -250,6 +253,7 @@ router.get('/posts', async (req, res, next) => {
         select: {
           id: true,
           name: true,
+          nickname: true,
           loungeMembership: { select: { selfLabel: true, jobRole: true } },
         },
       },
@@ -330,6 +334,7 @@ router.post('/posts', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -357,6 +362,7 @@ router.get('/posts/:id', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -371,6 +377,14 @@ router.get('/posts/:id', async (req, res, next) => {
       return res.status(404).json({ error: '글을 찾을 수 없습니다' });
     }
 
+    // 조회수 증가 — 작성자 본인은 제외. 비동기 (응답 지연 방지)
+    if (post.authorId !== req.user.id) {
+      prisma.loungePost
+        .update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } })
+        .catch(() => {});
+      post.viewCount = (post.viewCount || 0) + 1;
+    }
+
     const comments = await prisma.loungeComment.findMany({
       where: { postId: post.id, status: 'active' },
       orderBy: { createdAt: 'asc' },
@@ -379,6 +393,7 @@ router.get('/posts/:id', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -435,6 +450,7 @@ router.patch('/posts/:id', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -504,6 +520,7 @@ router.post('/posts/:id/comments', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -544,6 +561,7 @@ router.patch('/comments/:id', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -838,6 +856,7 @@ router.get('/home-pinned', async (req, res, next) => {
           select: {
             id: true,
             name: true,
+            nickname: true,
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
@@ -853,6 +872,7 @@ router.get('/home-pinned', async (req, res, next) => {
             select: {
               id: true,
               name: true,
+              nickname: true,
               loungeMembership: { select: { selfLabel: true, jobRole: true } },
             },
           },
