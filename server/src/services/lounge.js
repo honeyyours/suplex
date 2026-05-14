@@ -4,10 +4,11 @@
 // 그 회사를 떠나도 라운지 활동은 유지된다(인테리어 생태계 자산화).
 
 // 2026-05-14 축소: 6→3 카테고리. 공지는 별도 카테고리 X — isAnnouncement 플래그로 모든 목록 상단 핀.
+// 라벨 재조정 (2026-05-14 v2): 자유잡담→자유대화, 요청사항→루비 및 프로그램 피드백.
 const LOUNGE_CATEGORIES = [
-  { key: 'free', label: '자유잡담', staffOnly: false, sortOrder: 10 },
+  { key: 'free', label: '자유대화', staffOnly: false, sortOrder: 10 },
   { key: 'ruby', label: '루비', staffOnly: false, sortOrder: 20 },
-  { key: 'request', label: '요청사항', staffOnly: false, sortOrder: 30 },
+  { key: 'request', label: '루비 및 프로그램 피드백', staffOnly: false, sortOrder: 30 },
 ];
 
 const LOUNGE_CATEGORY_KEYS = LOUNGE_CATEGORIES.map((c) => c.key);

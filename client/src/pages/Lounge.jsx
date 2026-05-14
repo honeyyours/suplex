@@ -122,6 +122,25 @@ export default function Lounge() {
         </div>
       </header>
 
+      {/* 카테고리 탭 */}
+      <nav className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-800">
+        <CategoryTab
+          label="전체"
+          count={categories.reduce((sum, c) => sum + c.count, 0)}
+          active={activeCategory === 'all'}
+          onClick={() => setActiveCategory('all')}
+        />
+        {categories.map((c) => (
+          <CategoryTab
+            key={c.key}
+            label={c.label}
+            count={c.count}
+            active={activeCategory === c.key}
+            onClick={() => setActiveCategory(c.key)}
+          />
+        ))}
+      </nav>
+
       {/* 검색 */}
       <form onSubmit={applySearch} className="flex gap-2">
         <input
@@ -208,6 +227,22 @@ export default function Lounge() {
         />
       )}
     </div>
+  );
+}
+
+function CategoryTab({ label, count, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 transition ${
+        active
+          ? 'border-navy-700 text-navy-700 dark:text-navy-300 font-semibold'
+          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
+    >
+      {label}
+      {count > 0 && <span className="ml-1 text-[10px] text-gray-400">{count}</span>}
+    </button>
   );
 }
 
