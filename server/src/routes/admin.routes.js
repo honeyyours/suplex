@@ -190,7 +190,7 @@ router.delete('/users/:id', async (req, res, next) => {
 
     audit(req, 'admin.user-delete', {
       targetType: 'USER', targetId: userId,
-      metadata: { email: user.email, deletedCompanyIds, ownedCount: ownedCompanyIds.length },
+      metadata: { email: user.email, deletedCompanyIds: ownedCompanyIds, ownedCount: ownedCompanyIds.length },
     });
 
     res.json({ ok: true, deletedUserId: userId, deletedCompanyIds: ownedCompanyIds });
