@@ -113,12 +113,6 @@ export default function Lounge() {
               )}
             </button>
           )}
-          <button
-            onClick={() => setShowWrite(true)}
-            className="text-sm px-4 py-2 rounded bg-navy-700 text-white hover:bg-navy-800"
-          >
-            + 글쓰기
-          </button>
         </div>
       </header>
 
@@ -140,32 +134,6 @@ export default function Lounge() {
           />
         ))}
       </nav>
-
-      {/* 검색 */}
-      <form onSubmit={applySearch} className="flex gap-2">
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="제목·본문 검색"
-          className="flex-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-        />
-        <button
-          type="submit"
-          className="px-4 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          검색
-        </button>
-        {search && (
-          <button
-            type="button"
-            onClick={() => { setSearch(''); setSearchInput(''); }}
-            className="px-3 py-1.5 text-sm text-gray-500 hover:underline"
-          >
-            ✕
-          </button>
-        )}
-      </form>
 
       {/* 게시판 표 */}
       <div className="border border-gray-200 dark:border-gray-800 rounded overflow-x-auto">
@@ -203,6 +171,45 @@ export default function Lounge() {
           </tbody>
         </table>
       </div>
+
+      {/* 표 하단: 글쓰기 버튼 (우측) */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowWrite(true)}
+          className="text-sm px-5 py-2 rounded bg-navy-700 text-white hover:bg-navy-800 font-medium"
+        >
+          글쓰기
+        </button>
+      </div>
+
+      {/* 검색 박스 (가운데) */}
+      <form onSubmit={applySearch} className="flex justify-center pt-2">
+        <div className="flex gap-1 w-full max-w-md">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="제목·본문 검색"
+            className="flex-1 px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm rounded bg-navy-700 text-white hover:bg-navy-800"
+            aria-label="검색"
+          >
+            🔍
+          </button>
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(''); setSearchInput(''); }}
+              className="px-3 py-2 text-sm text-gray-500 hover:underline"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </form>
 
       {showWrite && (
         <WriteModal
