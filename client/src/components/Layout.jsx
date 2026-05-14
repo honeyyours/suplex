@@ -153,12 +153,6 @@ export default function Layout() {
         <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span className="font-semibold tracking-wide">SUPLEX</span>
-            {auth?.company?.name && (
-              <>
-                <span aria-hidden>·</span>
-                <span>{auth.company.name}</span>
-              </>
-            )}
             <span aria-hidden>·</span>
             <span>© {new Date().getFullYear()}</span>
             <span aria-hidden>·</span>
