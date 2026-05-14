@@ -181,12 +181,12 @@ export default function LoungePost() {
 
       <article className="space-y-3">
         <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          {post.isAnnouncement && (
+            <span className="font-semibold text-amber-700 dark:text-amber-400">📢 공지</span>
+          )}
           <span className="font-medium text-navy-700 dark:text-navy-300">
             {categoryLabel(post.category)}
           </span>
-          {post.tags.map((t) => (
-            <span key={t.key} className="text-gray-400">{t.label}</span>
-          ))}
         </div>
         <h1 className="text-2xl font-bold leading-snug">{post.title}</h1>
         <div className="text-sm text-gray-500 flex items-center gap-2 flex-wrap border-b border-gray-200 dark:border-gray-800 pb-3">
@@ -307,10 +307,12 @@ export default function LoungePost() {
       {showEdit && (
         <EditPostModal
           post={post}
+          isSuperAdmin={isSuperAdmin}
           onClose={() => setShowEdit(false)}
           onSaved={() => {
             setShowEdit(false);
             queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
+            queryClient.invalidateQueries({ queryKey: ['lounge', 'posts'] });
           }}
         />
       )}
@@ -429,19 +431,22 @@ function AttachmentSection({ postId, images, rubies, canEdit, isRubyCategory, on
 
 function categoryLabel(key) {
   const map = {
+    free: '자유잡담',
+    ruby: '루비',
+    request: '요청사항',
+    // 기존 폐기 카테고리(2026-05-14 이전 글) — 호환 표시
     knowhow: '공정·시공 노하우',
     usage: '수플렉스 사용 팁',
-    ruby: '스케치업 루비',
-    free: '자유잡담',
     jobs: '구인구직',
     notice: '공지',
   };
   return map[key] || key;
 }
 
-function EditPostModal({ post, onClose, onSaved }) {
+function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
   const [title, setTitle] = useState(post.title);
   const [body, setBody] = useState(post.body || '');
+  const [isAnnouncement, setIsAnnouncement] = useState(!!post.isAnnouncement);
   const [error, setError] = useState('');
   const mutation = useMutation({
     mutationFn: (payload) => loungeApi.updatePost(post.id, payload),
@@ -451,7 +456,9 @@ function EditPostModal({ post, onClose, onSaved }) {
   function submit(e) {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return setError('제목·본문을 입력해주세요');
-    mutation.mutate({ title, body });
+    const payload = { title, body };
+    if (isSuperAdmin) payload.isAnnouncement = isAnnouncement;
+    mutation.mutate(payload);
   }
   return (
     <Modal title="글 수정" onClose={onClose} size="lg">
@@ -469,6 +476,16 @@ function EditPostModal({ post, onClose, onSaved }) {
           rows={12}
           className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 font-mono"
         />
+        {isSuperAdmin && (
+          <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
+            <input
+              type="checkbox"
+              checked={isAnnouncement}
+              onChange={(e) => setIsAnnouncement(e.target.checked)}
+            />
+            <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
+          </label>
+        )}
         {error && <div className="text-sm text-rose-600">{error}</div>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-700">취소</button>

@@ -92,6 +92,7 @@ async function serializePost(post, opts = {}) {
     category: post.category,
     title: post.title,
     status: post.status,
+    isAnnouncement: post.isAnnouncement || false,
     pinnedToHome: post.pinnedToHome,
     reactionCount: post.reactionCount,
     commentCount: post.commentCount,
@@ -105,11 +106,6 @@ async function serializePost(post, opts = {}) {
           jobRole: post.author.loungeMembership?.jobRole || null,
         }
       : null,
-    tags: (post.tags || []).map((pt) => ({
-      key: pt.tag.key,
-      label: pt.tag.label,
-      kind: pt.tag.kind,
-    })),
     attachmentCount: post._count?.attachments ?? (post.attachments?.length || 0),
     showCompanyName: post.showCompanyName,
   };
@@ -169,15 +165,9 @@ router.get('/categories', async (req, res, next) => {
 // GET /api/lounge/tags — 화이트리스트 태그 (active만)
 // ============================================
 
+// 2026-05-14 태그 시스템 폐기 — 호환을 위해 라우트는 유지하되 빈 배열 반환.
 router.get('/tags', async (req, res, next) => {
-  try {
-    const tags = await prisma.loungeTag.findMany({
-      where: { isActive: true },
-      orderBy: [{ kind: 'asc' }, { sortOrder: 'asc' }],
-      select: { id: true, key: true, label: true, kind: true },
-    });
-    res.json({ tags });
-  } catch (e) { next(e); }
+  res.json({ tags: [] });
 });
 
 // ============================================
@@ -237,7 +227,6 @@ router.patch('/me', async (req, res, next) => {
 router.get('/posts', async (req, res, next) => {
   try {
     const category = (req.query.category || '').toString().trim() || null;
-    const tagsParam = (req.query.tags || '').toString().trim();
     const search = (req.query.search || '').toString().trim();
     const cursor = (req.query.cursor || '').toString().trim() || null;
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
@@ -245,9 +234,9 @@ router.get('/posts', async (req, res, next) => {
     if (category && !LOUNGE_CATEGORY_KEYS.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
-    const tagKeys = tagsParam ? tagsParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
-    const where = { status: 'active' };
+    // 일반 글 (공지 제외) — 카테고리 필터·검색 적용
+    const where = { status: 'active', isAnnouncement: false };
     if (category) where.category = category;
     if (search) {
       where.OR = [
@@ -255,34 +244,45 @@ router.get('/posts', async (req, res, next) => {
         { body: { contains: search, mode: 'insensitive' } },
       ];
     }
-    if (tagKeys.length > 0) {
-      where.tags = { some: { tag: { key: { in: tagKeys } } } };
-    }
+
+    const postsInclude = {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          loungeMembership: { select: { selfLabel: true, jobRole: true } },
+        },
+      },
+      _count: { select: { attachments: true } },
+    };
 
     const posts = await prisma.loungePost.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            loungeMembership: { select: { selfLabel: true, jobRole: true } },
-          },
-        },
-        tags: { include: { tag: true } },
-        _count: { select: { attachments: true } },
-      },
+      include: postsInclude,
     });
 
     const hasMore = posts.length > limit;
     const sliced = hasMore ? posts.slice(0, limit) : posts;
     const items = await Promise.all(sliced.map((p) => serializePost(p)));
 
+    // 공지글 — 첫 페이지(cursor 없을 때)에만 별도 배열로. 카테고리 무관 모두 노출.
+    let announcements = [];
+    if (!cursor) {
+      const annPosts = await prisma.loungePost.findMany({
+        where: { status: 'active', isAnnouncement: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: postsInclude,
+      });
+      announcements = await Promise.all(annPosts.map((p) => serializePost(p)));
+    }
+
     res.json({
       items,
+      announcements,
       nextCursor: hasMore ? sliced[sliced.length - 1].id : null,
     });
   } catch (e) { next(e); }
@@ -297,27 +297,16 @@ const postCreateSchema = z.object({
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(50000),
   showCompanyName: z.boolean().optional().default(false),
-  tagIds: z.array(z.string()).max(3).optional().default([]),
+  isAnnouncement: z.boolean().optional().default(false),
 });
 
 router.post('/posts', async (req, res, next) => {
   try {
     const data = postCreateSchema.parse(req.body || {});
 
-    // 공지 카테고리는 슈퍼어드민만
-    if (data.category === 'notice' && !req.user.isSuperAdmin) {
-      return res.status(403).json({ error: '공지 카테고리는 운영자만 작성할 수 있습니다' });
-    }
-
-    // 태그 화이트리스트 검증
-    if (data.tagIds.length > 0) {
-      const tagsExist = await prisma.loungeTag.findMany({
-        where: { id: { in: data.tagIds }, isActive: true },
-        select: { id: true },
-      });
-      if (tagsExist.length !== data.tagIds.length) {
-        return res.status(400).json({ error: '유효하지 않은 태그가 포함되어 있습니다' });
-      }
+    // 공지 글은 슈퍼어드민만 — 카테고리 무관, 모든 목록 상단 핀
+    if (data.isAnnouncement && !req.user.isSuperAdmin) {
+      return res.status(403).json({ error: '공지 글은 운영자만 작성할 수 있습니다' });
     }
 
     const post = await prisma.$transaction(async (tx) => {
@@ -328,14 +317,9 @@ router.post('/posts', async (req, res, next) => {
           title: data.title.trim(),
           body: data.body,
           showCompanyName: data.showCompanyName,
+          isAnnouncement: data.isAnnouncement,
         },
       });
-      if (data.tagIds.length > 0) {
-        await tx.loungePostTag.createMany({
-          data: data.tagIds.map((tagId) => ({ postId: created.id, tagId })),
-          skipDuplicates: true,
-        });
-      }
       return created;
     });
 
@@ -349,7 +333,6 @@ router.post('/posts', async (req, res, next) => {
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
-        tags: { include: { tag: true } },
       },
     });
     res.status(201).json({ post: await serializePost(full, { includeBody: true }) });
@@ -377,7 +360,6 @@ router.get('/posts/:id', async (req, res, next) => {
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
-        tags: { include: { tag: true } },
         reactions: { where: { userId: req.user.id }, select: { userId: true } },
         _count: { select: { attachments: true } },
       },
@@ -418,7 +400,7 @@ const postUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   body: z.string().min(1).max(50000).optional(),
   showCompanyName: z.boolean().optional(),
-  tagIds: z.array(z.string()).max(3).optional(),
+  isAnnouncement: z.boolean().optional(),
 });
 
 router.patch('/posts/:id', async (req, res, next) => {
@@ -431,35 +413,19 @@ router.patch('/posts/:id', async (req, res, next) => {
     if (post.authorId !== req.user.id && !req.user.isSuperAdmin) {
       return res.status(403).json({ error: '본인 글만 수정할 수 있습니다' });
     }
-
-    if (data.tagIds && data.tagIds.length > 0) {
-      const tagsExist = await prisma.loungeTag.findMany({
-        where: { id: { in: data.tagIds }, isActive: true },
-        select: { id: true },
-      });
-      if (tagsExist.length !== data.tagIds.length) {
-        return res.status(400).json({ error: '유효하지 않은 태그가 포함되어 있습니다' });
-      }
+    // 공지 토글은 슈퍼어드민만
+    if (data.isAnnouncement !== undefined && !req.user.isSuperAdmin) {
+      return res.status(403).json({ error: '공지 토글은 운영자만 가능합니다' });
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.loungePost.update({
-        where: { id: post.id },
-        data: {
-          ...(data.title !== undefined ? { title: data.title.trim() } : {}),
-          ...(data.body !== undefined ? { body: data.body } : {}),
-          ...(data.showCompanyName !== undefined ? { showCompanyName: data.showCompanyName } : {}),
-        },
-      });
-      if (data.tagIds) {
-        await tx.loungePostTag.deleteMany({ where: { postId: post.id } });
-        if (data.tagIds.length > 0) {
-          await tx.loungePostTag.createMany({
-            data: data.tagIds.map((tagId) => ({ postId: post.id, tagId })),
-            skipDuplicates: true,
-          });
-        }
-      }
+    await prisma.loungePost.update({
+      where: { id: post.id },
+      data: {
+        ...(data.title !== undefined ? { title: data.title.trim() } : {}),
+        ...(data.body !== undefined ? { body: data.body } : {}),
+        ...(data.showCompanyName !== undefined ? { showCompanyName: data.showCompanyName } : {}),
+        ...(data.isAnnouncement !== undefined ? { isAnnouncement: data.isAnnouncement } : {}),
+      },
     });
 
     const full = await prisma.loungePost.findUnique({
@@ -472,7 +438,6 @@ router.patch('/posts/:id', async (req, res, next) => {
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
-        tags: { include: { tag: true } },
       },
     });
     res.json({ post: await serializePost(full, { includeBody: true }) });
@@ -864,6 +829,7 @@ router.delete('/attachments/:id', async (req, res, next) => {
 
 router.get('/home-pinned', async (req, res, next) => {
   try {
+    // 1순위: 슈퍼어드민이 명시 핀한 글. 2순위: 최근 활성 공지(isAnnouncement)
     let post = await prisma.loungePost.findFirst({
       where: { pinnedToHome: true, status: 'active' },
       orderBy: { homePinnedAt: 'desc' },
@@ -875,20 +841,13 @@ router.get('/home-pinned', async (req, res, next) => {
             loungeMembership: { select: { selfLabel: true, jobRole: true } },
           },
         },
-        tags: { include: { tag: true } },
       },
     });
 
     if (!post) {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       post = await prisma.loungePost.findFirst({
-        where: {
-          status: 'active',
-          category: 'usage',
-          createdAt: { gte: sevenDaysAgo },
-          reactionCount: { gte: 1 },
-        },
-        orderBy: [{ reactionCount: 'desc' }, { createdAt: 'desc' }],
+        where: { status: 'active', isAnnouncement: true },
+        orderBy: { createdAt: 'desc' },
         include: {
           author: {
             select: {
@@ -897,7 +856,6 @@ router.get('/home-pinned', async (req, res, next) => {
               loungeMembership: { select: { selfLabel: true, jobRole: true } },
             },
           },
-          tags: { include: { tag: true } },
         },
       });
     }

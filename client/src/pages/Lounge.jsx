@@ -30,7 +30,6 @@ function jobRoleLabel(role) {
 
 export default function Lounge() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [selectedTagKeys, setSelectedTagKeys] = useState([]);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [showWrite, setShowWrite] = useState(false);
@@ -42,11 +41,6 @@ export default function Lounge() {
     queryFn: () => loungeApi.categories(),
     staleTime: 60_000,
   });
-  const { data: tagData } = useQuery({
-    queryKey: ['lounge', 'tags'],
-    queryFn: () => loungeApi.tags(),
-    staleTime: 5 * 60_000,
-  });
   const { data: meData, refetch: refetchMe } = useQuery({
     queryKey: ['lounge', 'me'],
     queryFn: () => loungeApi.me(),
@@ -56,10 +50,9 @@ export default function Lounge() {
   const queryParams = useMemo(() => {
     const p = {};
     if (activeCategory !== 'all') p.category = activeCategory;
-    if (selectedTagKeys.length > 0) p.tags = selectedTagKeys.join(',');
     if (search) p.search = search;
     return p;
-  }, [activeCategory, selectedTagKeys, search]);
+  }, [activeCategory, search]);
 
   const { data: postsData, isLoading } = useQuery({
     queryKey: ['lounge', 'posts', queryParams],
@@ -67,21 +60,12 @@ export default function Lounge() {
     keepPreviousData: true,
   });
 
-  function toggleTag(key) {
-    setSelectedTagKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key].slice(-3)
-    );
-  }
-
   function applySearch(e) {
     e.preventDefault();
     setSearch(searchInput.trim());
   }
 
   const categories = catData?.categories || [];
-  const tags = tagData?.tags || [];
-  const roleTags = tags.filter((t) => t.kind === 'role');
-  const topicTags = tags.filter((t) => t.kind === 'topic');
   const isSuperAdmin = meData?.isSuperAdmin;
   const noLoungeAccess = !meData?.isSuperAdmin && (!meData?.membership || meData.membership.status !== 'active');
 
@@ -143,37 +127,8 @@ export default function Lounge() {
         ))}
       </nav>
 
-      {/* 태그 필터 + 검색 */}
+      {/* 검색 */}
       <div className="space-y-2">
-        {(roleTags.length > 0 || topicTags.length > 0) && (
-          <div className="flex flex-wrap gap-1.5 text-xs">
-            {[...roleTags, ...topicTags].map((t) => {
-              const sel = selectedTagKeys.includes(t.key);
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => toggleTag(t.key)}
-                  className={`px-2 py-0.5 rounded-full border transition ${
-                    sel
-                      ? 'bg-navy-700 text-white border-navy-700'
-                      : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                  title={`${t.kind === 'role' ? '직군' : '주제'} 태그`}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-            {selectedTagKeys.length > 0 && (
-              <button
-                onClick={() => setSelectedTagKeys([])}
-                className="px-2 py-0.5 text-gray-500 hover:underline"
-              >
-                초기화
-              </button>
-            )}
-          </div>
-        )}
         <form onSubmit={applySearch} className="flex gap-2">
           <input
             type="text"
@@ -200,7 +155,41 @@ export default function Lounge() {
         </form>
       </div>
 
-      {/* 목록 */}
+      {/* 공지 핀 — 카테고리 무관 항상 상단 */}
+      {(postsData?.announcements?.length || 0) > 0 && (
+        <div className="border border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20 rounded divide-y divide-amber-100 dark:divide-amber-900/40">
+          {postsData.announcements.map((p) => (
+            <Link
+              key={p.id}
+              to={`/lounge/${p.id}`}
+              className="block px-4 py-3 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 text-[11px] mb-0.5">
+                    <span className="font-semibold text-amber-700 dark:text-amber-400">📢 공지</span>
+                    <span className="text-gray-400">
+                      · {categories.find((c) => c.key === p.category)?.label || p.category}
+                    </span>
+                  </div>
+                  <div className="font-medium truncate">{p.title}</div>
+                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>{p.author?.name}</span>
+                    <span>· {relTime(p.createdAt)}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 flex items-center gap-3 shrink-0 mt-1">
+                  {p.attachmentCount > 0 && <span>📎 {p.attachmentCount}</span>}
+                  <span>♥ {p.reactionCount}</span>
+                  <span>💬 {p.commentCount}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* 일반 글 목록 */}
       <div className="border border-gray-200 dark:border-gray-800 rounded divide-y divide-gray-200 dark:divide-gray-800">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-gray-500">불러오는 중...</div>
@@ -221,11 +210,6 @@ export default function Lounge() {
                     <span className="font-medium text-navy-700 dark:text-navy-300">
                       {categories.find((c) => c.key === p.category)?.label || p.category}
                     </span>
-                    {p.tags.map((t) => (
-                      <span key={t.key} className="text-gray-400">
-                        {t.label}
-                      </span>
-                    ))}
                   </div>
                   <div className="font-medium truncate">{p.title}</div>
                   <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
@@ -249,7 +233,6 @@ export default function Lounge() {
       {showWrite && (
         <WriteModal
           categories={categories}
-          tags={tags}
           isSuperAdmin={isSuperAdmin}
           onClose={() => setShowWrite(false)}
           onCreated={(post) => {
@@ -288,32 +271,60 @@ function CategoryTab({ label, count, active, onClick }) {
   );
 }
 
-function WriteModal({ categories, tags, isSuperAdmin, onClose, onCreated }) {
-  const [category, setCategory] = useState('knowhow');
+function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
+  const [category, setCategory] = useState('free');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [tagIds, setTagIds] = useState([]);
   const [showCompanyName, setShowCompanyName] = useState(false);
+  const [isAnnouncement, setIsAnnouncement] = useState(false);
+  const [images, setImages] = useState([]); // File[]
+  const [rubyFiles, setRubyFiles] = useState([]); // File[]
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState('');
 
   const availableCategories = categories.filter((c) => !c.staffOnly || isSuperAdmin);
 
   const mutation = useMutation({
-    mutationFn: (payload) => loungeApi.createPost(payload),
-    onSuccess: (data) => onCreated(data.post),
-    onError: (e) => setError(e.response?.data?.error || e.message),
+    mutationFn: async (payload) => {
+      const { post } = await loungeApi.createPost(payload);
+      // 첨부 업로드 — 글 생성 후 2단계
+      if (images.length > 0) {
+        setProgress('이미지 업로드 중…');
+        await loungeApi.uploadAttachments(post.id, 'image', images);
+      }
+      if (rubyFiles.length > 0) {
+        setProgress('루비 파일 업로드 중…');
+        await loungeApi.uploadAttachments(post.id, 'ruby', rubyFiles);
+      }
+      return post;
+    },
+    onSuccess: (post) => onCreated(post),
+    onError: (e) => {
+      setProgress('');
+      setError(e.response?.data?.error || e.message);
+    },
   });
 
-  function toggleTagId(id) {
-    setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(-3)));
+  function pickImages(e) {
+    const files = Array.from(e.target.files || []);
+    setImages((prev) => [...prev, ...files].slice(0, 5));
+    e.target.value = '';
   }
+  function pickRuby(e) {
+    const files = Array.from(e.target.files || []);
+    setRubyFiles((prev) => [...prev, ...files].slice(0, 3));
+    e.target.value = '';
+  }
+  function removeImage(i) { setImages((p) => p.filter((_, idx) => idx !== i)); }
+  function removeRuby(i) { setRubyFiles((p) => p.filter((_, idx) => idx !== i)); }
 
   function submit(e) {
     e.preventDefault();
     setError('');
+    setProgress('');
     if (!title.trim()) return setError('제목을 입력해주세요');
     if (!body.trim()) return setError('본문을 입력해주세요');
-    mutation.mutate({ category, title, body, tagIds, showCompanyName });
+    mutation.mutate({ category, title, body, showCompanyName, isAnnouncement });
   }
 
   const isRuby = category === 'ruby';
@@ -362,28 +373,51 @@ function WriteModal({ categories, tags, isSuperAdmin, onClose, onCreated }) {
           />
         </div>
 
+        {/* 이미지 첨부 (최대 5개·5MB) */}
         <div>
-          <label className="block text-xs font-medium mb-1">태그 (최대 3개)</label>
-          <div className="flex flex-wrap gap-1.5 text-xs">
-            {tags.map((t) => {
-              const sel = tagIds.includes(t.id);
-              return (
-                <button
-                  type="button"
-                  key={t.id}
-                  onClick={() => toggleTagId(t.id)}
-                  className={`px-2 py-0.5 rounded-full border transition ${
-                    sel
-                      ? 'bg-navy-700 text-white border-navy-700'
-                      : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
+          <label className="block text-xs font-medium mb-1">이미지 첨부 (최대 5개·5MB)</label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={pickImages}
+            className="text-xs"
+          />
+          {images.length > 0 && (
+            <ul className="mt-1 space-y-0.5">
+              {images.map((f, i) => (
+                <li key={i} className="text-xs flex items-center gap-2">
+                  <span className="truncate flex-1">🖼 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
+                  <button type="button" onClick={() => removeImage(i)} className="text-rose-600 hover:underline">제거</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+
+        {/* 루비 파일 첨부 — 루비 카테고리 + 슈퍼어드민 우대 (모든 사용자도 가능) */}
+        {(isRuby || rubyFiles.length > 0) && (
+          <div>
+            <label className="block text-xs font-medium mb-1">.rb 파일 첨부 (최대 3개·1MB)</label>
+            <input
+              type="file"
+              accept=".rb"
+              multiple
+              onChange={pickRuby}
+              className="text-xs"
+            />
+            {rubyFiles.length > 0 && (
+              <ul className="mt-1 space-y-0.5">
+                {rubyFiles.map((f, i) => (
+                  <li key={i} className="text-xs flex items-center gap-2">
+                    <span className="truncate flex-1">📜 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
+                    <button type="button" onClick={() => removeRuby(i)} className="text-rose-600 hover:underline">제거</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -394,12 +428,24 @@ function WriteModal({ categories, tags, isSuperAdmin, onClose, onCreated }) {
           내 회사명을 함께 표시
         </label>
 
-        {category === 'ruby' && (
+        {isSuperAdmin && (
+          <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
+            <input
+              type="checkbox"
+              checked={isAnnouncement}
+              onChange={(e) => setIsAnnouncement(e.target.checked)}
+            />
+            <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
+          </label>
+        )}
+
+        {isRuby && (
           <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
-            ⚠ 첨부된 .rb 스크립트는 사용자가 만든 것입니다. 본인 책임 하에 실행하세요. 파일 첨부는 곧 추가됩니다.
+            ⚠ 첨부된 .rb 스크립트는 사용자가 만든 것입니다. 본인 책임 하에 실행하세요.
           </div>
         )}
 
+        {progress && <div className="text-sm text-navy-700">{progress}</div>}
         {error && <div className="text-sm text-rose-600">{error}</div>}
 
         <div className="flex justify-end gap-2 pt-2">

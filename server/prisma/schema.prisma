@@ -1427,11 +1427,12 @@ model LoungeMembership {
 model LoungePost {
   id              String    @id @default(cuid())
   authorId        String
-  category        String // knowhow | usage | ruby | free | jobs | notice
+  category        String // free | ruby | request (2026-05-14 축소: knowhow/usage/jobs/notice 폐기)
   title           String
   body            String    @db.Text // 마크다운 (코드 블록 포함)
   showCompanyName Boolean   @default(false)
   status          String    @default("active") // active | hidden | deleted
+  isAnnouncement  Boolean   @default(false) // 슈퍼어드민 공지 — 모든 카테고리 상단 핀 (2026-05-14)
   pinnedToHome    Boolean   @default(false) // 홈 "오늘의 팁" 큐레이션
   homePinnedAt    DateTime?
   homePinnedById  String? // 슈퍼어드민 (감사)
@@ -1448,6 +1449,7 @@ model LoungePost {
 
   @@index([category, status, createdAt])
   @@index([pinnedToHome, homePinnedAt])
+  @@index([isAnnouncement, status, createdAt])
   @@index([authorId])
   @@map("lounge_posts")
 }

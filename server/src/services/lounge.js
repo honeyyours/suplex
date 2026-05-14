@@ -3,49 +3,18 @@
 // 핵심 정책: LoungeMembership은 User 단위. 한 번이라도 APPROVED 회사에 속하면 부여되고,
 // 그 회사를 떠나도 라운지 활동은 유지된다(인테리어 생태계 자산화).
 
+// 2026-05-14 축소: 6→3 카테고리. 공지는 별도 카테고리 X — isAnnouncement 플래그로 모든 목록 상단 핀.
 const LOUNGE_CATEGORIES = [
-  { key: 'knowhow', label: '공정·시공 노하우', staffOnly: false, sortOrder: 10 },
-  { key: 'usage', label: '수플렉스 사용 팁', staffOnly: false, sortOrder: 20 },
-  { key: 'ruby', label: '스케치업 루비', staffOnly: false, sortOrder: 30 },
-  { key: 'free', label: '자유잡담', staffOnly: false, sortOrder: 40 },
-  { key: 'jobs', label: '구인구직', staffOnly: false, sortOrder: 50 },
-  { key: 'notice', label: '공지', staffOnly: true, sortOrder: 60 },
+  { key: 'free', label: '자유잡담', staffOnly: false, sortOrder: 10 },
+  { key: 'ruby', label: '루비', staffOnly: false, sortOrder: 20 },
+  { key: 'request', label: '요청사항', staffOnly: false, sortOrder: 30 },
 ];
 
 const LOUNGE_CATEGORY_KEYS = LOUNGE_CATEGORIES.map((c) => c.key);
 
-// 시드 태그 — 화이트리스트. label은 [] 포함하여 그대로 표시.
-const LOUNGE_TAGS_SEED = [
-  // role
-  { key: 'role_designer', label: '[디자이너]', kind: 'role', sortOrder: 10 },
-  { key: 'role_site', label: '[현장팀]', kind: 'role', sortOrder: 20 },
-  { key: 'role_ops', label: '[운영]', kind: 'role', sortOrder: 30 },
-  // 수플렉스 기능
-  { key: 'topic_preset', label: '[프리셋추천]', kind: 'topic', sortOrder: 110 },
-  { key: 'topic_quote', label: '[견적]', kind: 'topic', sortOrder: 120 },
-  { key: 'topic_schedule', label: '[일정]', kind: 'topic', sortOrder: 130 },
-  { key: 'topic_material', label: '[마감재]', kind: 'topic', sortOrder: 140 },
-  { key: 'topic_settlement', label: '[지출정산]', kind: 'topic', sortOrder: 150 },
-  { key: 'topic_advice', label: '[어드바이스]', kind: 'topic', sortOrder: 160 },
-  // 시공 영역
-  { key: 'topic_demolition', label: '[철거]', kind: 'topic', sortOrder: 210 },
-  { key: 'topic_carpentry', label: '[목공]', kind: 'topic', sortOrder: 220 },
-  { key: 'topic_electric', label: '[전기]', kind: 'topic', sortOrder: 230 },
-  { key: 'topic_tile', label: '[타일]', kind: 'topic', sortOrder: 240 },
-  { key: 'topic_painting', label: '[도장]', kind: 'topic', sortOrder: 250 },
-  { key: 'topic_film', label: '[필름]', kind: 'topic', sortOrder: 260 },
-  { key: 'topic_appliance', label: '[가전]', kind: 'topic', sortOrder: 270 },
-  // 스케치업 루비
-  { key: 'topic_ruby_share', label: '[루비공유]', kind: 'topic', sortOrder: 310 },
-  { key: 'topic_ruby_request', label: '[루비개발요청]', kind: 'topic', sortOrder: 320 },
-  { key: 'topic_ruby_question', label: '[루비질문]', kind: 'topic', sortOrder: 330 },
-  { key: 'topic_tutorial', label: '[튜토리얼]', kind: 'topic', sortOrder: 340 },
-  // 운영
-  { key: 'topic_hiring', label: '[채용공고]', kind: 'topic', sortOrder: 410 },
-  { key: 'topic_seeking', label: '[구직]', kind: 'topic', sortOrder: 420 },
-  { key: 'topic_beta', label: '[베타피드백]', kind: 'topic', sortOrder: 430 },
-  { key: 'topic_tax', label: '[세무]', kind: 'topic', sortOrder: 440 },
-];
+// 태그 시스템 폐기 (2026-05-14). 기존 DB의 LoungeTag/LoungePostTag 레코드는 보존되나 신규 시드 X.
+// 글쓰기 UI에서 태그 선택 제거, GET /tags는 빈 배열, POST /posts에서 tagIds 무시.
+const LOUNGE_TAGS_SEED = [];
 
 // 멱등 부여: userId가 이미 라운지 멤버면 noop, 아니면 신규 생성.
 // 호출하는 쪽에서 회사 상태가 APPROVED라는 걸 보장한 경우 사용.
