@@ -374,8 +374,8 @@ function CreateMemoModal({ onClose, onSave }) {
   }
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg my-8">
+    <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-lg my-4 sm:my-8">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-navy-800">새 메모</h2>
         </div>
@@ -600,9 +600,10 @@ function MemoCard({ memo, onUpdate, onRemove, onAddPhotos, onRemovePhoto }) {
             onClick={() => photoInputRef.current?.click()}
             disabled={uploading}
             title="사진 추가"
-            className="px-2 py-1 text-gray-400 hover:text-navy-700 hover:bg-gray-50 rounded sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50"
+            className="px-2 py-1 text-navy-700 bg-navy-50 hover:bg-navy-100 rounded disabled:opacity-50 flex items-center gap-1"
           >
-            {uploading ? '⏳' : '📷'}
+            <span>{uploading ? '⏳' : '📷'}</span>
+            <span className="sm:hidden">사진</span>
           </button>
           <button
             onClick={copyAll}
