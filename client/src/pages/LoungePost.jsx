@@ -176,59 +176,73 @@ export default function LoungePost() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-4xl mx-auto">
       <Link to="/lounge" className="text-sm text-gray-500 hover:underline">← 라운지</Link>
 
-      <article className="space-y-3">
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          {post.isAnnouncement && (
-            <span className="font-semibold text-amber-700 dark:text-amber-400">📢 공지</span>
-          )}
-          <span className="font-medium text-navy-700 dark:text-navy-300">
-            {categoryLabel(post.category)}
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold leading-snug">{post.title}</h1>
-        <div className="text-sm text-gray-500 flex items-center gap-2 flex-wrap border-b border-gray-200 dark:border-gray-800 pb-3">
-          <span className="font-medium">{post.author?.nickname || post.author?.name}</span>
-          {post.author?.jobRole && <span>· {JOB_ROLE_LABEL[post.author.jobRole]}</span>}
-          {post.showCompanyName && post.companyName && <span>· {post.companyName}</span>}
-          <span>· {relTime(post.createdAt)}</span>
-          <span>· 조회 {post.viewCount || 0}</span>
-          {canEdit && (
-            <span className="ml-auto flex gap-2 text-xs">
-              <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-navy-700 dark:hover:text-navy-300">수정</button>
-              <button onClick={confirmRemovePost} className="text-gray-600 hover:text-rose-600">삭제</button>
+      {/* 글 카드 — 헤더(제목·메타) + 본문 + 첨부 + 액션바 */}
+      <article className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+        {/* 헤더: 카테고리 + 제목 + 작성자 메타 */}
+        <header className="px-6 pt-5 pb-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
+          <div className="flex items-center gap-2 text-xs mb-2">
+            {post.isAnnouncement && (
+              <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-white font-semibold">📢 공지</span>
+            )}
+            <span className="font-medium text-navy-700 dark:text-navy-300">
+              [{categoryLabel(post.category)}]
             </span>
-          )}
-        </div>
+          </div>
+          <h1 className="text-2xl font-bold leading-snug text-gray-900 dark:text-gray-100 mb-3">
+            {post.title}
+          </h1>
+          <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              {post.author?.nickname || post.author?.name}
+            </span>
+            {post.author?.jobRole && <span>· {JOB_ROLE_LABEL[post.author.jobRole]}</span>}
+            {post.showCompanyName && post.companyName && <span>· {post.companyName}</span>}
+            <span>· {relTime(post.createdAt)}</span>
+            <span>· 조회 {post.viewCount || 0}</span>
+            {canEdit && (
+              <span className="ml-auto flex gap-2 text-xs">
+                <button onClick={() => setShowEdit(true)} className="px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 hover:bg-white dark:hover:bg-gray-800">수정</button>
+                <button onClick={confirmRemovePost} className="px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300">삭제</button>
+              </span>
+            )}
+          </div>
+        </header>
 
-        <div className="text-sm">{renderBody(post.body)}</div>
+        {/* 본문 */}
+        <div className="px-6 py-8 min-h-[200px] text-base text-gray-800 dark:text-gray-200 leading-relaxed">
+          {renderBody(post.body)}
+        </div>
 
         {/* 첨부 — 이미지 + .rb */}
         {(images.length > 0 || rubies.length > 0 || canEdit) && (
-          <AttachmentSection
-            postId={post.id}
-            images={images}
-            rubies={rubies}
-            canEdit={canEdit}
-            isRubyCategory={post.category === 'ruby'}
-            onUploaded={() => {
-              refetchAttachments();
-              queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
-            }}
-            onRemove={(id) => {
-              if (confirm('첨부를 삭제할까요?')) removeAttachmentMutation.mutate(id);
-            }}
-            onDownloadRuby={downloadRuby}
-          />
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
+            <AttachmentSection
+              postId={post.id}
+              images={images}
+              rubies={rubies}
+              canEdit={canEdit}
+              isRubyCategory={post.category === 'ruby'}
+              onUploaded={() => {
+                refetchAttachments();
+                queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
+              }}
+              onRemove={(id) => {
+                if (confirm('첨부를 삭제할까요?')) removeAttachmentMutation.mutate(id);
+              }}
+              onDownloadRuby={downloadRuby}
+            />
+          </div>
         )}
 
-        <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+        {/* 액션바: 공감·신고 */}
+        <div className="px-6 py-3 flex items-center gap-3 border-t border-gray-200 dark:border-gray-800">
           <button
             onClick={() => reactionMutation.mutate()}
             disabled={reactionMutation.isPending}
-            className={`px-3 py-1.5 rounded border text-sm flex items-center gap-1.5 transition ${
+            className={`px-4 py-1.5 rounded-full border text-sm flex items-center gap-1.5 transition ${
               post.liked
                 ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                 : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -245,9 +259,9 @@ export default function LoungePost() {
         </div>
       </article>
 
-      {/* 댓글 */}
-      <section className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-        <h3 className="text-sm font-semibold">댓글 {comments.length}</h3>
+      {/* 댓글 카드 */}
+      <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 space-y-3">
+        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">댓글 {comments.length}</h3>
 
         <form onSubmit={submitComment} className="space-y-2">
           <textarea
@@ -276,8 +290,8 @@ export default function LoungePost() {
               const canEditComment = isSuperAdmin || c.author?.id === myUserId;
               return (
                 <div key={c.id} className="py-3">
-                  <div className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="font-medium">{c.author?.nickname || c.author?.name}</span>
+                  <div className="text-xs text-gray-500 flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{c.author?.nickname || c.author?.name}</span>
                     {c.author?.jobRole && <span>· {JOB_ROLE_LABEL[c.author.jobRole]}</span>}
                     <span>· {relTime(c.createdAt)}</span>
                     <span className="ml-auto flex gap-2">
@@ -297,7 +311,7 @@ export default function LoungePost() {
                       </button>
                     </span>
                   </div>
-                  <div className="text-sm mt-1 whitespace-pre-wrap break-words">{c.body}</div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">{c.body}</div>
                 </div>
               );
             })
