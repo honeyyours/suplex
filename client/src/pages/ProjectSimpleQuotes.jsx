@@ -8,6 +8,7 @@ import NewQuoteWithPhasesModal from '../components/NewQuoteWithPhasesModal';
 import SendToMaterialsModal from '../components/SendToMaterialsModal';
 import QuoteGuideDrawer from '../components/QuoteGuideDrawer';
 import { QUOTE_PRINT_TEMPLATES, DEFAULT_TEMPLATE_KEY } from '../components/QuotePrintTemplates';
+import MoneyInput from '../components/MoneyInput';
 
 // 그룹 헤더 옆에 표시되는 정규화 미리보기 배지
 // 표준 매핑된 경우만 표시 (예: "벽지" → "도배"). OTHER는 자유 텍스트로 처리되니 표시 X.
@@ -932,17 +933,14 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             label={
               <span className="flex items-center gap-2 text-gray-500">
                 단수조정
-                <input
-                  type="number"
-                  min="0"
-                  value={Math.abs(Number(quote.roundAdjustment) || 0) || ''}
-                  onChange={(e) => {
-                    // 항상 차감으로 저장 — 사용자 매번 - 안 붙여도 OK
-                    const raw = Math.abs(Number(e.target.value) || 0);
+                <MoneyInput
+                  value={Math.abs(Number(quote.roundAdjustment) || 0)}
+                  onChange={(n) => {
+                    const raw = Math.abs(Number(n) || 0);
                     scheduleHeaderSave({ roundAdjustment: raw === 0 ? 0 : -raw });
                   }}
                   placeholder="0"
-                  className="w-24 px-1 py-0.5 border rounded text-right text-xs"
+                  className="w-24 px-1 py-0.5 border rounded text-xs"
                   title="입력한 금액만큼 공급가액에서 차감됩니다 (부가세는 차감 후 금액 기준)"
                 />
               </span>
@@ -1256,13 +1254,11 @@ function LineRow({
         />
       </td>
       <td className="px-2 py-1.5">
-        <input
+        <MoneyInput
           {...cellAttrs('unitPrice')}
-          type="number"
-          step="any"
-          value={displayNum(line.unitPrice)}
-          onChange={onNum('unitPrice')}
-          className={inputCls + ' text-right tabular-nums'}
+          value={Number(line.unitPrice) || 0}
+          onChange={(n) => onChange({ unitPrice: n })}
+          className={inputCls}
           placeholder="0"
         />
       </td>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   quotesApi, WORK_TYPES, WORK_TYPE_LABEL, QUOTE_STATUS_META,
@@ -784,15 +784,20 @@ function CellNumber({ value, onSave, decimals = 0 }) {
 
 function CellMoney({ value, onSave }) {
   const [v, setV] = useState(formatWon(value));
-  useEffect(() => { setV(formatWon(value)); }, [value]);
+  const focusedRef = useRef(false);
+  useEffect(() => { if (!focusedRef.current) setV(formatWon(value)); }, [value]);
   return (
     <input
       type="text"
       inputMode="numeric"
       value={v}
-      onChange={(e) => setV(e.target.value)}
-      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const n = parseWon(e.target.value);
+        setV(formatWon(n));
+      }}
+      onFocus={(e) => { focusedRef.current = true; e.target.select(); }}
       onBlur={() => {
+        focusedRef.current = false;
         const n = parseWon(v);
         setV(formatWon(n));
         if (n !== Number(value)) onSave(n);

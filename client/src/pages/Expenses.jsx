@@ -11,6 +11,7 @@ import { formatWon } from '../api/quotes';
 import { toCSV, downloadFile, detectCsvHeader, normalizeDate, readSpreadsheetFile } from '../utils/csv';
 import VendorAutocomplete from '../components/VendorAutocomplete';
 import InlineCombobox from '../components/InlineCombobox';
+import MoneyInput from '../components/MoneyInput';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
 
@@ -906,7 +907,10 @@ function ContractAmountCell({ project, onSaved }) {
         type="text"
         inputMode="numeric"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d]/g, '');
+          setValue(raw === '' ? '' : Number(raw).toLocaleString('ko-KR'));
+        }}
         onFocus={(e) => e.target.select()}
         onBlur={save}
         onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
@@ -1018,7 +1022,7 @@ function ExpenseModal({ expense, projects, onClose, onSaved }) {
               <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} className="input" />
             </Field>
             <Field label="금액 (원)" required>
-              <input type="number" value={form.amount} onChange={(e) => set('amount', e.target.value)} placeholder="50000" className="input" />
+              <MoneyInput value={form.amount === '' ? '' : Number(form.amount) || 0} onChange={(n) => set('amount', n === '' ? '' : String(n))} allowEmpty placeholder="50,000" className="input" />
             </Field>
           </div>
           <Field label="프로젝트">

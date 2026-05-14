@@ -10,6 +10,7 @@ import { phaseDeadlinesApi, phaseAdvicesApi, phasePresetApi } from '../api/phase
 import { companyPhaseTipsApi, GENERAL_PHASE } from '../api/companyPhaseTips';
 import { hasFeature, F } from '../utils/features';
 import PlanBadge from '../components/PlanBadge';
+import MoneyInput from '../components/MoneyInput';
 import { applianceSpecsApi } from '../api/applianceSpecs';
 import { phasesApi } from '../api/phases';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
@@ -685,9 +686,9 @@ function QuoteTemplatesSection() {
             <FormField label="규격" value={form.spec} onChange={(v) => setForm({ ...form, spec: v })} />
             <FormField label="단위" value={form.unit} onChange={(v) => setForm({ ...form, unit: v })} />
             <FormField label="기본수량" type="number" step="0.01" value={form.defaultQuantity} onChange={(v) => setForm({ ...form, defaultQuantity: Number(v) || 0 })} />
-            <FormField label="재료 단가" type="number" value={form.defaultMaterialPrice} onChange={(v) => setForm({ ...form, defaultMaterialPrice: Number(v) || 0 })} />
-            <FormField label="노무 단가" type="number" value={form.defaultLaborPrice} onChange={(v) => setForm({ ...form, defaultLaborPrice: Number(v) || 0 })} />
-            <FormField label="경비 단가" type="number" value={form.defaultExpensePrice} onChange={(v) => setForm({ ...form, defaultExpensePrice: Number(v) || 0 })} />
+            <FormField label="재료 단가" type="money" value={form.defaultMaterialPrice} onChange={(v) => setForm({ ...form, defaultMaterialPrice: Number(v) || 0 })} />
+            <FormField label="노무 단가" type="money" value={form.defaultLaborPrice} onChange={(v) => setForm({ ...form, defaultLaborPrice: Number(v) || 0 })} />
+            <FormField label="경비 단가" type="money" value={form.defaultExpensePrice} onChange={(v) => setForm({ ...form, defaultExpensePrice: Number(v) || 0 })} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => { setAdding(false); setEditingId(null); setForm(null); }} className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50">취소</button>
@@ -1886,13 +1887,21 @@ function FormField({ label, value, onChange, type = 'text', step, full }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
       <label className="block text-xs text-gray-500 mb-0.5">{label}</label>
-      <input
-        type={type}
-        step={step}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
-      />
+      {type === 'money' ? (
+        <MoneyInput
+          value={Number(value) || 0}
+          onChange={(n) => onChange(n)}
+          className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+      ) : (
+        <input
+          type={type}
+          step={step}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import MoneyInput from './MoneyInput';
 
 const emptyForm = {
   name: '',
@@ -157,12 +158,12 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
       <Field label="계약 금액 (원)">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <input
-              type="number"
-              value={form.contractAmount}
-              onChange={update('contractAmount')}
-              placeholder="50000000"
-              className="input flex-1 text-lg tabular-nums"
+            <MoneyInput
+              value={form.contractAmount === '' ? '' : Number(form.contractAmount) || 0}
+              onChange={(n) => setForm({ ...form, contractAmount: n === '' ? '' : String(n) })}
+              allowEmpty
+              placeholder="50,000,000"
+              className="input flex-1 text-lg"
             />
             <label className="flex items-center gap-2 text-sm whitespace-nowrap cursor-pointer select-none">
               <input

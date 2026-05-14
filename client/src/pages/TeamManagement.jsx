@@ -9,6 +9,7 @@ import {
   TOGGLE_FEATURE_META,
   ROLE_DEFAULTS,
 } from '../utils/features';
+import MoneyInput from '../components/MoneyInput';
 
 export default function TeamManagement() {
   const { auth } = useAuth();
@@ -1135,11 +1136,12 @@ function VendorModal({ vendor, existingCategories = [], onClose, onSaved }) {
           />
         </Field>
         <Field label="단가">
-          <input
-            value={form.unitPrice}
-            onChange={(e) => setForm({ ...form, unitPrice: e.target.value })}
-            placeholder="원 단위 숫자"
-            className="w-full px-3 py-2 border rounded text-sm tabular-nums"
+          <MoneyInput
+            value={form.unitPrice === '' ? '' : Number(String(form.unitPrice).replace(/[^\d.]/g, '')) || 0}
+            onChange={(n) => setForm({ ...form, unitPrice: n === '' ? '' : String(n) })}
+            allowEmpty
+            placeholder="0"
+            className="w-full px-3 py-2 border rounded text-sm"
           />
         </Field>
         <Field label="단위">

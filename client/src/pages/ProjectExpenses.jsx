@@ -6,6 +6,7 @@ import { expensesApi, EXPENSE_TYPE_META, EXPENSE_TYPE_KEYS, PAYMENT_METHOD_META,
 import { accountCodesApi, accountColor } from '../api/accountCodes';
 import { formatWon } from '../api/quotes';
 import VendorAutocomplete from '../components/VendorAutocomplete';
+import MoneyInput from '../components/MoneyInput';
 
 const STATUS_KEYS = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 const ALL_TAB = 'ALL';
@@ -293,7 +294,7 @@ function QuickExpenseModal({ projectId, accountCodes, onClose, onSaved }) {
               <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} className="input" />
             </Field>
             <Field label="금액 (원)" required>
-              <input type="number" value={form.amount} onChange={(e) => set('amount', e.target.value)} className="input" />
+              <MoneyInput value={form.amount === '' ? '' : Number(form.amount) || 0} onChange={(n) => set('amount', n === '' ? '' : String(n))} allowEmpty className="input" />
             </Field>
           </div>
           <Field label="계정과목">
@@ -398,8 +399,8 @@ function OrderModal({ projectId, order, onClose, onSaved }) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Field label="수량"><input type="number" step="0.01" value={form.quantity} onChange={(e) => setField('quantity', e.target.value)} className="input" /></Field>
             <Field label="단위"><input value={form.unit} onChange={(e) => setField('unit', e.target.value)} className="input" /></Field>
-            <Field label="단가"><input type="number" value={form.unitPrice} onChange={(e) => setField('unitPrice', e.target.value)} className="input" /></Field>
-            <Field label="합계"><input type="number" value={form.totalPrice} onChange={(e) => setField('totalPrice', e.target.value)} className="input" /></Field>
+            <Field label="단가"><MoneyInput value={form.unitPrice === '' ? '' : Number(form.unitPrice) || 0} onChange={(n) => setField('unitPrice', n === '' ? '' : String(n))} allowEmpty className="input" /></Field>
+            <Field label="합계"><MoneyInput value={form.totalPrice === '' ? '' : Number(form.totalPrice) || 0} onChange={(n) => setField('totalPrice', n === '' ? '' : String(n))} allowEmpty className="input" /></Field>
           </div>
           <Field label="비고"><textarea value={form.notes} onChange={(e) => setField('notes', e.target.value)} rows={2} className="input resize-y" /></Field>
         </div>

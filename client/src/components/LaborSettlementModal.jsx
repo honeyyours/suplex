@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { vendorsApi } from '../api/vendors';
 import { projectMemosApi } from '../api/projectMemos';
 import { useEscape } from '../hooks/useEscape';
+import MoneyInput from './MoneyInput';
 
 export default function LaborSettlementModal({ project, projectId, onClose }) {
   useEscape(true, onClose);
@@ -294,23 +295,19 @@ export default function LaborSettlementModal({ project, projectId, onClose }) {
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <input
-                          type="number"
-                          min="0"
-                          value={r.dailyRate}
-                          onChange={(e) => updateRow(i, { dailyRate: e.target.value })}
-                          className="w-24 px-2 py-1 border rounded text-right tabular-nums"
+                        <MoneyInput
+                          value={Number(r.dailyRate) || 0}
+                          onChange={(n) => updateRow(i, { dailyRate: n })}
+                          className="w-24 px-2 py-1 border rounded"
                         />
                       </td>
                       <td className="px-3 py-2">
                         {r.isLeader ? (
                           <div className="flex items-center justify-end gap-1">
-                            <input
-                              type="number"
-                              min="0"
-                              value={r.meal}
-                              onChange={(e) => updateRow(i, { meal: e.target.value })}
-                              className="w-20 px-2 py-1 border rounded text-right tabular-nums"
+                            <MoneyInput
+                              value={Number(r.meal) || 0}
+                              onChange={(n) => updateRow(i, { meal: n })}
+                              className="w-20 px-2 py-1 border rounded"
                             />
                             {Number(r.meal || 0) > 0 && totalDays > 0 && (
                               <span className="text-[10px] text-amber-700 whitespace-nowrap">×{totalDays}일</span>
@@ -326,12 +323,10 @@ export default function LaborSettlementModal({ project, projectId, onClose }) {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        <input
-                          type="number"
-                          min="0"
-                          value={r.transport}
-                          onChange={(e) => updateRow(i, { transport: e.target.value })}
-                          className="w-20 px-2 py-1 border rounded text-right tabular-nums"
+                        <MoneyInput
+                          value={Number(r.transport) || 0}
+                          onChange={(n) => updateRow(i, { transport: n })}
+                          className="w-20 px-2 py-1 border rounded"
                         />
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums font-medium text-navy-800">
