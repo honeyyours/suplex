@@ -10,6 +10,7 @@ const { STANDARD_ADVICES } = require('../services/standardPhaseAdvices');
 const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseKeywordSeed');
 const { invalidateCache: invalidatePhaseCache } = require('../services/phaseDetect');
 const { STANDARD_PHASES, normalizePhase } = require('../services/phases');
+const { addAllCompanyUsersToProject } = require('../services/projectMembership');
 
 const router = express.Router();
 
@@ -325,22 +326,17 @@ router.post('/', async (req, res, next) => {
   try {
     const data = createSchema.parse(req.body);
 
-    // 추가 멤버 — body.memberUserIds(배열, MEMBER) + body.leadUserId(있으면 LEAD 위임).
-    // 미지정이면 createdBy 본인이 자동 LEAD.
-    const memberUserIds = Array.isArray(req.body.memberUserIds) ? req.body.memberUserIds.filter(Boolean) : [];
+    // 디폴트 정책 (2026-05-14): 회사 모든 직원이 자동 멤버.
+    // body.leadUserId 지정 시 LEAD 위임(같은 회사인지 검증), 미지정이면 생성자 본인이 LEAD.
     const leadUserIdRaw = (typeof req.body.leadUserId === 'string' && req.body.leadUserId.trim()) || null;
-
-    // 같은 회사 멤버인지 검증
-    const validUserIds = new Set();
-    if (memberUserIds.length > 0 || leadUserIdRaw) {
-      const ids = Array.from(new Set([...memberUserIds, leadUserIdRaw].filter(Boolean)));
-      const memberships = await prisma.membership.findMany({
-        where: { userId: { in: ids }, companyId: req.user.companyId },
+    let leadUserId = req.user.id;
+    if (leadUserIdRaw && leadUserIdRaw !== req.user.id) {
+      const ms = await prisma.membership.findFirst({
+        where: { userId: leadUserIdRaw, companyId: req.user.companyId },
         select: { userId: true },
       });
-      for (const m of memberships) validUserIds.add(m.userId);
+      if (ms) leadUserId = leadUserIdRaw;
     }
-    const leadUserId = leadUserIdRaw && validUserIds.has(leadUserIdRaw) ? leadUserIdRaw : req.user.id;
 
     const result = await prisma.$transaction(async (tx) => {
       const project = await tx.project.create({
@@ -364,20 +360,12 @@ router.post('/', async (req, res, next) => {
         },
       });
 
-      // 멤버 등록 — LEAD + MEMBER들. 본인이 LEAD면 본인을 LEAD로, 아니면 본인은 MEMBER로 추가.
-      const memberRows = [];
-      memberRows.push({ projectId: project.id, userId: leadUserId, role: 'LEAD' });
-      // 본인이 LEAD가 아닐 때 본인도 멤버로 (생성자는 항상 멤버 — 사고 방지)
-      if (leadUserId !== req.user.id) {
-        memberRows.push({ projectId: project.id, userId: req.user.id, role: 'MEMBER' });
-      }
-      for (const uid of memberUserIds) {
-        if (!validUserIds.has(uid) || uid === leadUserId || uid === req.user.id) continue;
-        memberRows.push({ projectId: project.id, userId: uid, role: 'MEMBER' });
-      }
-      if (memberRows.length > 0) {
-        await tx.projectMember.createMany({ data: memberRows, skipDuplicates: true });
-      }
+      // 회사 전체 직원을 자동 합류 — leadUserId 한 명만 LEAD, 나머지는 MEMBER
+      await addAllCompanyUsersToProject(tx, {
+        projectId: project.id,
+        companyId: req.user.companyId,
+        leadUserId,
+      });
 
       return project;
     });

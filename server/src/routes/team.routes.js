@@ -6,6 +6,7 @@ const { authRequired, requireRole } = require('../middlewares/auth');
 const { audit } = require('../services/audit');
 const { TOGGLEABLE_FEATURES } = require('../services/features');
 const { grantIfCompanyApproved } = require('../services/lounge');
+const { addUserToAllCompanyProjects } = require('../services/projectMembership');
 
 const router = express.Router();
 router.use(authRequired);
@@ -72,6 +73,8 @@ router.post('/members', requireRole('OWNER'), async (req, res, next) => {
       });
       // 라운지 멤버십 — 회사가 APPROVED일 때만
       await grantIfCompanyApproved(tx, user.id, req.user.companyId, 'OWNER가 직접 추가');
+      // 회사 모든 기존 프로젝트에 자동 MEMBER로 합류
+      await addUserToAllCompanyProjects(tx, { userId: user.id, companyId: req.user.companyId });
       return { user, membership };
     });
 
