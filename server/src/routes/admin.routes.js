@@ -194,7 +194,23 @@ router.delete('/users/:id', async (req, res, next) => {
     });
 
     res.json({ ok: true, deletedUserId: userId, deletedCompanyIds: ownedCompanyIds });
-  } catch (e) { next(e); }
+  } catch (e) {
+    // 외래키 제약 위반 — 어떤 테이블/FK가 막는지 어드민에게 명확히 노출.
+    // (Project.createdById, DailyReport.authorId, ProjectPhoto.uploadedById,
+    //  MaterialRequest.requestedById, MaterialHistory.changedById, ScheduleChange.changedById 등 cascade 미지정 6종 의심)
+    if (e?.code === 'P2003') {
+      return res.status(409).json({
+        error: '다른 데이터가 이 계정을 참조하고 있어 삭제할 수 없습니다',
+        code: 'FK_CONSTRAINT',
+        details: {
+          modelName: e?.meta?.modelName || null,
+          fieldName: e?.meta?.field_name || e?.meta?.constraint || null,
+        },
+        hint: '회사 OWNER가 아닌 곳에서 만든 프로젝트/사진/리포트가 있으면 사용자 삭제가 차단됩니다. 해당 데이터를 먼저 정리하거나 schema의 onDelete 정책 보강이 필요합니다.',
+      });
+    }
+    next(e);
+  }
 });
 
 // ============================================
