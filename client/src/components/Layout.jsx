@@ -150,24 +150,31 @@ export default function Layout() {
       </main>
 
       <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
-          <span className="font-semibold tracking-wide">SUPLEX</span>
-          {auth?.company?.name && (
-            <>
-              <span aria-hidden>·</span>
-              <span>{auth.company.name}</span>
-            </>
-          )}
-          <span aria-hidden>·</span>
-          <span>© {new Date().getFullYear()}</span>
-          <span aria-hidden>·</span>
-          <Link to="/terms" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">이용약관</Link>
-          <span aria-hidden>·</span>
-          <Link to="/privacy" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">개인정보처리방침</Link>
-          <span aria-hidden>·</span>
-          <a href="mailto:hello@suplex.kr" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">hello@suplex.kr</a>
-          <span aria-hidden>·</span>
-          <a href="https://instagram.com/suplex.kr" target="_blank" rel="noopener noreferrer" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">@suplex.kr</a>
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            <span className="font-semibold tracking-wide">SUPLEX</span>
+            {auth?.company?.name && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{auth.company.name}</span>
+              </>
+            )}
+            <span aria-hidden>·</span>
+            <span>© {new Date().getFullYear()}</span>
+            <span aria-hidden>·</span>
+            <Link to="/terms" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">이용약관</Link>
+            <span aria-hidden>·</span>
+            <Link to="/privacy" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">개인정보처리방침</Link>
+            <span aria-hidden>·</span>
+            <a href="mailto:hello@suplex.kr" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">hello@suplex.kr</a>
+            <span aria-hidden>·</span>
+            <a href="https://instagram.com/suplex.kr" target="_blank" rel="noopener noreferrer" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">@suplex.kr</a>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            <span>사업자등록번호 491-86-04017</span>
+            <span aria-hidden>·</span>
+            <span>법인등록번호 140111-0012507</span>
+          </div>
         </div>
       </footer>
     </div>
