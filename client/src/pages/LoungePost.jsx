@@ -33,22 +33,51 @@ function relTime(date) {
   return d.toISOString().slice(0, 10);
 }
 
-// 마크다운 코드 블록(```ruby ... ```)을 <pre>로 변환. 그 외는 줄바꿈 보존.
+// 본문 한 줄이 단독 유튜브 URL이면 {id, start} 반환. 줄에 다른 텍스트가 섞여 있으면 null.
+const YOUTUBE_LINE_RE =
+  /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([\w-]{11})(\S*)$/i;
+
+function parseYoutubeLine(line) {
+  const m = line.trim().match(YOUTUBE_LINE_RE);
+  if (!m) return null;
+  const id = m[1];
+  const tail = m[2] || '';
+  // 타임스탬프 t=숫자(s) 만 단순 추출. 분·시간 단위(`1m30s`)는 일단 무시.
+  const t = tail.match(/[?&]t=(\d+)/);
+  return { id, start: t ? Number(t[1]) : null };
+}
+
+// 마크다운 코드 블록(```ruby ... ```)을 <pre>로 변환. 단독 줄 유튜브 URL은 iframe 임베드.
+// 그 외는 줄바꿈 보존.
 function renderBody(body) {
   if (!body) return null;
-  const parts = [];
-  let i = 0;
+  const segments = [];
   const re = /```(\w+)?\n([\s\S]*?)```/g;
   let last = 0;
   let m;
   while ((m = re.exec(body)) !== null) {
-    if (m.index > last) {
-      parts.push({ type: 'text', value: body.slice(last, m.index) });
-    }
-    parts.push({ type: 'code', lang: m[1] || '', value: m[2] });
+    if (m.index > last) segments.push({ type: 'text', value: body.slice(last, m.index) });
+    segments.push({ type: 'code', lang: m[1] || '', value: m[2] });
     last = m.index + m[0].length;
   }
-  if (last < body.length) parts.push({ type: 'text', value: body.slice(last) });
+  if (last < body.length) segments.push({ type: 'text', value: body.slice(last) });
+
+  // 텍스트 세그먼트를 다시 줄 단위로 분해해 유튜브 임베드 추출
+  const parts = [];
+  for (const seg of segments) {
+    if (seg.type !== 'text') { parts.push(seg); continue; }
+    const lines = seg.value.split('\n');
+    let buf = [];
+    const flush = () => {
+      if (buf.length) { parts.push({ type: 'text', value: buf.join('\n') }); buf = []; }
+    };
+    for (const line of lines) {
+      const yt = parseYoutubeLine(line);
+      if (yt) { flush(); parts.push({ type: 'youtube', ...yt }); }
+      else buf.push(line);
+    }
+    flush();
+  }
 
   return parts.map((p, idx) => {
     if (p.type === 'code') {
@@ -60,6 +89,22 @@ function renderBody(body) {
           {p.lang && <div className="text-[10px] text-gray-400 mb-1">{p.lang}</div>}
           <code>{p.value}</code>
         </pre>
+      );
+    }
+    if (p.type === 'youtube') {
+      const src = `https://www.youtube.com/embed/${p.id}${p.start ? `?start=${p.start}` : ''}`;
+      return (
+        <div key={idx} className="my-3 aspect-video w-full max-w-2xl">
+          <iframe
+            src={src}
+            title="YouTube"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+            className="w-full h-full rounded border border-gray-200 dark:border-gray-800"
+          />
+        </div>
       );
     }
     return (
@@ -492,6 +537,9 @@ function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
           rows={12}
           className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 font-mono"
         />
+        <div className="text-[11px] text-gray-500">
+          유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.
+        </div>
         {isSuperAdmin && (
           <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
             <input

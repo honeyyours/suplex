@@ -324,7 +324,7 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
   const [showCompanyName, setShowCompanyName] = useState(false);
   const [isAnnouncement, setIsAnnouncement] = useState(false);
   const [images, setImages] = useState([]); // File[]
-  const [rubyFiles, setRubyFiles] = useState([]); // File[]
+  const [files, setFiles] = useState([]);   // File[] — 일반 파일
   const [error, setError] = useState('');
   const [progress, setProgress] = useState('');
 
@@ -338,9 +338,9 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
         setProgress('이미지 업로드 중…');
         await loungeApi.uploadAttachments(post.id, 'image', images);
       }
-      if (rubyFiles.length > 0) {
-        setProgress('루비 파일 업로드 중…');
-        await loungeApi.uploadAttachments(post.id, 'ruby', rubyFiles);
+      if (files.length > 0) {
+        setProgress('파일 업로드 중…');
+        await loungeApi.uploadAttachments(post.id, 'file', files);
       }
       return post;
     },
@@ -352,17 +352,17 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
   });
 
   function pickImages(e) {
-    const files = Array.from(e.target.files || []);
-    setImages((prev) => [...prev, ...files].slice(0, 5));
+    const picked = Array.from(e.target.files || []);
+    setImages((prev) => [...prev, ...picked].slice(0, 5));
     e.target.value = '';
   }
-  function pickRuby(e) {
-    const files = Array.from(e.target.files || []);
-    setRubyFiles((prev) => [...prev, ...files].slice(0, 3));
+  function pickFiles(e) {
+    const picked = Array.from(e.target.files || []);
+    setFiles((prev) => [...prev, ...picked].slice(0, 5));
     e.target.value = '';
   }
   function removeImage(i) { setImages((p) => p.filter((_, idx) => idx !== i)); }
-  function removeRuby(i) { setRubyFiles((p) => p.filter((_, idx) => idx !== i)); }
+  function removeFile(i) { setFiles((p) => p.filter((_, idx) => idx !== i)); }
 
   function submit(e) {
     e.preventDefault();
@@ -403,17 +403,15 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1">
-            본문 {isRuby && <span className="text-gray-500">(코드 블록은 ```ruby ... ```)</span>}
-          </label>
+          <label className="block text-xs font-medium mb-1">본문</label>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={isRuby ? 14 : 10}
             placeholder={
               isRuby
-                ? '스케치업 버전 / 사용법 / 주의사항을 적어주세요.\n\n```ruby\n# 코드 블록 예시\n```'
-                : '마크다운 지원'
+                ? '스케치업 버전 / 사용법 / 주의사항을 적어주세요.\n\n```ruby\n# 코드 블록 예시\n```\n\n유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.'
+                : '마크다운 지원\n\n유튜브 링크를 한 줄에 붙여넣으면 영상이 자동으로 표시됩니다.'
             }
             className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 font-mono"
           />
@@ -441,29 +439,26 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
           )}
         </div>
 
-        {/* 루비 파일 첨부 — 루비 카테고리 + 슈퍼어드민 우대 (모든 사용자도 가능) */}
-        {(isRuby || rubyFiles.length > 0) && (
-          <div>
-            <label className="block text-xs font-medium mb-1">.rb 파일 첨부 (최대 3개·1MB)</label>
-            <input
-              type="file"
-              accept=".rb"
-              multiple
-              onChange={pickRuby}
-              className="text-xs"
-            />
-            {rubyFiles.length > 0 && (
-              <ul className="mt-1 space-y-0.5">
-                {rubyFiles.map((f, i) => (
-                  <li key={i} className="text-xs flex items-center gap-2">
-                    <span className="truncate flex-1">📜 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
-                    <button type="button" onClick={() => removeRuby(i)} className="text-rose-600 hover:underline">제거</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        {/* 일반 파일 첨부 — 실행파일 제외, 최대 5개·20MB */}
+        <div>
+          <label className="block text-xs font-medium mb-1">파일 첨부 (최대 5개·20MB, 실행파일 제외)</label>
+          <input
+            type="file"
+            multiple
+            onChange={pickFiles}
+            className="text-xs"
+          />
+          {files.length > 0 && (
+            <ul className="mt-1 space-y-0.5">
+              {files.map((f, i) => (
+                <li key={i} className="text-xs flex items-center gap-2">
+                  <span className="truncate flex-1">📎 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
+                  <button type="button" onClick={() => removeFile(i)} className="text-rose-600 hover:underline">제거</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -483,12 +478,6 @@ function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
             />
             <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
           </label>
-        )}
-
-        {isRuby && (
-          <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
-            ⚠ 사용자가 만든 루비 파일입니다. 사용에 주의해주세요.
-          </div>
         )}
 
         {progress && <div className="text-sm text-navy-700">{progress}</div>}
