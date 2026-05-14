@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { loungeApi } from '../api/lounge';
 import { useAuth } from '../contexts/AuthContext';
-import LoungeRichEditor from '../components/LoungeRichEditor';
 
 const JOB_ROLE_OPTIONS = [
   { value: 'designer', label: '디자이너' },
@@ -35,7 +34,6 @@ export default function Lounge() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [showWrite, setShowWrite] = useState(false);
   const [showMeEdit, setShowMeEdit] = useState(false);
   const navigate = useNavigate();
 
@@ -176,7 +174,7 @@ export default function Lounge() {
       {/* 표 하단: 글쓰기 버튼 (우측) */}
       <div className="flex justify-end">
         <button
-          onClick={() => setShowWrite(true)}
+          onClick={() => navigate('/lounge/new')}
           className="text-sm px-5 py-2 rounded bg-navy-700 text-white hover:bg-navy-800 font-medium"
         >
           글쓰기
@@ -212,17 +210,6 @@ export default function Lounge() {
         </div>
       </form>
 
-      {showWrite && (
-        <WriteModal
-          categories={categories}
-          isSuperAdmin={isSuperAdmin}
-          onClose={() => setShowWrite(false)}
-          onCreated={(post) => {
-            setShowWrite(false);
-            navigate(`/lounge/${post.id}`);
-          }}
-        />
-      )}
       {showMeEdit && meData?.membership && (
         <MeEditModal
           me={meData.membership}
@@ -316,193 +303,6 @@ function formatDate(date) {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
   return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function WriteModal({ categories, isSuperAdmin, onClose, onCreated }) {
-  const [category, setCategory] = useState('free');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');         // HTML
-  const [bodyEmpty, setBodyEmpty] = useState(true);
-  const [showCompanyName, setShowCompanyName] = useState(false);
-  const [isAnnouncement, setIsAnnouncement] = useState(false);
-  const [images, setImages] = useState([]); // File[]
-  const [files, setFiles] = useState([]);   // File[] — 일반 파일
-  const [error, setError] = useState('');
-  const [progress, setProgress] = useState('');
-
-  const availableCategories = categories.filter((c) => !c.staffOnly || isSuperAdmin);
-
-  const mutation = useMutation({
-    mutationFn: async (payload) => {
-      const { post } = await loungeApi.createPost(payload);
-      // 첨부 업로드 — 글 생성 후 2단계
-      if (images.length > 0) {
-        setProgress('이미지 업로드 중…');
-        await loungeApi.uploadAttachments(post.id, 'image', images);
-      }
-      if (files.length > 0) {
-        setProgress('파일 업로드 중…');
-        await loungeApi.uploadAttachments(post.id, 'file', files);
-      }
-      return post;
-    },
-    onSuccess: (post) => onCreated(post),
-    onError: (e) => {
-      setProgress('');
-      setError(e.response?.data?.error || e.message);
-    },
-  });
-
-  function pickImages(e) {
-    const picked = Array.from(e.target.files || []);
-    setImages((prev) => [...prev, ...picked].slice(0, 5));
-    e.target.value = '';
-  }
-  function pickFiles(e) {
-    const picked = Array.from(e.target.files || []);
-    setFiles((prev) => [...prev, ...picked].slice(0, 5));
-    e.target.value = '';
-  }
-  function removeImage(i) { setImages((p) => p.filter((_, idx) => idx !== i)); }
-  function removeFile(i) { setFiles((p) => p.filter((_, idx) => idx !== i)); }
-
-  function submit(e) {
-    e.preventDefault();
-    setError('');
-    setProgress('');
-    if (!title.trim()) return setError('제목을 입력해주세요');
-    if (bodyEmpty) return setError('본문을 입력해주세요');
-    mutation.mutate({ category, title, body, bodyFormat: 'html', showCompanyName, isAnnouncement });
-  }
-
-  const isRuby = category === 'ruby';
-
-  return (
-    <Modal title="라운지 글쓰기" onClose={onClose} size="lg">
-      <form onSubmit={submit} className="space-y-3">
-        <div>
-          <label className="block text-xs font-medium mb-1">카테고리</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-          >
-            {availableCategories.map((c) => (
-              <option key={c.key} value={c.key}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium mb-1">제목</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-            maxLength={200}
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium mb-1">본문</label>
-          <LoungeRichEditor
-            initialHtml=""
-            onChange={(html, isEmpty) => { setBody(html); setBodyEmpty(isEmpty); }}
-            placeholder={
-              isRuby
-                ? '스케치업 버전 / 사용법 / 주의사항을 적어주세요. 툴바의 📺 버튼으로 유튜브, 🖼 버튼으로 이미지 삽입.'
-                : '내용을 입력하세요. 툴바로 굵게·제목·리스트, 🖼 이미지, 📺 유튜브를 본문 안에 넣을 수 있습니다.'
-            }
-            minRows={isRuby ? 14 : 10}
-          />
-        </div>
-
-        {/* 이미지 첨부 (최대 5개·5MB) */}
-        <div>
-          <label className="block text-xs font-medium mb-1">이미지 첨부 (최대 5개·5MB)</label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={pickImages}
-            className="text-xs"
-          />
-          {images.length > 0 && (
-            <ul className="mt-1 space-y-0.5">
-              {images.map((f, i) => (
-                <li key={i} className="text-xs flex items-center gap-2">
-                  <span className="truncate flex-1">🖼 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
-                  <button type="button" onClick={() => removeImage(i)} className="text-rose-600 hover:underline">제거</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* 일반 파일 첨부 — 실행파일 제외, 최대 5개·20MB */}
-        <div>
-          <label className="block text-xs font-medium mb-1">파일 첨부 (최대 5개·20MB, 실행파일 제외)</label>
-          <input
-            type="file"
-            multiple
-            onChange={pickFiles}
-            className="text-xs"
-          />
-          {files.length > 0 && (
-            <ul className="mt-1 space-y-0.5">
-              {files.map((f, i) => (
-                <li key={i} className="text-xs flex items-center gap-2">
-                  <span className="truncate flex-1">📎 {f.name} ({(f.size / 1024).toFixed(0)}KB)</span>
-                  <button type="button" onClick={() => removeFile(i)} className="text-rose-600 hover:underline">제거</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={showCompanyName}
-            onChange={(e) => setShowCompanyName(e.target.checked)}
-          />
-          내 회사명을 함께 표시
-        </label>
-
-        {isSuperAdmin && (
-          <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
-            <input
-              type="checkbox"
-              checked={isAnnouncement}
-              onChange={(e) => setIsAnnouncement(e.target.checked)}
-            />
-            <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
-          </label>
-        )}
-
-        {progress && <div className="text-sm text-navy-700">{progress}</div>}
-        {error && <div className="text-sm text-rose-600">{error}</div>}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-700"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="px-4 py-2 text-sm rounded bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50"
-          >
-            {mutation.isPending ? '등록 중...' : '등록'}
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
 }
 
 // 닉네임 미설정 사용자(베타 정책 변경 이전 가입자)에게 강제로 입력시키는 화면.

@@ -38,6 +38,7 @@ import ProjectProcessOverview from './pages/ProjectProcessOverview';
 import ProjectUtilities from './pages/ProjectUtilities';
 import Lounge from './pages/Lounge';
 import LoungePost from './pages/LoungePost';
+import LoungePostEditor from './pages/LoungePostEditor';
 import IntroHome from './pages/IntroHome';
 
 // 홈 라우트 분기:
@@ -75,6 +76,8 @@ export default function App() {
       >
         {/* 라운지 — 베타 진입 통제 우회. 미승인 회사도 자유롭게 접근/활동 */}
         <Route path="/lounge" element={<Lounge />} />
+        <Route path="/lounge/new" element={<LoungePostEditor />} />
+        <Route path="/lounge/:postId/edit" element={<LoungePostEditor />} />
         <Route path="/lounge/:postId" element={<LoungePost />} />
 
         {/* 어드민 — 슈퍼어드민 전용이므로 BetaGate 불필요 (어드민 자체가 isSuperAdmin 체크) */}

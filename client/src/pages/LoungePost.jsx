@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { loungeApi } from '../api/lounge';
 import { useAuth } from '../contexts/AuthContext';
-import LoungeRichEditor, { plainToHtml } from '../components/LoungeRichEditor';
 
 const JOB_ROLE_LABEL = {
   designer: '디자이너',
@@ -124,7 +123,6 @@ export default function LoungePost() {
   const isSuperAdmin = !!auth?.isSuperAdmin;
   const myUserId = auth?.user?.id;
 
-  const [showEdit, setShowEdit] = useState(false);
   const [reportTarget, setReportTarget] = useState(null); // { type: 'post'|'comment', id }
   const [commentBody, setCommentBody] = useState('');
 
@@ -250,7 +248,7 @@ export default function LoungePost() {
             <span>· 조회 {post.viewCount || 0}</span>
             {canEdit && (
               <span className="ml-auto flex gap-2 text-xs">
-                <button onClick={() => setShowEdit(true)} className="px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 hover:bg-white dark:hover:bg-gray-800">수정</button>
+                <button onClick={() => navigate(`/lounge/${post.id}/edit`)} className="px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 hover:bg-white dark:hover:bg-gray-800">수정</button>
                 <button onClick={confirmRemovePost} className="px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300">삭제</button>
               </span>
             )}
@@ -371,18 +369,6 @@ export default function LoungePost() {
         </div>
       </section>
 
-      {showEdit && (
-        <EditPostModal
-          post={post}
-          isSuperAdmin={isSuperAdmin}
-          onClose={() => setShowEdit(false)}
-          onSaved={() => {
-            setShowEdit(false);
-            queryClient.invalidateQueries({ queryKey: ['lounge', 'post', postId] });
-            queryClient.invalidateQueries({ queryKey: ['lounge', 'posts'] });
-          }}
-        />
-      )}
       {reportTarget && (
         <ReportModal
           target={reportTarget}
@@ -510,70 +496,6 @@ function categoryLabel(key) {
     notice: '공지',
   };
   return map[key] || key;
-}
-
-function EditPostModal({ post, isSuperAdmin, onClose, onSaved }) {
-  const [title, setTitle] = useState(post.title);
-  // 옛 plain 본문은 TipTap이 다룰 HTML로 변환(레거시 → 위지윅 마이그레이션).
-  // 신규 글은 이미 HTML.
-  const initialBodyHtml =
-    post.bodyFormat === 'html' ? (post.body || '') : plainToHtml(post.body || '');
-  const [body, setBody] = useState(initialBodyHtml);
-  const [bodyEmpty, setBodyEmpty] = useState(!initialBodyHtml);
-  const [isAnnouncement, setIsAnnouncement] = useState(!!post.isAnnouncement);
-  const [error, setError] = useState('');
-  const mutation = useMutation({
-    mutationFn: (payload) => loungeApi.updatePost(post.id, payload),
-    onSuccess: () => onSaved(),
-    onError: (e) => setError(e.response?.data?.error || e.message),
-  });
-  function submit(e) {
-    e.preventDefault();
-    if (!title.trim() || bodyEmpty) return setError('제목·본문을 입력해주세요');
-    const payload = { title, body, bodyFormat: 'html' };
-    if (isSuperAdmin) payload.isAnnouncement = isAnnouncement;
-    mutation.mutate(payload);
-  }
-  return (
-    <Modal title="글 수정" onClose={onClose} size="lg">
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
-          maxLength={200}
-        />
-        <LoungeRichEditor
-          initialHtml={initialBodyHtml}
-          onChange={(html, isEmpty) => { setBody(html); setBodyEmpty(isEmpty); }}
-          placeholder="툴바로 굵게·제목·리스트, 🖼 이미지, 📺 유튜브를 본문 안에 넣을 수 있습니다."
-          minRows={12}
-        />
-        {isSuperAdmin && (
-          <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
-            <input
-              type="checkbox"
-              checked={isAnnouncement}
-              onChange={(e) => setIsAnnouncement(e.target.checked)}
-            />
-            <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
-          </label>
-        )}
-        {error && <div className="text-sm text-rose-600">{error}</div>}
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-700">취소</button>
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="px-4 py-2 text-sm rounded bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50"
-          >
-            {mutation.isPending ? '저장 중...' : '저장'}
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
 }
 
 function ReportModal({ target, onClose, onSubmitted }) {
