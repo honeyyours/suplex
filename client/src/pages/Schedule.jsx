@@ -84,7 +84,7 @@ export default function Schedule() {
               headerRight={
                 <button
                   onClick={() => setExtractAllOpen(true)}
-                  className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
+                  className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                   title="키워드/기간 선택 후 카톡 형식으로 클립보드 복사"
                 >
                   일정 복사
@@ -315,7 +315,7 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
           headerRight={
             <button
               onClick={() => setExtractScopedOpen(true)}
-              className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
+              className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
               title={`현재 ${status === 'IN_PROGRESS' ? '진행중' : '예정'} 프로젝트 ${projects.length}개의 일정 복사`}
             >
               일정 복사
