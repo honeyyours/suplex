@@ -496,7 +496,7 @@ function categoryLabel(key) {
   const map = {
     free: '자유대화',
     ruby: '루비',
-    request: '루비 및 프로그램 피드백',
+    request: '피드백',
     // 기존 폐기 카테고리(2026-05-14 이전 글) — 호환 표시
     knowhow: '공정·시공 노하우',
     usage: '수플렉스 사용 팁',
