@@ -39,7 +39,7 @@ export default function HomeProjectCards({ status }) {
   return (
     <section className="bg-white rounded-xl border p-3 sm:p-5">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 className="text-base sm:text-lg font-bold text-navy-800 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-navy-800 flex items-center gap-2">
           <span>{v.title}</span>
           <span className="text-sm font-normal text-gray-500">({projects.length})</span>
         </h2>

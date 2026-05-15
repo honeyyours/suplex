@@ -126,7 +126,7 @@ function BriefSection({ label, range, groups, emptyText }) {
   return (
     <section className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
       <div className="flex items-baseline justify-between mb-3 pb-2 border-b border-gray-100 dark:border-slate-800">
-        <h2 className="text-base font-bold text-navy-800 dark:text-navy-200">
+        <h2 className="text-lg font-bold text-navy-800 dark:text-navy-200">
           {label}
           <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">{range}</span>
         </h2>
