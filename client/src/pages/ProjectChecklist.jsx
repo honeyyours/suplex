@@ -302,11 +302,7 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             {item.phase && (
               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
             )}
-            {item.dueDate && (
-              <span className="px-1.5 py-0.5 rounded bg-navy-50 text-navy-700">
-                📅 {new Date(item.dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
-              </span>
-            )}
+            {item.dueDate && <DueBadge dueDate={item.dueDate} isDone={item.isDone} />}
             {item.requiresPhoto && (
               <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷 사진 필수</span>
             )}
@@ -343,6 +339,38 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
         <ChecklistPhotos projectId={projectId} item={item} onChange={onChange} />
       )}
     </div>
+  );
+}
+
+// 기한 배지 — 📅 이모지 대신 D-N + 날짜 텍스트로 긴급도를 색으로 구분
+function DueBadge({ dueDate, isDone }) {
+  const d = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+  const md = `${d.getMonth() + 1}/${d.getDate()}`;
+
+  let cls = 'bg-navy-50 text-navy-700';
+  let prefix = `D-${diffDays}`;
+  if (isDone) {
+    cls = 'bg-gray-100 text-gray-500';
+    prefix = '';
+  } else if (diffDays < 0) {
+    cls = 'bg-rose-100 text-rose-700 font-semibold';
+    prefix = `${Math.abs(diffDays)}일 지남`;
+  } else if (diffDays === 0) {
+    cls = 'bg-rose-100 text-rose-700 font-semibold';
+    prefix = '오늘 마감';
+  } else if (diffDays <= 7) {
+    cls = 'bg-amber-100 text-amber-800 font-medium';
+  }
+
+  return (
+    <span className={`px-1.5 py-0.5 rounded tabular-nums ${cls}`}>
+      {prefix ? `${prefix} · ${md}` : `마감 ${md}`}
+    </span>
   );
 }
 
