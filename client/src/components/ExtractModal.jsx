@@ -53,7 +53,12 @@ export default function ExtractModal({ projectId, project, onClose }) {
       if (project.siteAddress) parts.push(`주소: ${project.siteAddress}`);
       if (project.customerPhone) parts.push(`연락처: ${project.customerPhone}`);
       if (project.doorPassword) parts.push(`출입번호: ${project.doorPassword}`);
-      if (project.siteNotes) parts.push(`현장정보: ${project.siteNotes}`);
+      // 현장 특이사항은 별도 섹션 — 원본 줄바꿈 그대로 보존
+      if (project.siteNotes && project.siteNotes.trim()) {
+        parts.push('');
+        parts.push('[현장 특이사항]');
+        parts.push(project.siteNotes);
+      }
     }
 
     try {
