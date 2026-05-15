@@ -171,6 +171,36 @@ export function categoryBorderClass(cat) {
   return FALLBACK_PHASE_BORDER_COLORS[hashString(cat) % FALLBACK_PHASE_BORDER_COLORS.length];
 }
 
+// 빠른 공종 칩의 phase dot용 — 흰 카드 + 작은 컬러 dot 디자인에 사용
+// Tailwind purge 안전을 위해 명시 클래스 매핑
+const CATEGORY_DOT_COLORS = {
+  철거:   'bg-rose-400',
+  목공:   'bg-amber-400',
+  전기:   'bg-sky-400',
+  설비:   'bg-teal-400',
+  타일:   'bg-pink-400',
+  도배:   'bg-violet-400',
+  도장:   'bg-orange-400',
+  필름:   'bg-fuchsia-400',
+  마루:   'bg-yellow-400',
+  준공:   'bg-emerald-400',
+};
+
+const FALLBACK_PHASE_DOT_COLORS = [
+  'bg-stone-400',
+  'bg-lime-500',
+  'bg-cyan-400',
+  'bg-indigo-400',
+  'bg-purple-400',
+  'bg-blue-400',
+];
+
+export function categoryDotClass(cat) {
+  if (!cat) return 'bg-gray-300';
+  if (CATEGORY_DOT_COLORS[cat]) return CATEGORY_DOT_COLORS[cat];
+  return FALLBACK_PHASE_DOT_COLORS[hashString(cat) % FALLBACK_PHASE_DOT_COLORS.length];
+}
+
 // 프로젝트별 색 — 전체 일정(여러 프로젝트가 한 화면) 캘린더 막대용
 const PROJECT_BG_COLORS = [
   'bg-blue-100 text-blue-800',
