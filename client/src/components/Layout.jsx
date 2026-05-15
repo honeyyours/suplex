@@ -135,29 +135,31 @@ export default function Layout() {
             </button>
           </div>
         </div>
-        <nav className="sm:hidden flex gap-1 px-4 pb-2 overflow-x-auto">
-          {navItems.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.exact}
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-md text-xs whitespace-nowrap ${
-                  isActive ? 'bg-navy-700 text-white' : 'text-navy-100 hover:bg-navy-700/60'
-                }`
-              }
-            >
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
 
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <Outlet />
       </main>
 
-      <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+      {/* 모바일 하단 메인 메뉴 — 데스크톱에선 header 안의 nav 사용 */}
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-navy-800 border-t border-navy-700 flex gap-1 px-3 pt-1.5 pb-[calc(env(safe-area-inset-bottom,0px)+6px)] overflow-x-auto">
+        {navItems.map((n) => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            end={n.exact}
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-md text-xs whitespace-nowrap ${
+                isActive ? 'bg-navy-700 text-white' : 'text-navy-100 hover:bg-navy-700/60'
+              }`
+            }
+          >
+            {n.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 mb-[calc(env(safe-area-inset-bottom,0px)+56px)] sm:mb-0">
         <div className="max-w-[1400px] mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span className="font-semibold tracking-wide">SUPLEX</span>
