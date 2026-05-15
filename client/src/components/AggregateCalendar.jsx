@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryBorderClass,
+  toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryClass, categoryBorderClass,
 } from '../utils/date';
 import PhaseInlineContent from './PhaseInlineContent';
 
@@ -113,20 +113,22 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                 </div>
                 <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {
+                    const catColor = categoryClass(e.category);
                     const borderColor = categoryBorderClass(e.category);
                     return (
                       <Link
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[10px] rounded-sm sm:rounded pl-1 pr-3 py-0.5 truncate flex items-center gap-1
-                          bg-white dark:bg-slate-900 text-navy-800 dark:text-slate-200
-                          border-l-[3px] ${borderColor}
+                          relative text-[10px] sm:text-sm rounded-sm sm:rounded
+                          pl-1 pr-3 py-0.5 sm:py-0.5 truncate flex items-center gap-1
+                          ${catColor}
+                          border-l-0 sm:border-l-[3px] ${borderColor}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
-                        <span className="hidden sm:inline text-gray-500 mr-0.5 truncate max-w-[60px]">
+                        <span className="hidden sm:inline opacity-70 mr-0.5 truncate max-w-[60px]">
                           {e.project?.name}
                         </span>
                         <PhaseInlineContent entry={e} textClassName="flex-1" />

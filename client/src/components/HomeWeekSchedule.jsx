@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
-import { toDateKey, addDays, categoryBorderClass } from '../utils/date';
+import { toDateKey, addDays, categoryClass, categoryBorderClass } from '../utils/date';
 
 // 오늘이 포함된 월요일 0시 반환
 function getMonday(date) {
@@ -114,22 +114,24 @@ export default function HomeWeekSchedule() {
                   <div className="text-xs sm:text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
                   dayEntries.map((e) => {
+                    const catColor = categoryClass(e.category);
                     const borderColor = categoryBorderClass(e.category);
                     return (
                       <Link
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[10px] rounded-sm sm:rounded pl-1 pr-3 py-0.5 truncate block
-                          bg-white dark:bg-slate-900 text-navy-800 dark:text-slate-200
-                          border-l-[3px] ${borderColor}
+                          relative text-[10px] sm:text-sm rounded-sm sm:rounded
+                          pl-1 pr-3 py-0.5 sm:py-0.5 truncate block
+                          ${catColor}
+                          border-l-0 sm:border-l-[3px] ${borderColor}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
                         <span className="truncate">
                           {e.project?.name && (
-                            <span className="hidden sm:inline text-gray-500 mr-1">{e.project.name}</span>
+                            <span className="hidden sm:inline opacity-70 mr-1">{e.project.name}</span>
                           )}
                           {e.content}
                         </span>
