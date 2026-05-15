@@ -16,6 +16,13 @@ const { audit } = require('../services/audit');
 
 const router = express.Router();
 
+// HTTP 헤더는 ASCII 만 허용 — 한글 회사명을 그대로 넣으면 ERR_INVALID_CHAR.
+// RFC 5987: filename="ASCII_폴백" + filename*=UTF-8''<percent-encoded>
+function contentDispositionAttachment(filename) {
+  const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
+  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
+}
+
 // 임포트 JSON 은 거래처·템플릿 합쳐서 수 MB 가능 — 라우트 자체에 큰 limit
 router.use(express.json({ limit: '20mb' }));
 router.use(authRequired);
@@ -31,10 +38,7 @@ router.get('/export', async (req, res, next) => {
     const safeName = (payload.sourceCompanyName || 'suplex').replace(/[^\w가-힣]+/g, '_');
     const date = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="suplex_assets_${safeName}_${date}.json"`
-    );
+    res.setHeader('Content-Disposition', contentDispositionAttachment(`suplex_assets_${safeName}_${date}.json`));
     res.json(payload);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ error: e.message });
@@ -53,10 +57,7 @@ router.get('/export-full', async (req, res, next) => {
     const safeName = (payload.sourceCompanyName || 'suplex').replace(/[^\w가-힣]+/g, '_');
     const date = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="suplex_full_${safeName}_${date}.json"`
-    );
+    res.setHeader('Content-Disposition', contentDispositionAttachment(`suplex_full_${safeName}_${date}.json`));
     res.json(payload);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ error: e.message });

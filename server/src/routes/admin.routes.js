@@ -555,7 +555,10 @@ router.get('/companies/:id/backup', async (req, res, next) => {
     });
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="suplex-admin-backup-${company.name}-${Date.now()}.json"`);
+    // RFC 5987 — 한글 회사명도 안전하게
+    const fname = `suplex-admin-backup-${company.name}-${Date.now()}.json`;
+    const asciiFallback = fname.replace(/[^\x20-\x7E]/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(fname)}`);
     res.json({
       version: 1,
       exportedAt: new Date().toISOString(),
