@@ -259,13 +259,13 @@ function MobileBottomNav({ navItems }) {
   const overflowActive = overflow.some((n) => location.pathname === n.to || (n.to !== '/' && location.pathname.startsWith(n.to + '/')));
 
   const tabBase = 'flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium select-none';
-  const activeColor = 'text-navy-700 dark:text-navy-300';
-  const inactiveColor = 'text-gray-500 dark:text-gray-400';
+  const activeColor = 'text-white';
+  const inactiveColor = 'text-navy-200';
 
   return (
     <>
       <nav
-        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 grid pb-[env(safe-area-inset-bottom,0px)]"
+        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-navy-800 border-t border-navy-700 grid pb-[env(safe-area-inset-bottom,0px)]"
         style={{ gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}
       >
         {primary.map((n) => (
@@ -273,7 +273,7 @@ function MobileBottomNav({ navItems }) {
             key={n.to}
             to={n.to}
             end={n.exact}
-            className={({ isActive }) => `${tabBase} ${isActive ? activeColor : inactiveColor} active:bg-gray-100 dark:active:bg-slate-800`}
+            className={({ isActive }) => `${tabBase} ${isActive ? activeColor : inactiveColor} active:bg-navy-700/60`}
           >
             <NavIcon name={n.icon} />
             <span className="truncate max-w-full px-1">{n.mobileLabel || n.label}</span>
@@ -283,7 +283,7 @@ function MobileBottomNav({ navItems }) {
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`${tabBase} ${overflowActive ? activeColor : inactiveColor} active:bg-gray-100 dark:active:bg-slate-800`}
+            className={`${tabBase} ${overflowActive ? activeColor : inactiveColor} active:bg-navy-700/60`}
           >
             <NavIcon name="more" />
             <span>더보기</span>
