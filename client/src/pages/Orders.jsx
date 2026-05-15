@@ -326,21 +326,23 @@ export default function Orders({ lockedProjectId = null }) {
   );
 }
 
-// 선택된 PO들 → 카톡 친화적 텍스트로 정리 (샘플 A 형식)
+// 선택된 PO들 → 카톡 친화적 텍스트로 정리.
 //
 // 안녕하세요, {회사명}입니다.
 // 아래 자재 발주 부탁드립니다.
 //
-// 📍 현장: {프로젝트명}
-//    주소: {주소}
-// 👤 현장 담당자: {사용자명} {연락처}
-// 📅 도착 희망일: ____________
-// ⚠️ 현장 특이사항
-//    · {줄별 siteNotes}
+// 현장: {프로젝트명}
+// 주소: {주소}
+// 현장 담당자: {사용자명} {연락처}
+// 도착 희망일: ____________
 //
-// ────── 발주 항목 ──────
+// [현장 특이사항]            ← siteNotes 원본 줄바꿈 보존
+// {줄1}
+// {줄2}
+//
+// [발주 항목]
 // (한 매입처) 평면 list
-// (여러 매입처) ■ 매입처별 묶음
+// (여러 매입처) [매입처] 헤더로 묶음
 //
 // 확인 후 가능 여부 회신 부탁드립니다.
 // 감사합니다.
@@ -366,12 +368,11 @@ function formatOrdersForCopy(orders, { company, user } = {}) {
       lines.push(`현장 담당자: ${[userName, userPhone].filter(Boolean).join(' ')}`);
     }
     lines.push('도착 희망일: ____________');
+    // 현장 특이사항은 별도 섹션 — 일정 복사 텍스트와 톤 통일.
     if (p.siteNotes && p.siteNotes.trim()) {
-      lines.push('현장 특이사항');
-      for (const ln of p.siteNotes.split('\n')) {
-        const s = ln.trim();
-        if (s) lines.push(`  - ${s}`);
-      }
+      lines.push('');
+      lines.push('[현장 특이사항]');
+      lines.push(p.siteNotes);
     }
     lines.push('');
   }
