@@ -200,7 +200,7 @@ export default function Expenses() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap pl-2">
         <h1 className="text-2xl font-bold text-navy-800">지출관리</h1>
         <div className="flex gap-2 flex-wrap">
           <button onClick={handleExport} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📥 CSV 내보내기 ({expenses.length})</button>

@@ -72,7 +72,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-navy-800">설정</h1>
+      <h1 className="text-2xl font-bold text-navy-800 pl-2">설정</h1>
 
       <CompanyInfoSection company={company} onSaved={setCompany} canEdit={isOwner} />
 

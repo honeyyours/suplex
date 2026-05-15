@@ -92,7 +92,7 @@ export default function Lounge() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-start justify-between gap-3 flex-wrap">
+      <header className="flex items-start justify-between gap-3 flex-wrap pl-2">
         <div>
           <h1 className="text-2xl font-bold">라운지</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

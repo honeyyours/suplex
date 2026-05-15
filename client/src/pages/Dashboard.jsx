@@ -10,7 +10,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="pl-2">
         <h1 className="text-2xl font-bold text-navy-800">
           {greeting}{userName && `, ${userName}님`} 👋
         </h1>

@@ -105,7 +105,7 @@ export default function Projects() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap pl-2">
         <h1 className="text-2xl font-bold text-navy-800">프로젝트</h1>
         <div className="flex items-center gap-2">
           <button

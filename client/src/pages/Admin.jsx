@@ -35,7 +35,7 @@ export default function Admin() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pl-2">
         <div>
           <h1 className="text-2xl font-bold text-navy-800">🛡️ 관리자 콘솔</h1>
           <div className="text-xs text-gray-500 mt-1">
