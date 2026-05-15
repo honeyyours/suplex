@@ -19,7 +19,7 @@ router.get('/export', async (req, res, next) => {
         include: {
           dailyScheduleEntries: { orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }] },
           checklists: { orderBy: { createdAt: 'asc' } },
-          memos: { orderBy: { createdAt: 'asc' } },
+          projectMemos: { orderBy: { createdAt: 'asc' } },
           scheduleChanges: { orderBy: { createdAt: 'desc' }, take: 500 },
         },
       });
@@ -44,7 +44,7 @@ router.get('/export', async (req, res, next) => {
           include: {
             dailyScheduleEntries: { orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }] },
             checklists: { orderBy: { createdAt: 'asc' } },
-            memos: { orderBy: { createdAt: 'asc' } },
+            projectMemos: { orderBy: { createdAt: 'asc' } },
             scheduleChanges: { orderBy: { createdAt: 'desc' }, take: 500 },
           },
         },
@@ -152,9 +152,11 @@ router.post('/import', async (req, res, next) => {
         });
       }
 
-      if (p.memos?.length) {
+      // import 호환성: 신규 export 는 projectMemos 키 사용 / 구버전 백업 파일은 memos 키 — 둘 다 허용
+      const memoRows = p.projectMemos?.length ? p.projectMemos : p.memos;
+      if (memoRows?.length) {
         await prisma.projectMemo.createMany({
-          data: p.memos.map((m) => ({
+          data: memoRows.map((m) => ({
             projectId: project.id,
             title: m.title || null,
             content: m.content || '',
@@ -171,7 +173,7 @@ router.post('/import', async (req, res, next) => {
     res.json({
       ok: true,
       projects: createdProjects,
-      restoredTypes: ['dailyScheduleEntries', 'checklists', 'memos'],
+      restoredTypes: ['dailyScheduleEntries', 'checklists', 'projectMemos'],
       note: '현재 일정·체크리스트·메모만 복원됩니다. 마감재·견적·지출·발주 등은 정식 출시 후 지원 예정입니다.',
     });
   } catch (e) {

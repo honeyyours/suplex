@@ -531,7 +531,7 @@ router.get('/companies/:id/backup', async (req, res, next) => {
           expenses: true,
           quotes: { include: { lines: true } },
           simpleQuotes: { include: { lines: true } },
-          memos: true,
+          projectMemos: true,
           purchaseOrders: true,
           photos: true,
           measurements: true,

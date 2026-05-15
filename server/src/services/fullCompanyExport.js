@@ -67,7 +67,7 @@ async function exportFullCompany(prisma, companyId) {
       expenses: true,
       quotes: { include: { lines: true } },
       simpleQuotes: { include: { lines: true } },
-      memos: { orderBy: { createdAt: 'asc' } },
+      projectMemos: { orderBy: { createdAt: 'asc' } },
       // PurchaseOrder 는 한 PO = 단일 항목(라인 관계 없음). include 추가 불필요.
       purchaseOrders: true,
       photos: true,
@@ -97,7 +97,7 @@ async function exportFullCompany(prisma, companyId) {
       expenses: projects.reduce((s, p) => s + (p.expenses?.length || 0), 0),
       purchaseOrders: projects.reduce((s, p) => s + (p.purchaseOrders?.length || 0), 0),
       photos: projects.reduce((s, p) => s + (p.photos?.length || 0), 0),
-      memos: projects.reduce((s, p) => s + (p.memos?.length || 0), 0),
+      projectMemos: projects.reduce((s, p) => s + (p.projectMemos?.length || 0), 0),
       dailyScheduleEntries: projects.reduce((s, p) => s + (p.dailyScheduleEntries?.length || 0), 0),
       checklists: projects.reduce((s, p) => s + (p.checklists?.length || 0), 0),
       dailyReports: projects.reduce((s, p) => s + (p.dailyReports?.length || 0), 0),

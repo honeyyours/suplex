@@ -222,7 +222,7 @@
         }
       ],
 
-      "memos": [
+      "projectMemos": [
         {
           "id": "memo_001",
           "projectId": "prj_sample_001",
@@ -305,7 +305,7 @@
     "simpleQuotes": 1,
     "expenses": 1,
     "purchaseOrders": 1,
-    "memos": 1,
+    "projectMemos": 1,
     "dailyScheduleEntries": 2,
     "checklists": 1
   }
