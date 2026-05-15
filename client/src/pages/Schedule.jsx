@@ -262,7 +262,7 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
   // 캘린더(+ 프로젝트 칩 + 정보 카드 + 모달)
   return (
     <>
-      <div className="sm:hidden border-b mb-2 overflow-x-auto">
+      <div className="sm:hidden border-b mb-3 overflow-x-auto px-2">
         <div className="flex">
           <MobileProjectTab
             active={selectedId === 'all'}
