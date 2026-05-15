@@ -1435,6 +1435,7 @@ model LoungePost {
   showCompanyName Boolean   @default(false)
   status          String    @default("active") // active | hidden | deleted
   isAnnouncement  Boolean   @default(false) // 슈퍼어드민 공지 — 모든 카테고리 상단 핀 (2026-05-14)
+  isPrivate       Boolean   @default(false) // 비공개 글 — 작성자 본인 + 슈퍼어드민만 열람 (2026-05-15)
   viewCount       Int       @default(0) // 조회수 — 게시판 표시용 (2026-05-14)
   pinnedToHome    Boolean   @default(false) // 홈 "오늘의 팁" 큐레이션
   homePinnedAt    DateTime?
@@ -1454,6 +1455,7 @@ model LoungePost {
   @@index([pinnedToHome, homePinnedAt])
   @@index([isAnnouncement, status, createdAt])
   @@index([authorId])
+  @@index([isPrivate, status, createdAt])
   @@map("lounge_posts")
 }
 

@@ -24,6 +24,7 @@ export default function LoungePostEditor() {
   const [initialHtml, setInitialHtml] = useState('');
   const [showCompanyName, setShowCompanyName] = useState(false);
   const [isAnnouncement, setIsAnnouncement] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [images, setImages] = useState([]); // File[] — 신규 모드 첨부
   const [files, setFiles] = useState([]);   // File[] — 신규 모드 첨부
   const [error, setError] = useState('');
@@ -55,6 +56,7 @@ export default function LoungePostEditor() {
     setBody(html);
     setBodyEmpty(!html);
     setIsAnnouncement(!!p.isAnnouncement);
+    setIsPrivate(!!p.isPrivate);
     setShowCompanyName(!!p.showCompanyName);
   }, [isEdit, postData]);
 
@@ -103,8 +105,11 @@ export default function LoungePostEditor() {
     setProgress('');
     if (!title.trim()) return setError('제목을 입력해주세요');
     if (bodyEmpty) return setError('본문을 입력해주세요');
+    if (isPrivate && isAnnouncement) {
+      return setError('공지 글은 비공개로 등록할 수 없습니다');
+    }
     if (isEdit) {
-      const payload = { title, body, bodyFormat: 'html' };
+      const payload = { title, body, bodyFormat: 'html', isPrivate };
       if (isSuperAdmin) payload.isAnnouncement = isAnnouncement;
       updateMutation.mutate(payload);
     } else {
@@ -115,6 +120,7 @@ export default function LoungePostEditor() {
         bodyFormat: 'html',
         showCompanyName,
         isAnnouncement,
+        isPrivate,
       });
     }
   }
@@ -228,14 +234,36 @@ export default function LoungePostEditor() {
             </>
           )}
 
+          <label className="flex items-start gap-2 text-sm bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded p-2">
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(e) => {
+                setIsPrivate(e.target.checked);
+                if (e.target.checked) setIsAnnouncement(false);
+              }}
+              className="mt-0.5"
+            />
+            <span>
+              🔒 <b>비공개</b>로 등록
+              <span className="block text-xs text-gray-500 mt-0.5">
+                작성자 본인과 운영자(슈퍼어드민)만 글·댓글을 열람할 수 있습니다. 1:1 문의·민감한 정보 공유에 사용하세요.
+              </span>
+            </span>
+          </label>
+
           {isSuperAdmin && (
             <label className="flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded p-2">
               <input
                 type="checkbox"
                 checked={isAnnouncement}
+                disabled={isPrivate}
                 onChange={(e) => setIsAnnouncement(e.target.checked)}
               />
-              <span>📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀</span>
+              <span>
+                📢 <b>공지</b>로 등록 — 모든 카테고리 상단에 핀
+                {isPrivate && <span className="ml-1 text-xs text-gray-500">(비공개와 동시 사용 불가)</span>}
+              </span>
             </label>
           )}
 

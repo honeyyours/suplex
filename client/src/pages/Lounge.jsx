@@ -260,6 +260,9 @@ function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
       </td>
       <td className="px-3 py-2">
         <Link to={`/lounge/${p.id}`} className="hover:underline text-navy-800 dark:text-navy-200">
+          {p.isPrivate && (
+            <span className="text-[11px] mr-1 text-gray-500" title="비공개 글 (본인·운영자만 열람)">🔒</span>
+          )}
           <span className="text-[11px] text-gray-400 mr-1">[{catLabel}]</span>
           <span className={isNotice ? 'font-semibold' : 'font-medium'}>{p.title}</span>
           {p.commentCount > 0 && (

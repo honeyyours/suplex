@@ -231,6 +231,14 @@ export default function LoungePost() {
             {post.isAnnouncement && (
               <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-white font-semibold">📢 공지</span>
             )}
+            {post.isPrivate && (
+              <span
+                className="inline-block px-1.5 py-0.5 rounded bg-gray-700 text-white font-semibold"
+                title="작성자 본인과 운영자만 열람할 수 있습니다"
+              >
+                🔒 비공개
+              </span>
+            )}
             <span className="font-medium text-navy-700 dark:text-navy-300">
               [{categoryLabel(post.category)}]
             </span>

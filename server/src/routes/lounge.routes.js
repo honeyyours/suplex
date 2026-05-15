@@ -64,6 +64,14 @@ function sanitizeBody(html) {
   return sanitizeHtml(html || '', SANITIZE_OPTS);
 }
 
+// 비공개 글 접근 가능 여부 — 본인 + 슈퍼어드민. 공개 글은 누구나 OK.
+function canViewPost(post, user) {
+  if (!post) return false;
+  if (!post.isPrivate) return true;
+  if (user?.isSuperAdmin) return true;
+  return post.authorId === user?.id;
+}
+
 const router = express.Router();
 router.use(authRequired);
 
@@ -139,6 +147,7 @@ async function serializePost(post, opts = {}) {
     title: post.title,
     status: post.status,
     isAnnouncement: post.isAnnouncement || false,
+    isPrivate: post.isPrivate || false,
     pinnedToHome: post.pinnedToHome,
     viewCount: post.viewCount || 0,
     reactionCount: post.reactionCount,
@@ -198,9 +207,10 @@ function serializeComment(c) {
 
 router.get('/categories', async (req, res, next) => {
   try {
+    // 비공개 글은 카테고리 카운트에서 항상 제외 (사용자별 정확한 카운트는 비용 큼, 단순화)
     const counts = await prisma.loungePost.groupBy({
       by: ['category'],
-      where: { status: 'active' },
+      where: { status: 'active', isPrivate: false },
       _count: { _all: true },
     });
     const countMap = Object.fromEntries(counts.map((c) => [c.category, c._count._all]));
@@ -296,6 +306,13 @@ router.get('/posts', async (req, res, next) => {
         { body: { contains: search, mode: 'insensitive' } },
       ];
     }
+    // 비공개 글: 슈퍼어드민은 모두, 일반 사용자는 본인 글만 보임
+    if (!req.user.isSuperAdmin) {
+      where.AND = [
+        ...(where.AND || []),
+        { OR: [{ isPrivate: false }, { authorId: req.user.id }] },
+      ];
+    }
 
     const postsInclude = {
       author: {
@@ -352,6 +369,7 @@ const postCreateSchema = z.object({
   bodyFormat: z.enum(['plain', 'html']).optional().default('plain'),
   showCompanyName: z.boolean().optional().default(false),
   isAnnouncement: z.boolean().optional().default(false),
+  isPrivate: z.boolean().optional().default(false),
 });
 
 router.post('/posts', async (req, res, next) => {
@@ -361,6 +379,10 @@ router.post('/posts', async (req, res, next) => {
     // 공지 글은 슈퍼어드민만 — 카테고리 무관, 모든 목록 상단 핀
     if (data.isAnnouncement && !req.user.isSuperAdmin) {
       return res.status(403).json({ error: '공지 글은 운영자만 작성할 수 있습니다' });
+    }
+    // 공지 + 비공개는 상호 배타 — 공지는 모두에게 보여야 함
+    if (data.isAnnouncement && data.isPrivate) {
+      return res.status(400).json({ error: '공지 글은 비공개로 등록할 수 없습니다' });
     }
 
     const finalBody = data.bodyFormat === 'html' ? sanitizeBody(data.body) : data.body;
@@ -375,6 +397,7 @@ router.post('/posts', async (req, res, next) => {
           bodyFormat: data.bodyFormat,
           showCompanyName: data.showCompanyName,
           isAnnouncement: data.isAnnouncement,
+          isPrivate: data.isPrivate,
         },
       });
       return created;
@@ -429,6 +452,10 @@ router.get('/posts/:id', async (req, res, next) => {
     if (post.status === 'hidden' && !req.user.isSuperAdmin && post.authorId !== req.user.id) {
       return res.status(404).json({ error: '글을 찾을 수 없습니다' });
     }
+    // 비공개 글: 작성자 본인 + 슈퍼어드민만 열람
+    if (post.isPrivate && !req.user.isSuperAdmin && post.authorId !== req.user.id) {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
 
     // 조회수 증가 — 작성자 본인은 제외. 비동기 (응답 지연 방지)
     if (post.authorId !== req.user.id) {
@@ -470,6 +497,7 @@ const postUpdateSchema = z.object({
   bodyFormat: z.enum(['plain', 'html']).optional(),
   showCompanyName: z.boolean().optional(),
   isAnnouncement: z.boolean().optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 router.patch('/posts/:id', async (req, res, next) => {
@@ -485,6 +513,12 @@ router.patch('/posts/:id', async (req, res, next) => {
     // 공지 토글은 슈퍼어드민만
     if (data.isAnnouncement !== undefined && !req.user.isSuperAdmin) {
       return res.status(403).json({ error: '공지 토글은 운영자만 가능합니다' });
+    }
+    // 공지 + 비공개 상호 배타 가드 (수정 후 결과 기준)
+    const willAnnouncement = data.isAnnouncement !== undefined ? data.isAnnouncement : post.isAnnouncement;
+    const willPrivate = data.isPrivate !== undefined ? data.isPrivate : post.isPrivate;
+    if (willAnnouncement && willPrivate) {
+      return res.status(400).json({ error: '공지 글은 비공개로 등록할 수 없습니다' });
     }
 
     // body가 들어오면 bodyFormat 기준으로 sanitize 결정.
@@ -505,6 +539,7 @@ router.patch('/posts/:id', async (req, res, next) => {
         ...(data.bodyFormat !== undefined ? { bodyFormat: data.bodyFormat } : {}),
         ...(data.showCompanyName !== undefined ? { showCompanyName: data.showCompanyName } : {}),
         ...(data.isAnnouncement !== undefined ? { isAnnouncement: data.isAnnouncement } : {}),
+        ...(data.isPrivate !== undefined ? { isPrivate: data.isPrivate } : {}),
       },
     });
 
@@ -564,6 +599,9 @@ router.post('/posts/:id/comments', async (req, res, next) => {
     const data = commentCreateSchema.parse(req.body || {});
     const post = await prisma.loungePost.findUnique({ where: { id: req.params.id } });
     if (!post || post.status !== 'active') {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
+    if (!canViewPost(post, req.user)) {
       return res.status(404).json({ error: '글을 찾을 수 없습니다' });
     }
 
@@ -675,6 +713,9 @@ router.post('/posts/:id/reactions', async (req, res, next) => {
     if (!post || post.status !== 'active') {
       return res.status(404).json({ error: '글을 찾을 수 없습니다' });
     }
+    if (!canViewPost(post, req.user)) {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
     const existing = await prisma.loungeReaction.findUnique({
       where: { postId_userId: { postId: post.id, userId: req.user.id } },
     });
@@ -721,9 +762,16 @@ async function createReport(req, res, next, targetType) {
     if (targetType === 'post') {
       const p = await prisma.loungePost.findUnique({ where: { id: targetId } });
       if (!p) return res.status(404).json({ error: '대상을 찾을 수 없습니다' });
+      if (!canViewPost(p, req.user)) return res.status(404).json({ error: '대상을 찾을 수 없습니다' });
     } else {
-      const c = await prisma.loungeComment.findUnique({ where: { id: targetId } });
+      const c = await prisma.loungeComment.findUnique({
+        where: { id: targetId },
+        include: { post: { select: { isPrivate: true, authorId: true } } },
+      });
       if (!c) return res.status(404).json({ error: '대상을 찾을 수 없습니다' });
+      if (c.post && !canViewPost(c.post, req.user)) {
+        return res.status(404).json({ error: '대상을 찾을 수 없습니다' });
+      }
     }
 
     const report = await prisma.loungeReport.create({
@@ -890,6 +938,9 @@ router.get('/posts/:id/attachments', async (req, res, next) => {
     if (!post || post.status === 'deleted') {
       return res.status(404).json({ error: '글을 찾을 수 없습니다' });
     }
+    if (!canViewPost(post, req.user)) {
+      return res.status(404).json({ error: '글을 찾을 수 없습니다' });
+    }
     const items = await prisma.loungeAttachment.findMany({
       where: { postId: post.id },
       orderBy: { createdAt: 'asc' },
@@ -916,8 +967,14 @@ router.get('/posts/:id/attachments', async (req, res, next) => {
 // GET /api/lounge/attachments/:id/download — .rb / 일반파일 다운로드 URL + 카운트
 router.get('/attachments/:id/download', async (req, res, next) => {
   try {
-    const a = await prisma.loungeAttachment.findUnique({ where: { id: req.params.id } });
+    const a = await prisma.loungeAttachment.findUnique({
+      where: { id: req.params.id },
+      include: { post: { select: { isPrivate: true, authorId: true } } },
+    });
     if (!a) return res.status(404).json({ error: '첨부를 찾을 수 없습니다' });
+    if (a.post && !canViewPost(a.post, req.user)) {
+      return res.status(404).json({ error: '첨부를 찾을 수 없습니다' });
+    }
     if (a.kind === 'image') {
       return res.status(400).json({ error: '이미지는 url을 직접 사용하세요' });
     }
@@ -960,8 +1017,9 @@ router.delete('/attachments/:id', async (req, res, next) => {
 router.get('/home-pinned', async (req, res, next) => {
   try {
     // 1순위: 슈퍼어드민이 명시 핀한 글. 2순위: 최근 활성 공지(isAnnouncement)
+    // 비공개 글은 홈 카드에서 항상 제외
     let post = await prisma.loungePost.findFirst({
-      where: { pinnedToHome: true, status: 'active' },
+      where: { pinnedToHome: true, status: 'active', isPrivate: false },
       orderBy: { homePinnedAt: 'desc' },
       include: {
         author: {
@@ -977,7 +1035,7 @@ router.get('/home-pinned', async (req, res, next) => {
 
     if (!post) {
       post = await prisma.loungePost.findFirst({
-        where: { status: 'active', isAnnouncement: true },
+        where: { status: 'active', isAnnouncement: true, isPrivate: false },
         orderBy: { createdAt: 'desc' },
         include: {
           author: {
