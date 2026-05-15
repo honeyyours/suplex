@@ -10,9 +10,9 @@ export const companyAssetsApi = {
     api.post('/company-assets/import', { payload, mode }).then((r) => r.data),
 };
 
-export async function downloadCompanyAssets() {
+async function downloadFrom(url, fallbackName) {
   const token = localStorage.getItem('suplex_token');
-  const res = await fetch('/api/company-assets/export', {
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
@@ -20,19 +20,32 @@ export async function downloadCompanyAssets() {
     throw new Error(j.error || `내보내기 실패 (${res.status})`);
   }
   const blob = await res.blob();
-  // filename 은 헤더에서 가져옴 — Content-Disposition 파싱
-  let filename = `suplex_assets_${new Date().toISOString().slice(0, 10)}.json`;
+  let filename = fallbackName;
   const cd = res.headers.get('content-disposition');
   if (cd) {
     const m = cd.match(/filename="?([^"]+)"?/);
     if (m) filename = decodeURIComponent(m[1]);
   }
-  const url = URL.createObjectURL(blob);
+  const dlUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = dlUrl;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(dlUrl);
+}
+
+export function downloadCompanyAssets() {
+  return downloadFrom(
+    '/api/company-assets/export',
+    `suplex_assets_${new Date().toISOString().slice(0, 10)}.json`
+  );
+}
+
+export function downloadFullCompany() {
+  return downloadFrom(
+    '/api/company-assets/export-full',
+    `suplex_full_${new Date().toISOString().slice(0, 10)}.json`
+  );
 }

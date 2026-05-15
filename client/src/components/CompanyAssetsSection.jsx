@@ -1,7 +1,7 @@
 // 회사 자산 가져오기/내보내기 — OWNER 전용 (Settings 페이지에서 렌더).
 // 신규 인테리어 업체 락인 시드 + 자산 백업 용도. 9개 모델 한 번에.
 import { useRef, useState } from 'react';
-import { companyAssetsApi, downloadCompanyAssets } from '../api/companyAssets';
+import { companyAssetsApi, downloadCompanyAssets, downloadFullCompany } from '../api/companyAssets';
 
 const SECTION_LABELS = {
   vendors: '거래처',
@@ -25,6 +25,17 @@ export default function CompanyAssetsSection() {
     setBusy(true); setErr(''); setResult(null);
     try {
       await downloadCompanyAssets();
+    } catch (e) {
+      setErr(e.message || '내보내기 실패');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExportFull() {
+    setBusy(true); setErr(''); setResult(null);
+    try {
+      await downloadFullCompany();
     } catch (e) {
       setErr(e.message || '내보내기 실패');
     } finally {
@@ -87,15 +98,24 @@ export default function CompanyAssetsSection() {
           onClick={handleExport}
           disabled={busy}
           className="text-sm px-3 py-1.5 border border-navy-200 text-navy-700 rounded hover:bg-navy-50 disabled:opacity-50"
+          title="거래처·템플릿·룰·견적가이드 등 9종 회사 자산만"
         >
-          💾 JSON 내보내기
+          💾 자산만 내보내기
+        </button>
+        <button
+          onClick={handleExportFull}
+          disabled={busy}
+          className="text-sm px-3 py-1.5 border border-navy-300 bg-navy-50 text-navy-800 rounded hover:bg-navy-100 disabled:opacity-50 font-medium"
+          title="자산 9종 + 모든 프로젝트(견적·마감재·일정·지출·메모·발주·사진 등) 통째 백업"
+        >
+          📦 전체 데이터 내보내기
         </button>
         <button
           onClick={triggerImport}
           disabled={busy}
           className="text-sm px-3 py-1.5 border border-navy-200 text-navy-700 rounded hover:bg-navy-50 disabled:opacity-50"
         >
-          📥 JSON 가져오기 (Seed)
+          📥 자산 가져오기 (Seed)
         </button>
         {busy && <span className="text-xs text-gray-400 self-center">처리 중...</span>}
       </div>
@@ -132,11 +152,14 @@ export default function CompanyAssetsSection() {
         </div>
       )}
 
-      <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
-        Seed 모드: 기존 데이터를 절대 덮어쓰지 않고, 비어있는 자리에만 추가합니다.
-        같은 거래처·템플릿이 이미 있으면 자동으로 건너뜁니다.
-        외부 AI(ChatGPT·Claude 등)에게 양식 문서를 주고 JSON을 만들게 한 뒤 임포트할 수 있습니다.
-      </p>
+      <div className="text-[11px] text-gray-400 mt-3 leading-relaxed space-y-1">
+        <p>
+          <b>자산만 내보내기/가져오기</b>: 거래처·템플릿·룰 9종(반복 사용 설정). Seed 모드는 기존 데이터를 절대 덮어쓰지 않고 비어있는 자리에만 추가합니다. 외부 AI(ChatGPT·Claude)에게 양식 문서를 주고 JSON을 만들게 한 뒤 가져올 수 있습니다.
+        </p>
+        <p>
+          <b>전체 데이터 내보내기</b>: 자산 9종 + 모든 프로젝트(견적·마감재·일정·지출·메모·발주·사진) 통째. 회사 백업·이전·표준 회사 양식 추출 용도. <span className="text-amber-600">전체 데이터 <b>가져오기</b>는 외래키 그래프 검증이 완료된 뒤 다음 사이클에 열립니다.</span>
+        </p>
+      </div>
     </div>
   );
 }

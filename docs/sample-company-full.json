@@ -1,0 +1,317 @@
+{
+  "formatVersion": 1,
+  "kind": "company-full",
+  "exportedAt": "2026-05-15T10:00:00.000Z",
+  "sourceCompanyName": "샘플 인테리어",
+  "company": {
+    "phaseLabels": {},
+    "hideExpenses": false,
+    "rateDesign": "2.00",
+    "rateVat": "10.00"
+  },
+  "vendors": [
+    {
+      "name": "동현타일",
+      "category": "타일",
+      "contact": "박동현",
+      "phone": "010-1234-5678",
+      "unitPrice": "150000",
+      "unit": "㎡",
+      "bankAccount": "국민 123-45-678901 박동현"
+    },
+    {
+      "name": "한솔도배",
+      "category": "도배",
+      "contact": "이한솔",
+      "phone": "010-2345-6789",
+      "bankAccount": "신한 110-456-789012 이한솔"
+    },
+    {
+      "name": "김OO 목수",
+      "category": "목공",
+      "contact": "김OO",
+      "phone": "010-3456-7890",
+      "unitPrice": "280000",
+      "unit": "일",
+      "defaultMeal": "12000",
+      "defaultTransport": "10000"
+    }
+  ],
+  "materialTemplates": [
+    {
+      "kind": "FINISH",
+      "spaceGroup": "거실",
+      "subgroup": "바닥",
+      "itemName": "강마루",
+      "orderIndex": 0,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "주방",
+      "subgroup": "바닥",
+      "itemName": "포세린 타일 600x600",
+      "orderIndex": 0,
+      "active": true
+    }
+  ],
+  "quoteLineItemTemplates": [
+    {
+      "workType": "TILE",
+      "itemName": "포세린 600x600",
+      "unit": "㎡",
+      "defaultMaterialPrice": "45000",
+      "defaultLaborPrice": "30000",
+      "active": true
+    }
+  ],
+  "phaseKeywordRules": [
+    { "keyword": "벽지", "phase": "도배", "active": true },
+    { "keyword": "타일", "phase": "타일", "active": true },
+    { "keyword": "걸레받이", "phase": "목공", "active": true }
+  ],
+  "phaseDeadlineRules": [
+    { "phase": "타일", "daysBefore": 3, "active": true },
+    { "phase": "주방", "daysBefore": 7, "active": true }
+  ],
+  "phaseAdvices": [
+    {
+      "phase": "철거",
+      "ruleType": "STANDARD",
+      "daysBefore": 7,
+      "title": "관리실 보양·소음 양해 협의",
+      "category": "관리실 협의",
+      "active": true
+    }
+  ],
+  "companyPhaseTips": [
+    { "phase": "GENERAL", "body": "기본 견적 정책: 부가세 별도, 견적 유효기간 30일" },
+    { "phase": "타일", "body": "포세린 600x600 기준 ㎡당 자재 45,000원 / 시공비 30,000원" }
+  ],
+  "accountCodes": [
+    { "id": "acc_001", "code": "[현장] 자재비", "groupName": "현장", "active": true, "orderIndex": 0 },
+    { "id": "acc_002", "code": "[현장] 인건비", "groupName": "현장", "active": true, "orderIndex": 1 }
+  ],
+  "expenseCategoryRules": [
+    {
+      "keyword": "동현타일",
+      "accountCodeId": "acc_001",
+      "workCategory": "타일",
+      "priority": 10,
+      "active": true
+    }
+  ],
+  "projects": [
+    {
+      "id": "prj_sample_001",
+      "name": "삼성동 OO아파트 1503호",
+      "customerName": "홍길동",
+      "customerPhone": "010-1234-5678",
+      "siteAddress": "서울시 강남구 삼성동 ...",
+      "contractAmount": "85000000",
+      "contractVatRate": "10",
+      "startDate": "2026-04-01T00:00:00.000Z",
+      "expectedEndDate": "2026-05-15T00:00:00.000Z",
+      "status": "IN_PROGRESS",
+      "area": "32.5",
+      "siteCode": "2604_삼성동",
+      "doorPassword": "1234",
+      "siteNotes": "엘리베이터 사용시간 09-17. 주차 2대 가능",
+      "memo": "현관 중문 추가 옵션 검토중",
+      "createdById": null,
+      "createdAt": "2026-03-15T00:00:00.000Z",
+      "updatedAt": "2026-05-10T00:00:00.000Z",
+
+      "simpleQuotes": [
+        {
+          "id": "sq_001",
+          "projectId": "prj_sample_001",
+          "title": "삼성동 1503호 견적 v1",
+          "round": 1,
+          "isConfirmed": true,
+          "totalAmount": "85000000",
+          "designRate": "2.00",
+          "vatRate": "10",
+          "createdById": null,
+          "createdAt": "2026-03-20T00:00:00.000Z",
+          "updatedAt": "2026-03-25T00:00:00.000Z",
+          "lines": [
+            {
+              "id": "sql_001",
+              "simpleQuoteId": "sq_001",
+              "groupName": "철거",
+              "itemName": "전체 철거",
+              "spec": "32평 기준",
+              "unit": "식",
+              "quantity": "1",
+              "unitPrice": "3500000",
+              "amount": "3500000",
+              "orderIndex": 0
+            },
+            {
+              "id": "sql_002",
+              "simpleQuoteId": "sq_001",
+              "groupName": "타일",
+              "itemName": "주방 바닥 포세린 600x600",
+              "spec": "유광",
+              "unit": "㎡",
+              "quantity": "12",
+              "unitPrice": "75000",
+              "amount": "900000",
+              "orderIndex": 0
+            }
+          ]
+        }
+      ],
+
+      "materials": [
+        {
+          "id": "mat_001",
+          "projectId": "prj_sample_001",
+          "kind": "FINISH",
+          "spaceGroup": "거실",
+          "subgroup": "바닥",
+          "itemName": "강마루",
+          "brand": "동화자연마루",
+          "model": "나투스진",
+          "status": "ORDERED",
+          "quantity": "32",
+          "unit": "평",
+          "orderDate": "2026-04-10T00:00:00.000Z",
+          "expectedDate": "2026-04-25T00:00:00.000Z"
+        }
+      ],
+
+      "dailyScheduleEntries": [
+        {
+          "id": "dse_001",
+          "projectId": "prj_sample_001",
+          "date": "2026-04-05",
+          "category": "철거",
+          "content": "전체 철거 + 폐기물 반출",
+          "confirmed": true,
+          "orderIndex": 0,
+          "vendorId": null,
+          "createdById": null,
+          "updatedById": null
+        },
+        {
+          "id": "dse_002",
+          "projectId": "prj_sample_001",
+          "date": "2026-04-08",
+          "category": "방수",
+          "content": "욕실 방수 1차",
+          "confirmed": true,
+          "orderIndex": 0,
+          "createdById": null,
+          "updatedById": null
+        }
+      ],
+
+      "checklists": [
+        {
+          "id": "chk_001",
+          "projectId": "prj_sample_001",
+          "phase": "철거",
+          "category": "GENERAL",
+          "title": "관리실 보양 신청",
+          "isDone": true,
+          "orderIndex": 0,
+          "createdById": null,
+          "completedById": null
+        }
+      ],
+
+      "memos": [
+        {
+          "id": "memo_001",
+          "projectId": "prj_sample_001",
+          "title": "초도 미팅 메모",
+          "content": "고객 요청: 거실 벽 컬러 톤다운, 주방 타일은 화이트 유광 선호. 안방 붙박이장 철거 후 재시공.",
+          "tag": "미팅",
+          "pinned": true,
+          "orderIndex": 0
+        }
+      ],
+
+      "expenses": [
+        {
+          "id": "exp_001",
+          "companyId": "cmp_source",
+          "projectId": "prj_sample_001",
+          "date": "2026-04-12",
+          "amount": "1800000",
+          "type": "EXPENSE",
+          "vendor": "동현타일",
+          "vendorId": null,
+          "accountCodeId": "acc_001",
+          "workCategory": "타일",
+          "description": "주방 바닥 포세린 600x600 자재비",
+          "paymentMethod": "BANK_TRANSFER",
+          "createdById": null
+        }
+      ],
+
+      "purchaseOrders": [
+        {
+          "id": "po_001",
+          "projectId": "prj_sample_001",
+          "vendorId": null,
+          "title": "주방 타일 발주",
+          "status": "DELIVERED",
+          "orderDate": "2026-04-10T00:00:00.000Z",
+          "expectedDate": "2026-04-25T00:00:00.000Z",
+          "createdById": null,
+          "lines": [
+            {
+              "id": "pol_001",
+              "purchaseOrderId": "po_001",
+              "itemName": "포세린 600x600 화이트 유광",
+              "quantity": "13",
+              "unit": "㎡",
+              "unitPrice": "45000",
+              "amount": "585000",
+              "orderIndex": 0
+            }
+          ]
+        }
+      ],
+
+      "photos": [],
+      "measurements": [],
+      "dailyReports": [],
+      "materialRequests": [],
+      "scheduleChanges": [],
+      "phaseNotes": [
+        {
+          "id": "pn_001",
+          "projectId": "prj_sample_001",
+          "phase": "GENERAL",
+          "body": "32평 1.5억 견적 진행. 입주민 예민 — 소음 양해 사전 안내 철저.",
+          "updatedById": null
+        }
+      ],
+      "settlementNotes": [],
+      "members": []
+    }
+  ],
+  "counts": {
+    "vendors": 3,
+    "materialTemplates": 2,
+    "quoteLineItemTemplates": 1,
+    "phaseKeywordRules": 3,
+    "phaseDeadlineRules": 2,
+    "phaseAdvices": 1,
+    "companyPhaseTips": 2,
+    "accountCodes": 2,
+    "expenseCategoryRules": 1,
+    "projects": 1,
+    "materials": 1,
+    "simpleQuotes": 1,
+    "expenses": 1,
+    "purchaseOrders": 1,
+    "memos": 1,
+    "dailyScheduleEntries": 2,
+    "checklists": 1
+  }
+}

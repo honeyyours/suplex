@@ -11,6 +11,7 @@ const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
 const { exportCompanyAssets } = require('../services/companyAssetExport');
 const { importCompanyAssets } = require('../services/companyAssetImport');
+const { exportFullCompany } = require('../services/fullCompanyExport');
 const { audit } = require('../services/audit');
 
 const router = express.Router();
@@ -33,6 +34,28 @@ router.get('/export', async (req, res, next) => {
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="suplex_assets_${safeName}_${date}.json"`
+    );
+    res.json(payload);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
+    next(e);
+  }
+});
+
+// 회사 전체 데이터(자산 + 프로젝트 + 모든 하위 모델). import 는 다음 사이클.
+router.get('/export-full', async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const payload = await exportFullCompany(prisma, companyId);
+
+    audit(req, 'company-assets.export-full', { metadata: { counts: payload.counts } });
+
+    const safeName = (payload.sourceCompanyName || 'suplex').replace(/[^\w가-힣]+/g, '_');
+    const date = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="suplex_full_${safeName}_${date}.json"`
     );
     res.json(payload);
   } catch (e) {
