@@ -1,0 +1,315 @@
+{
+  "formatVersion": 1,
+  "kind": "company-assets",
+  "exportedAt": "2026-05-15T10:00:00.000Z",
+  "sourceCompanyName": "샘플 인테리어",
+  "company": {
+    "phaseLabels": {},
+    "hideExpenses": false,
+    "rateDesign": "2.00",
+    "rateVat": "10.00"
+  },
+  "vendors": [
+    {
+      "name": "동현타일",
+      "category": "타일",
+      "contact": "박동현",
+      "phone": "010-1234-5678",
+      "unitPrice": "150000",
+      "unit": "㎡",
+      "bankAccount": "국민 123-45-678901 박동현",
+      "memo": "주문 후 3일 배송"
+    },
+    {
+      "name": "한솔도배",
+      "category": "도배",
+      "contact": "이한솔",
+      "phone": "010-2345-6789",
+      "unitPrice": "30000",
+      "unit": "평",
+      "bankAccount": "신한 110-456-789012 이한솔"
+    },
+    {
+      "name": "김OO 목수",
+      "category": "목공",
+      "contact": "김OO",
+      "phone": "010-3456-7890",
+      "unitPrice": "280000",
+      "unit": "일",
+      "bankAccount": "농협 302-1234-5678 김OO",
+      "defaultMeal": "12000",
+      "defaultTransport": "10000",
+      "memo": "걸레받이·몰딩 전문"
+    },
+    {
+      "name": "광명전기",
+      "category": "전기",
+      "contact": "최광명",
+      "phone": "010-4567-8901",
+      "bankAccount": "기업 123-456789-01-012 최광명"
+    },
+    {
+      "name": "삼성설비",
+      "category": "설비",
+      "contact": "정삼성",
+      "phone": "010-5678-9012",
+      "bankAccount": "우리 1002-345-678901 정삼성"
+    }
+  ],
+  "materialTemplates": [
+    {
+      "kind": "FINISH",
+      "spaceGroup": "거실",
+      "subgroup": "바닥",
+      "itemName": "강마루",
+      "defaultSiteNotes": "재단 후 폐기물 정리 필수",
+      "orderIndex": 0,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "거실",
+      "subgroup": "벽",
+      "itemName": "실크벽지",
+      "orderIndex": 1,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "거실",
+      "subgroup": "천장",
+      "itemName": "친환경 페인트",
+      "orderIndex": 2,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "주방",
+      "subgroup": "바닥",
+      "itemName": "포세린 타일 600x600",
+      "defaultSiteNotes": "조명 색상에 따라 톤 확인",
+      "orderIndex": 0,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "주방",
+      "subgroup": "조명",
+      "itemName": "다운라이트 6인치",
+      "orderIndex": 1,
+      "active": true
+    },
+    {
+      "kind": "FINISH",
+      "spaceGroup": "욕실",
+      "subgroup": "바닥",
+      "itemName": "논슬립 타일 300x300",
+      "defaultSiteNotes": "방수 후 24시간 이상 양생",
+      "orderIndex": 0,
+      "active": true
+    },
+    {
+      "kind": "APPLIANCE",
+      "spaceGroup": "주방",
+      "subgroup": "가전",
+      "itemName": "빌트인 식기세척기",
+      "orderIndex": 0,
+      "active": true
+    }
+  ],
+  "quoteLineItemTemplates": [
+    {
+      "workType": "TILE",
+      "itemName": "포세린 600x600",
+      "spec": "유광/무광 선택",
+      "unit": "㎡",
+      "defaultQuantity": "1",
+      "defaultMaterialPrice": "45000",
+      "defaultLaborPrice": "30000",
+      "defaultExpensePrice": "5000",
+      "active": true,
+      "orderIndex": 0
+    },
+    {
+      "workType": "WALLPAPER",
+      "itemName": "실크벽지",
+      "unit": "평",
+      "defaultQuantity": "1",
+      "defaultMaterialPrice": "12000",
+      "defaultLaborPrice": "18000",
+      "active": true,
+      "orderIndex": 0
+    },
+    {
+      "workType": "FLOORING",
+      "itemName": "강마루 8mm",
+      "unit": "평",
+      "defaultQuantity": "1",
+      "defaultMaterialPrice": "85000",
+      "defaultLaborPrice": "25000",
+      "active": true,
+      "orderIndex": 0
+    },
+    {
+      "workType": "PAINT",
+      "itemName": "친환경 페인트 천장",
+      "unit": "㎡",
+      "defaultQuantity": "1",
+      "defaultMaterialPrice": "8000",
+      "defaultLaborPrice": "12000",
+      "active": true,
+      "orderIndex": 0
+    }
+  ],
+  "phaseKeywordRules": [
+    { "keyword": "벽지", "phase": "도배", "active": true },
+    { "keyword": "도배", "phase": "도배", "active": true },
+    { "keyword": "타일", "phase": "타일", "active": true },
+    { "keyword": "걸레받이", "phase": "목공", "active": true },
+    { "keyword": "몰딩", "phase": "목공", "active": true },
+    { "keyword": "콘센트", "phase": "전기", "active": true },
+    { "keyword": "조명", "phase": "전기", "active": true },
+    { "keyword": "수전", "phase": "설비", "active": true },
+    { "keyword": "방수", "phase": "방수", "active": true },
+    { "keyword": "철거", "phase": "철거", "active": true },
+    { "keyword": "마루", "phase": "마루", "active": true },
+    { "keyword": "페인트", "phase": "도장", "active": true },
+    { "keyword": "도장", "phase": "도장", "active": true },
+    { "keyword": "샷시", "phase": "창호", "active": true },
+    { "keyword": "창호", "phase": "창호", "active": true }
+  ],
+  "phaseDeadlineRules": [
+    { "phase": "타일", "daysBefore": 3, "active": true },
+    { "phase": "마루", "daysBefore": 2, "active": true },
+    { "phase": "도배", "daysBefore": 2, "active": true },
+    { "phase": "주방", "daysBefore": 7, "active": true },
+    { "phase": "욕실", "daysBefore": 5, "active": true },
+    { "phase": "창호", "daysBefore": 14, "active": true },
+    { "phase": "전기", "daysBefore": 3, "active": true }
+  ],
+  "phaseAdvices": [
+    {
+      "phase": "철거",
+      "ruleType": "STANDARD",
+      "daysBefore": 7,
+      "title": "관리실 보양·소음 양해 협의",
+      "description": "엘리베이터 보양 신청 + 인접 세대 사전 안내문 부착",
+      "category": "관리실 협의",
+      "requiresPhoto": false,
+      "active": true
+    },
+    {
+      "phase": "철거",
+      "ruleType": "STANDARD",
+      "daysBefore": 3,
+      "title": "철거 폐기물 처리업체 예약",
+      "category": "사전 준비",
+      "active": true
+    },
+    {
+      "phase": "타일",
+      "ruleType": "STANDARD",
+      "daysBefore": 3,
+      "title": "타일 배송 도착 확인 + 보관 위치 확보",
+      "category": "자재",
+      "requiresPhoto": true,
+      "active": true
+    },
+    {
+      "phase": "도배",
+      "ruleType": "STANDARD",
+      "daysBefore": 2,
+      "title": "벽지 도착 + 풀·도배칼 준비",
+      "category": "자재",
+      "active": true
+    },
+    {
+      "phase": "전기",
+      "ruleType": "STANDARD",
+      "daysBefore": 3,
+      "title": "콘센트·스위치 위치 최종 확정",
+      "category": "고객 협의",
+      "active": true
+    },
+    {
+      "phase": "준공",
+      "ruleType": "STANDARD",
+      "daysBefore": 0,
+      "title": "입주 청소 후 현장 사진 촬영",
+      "category": "기록",
+      "requiresPhoto": true,
+      "active": true
+    }
+  ],
+  "companyPhaseTips": [
+    {
+      "phase": "GENERAL",
+      "body": "기본 견적 정책: 부가세 별도, 견적 유효기간 30일, 자재비 30% 선금 / 잔금은 준공 시"
+    },
+    {
+      "phase": "타일",
+      "body": "포세린 600x600 기준 ㎡당 자재 45,000원 / 시공비 30,000원. 1.5룸 평균 8평. 줄눈 색상 사전 합의 필수."
+    },
+    {
+      "phase": "도배",
+      "body": "실크벽지 기준 평당 자재 12,000원 / 시공비 18,000원. 30평대 약 1.5일 소요. 결로 의심 벽면 사전 확인."
+    },
+    {
+      "phase": "마루",
+      "body": "강마루 8mm 기준 평당 자재 85,000원 / 시공비 25,000원. 걸레받이·문턱 마감 별도. 수평 안 맞으면 합판 깔기 추가."
+    },
+    {
+      "phase": "주방",
+      "body": "씽크대 상판은 인조대리석 기준. 가스레인지 후드 별도. 빌트인 가전 사이즈 사전 확인 필수(냉장고·식기세척기)."
+    },
+    {
+      "phase": "욕실",
+      "body": "기본 폼: 슬리퍼 형태 + 욕실장 + 양변기 + 세면대 교체. 방수 24시간 양생 + 백시멘트 줄눈."
+    }
+  ],
+  "accountCodes": [
+    { "id": "acc_001", "code": "[현장] 자재비", "groupName": "현장", "active": true, "orderIndex": 0 },
+    { "id": "acc_002", "code": "[현장] 인건비", "groupName": "현장", "active": true, "orderIndex": 1 },
+    { "id": "acc_003", "code": "[현장] 외주비", "groupName": "현장", "active": true, "orderIndex": 2 },
+    { "id": "acc_004", "code": "[현장] 운반·폐기물", "groupName": "현장", "active": true, "orderIndex": 3 },
+    { "id": "acc_005", "code": "[본사] 임대료", "groupName": "본사", "active": true, "orderIndex": 0 },
+    { "id": "acc_006", "code": "[본사] 복리후생비", "groupName": "본사", "active": true, "orderIndex": 1 },
+    { "id": "acc_007", "code": "[본사] 통신비", "groupName": "본사", "active": true, "orderIndex": 2 },
+    { "id": "acc_008", "code": "[대표] 차량 유지비", "groupName": "대표", "active": true, "orderIndex": 0 }
+  ],
+  "expenseCategoryRules": [
+    {
+      "keyword": "동현타일",
+      "accountCodeId": "acc_001",
+      "workCategory": "타일",
+      "priority": 10,
+      "active": true
+    },
+    {
+      "keyword": "한솔도배",
+      "accountCodeId": "acc_003",
+      "workCategory": "도배",
+      "priority": 10,
+      "active": true
+    },
+    {
+      "keyword": "광명전기",
+      "accountCodeId": "acc_003",
+      "workCategory": "전기",
+      "priority": 10,
+      "active": true
+    },
+    {
+      "keyword": "스타벅스",
+      "accountCodeId": "acc_006",
+      "priority": 5,
+      "active": true
+    },
+    {
+      "keyword": "GS주유",
+      "accountCodeId": "acc_008",
+      "priority": 5,
+      "active": true
+    }
+  ]
+}
