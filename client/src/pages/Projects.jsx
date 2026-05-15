@@ -26,8 +26,12 @@ export default function Projects() {
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('recent'); // recent | name | start
   const [seeding, setSeeding] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // 모바일 필터 시트 — 디폴트와 다른 값이 1개라도 있으면 ●
+  const hasActiveFilter = yearFilter !== currentYear || statusFilter !== 'ALL' || sortBy !== 'recent';
 
   async function handleSeedSample() {
     if (!confirm('시연용 샘플 프로젝트를 만들까요?\n견적/일정/마감재/발주/메모 데이터가 한꺼번에 들어갑니다.\n(여러 번 만들어도 안전 — 별도 프로젝트로 생성됨)')) return;
@@ -111,7 +115,7 @@ export default function Projects() {
           <button
             onClick={handleSeedSample}
             disabled={seeding}
-            className="text-xs px-3 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50"
+            className="hidden sm:inline-block text-xs px-3 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50"
             title="견적/일정/마감재/발주/메모가 모두 들어간 시연용 샘플 프로젝트 생성"
           >
             {seeding ? '생성 중...' : '🧪 샘플 시연용 생성'}
@@ -125,7 +129,28 @@ export default function Projects() {
         </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-4 space-y-3">
+      {/* 모바일: 검색 1행 + ⚙️ 필터 시트 */}
+      <div className="sm:hidden flex items-center gap-2 px-2">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="검색"
+          className="flex-1 text-sm px-3 py-2 border rounded-md focus:border-navy-700 outline-none"
+        />
+        <button
+          onClick={() => setFilterSheetOpen(true)}
+          className="relative text-sm px-3 py-2 border rounded-md hover:bg-gray-50 whitespace-nowrap"
+        >
+          ⚙️ 필터
+          {hasActiveFilter && (
+            <span className="absolute top-1 right-1 w-2 h-2 bg-navy-700 rounded-full"></span>
+          )}
+        </button>
+      </div>
+
+      {/* 데스크탑: 기존 필터 카드 */}
+      <div className="hidden sm:block bg-white border rounded-lg p-4 space-y-3">
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-xs text-gray-500 mr-1">연도</span>
           <FilterChip
@@ -178,6 +203,23 @@ export default function Projects() {
           </select>
         </div>
       </div>
+
+      {/* 모바일 필터 시트 */}
+      {filterSheetOpen && (
+        <MobileFilterSheet
+          yearFilter={yearFilter}
+          setYearFilter={setYearFilter}
+          years={years}
+          yearCounts={yearCounts}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          counts={counts}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          onReset={() => { setYearFilter(currentYear); setStatusFilter('ALL'); setSortBy('recent'); }}
+          onClose={() => setFilterSheetOpen(false)}
+        />
+      )}
 
       {loading && (
         <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
@@ -247,6 +289,90 @@ function FilterChip({ label, active, onClick, colorClass }) {
     >
       {label}
     </button>
+  );
+}
+
+function MobileFilterSheet({
+  yearFilter, setYearFilter, years, yearCounts,
+  statusFilter, setStatusFilter, counts,
+  sortBy, setSortBy,
+  onReset, onClose,
+}) {
+  return (
+    <div className="fixed inset-0 z-50 sm:hidden">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+          <div className="font-bold text-navy-800">필터·정렬</div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
+        </div>
+        <div className="p-4 space-y-5">
+          <div>
+            <div className="text-xs font-semibold text-gray-500 mb-2">연도</div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip
+                label={`전체 (${yearCounts.ALL})`}
+                active={yearFilter === 'ALL'}
+                onClick={() => setYearFilter('ALL')}
+              />
+              {years.map((y) => (
+                <FilterChip
+                  key={y}
+                  label={`${y}년 (${yearCounts[y] || 0})`}
+                  active={yearFilter === y}
+                  onClick={() => setYearFilter(y)}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-gray-500 mb-2">상태</div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip
+                label={`전체 (${counts.ALL})`}
+                active={statusFilter === 'ALL'}
+                onClick={() => setStatusFilter('ALL')}
+              />
+              {STATUS_ORDER.map((k) => (
+                <FilterChip
+                  key={k}
+                  label={`${STATUS_META[k].label} (${counts[k] || 0})`}
+                  active={statusFilter === k}
+                  colorClass={STATUS_META[k].color}
+                  onClick={() => setStatusFilter(k)}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-gray-500 mb-2">정렬</div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full text-sm px-3 py-2 border rounded-md focus:border-navy-700 outline-none"
+            >
+              <option value="recent">최근 등록순</option>
+              <option value="name">이름순</option>
+              <option value="start">시작일순</option>
+            </select>
+          </div>
+        </div>
+        <div className="sticky bottom-0 bg-white border-t px-4 py-3 flex gap-2">
+          <button
+            onClick={onReset}
+            className="flex-1 text-sm px-3 py-2 border rounded-md hover:bg-gray-50"
+          >
+            초기화
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 text-sm px-3 py-2 bg-navy-700 text-white rounded-md hover:bg-navy-800"
+          >
+            적용
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
