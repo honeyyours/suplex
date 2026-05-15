@@ -599,19 +599,38 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   // ⚠ 모든 hook은 early return 위에서 호출되어야 함 (React Hooks 순서 규칙)
   // 각 라인이 어느 그룹 안에 있는지 계산 — 위에서부터 순회하며 inGroup 상태 추적
   // 동시에 각 라인이 속한 그룹 헤더의 itemName(공정명)도 같이 계산
+  // 그룹 헤더·종료 마커에는 그 그룹의 합계(_groupTotal)도 부착
   const linesWithMeta = useMemo(() => {
+    // 그룹별 합계 precompute (header idx → total)
+    const ranges = computeGroupRanges(lines);
+    const totalByHeader = new Map();
+    for (const r of ranges) {
+      let t = 0;
+      for (let j = r.start + 1; j <= r.end; j++) {
+        const l = lines[j];
+        if (!l || l.isGroup) continue;
+        t += (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0);
+      }
+      totalByHeader.set(r.start, t);
+    }
+
     let inGroup = false;
     let groupHeaderName = null;
-    return lines.map((l) => {
+    let groupHeaderIdx = -1;
+    return lines.map((l, idx) => {
       if (l.isGroup && l.isGroupEnd) {
-        const meta = { ...l, _inGroup: false, _groupName: null };
+        const total = groupHeaderIdx >= 0 ? (totalByHeader.get(groupHeaderIdx) ?? 0) : 0;
+        const meta = { ...l, _inGroup: false, _groupName: null, _groupTotal: total };
         inGroup = false;
         groupHeaderName = null;
+        groupHeaderIdx = -1;
         return meta;
       }
       if (l.isGroup) {
         groupHeaderName = l.itemName || null;
-        const meta = { ...l, _inGroup: false, _groupName: groupHeaderName };
+        groupHeaderIdx = idx;
+        const total = totalByHeader.get(idx) ?? 0;
+        const meta = { ...l, _inGroup: false, _groupName: groupHeaderName, _groupTotal: total };
         inGroup = true;
         return meta;
       }
@@ -1132,8 +1151,9 @@ function LineRow({
 
   const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
 
-  // ===== 그룹 종료 마커 (가는 구분선) =====
+  // ===== 그룹 종료 마커 (가는 구분선 + 합계) =====
   if (line.isGroup && line.isGroupEnd) {
+    const groupTotal = Number(line._groupTotal || 0);
     return (
       <tr
         className={`group bg-gray-50 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
@@ -1143,9 +1163,9 @@ function LineRow({
       >
         <td className="px-0"></td>
         <td colSpan={7} className="px-2 py-1">
-          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+          <div className="flex items-center gap-2 text-[11px] text-gray-500">
             <span className="flex-1 border-t border-dashed border-gray-300"></span>
-            <span>↩ 그룹 종료</span>
+            <span>↩ 그룹 합계 <b className="text-navy-700 tabular-nums">{formatWon(groupTotal)}</b>원</span>
             <span className="flex-1 border-t border-dashed border-gray-300"></span>
           </div>
         </td>
@@ -1195,6 +1215,11 @@ function LineRow({
               >
                 + 항목
               </button>
+            )}
+            {Number(line._groupTotal || 0) > 0 && (
+              <span className="text-[11px] text-gray-500 whitespace-nowrap flex-shrink-0">
+                합계 <b className="text-navy-700 tabular-nums">{formatWon(line._groupTotal)}</b>원
+              </span>
             )}
           </div>
         </td>
