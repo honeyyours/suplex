@@ -38,7 +38,16 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
                 </span>
               )}
             </div>
-            {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowMembers(true)}
+                className="text-xs px-2.5 py-1 border border-gray-200 rounded hover:bg-gray-50 whitespace-nowrap text-gray-700"
+                title="팀 관리"
+              >
+                👥 팀
+              </button>
+              {actions}
+            </div>
           </div>
           {/* 2행: 제목 — 모바일 작게, 데스크탑 크게 */}
           <h2 className={`font-bold text-navy-800 leading-tight break-keep ${compact ? 'text-base sm:text-lg' : 'text-lg sm:text-2xl'}`}>
@@ -59,7 +68,7 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
         <InfoRow label="기간">
           {project.startDate && project.expectedEndDate ? (
             <>
@@ -95,11 +104,13 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
             <span className="text-gray-300">—</span>
           )}
         </InfoRow>
-        <InfoRow label="팀" full>
-          <button onClick={() => setShowMembers(true)} className="text-navy-700 hover:underline text-sm">
-            👥 팀 관리 →
-          </button>
-        </InfoRow>
+        {!showHeader && (
+          <InfoRow label="팀" full>
+            <button onClick={() => setShowMembers(true)} className="text-navy-700 hover:underline text-sm">
+              👥 팀 관리 →
+            </button>
+          </InfoRow>
+        )}
       </div>
       {showMembers && <ProjectMembersModal projectId={project.id} onClose={() => setShowMembers(false)} />}
     </div>
@@ -108,9 +119,8 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
 
 function InfoRow({ label, children, full }) {
   return (
-    <div className={`flex gap-3 ${full ? 'md:col-span-2' : ''}`}>
-      <span className="text-gray-500 w-16 flex-shrink-0">{label}</span>
-      <span className="text-gray-400 flex-shrink-0">|</span>
+    <div className={`flex items-start gap-3 ${full ? 'md:col-span-2' : ''}`}>
+      <span className="text-xs text-gray-500 w-16 flex-shrink-0 pt-0.5">{label}</span>
       <span className="text-gray-800 min-w-0 flex-1">{children}</span>
     </div>
   );
