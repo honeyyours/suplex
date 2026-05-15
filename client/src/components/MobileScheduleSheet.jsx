@@ -7,6 +7,8 @@ import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 import { useEscape } from '../hooks/useEscape';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+// 협력업체 태그 등록 UI 일시 하이드 (2026-05-15) — 다시 노출하려면 true로
+const SHOW_VENDOR_REGISTRATION = false;
 
 /**
  * 모바일에서 캘린더 셀을 탭했을 때 뜨는 바텀시트.
@@ -107,7 +109,7 @@ export default function MobileScheduleSheet({
                     <div className="text-[11px] text-violet-700 mt-0.5">🏢 {e.vendor.name}</div>
                   )}
                 </div>
-                {onUpdate && (
+                {SHOW_VENDOR_REGISTRATION && onUpdate && (
                   <button
                     onClick={(ev) => openVendorMenu(ev, e)}
                     className="text-gray-400 hover:text-violet-600 px-2 text-base"
