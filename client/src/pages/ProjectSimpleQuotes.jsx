@@ -656,7 +656,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const liveTotal = liveSubAfterDesign + liveVat;
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${showGuide ? 'xl:pr-[300px]' : ''}`}>
       {/* 헤더 액션 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -720,15 +720,17 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           >
             {sending ? '보내는 중…' : '📦 마감재로 보내기'}
           </button>
-          {!showGuide && (
-            <button
-              onClick={() => setShowGuide(true)}
-              className="hidden xl:inline-block text-sm px-3 py-1.5 border border-navy-300 text-navy-700 rounded hover:bg-navy-50"
-              title="우측 견적 가이드 드로어 열기 (회사 내부 메모 + 견적상담)"
-            >
-              📖 가이드
-            </button>
-          )}
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className={`hidden xl:inline-block text-sm px-3 py-1.5 border rounded ${
+              showGuide
+                ? 'border-navy-700 bg-navy-700 text-white hover:bg-navy-800'
+                : 'border-navy-300 text-navy-700 hover:bg-navy-50'
+            }`}
+            title={showGuide ? '가이드 닫기' : '우측 견적 가이드 드로어 열기 (회사 내부 메모 + 견적상담)'}
+          >
+            📖 가이드{showGuide ? ' 닫기' : ''}
+          </button>
           <button
             onClick={() => setShowPrint(true)}
             className="text-sm px-3 py-1.5 bg-navy-700 text-white rounded hover:bg-navy-800"
@@ -1073,7 +1075,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
       )}
 
       {/* 우측 견적 가이드 드로어 — fixed right, xl 이상에서만 표시.
-          작업영역은 위 div의 xl:pr-[340px]로 자리를 비움. */}
+          showGuide=true일 때만 위 div가 xl:pr-[300px]를 적용해 본문(특히 비고)과 겹침 회피. */}
       <QuoteGuideDrawer
         projectId={projectId}
         activePhase={activePhase}
