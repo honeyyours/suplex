@@ -529,7 +529,7 @@ router.get('/companies/:id/backup', async (req, res, next) => {
           checklists: true,
           dailyReports: true,
           expenses: true,
-          quotes: { include: { lineItems: true } },
+          quotes: { include: { lines: true } },
           simpleQuotes: { include: { lines: true } },
           memos: true,
           purchaseOrders: true,

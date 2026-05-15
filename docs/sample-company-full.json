@@ -256,24 +256,19 @@
         {
           "id": "po_001",
           "projectId": "prj_sample_001",
+          "materialId": null,
           "vendorId": null,
-          "title": "주방 타일 발주",
+          "vendor": "동현타일",
+          "itemName": "포세린 600x600 화이트 유광",
+          "spec": "유광",
+          "quantity": "13",
+          "unit": "㎡",
+          "unitPrice": "45000",
+          "totalPrice": "585000",
           "status": "DELIVERED",
-          "orderDate": "2026-04-10T00:00:00.000Z",
           "expectedDate": "2026-04-25T00:00:00.000Z",
-          "createdById": null,
-          "lines": [
-            {
-              "id": "pol_001",
-              "purchaseOrderId": "po_001",
-              "itemName": "포세린 600x600 화이트 유광",
-              "quantity": "13",
-              "unit": "㎡",
-              "unitPrice": "45000",
-              "amount": "585000",
-              "orderIndex": 0
-            }
-          ]
+          "orderedAt": "2026-04-10T00:00:00.000Z",
+          "receivedAt": "2026-04-23T00:00:00.000Z"
         }
       ],
 

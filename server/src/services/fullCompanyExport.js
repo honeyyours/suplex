@@ -65,10 +65,11 @@ async function exportFullCompany(prisma, companyId) {
       checklists: true,
       dailyReports: true,
       expenses: true,
-      quotes: { include: { lineItems: true } },
+      quotes: { include: { lines: true } },
       simpleQuotes: { include: { lines: true } },
       memos: { orderBy: { createdAt: 'asc' } },
-      purchaseOrders: { include: { lines: true } },
+      // PurchaseOrder 는 한 PO = 단일 항목(라인 관계 없음). include 추가 불필요.
+      purchaseOrders: true,
       photos: true,
       measurements: true,
       materialRequests: true,
