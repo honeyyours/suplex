@@ -102,7 +102,7 @@ export default function Schedule() {
         {tab === 'all' && (
           <>
             <h3 className="text-base font-bold text-navy-800 mb-3">
-              ✅ 전체 체크리스트
+              전체 체크리스트
             </h3>
             <AggregateChecklist />
           </>
@@ -242,14 +242,14 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
         {selectedProject ? (
           <>
             <h3 className="text-base font-bold text-navy-800 mb-3">
-              ✅ {selectedProject.name} 체크리스트
+              {selectedProject.name} 체크리스트
             </h3>
             <ProjectChecklist projectId={selectedProject.id} />
           </>
         ) : (
           <>
             <h3 className="text-base font-bold text-navy-800 mb-3">
-              ✅ 체크리스트
+              체크리스트
             </h3>
             <AggregateChecklist projectIds={allIds} />
           </>
