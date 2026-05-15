@@ -238,11 +238,11 @@ export default function ScheduleCalendar({ projectId, project }) {
                   <div
                     key={key}
                     onClick={(e) => handleCellClick(e, key, inRange)}
-                    className={`group border-r border-b last:border-r-0 min-h-[96px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
+                    className={`group border-r border-b last:border-r-0 min-h-[56px] sm:min-h-28 flex flex-col overflow-hidden cursor-pointer ${
                       inRange ? 'bg-white' : 'bg-gray-100/70 dark:bg-slate-900/40 cursor-default'
                     }`}
                   >
-                    <div className={`flex items-center justify-between px-1 py-1 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
+                    <div className={`flex items-center justify-between px-0.5 py-0 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
                       !inRange ? 'text-gray-300' :
                       dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                     }`}>
@@ -257,7 +257,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                     >+</button>
                   )}
                 </div>
-                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>div:nth-child(n+4)]:hidden sm:[&>div:nth-child(n+4)]:flex">
+                <div className="px-0 sm:px-1 pb-0 sm:pb-1 flex flex-col gap-0 sm:gap-0.5 flex-1 overflow-hidden [&>div:nth-child(n+4)]:hidden sm:[&>div:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => (
                     <ScheduleEntry
                       key={e.id}

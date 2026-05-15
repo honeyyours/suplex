@@ -124,18 +124,18 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-[80px] sm:min-h-28 flex flex-col overflow-hidden ${
+                className={`border-r border-b last:border-r-0 min-h-[56px] sm:min-h-28 flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
                 }`}
               >
-                <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
+                <div className={`px-0.5 py-0 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
                   <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''} ${isFirstOfMonth && !isToday ? 'font-semibold text-navy-700' : ''}`}>
                     {isFirstOfMonth ? `${date.getMonth() + 1}/1` : date.getDate()}
                   </span>
                 </div>
-                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-px sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
+                <div className="px-0 sm:px-1 pb-0 sm:pb-1 flex flex-col gap-0 sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {
                     const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
                     return (
@@ -143,7 +143,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate flex items-center gap-1
+                          relative text-[10px] sm:text-[10px] rounded-sm sm:rounded px-0.5 sm:px-1.5 py-0 sm:py-0.5 truncate flex items-center gap-1
                           ${projColor} sm:!bg-white sm:dark:!bg-slate-900 sm:!text-navy-800 sm:dark:!text-slate-200
                           sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
                           hover:brightness-95

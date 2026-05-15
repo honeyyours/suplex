@@ -75,7 +75,7 @@ export default function Schedule() {
             </button>
           ))}
         </div>
-        <div className="p-1 sm:p-5">
+        <div className="p-0 sm:p-5">
           {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" />}
           {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" />}
           {tab === 'all' && (
