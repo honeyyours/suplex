@@ -1,9 +1,8 @@
-// 홈 최상단 "오늘 할 일" 카드 — 결정론 규칙 기반(AI 아님).
-// 백엔드 /dashboard/today-actions가 다음 규칙으로 항목을 모아 옴:
-//   - 체크리스트 기한 지남·오늘·D-1
-//   - PO 마감 지남·오늘·D-1·D-2
-//   - 시공 D-7 + 자재 미발주 (검토)
-//   - 견적 5일+ 묵힘 (검토)
+// 홈 최상단 "3일 안에 할 일" 카드 — 결정론 규칙 기반(AI 아님).
+// 사용자 역할로 노출 항목이 분기됨 (서버에서 필터):
+//   - 현장팀(FIELD): 현장 일정 + 발주(PO + 체크리스트)
+//   - 디자인팀(DESIGNER): 마감재 미확정 + 발주(PO + 체크리스트)
+//   - 대표(OWNER): 모두
 // 4개 노출, 나머지는 "더 보기" 토글.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -26,10 +25,10 @@ function KindIcon({ kind, className = 'w-4 h-4' }) {
       return <svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M8 10l3 3 5-6" /></svg>;
     case 'order':
       return <svg {...common}><path d="M3 7l9-4 9 4-9 4-9-4z" /><path d="M3 7v10l9 4 9-4V7" /></svg>;
-    case 'quote':
-      return <svg {...common}><path d="M6 3h9l4 4v14a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" /><path d="M14 3v5h5" /></svg>;
-    case 'project':
-      return <svg {...common}><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>;
+    case 'schedule':
+      return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></svg>;
+    case 'material':
+      return <svg {...common}><path d="M4 7h16M4 12h16M4 17h10" /></svg>;
     default:
       return null;
   }
@@ -50,7 +49,7 @@ export default function HomeTodayActions() {
     <section className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
       <div className="flex items-center justify-between mb-2 sm:mb-3">
         <h2 className="text-base sm:text-lg font-bold text-navy-800 flex items-baseline gap-2">
-          <span>오늘 할 일</span>
+          <span>3일 안에 할 일</span>
           {items.length > 0 && (
             <span className="text-xs font-normal text-gray-500 tabular-nums">{items.length}건</span>
           )}
@@ -61,7 +60,7 @@ export default function HomeTodayActions() {
         <div className="text-sm text-gray-400 py-3">불러오는 중...</div>
       ) : items.length === 0 ? (
         <div className="py-6 text-center text-sm text-gray-500">
-          오늘 챙길 일이 없어요. 좋은 하루 보내세요.
+          3일 안에 챙길 일이 없어요.
         </div>
       ) : (
         <ul className="divide-y divide-gray-100">

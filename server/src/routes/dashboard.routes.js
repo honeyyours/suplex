@@ -1,15 +1,21 @@
-// 홈 대시보드 — 오늘 할 일 통합 조회 (결정론 규칙)
-// 규칙(우선순위 순):
-//   1. 체크리스트 기한 지남 (isDone=false, dueDate<today)              → overdue
-//   2. PO expectedDate < today (PENDING)                              → overdue
-//   3. 시공 startDate ≤ today+7 인데 PENDING PO 존재 (status=PLANNED)  → overdue
-//   4. 체크리스트 오늘 마감 (dueDate=today, isDone=false)              → today
-//   5. PO expectedDate = today (PENDING)                              → today
-//   6. 체크리스트 D-1 (dueDate=today+1, isDone=false)                  → soon
-//   7. PO expectedDate ∈ (today+1, today+2] (PENDING)                 → soon
-//   8. 견적 5일+ 묵힘 (SimpleQuote.status=DRAFT, updatedAt < today-5)  → review
+// 홈 대시보드 — 앞으로 3일 안에 해야 할 일 (역할 기반 노출).
 //
-// 모든 항목은 회사 스코프(companyId)로 필터.
+// 시간 창: [today-∞, today+3]. 지남 항목은 계속 노출(긴급도 최상).
+//
+// 역할 노출 (team):
+//   - FIELD : 현장 업무(공종 일정) + 발주 체크리스트 + PO  → team ∈ {FIELD, BOTH}
+//   - DESIGN: 마감재 미확정 + 발주 체크리스트 + PO        → team ∈ {DESIGN, BOTH}
+//   - OWNER : 모두
+//
+// 항목 종류와 team 매핑:
+//   1. DailyScheduleEntry(category 있음) within window         → FIELD
+//   2. PurchaseOrder PENDING within window or overdue           → BOTH (= 발주)
+//   3. Material status IN (UNDECIDED,REVIEWING) — 곧 시공 시작/진행중 프로젝트만 → DESIGN
+//   4. ProjectChecklist dueDate within window:
+//        - phase='발주' OR title에 발주/자재/주문/매입/배송 키워드 → BOTH
+//        - phase='마감재' OR title에 마감재/샘플/모델/시안 키워드 → DESIGN
+//        - 그 외 → FIELD
+//
 const express = require('express');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
@@ -17,186 +23,207 @@ const { authRequired } = require('../middlewares/auth');
 const router = express.Router();
 router.use(authRequired);
 
-function startOfDay(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function endOfDay(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function daysBetween(a, b) { return Math.round((startOfDay(b) - startOfDay(a)) / 86400000); }
+
+const ORDER_KEYWORDS = /발주|자재|주문|매입|배송|입고/;
+const MATERIAL_KEYWORDS = /마감재|샘플|모델|시안|컬러칩|컬러 ?시트|선정/;
+
+function classifyChecklist(item) {
+  const phase = (item.phase || '').trim();
+  const title = item.title || '';
+  if (phase === '발주' || ORDER_KEYWORDS.test(title)) return 'BOTH';
+  if (phase === '마감재' || MATERIAL_KEYWORDS.test(title)) return 'DESIGN';
+  return 'FIELD';
 }
-function endOfDay(d) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
+
+// 사용자 역할이 항목 team을 볼 수 있는지
+function canSeeTeam(role, team) {
+  if (role === 'OWNER') return true;
+  if (role === 'FIELD') return team === 'FIELD' || team === 'BOTH';
+  if (role === 'DESIGNER') return team === 'DESIGN' || team === 'BOTH';
+  return true; // 그 외 역할은 풀로 보여줌 (안전 디폴트)
 }
-function addDays(d, n) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
+
+function dayLabelFromDiff(diff, fallback) {
+  if (diff < 0) return `${Math.abs(diff)}일 지남`;
+  if (diff === 0) return '오늘';
+  return `D-${diff}`;
 }
-function daysBetween(a, b) {
-  // 일자 단위 차이 (a→b). 같은 날 = 0
-  return Math.round((startOfDay(b) - startOfDay(a)) / 86400000);
+
+function levelFromDiff(diff) {
+  if (diff < 0) return 'overdue';
+  if (diff === 0) return 'today';
+  if (diff <= 1) return 'soon';
+  return 'soon';
 }
 
 // GET /api/dashboard/today-actions
-// 응답: { items: [{ id, level, dayLabel, kind, title, meta, href }] }
 router.get('/today-actions', async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
+    const role = req.user.role;
     if (!companyId) return res.json({ items: [] });
 
     const today = startOfDay(new Date());
-    const todayEnd = endOfDay(today);
-    const tomorrow = addDays(today, 1);
-    const dayAfter = addDays(today, 2);
-    const sevenDays = endOfDay(addDays(today, 7));
-    const fiveDaysAgo = addDays(today, -5);
+    const horizonEnd = endOfDay(addDays(today, 3));     // today+3 까지
+    const projectStartHorizon = endOfDay(addDays(today, 14)); // 마감재용 보조 창
 
-    // 회사 프로젝트 ID들
     const projects = await prisma.project.findMany({
       where: { companyId },
       select: { id: true, name: true, startDate: true, status: true },
     });
+    if (projects.length === 0) return res.json({ items: [] });
+
     const projectIds = projects.map((p) => p.id);
     const projectById = new Map(projects.map((p) => [p.id, p]));
 
-    if (projectIds.length === 0) return res.json({ items: [] });
+    // 마감재 표시 대상 프로젝트 — 진행중이거나 14일내 시공 시작
+    const materialProjectIds = projects
+      .filter((p) => p.status === 'IN_PROGRESS' ||
+        (p.status === 'PLANNED' && p.startDate && new Date(p.startDate) <= projectStartHorizon))
+      .map((p) => p.id);
 
-    // 병렬 쿼리
-    const [checklists, orders, quotes, pendingOrdersByProject] = await Promise.all([
-      // 1·4·6: 체크리스트 (지남·오늘·D-1)
-      prisma.projectChecklist.findMany({
+    const [schedules, orders, materials, checklists] = await Promise.all([
+      // 1. 현장 일정 — category 있는 항목, 3일 내
+      prisma.dailyScheduleEntry.findMany({
         where: {
           projectId: { in: projectIds },
-          isDone: false,
-          dueDate: { not: null, lte: endOfDay(tomorrow) },
+          category: { not: null },
+          date: { gte: today, lte: horizonEnd },
         },
-        select: {
-          id: true, title: true, dueDate: true, projectId: true,
-        },
-        orderBy: { dueDate: 'asc' },
+        select: { id: true, projectId: true, date: true, category: true, content: true, confirmed: true },
+        orderBy: { date: 'asc' },
+        take: 50,
       }),
-      // 2·5·7: PO (지남·오늘·D-1·D-2)
+      // 2. PO PENDING — 지남 + 3일 내
       prisma.purchaseOrder.findMany({
         where: {
           projectId: { in: projectIds },
           status: 'PENDING',
-          expectedDate: { not: null, lte: endOfDay(dayAfter) },
+          expectedDate: { not: null, lte: horizonEnd },
         },
-        select: {
-          id: true, itemName: true, vendor: true, expectedDate: true, projectId: true,
-        },
+        select: { id: true, projectId: true, itemName: true, vendor: true, expectedDate: true },
         orderBy: { expectedDate: 'asc' },
+        take: 50,
       }),
-      // 8: 견적 묵힘
-      prisma.simpleQuote.findMany({
+      // 3. 마감재 미확정 — 곧 시공 시작/진행중 프로젝트만
+      materialProjectIds.length > 0
+        ? prisma.material.findMany({
+            where: {
+              projectId: { in: materialProjectIds },
+              status: { in: ['UNDECIDED', 'REVIEWING'] },
+            },
+            select: { id: true, projectId: true, spaceGroup: true, itemName: true, status: true },
+            take: 50,
+          })
+        : Promise.resolve([]),
+      // 4. 체크리스트 — 3일 내 마감, 미완료
+      prisma.projectChecklist.findMany({
         where: {
           projectId: { in: projectIds },
-          status: 'DRAFT',
-          updatedAt: { lt: fiveDaysAgo },
+          isDone: false,
+          dueDate: { not: null, lte: horizonEnd },
         },
-        select: {
-          id: true, title: true, updatedAt: true, projectId: true,
-        },
-        orderBy: { updatedAt: 'asc' },
-        take: 20,
-      }),
-      // 3 (보조): 프로젝트별 PENDING PO 갯수
-      prisma.purchaseOrder.groupBy({
-        by: ['projectId'],
-        where: {
-          projectId: { in: projectIds },
-          status: 'PENDING',
-        },
-        _count: { id: true },
+        select: { id: true, projectId: true, title: true, phase: true, dueDate: true },
+        orderBy: { dueDate: 'asc' },
+        take: 100,
       }),
     ]);
-    const pendingPoMap = new Map(pendingOrdersByProject.map((g) => [g.projectId, g._count.id]));
 
     const items = [];
 
-    // 1·4·6: 체크리스트
-    for (const c of checklists) {
-      const proj = projectById.get(c.projectId);
+    // 1. 현장 일정
+    for (const s of schedules) {
+      const proj = projectById.get(s.projectId);
       if (!proj) continue;
-      const diff = daysBetween(today, c.dueDate);
-      let level, dayLabel;
-      if (diff < 0) { level = 'overdue'; dayLabel = `${Math.abs(diff)}일 지남`; }
-      else if (diff === 0) { level = 'today'; dayLabel = '오늘'; }
-      else { level = 'soon'; dayLabel = 'D-1'; }
+      const diff = daysBetween(today, s.date);
+      if (diff < 0) continue; // schedule은 과거를 끌어오지 않음
+      const team = 'FIELD';
+      if (!canSeeTeam(role, team)) continue;
       items.push({
-        id: `chk-${c.id}`,
-        level,
-        dayLabel,
-        kind: 'checklist',
-        title: `${proj.name} · ${c.title}`,
-        meta: '체크리스트',
-        href: `/projects/${c.projectId}/checklist`,
-        sortKey: diff,
+        id: `sch-${s.id}`,
+        level: diff === 0 ? 'today' : 'soon',
+        dayLabel: dayLabelFromDiff(diff),
+        kind: 'schedule',
+        team,
+        title: `${proj.name} · ${s.content}`,
+        meta: `현장 ${s.category}`,
+        href: `/projects/${s.projectId}/schedule`,
+        sortKey: diff * 10 + 1,
       });
     }
 
-    // 2·5·7: PO
+    // 2. PO PENDING
     for (const o of orders) {
       const proj = projectById.get(o.projectId);
       if (!proj) continue;
       const diff = daysBetween(today, o.expectedDate);
-      let level, dayLabel;
-      if (diff < 0) { level = 'overdue'; dayLabel = `${Math.abs(diff)}일 지남`; }
-      else if (diff === 0) { level = 'today'; dayLabel = '오늘 발주'; }
-      else if (diff === 1) { level = 'soon'; dayLabel = 'D-1'; }
-      else { level = 'soon'; dayLabel = `D-${diff}`; }
+      const team = 'BOTH';
+      if (!canSeeTeam(role, team)) continue;
       const metaParts = ['발주 대기'];
       if (o.vendor) metaParts.push(o.vendor);
       items.push({
         id: `po-${o.id}`,
-        level,
-        dayLabel,
+        level: levelFromDiff(diff),
+        dayLabel: dayLabelFromDiff(diff),
         kind: 'order',
+        team,
         title: `${proj.name} · ${o.itemName}`,
         meta: metaParts.join(' · '),
         href: `/projects/${o.projectId}/orders`,
-        sortKey: diff,
+        sortKey: diff * 10 + 2,
       });
     }
 
-    // 3: 시공 D-7 + 자재 미발주 (검토)
-    for (const p of projects) {
-      if (!p.startDate) continue;
-      if (p.status !== 'PLANNED' && p.status !== 'IN_PROGRESS') continue;
-      const diff = daysBetween(today, p.startDate);
-      if (diff < 0 || diff > 7) continue;
-      const pendingCount = pendingPoMap.get(p.id) || 0;
-      if (pendingCount === 0) continue;
-      items.push({
-        id: `proj-prep-${p.id}`,
-        level: 'review',
-        dayLabel: '검토',
-        kind: 'project',
-        title: `${p.name} · 시공 임박`,
-        meta: `D-${diff}, 발주 대기 ${pendingCount}건`,
-        href: `/projects/${p.id}/orders`,
-        sortKey: 100 + diff, // 검토는 뒤로
-      });
-    }
-
-    // 8: 견적 묵힘
-    for (const q of quotes) {
-      const proj = projectById.get(q.projectId);
+    // 3. 마감재 미확정 (날짜 단위 정렬 아님 — 가장 우선순위 낮은 묶음)
+    for (const m of materials) {
+      const proj = projectById.get(m.projectId);
       if (!proj) continue;
-      const stale = daysBetween(q.updatedAt, today);
+      const team = 'DESIGN';
+      if (!canSeeTeam(role, team)) continue;
+      // 마감재 자체는 dueDate가 없으니 프로젝트 시공일까지 남은 일수로 정렬
+      const projDiff = proj.startDate ? daysBetween(today, proj.startDate) : 999;
+      const label = projDiff <= 0
+        ? '마감재 미확정'
+        : `시공 D-${projDiff}`;
       items.push({
-        id: `sq-${q.id}`,
-        level: 'review',
-        dayLabel: '검토',
-        kind: 'quote',
-        title: `${proj.name} · ${q.title}`,
-        meta: `견적 작성 ${stale}일째 진행 중`,
-        href: `/projects/${q.projectId}/quotes`,
-        sortKey: 200 - stale, // 오래 묵힐수록 앞
+        id: `mat-${m.id}`,
+        level: projDiff <= 3 ? 'today' : 'review',
+        dayLabel: label,
+        kind: 'material',
+        team,
+        title: `${proj.name} · ${m.spaceGroup}${m.itemName ? ` · ${m.itemName}` : ''}`,
+        meta: '마감재 확정 필요',
+        href: `/projects/${m.projectId}/materials`,
+        sortKey: 1000 + projDiff,
       });
     }
 
-    // 레벨 우선순위 + sortKey
+    // 4. 체크리스트
+    for (const c of checklists) {
+      const proj = projectById.get(c.projectId);
+      if (!proj) continue;
+      const diff = daysBetween(today, c.dueDate);
+      const team = classifyChecklist(c);
+      if (!canSeeTeam(role, team)) continue;
+      const tag = team === 'BOTH' ? '발주' : (team === 'DESIGN' ? '마감재' : '체크리스트');
+      items.push({
+        id: `chk-${c.id}`,
+        level: levelFromDiff(diff),
+        dayLabel: dayLabelFromDiff(diff),
+        kind: 'checklist',
+        team,
+        title: `${proj.name} · ${c.title}`,
+        meta: tag,
+        href: `/projects/${c.projectId}/checklist`,
+        sortKey: diff * 10 + 3,
+      });
+    }
+
+    // 정렬: level 우선 → sortKey
     const levelRank = { overdue: 0, today: 1, soon: 2, review: 3 };
     items.sort((a, b) => {
       const lr = levelRank[a.level] - levelRank[b.level];
