@@ -133,7 +133,7 @@ function MembersSection({ isOwner, currentUserId }) {
               <tr><td colSpan={isOwner ? 6 : 5} className="px-4 py-8 text-center text-gray-400">팀원이 없습니다</td></tr>
             ) : (
               members.map((m) => (
-                <tr key={m.userId} className="border-t hover:bg-gray-50">
+                <tr key={m.userId} className="border-t hover:bg-gray-50 group">
                   <td className="px-4 py-3 font-medium text-gray-800">
                     {m.name}
                     {m.userId === currentUserId && (
@@ -149,7 +149,7 @@ function MembersSection({ isOwner, currentUserId }) {
                     {new Date(m.joinedAt).toLocaleDateString('ko-KR')}
                   </td>
                   {isOwner && (
-                    <td className="px-4 py-3 text-right space-x-1">
+                    <td className="px-4 py-3 text-right space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => setEditing(m)}
                         className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
@@ -992,7 +992,7 @@ function VendorsSection({ isOwner, role }) {
               </td></tr>
             ) : (
               vendors.map((v) => (
-                <tr key={v.id} className="border-t hover:bg-gray-50">
+                <tr key={v.id} className="border-t hover:bg-gray-50 group">
                   <td className="px-4 py-3 font-medium text-gray-800">{v.name}</td>
                   <td className="px-4 py-3">
                     <span className="inline-block px-2 py-0.5 text-xs rounded bg-sky-50 text-sky-700 border border-sky-200">
@@ -1013,7 +1013,7 @@ function VendorsSection({ isOwner, role }) {
                     {v.memo || '-'}
                   </td>
                   {canEdit && (
-                    <td className="px-4 py-3 text-right space-x-1">
+                    <td className="px-4 py-3 text-right space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => setEditing(v)}
                         className="text-xs px-2 py-1 border rounded hover:bg-gray-50"

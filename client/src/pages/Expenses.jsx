@@ -544,7 +544,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
   const inputCls = 'w-full h-6 text-xs border border-transparent hover:border-gray-300 focus:border-navy-400 rounded px-1 bg-transparent';
   const cellWrap = 'flex items-center h-6';
   return (
-    <tr className={`${rowClass} align-middle`}>
+    <tr className={`${rowClass} align-middle group`}>
       <td className="px-3 py-1.5 text-center"><div className={`${cellWrap} justify-center`}><input type="checkbox" checked={selected} onChange={onToggleSelect} /></div></td>
       <td className="px-3 py-1.5"><div className={`${cellWrap} tabular-nums text-gray-600 text-xs`}>{String(e.date).slice(0, 10)}</div></td>
       <td className="px-3 py-1.5">
@@ -599,7 +599,7 @@ const ListRow = memo(function ListRow({ expense: e, selected, onToggleSelect, pr
       </td>
       <td className="px-3 py-1.5 text-center">
         <div className={`${cellWrap} justify-center`}>
-          <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs" title="삭제">×</button>
+          <button onClick={() => onRemove(e.id)} className="text-gray-300 hover:text-rose-500 text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" title="삭제">×</button>
         </div>
       </td>
     </tr>

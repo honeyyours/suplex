@@ -791,7 +791,7 @@ function Row({ material, onClick, onStatusChange }) {
                 </span>
               )}
               <span className="truncate">
-                {src.productName || customSummary || <span className="text-gray-400">미입력</span>}
+                {src.productName || customSummary || <span className="text-gray-300">—</span>}
               </span>
             </div>
           ) : (

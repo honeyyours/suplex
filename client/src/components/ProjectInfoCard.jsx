@@ -67,11 +67,11 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
               {weeks && <span className="text-gray-400 ml-1.5">(총 {weeks}주)</span>}
             </>
           ) : (
-            <span className="text-gray-400 italic">미입력</span>
+            <span className="text-gray-300">—</span>
           )}
         </InfoRow>
         <InfoRow label="주소">
-          {project.siteAddress || <span className="text-gray-400 italic">미입력</span>}
+          {project.siteAddress || <span className="text-gray-300">—</span>}
         </InfoRow>
         <InfoRow label="출입번호">
           {project.doorPassword ? (
@@ -79,20 +79,20 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
               {project.doorPassword}
             </span>
           ) : (
-            <span className="text-gray-400 italic">미입력</span>
+            <span className="text-gray-300">—</span>
           )}
         </InfoRow>
         <InfoRow label="연락처">
-          {project.customerPhone || <span className="text-gray-400 italic">미입력</span>}
+          {project.customerPhone || <span className="text-gray-300">—</span>}
         </InfoRow>
         <InfoRow label="면적">
-          {project.area ? `${Number(project.area).toLocaleString('ko-KR')} 평` : <span className="text-gray-400 italic">미입력</span>}
+          {project.area ? `${Number(project.area).toLocaleString('ko-KR')} 평` : <span className="text-gray-300">—</span>}
         </InfoRow>
         <InfoRow label="현장정보" full>
           {project.siteNotes ? (
             <span className="whitespace-pre-line">{project.siteNotes}</span>
           ) : (
-            <span className="text-gray-400 italic">미입력</span>
+            <span className="text-gray-300">—</span>
           )}
         </InfoRow>
         <InfoRow label="팀" full>
