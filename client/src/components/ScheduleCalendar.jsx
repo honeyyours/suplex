@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
@@ -22,34 +22,6 @@ export default function ScheduleCalendar({ projectId, project }) {
 
   const startKey = grid.length ? toDateKey(grid[0]) : null;
   const endKey = grid.length ? toDateKey(grid[grid.length - 1]) : null;
-
-  // 주 단위로 묶고, 월이 바뀌는 주(또는 첫 주)에 월 band 메타 부여.
-  // 긴 프로젝트(3~6월 등)에서 월 경계를 놓치지 않도록.
-  const weeks = useMemo(() => {
-    if (!grid.length || !projStartKey) return [];
-    const out = [];
-    let prevMonthKey = null;
-    for (let i = 0; i < grid.length; i += 7) {
-      const days = grid.slice(i, i + 7);
-      let bandLabel = null;
-      if (i === 0) {
-        // 첫 주: 프로젝트 시작일의 월 (그리드의 일요일이 전월일 수 있어서)
-        const ps = new Date(projStartKey);
-        const mk = `${ps.getFullYear()}-${ps.getMonth()}`;
-        bandLabel = `${ps.getFullYear()}년 ${ps.getMonth() + 1}월`;
-        prevMonthKey = mk;
-      } else {
-        const sat = days[6];
-        const mk = `${sat.getFullYear()}-${sat.getMonth()}`;
-        if (mk !== prevMonthKey) {
-          bandLabel = `${sat.getFullYear()}년 ${sat.getMonth() + 1}월`;
-          prevMonthKey = mk;
-        }
-      }
-      out.push({ days, bandLabel });
-    }
-    return out;
-  }, [grid, projStartKey]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['schedules', 'project', projectId, startKey, endKey],
@@ -253,14 +225,7 @@ export default function ScheduleCalendar({ projectId, project }) {
           ))}
         </div>
         <div className="grid grid-cols-7">
-          {weeks.map((wk, wi) => (
-            <Fragment key={wi}>
-              {wk.bandLabel && (
-                <div className="col-span-7 px-3 py-1.5 bg-navy-50 dark:bg-slate-800 text-navy-800 dark:text-slate-200 text-xs sm:text-sm font-semibold border-b border-navy-200 dark:border-slate-700">
-                  {wk.bandLabel}
-                </div>
-              )}
-              {wk.days.map((date) => {
+          {grid.map((date) => {
                 const key = toDateKey(date);
                 const dayEntries = byDate[key] || [];
                 const inRange = key >= projStartKey && key <= projEndKey;
@@ -329,8 +294,6 @@ export default function ScheduleCalendar({ projectId, project }) {
               </div>
             );
           })}
-            </Fragment>
-          ))}
         </div>
       </div>
     </div>
