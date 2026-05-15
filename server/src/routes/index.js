@@ -98,6 +98,9 @@ router.use('/expense-rules', expenseRuleRoutes);
 router.use('/ai-assistant', aiAssistantRoutes);
 router.use('/team', teamRoutes);
 router.use('/invitations', invitationRoutes);
+// 회사 자산/전체 데이터 임포트·익스포트 — 슈퍼어드민 전용 (어드민 콘솔에서 회사별 호출)
+// 반드시 `/admin` 보다 먼저 등록 — 더 구체적인 경로가 우선 매칭되어야 함
+router.use('/admin/companies/:companyId/data-transfer', companyAssetsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/activity', activityRoutes);
@@ -108,6 +111,5 @@ router.use('/dashboard', dashboardRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
-router.use('/company-assets', companyAssetsRoutes);
 
 module.exports = router;

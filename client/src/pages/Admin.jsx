@@ -5,6 +5,7 @@ import { adminApi } from '../api/admin';
 import api from '../api/client';
 import { totpApi } from '../api/totp';
 import AdminLoungeTab from '../components/AdminLoungeTab';
+import AdminCompanyDataTransferDialog from '../components/AdminCompanyDataTransferDialog';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
@@ -97,6 +98,7 @@ function CompaniesTab() {
   const [sort, setSort] = useState('created'); // created | name | activity
   const [dormantOnly, setDormantOnly] = useState(false);
   const [transferDlg, setTransferDlg] = useState(null);
+  const [dataXferDlg, setDataXferDlg] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -348,6 +350,11 @@ function CompaniesTab() {
                     className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
                   >💾 백업</button>
                   <button
+                    onClick={() => setDataXferDlg(c)}
+                    title="회사 자산/전체 데이터 export·import (요청 처리용)"
+                    className="text-xs px-2 py-1 border rounded hover:bg-navy-50 text-navy-700 border-navy-300"
+                  >📦 데이터</button>
+                  <button
                     onClick={() => handleDelete(c)}
                     className="text-xs px-2 py-1 border border-rose-300 text-rose-600 rounded hover:bg-rose-50"
                   >🗑️</button>
@@ -363,6 +370,13 @@ function CompaniesTab() {
           company={transferDlg}
           onClose={() => setTransferDlg(null)}
           onDone={() => { setTransferDlg(null); load(); }}
+        />
+      )}
+
+      {dataXferDlg && (
+        <AdminCompanyDataTransferDialog
+          company={dataXferDlg}
+          onClose={() => setDataXferDlg(null)}
         />
       )}
     </div>

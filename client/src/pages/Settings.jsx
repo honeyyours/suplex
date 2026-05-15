@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
-import CompanyAssetsSection from '../components/CompanyAssetsSection';
 import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
@@ -148,8 +147,6 @@ export default function Settings() {
           </button>
         </div>
       </Section>
-
-      {isOwner && <CompanyAssetsSection />}
 
       {isOwner && (
         <Section title="프로젝트 백업 (일정·체크리스트·메모)">
