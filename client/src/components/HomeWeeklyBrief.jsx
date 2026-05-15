@@ -162,10 +162,9 @@ function ProjectRow({ group }) {
       >
         🏠 {project.name}
       </Link>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-gray-700 dark:text-gray-300 flex-1">
-        {visible.map((e, idx) => (
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs text-gray-700 dark:text-gray-300 flex-1">
+        {visible.map((e) => (
           <span key={e.id} className="inline-flex items-baseline gap-1 whitespace-nowrap">
-            {idx > 0 && <span className="text-gray-300 dark:text-slate-600 -ml-2">·</span>}
             <span className="text-gray-500 dark:text-gray-400 tabular-nums">{dayLabel(e.date)}</span>
             {e.category && (
               <span className="text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300">

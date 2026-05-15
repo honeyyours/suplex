@@ -143,7 +143,7 @@ function Item({ item, onToggle }) {
               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
             )}
             {item.dueDate && (
-              <span className="px-1.5 py-0.5 rounded bg-navy-50 text-navy-700">
+              <span className="px-1.5 py-0.5 rounded bg-navy-100 text-navy-800 font-medium">
                 📅 {new Date(item.dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
               </span>
             )}
@@ -160,7 +160,7 @@ function Item({ item, onToggle }) {
                 {item.project.name}
               </Link>
             )}
-            <span className="text-gray-500">
+            <span className="text-gray-400">
               {item.isDone && item.completedAt
                 ? `완료 ${relativeTime(item.completedAt)}`
                 : `등록 ${relativeTime(item.createdAt)}`}

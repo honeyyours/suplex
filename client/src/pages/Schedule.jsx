@@ -54,11 +54,12 @@ export default function Schedule() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold text-navy-800">전체 일정</h1>
       </div>
 
+      {/* 탭 + 캘린더 카드 */}
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
         <div className="flex border-b px-2 overflow-x-auto">
           {SUBTABS.map((t) => (
@@ -76,8 +77,8 @@ export default function Schedule() {
           ))}
         </div>
         <div className="p-0 sm:p-5">
-          {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" />}
-          {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" />}
+          {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" section="calendar" />}
+          {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" section="calendar" />}
           {tab === 'all' && (
             <>
               <div className="flex justify-end mb-2 px-2 sm:px-0">
@@ -90,15 +91,23 @@ export default function Schedule() {
                 </button>
               </div>
               <AggregateCalendar />
-              <div className="mt-6 pt-4 border-t">
-                <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
-                  ✅ 전체 체크리스트
-                </h3>
-                <AggregateChecklist />
-              </div>
             </>
           )}
         </div>
+      </div>
+
+      {/* 체크리스트 — 별도 카드 */}
+      <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0 p-4 sm:p-5">
+        {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" section="checklist" />}
+        {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" section="checklist" />}
+        {tab === 'all' && (
+          <>
+            <h3 className="text-base font-bold text-navy-800 mb-3">
+              ✅ 전체 체크리스트
+            </h3>
+            <AggregateChecklist />
+          </>
+        )}
       </div>
 
       {extractAllOpen && (
@@ -114,7 +123,7 @@ export default function Schedule() {
   );
 }
 
-function FilterableProjectCalendar({ status }) {
+function FilterableProjectCalendar({ status, section = 'calendar' }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedId = searchParams.get('projectId') || 'all';
   const { auth } = useAuth();
@@ -227,6 +236,30 @@ function FilterableProjectCalendar({ status }) {
 
   const selectedProject = selectedId !== 'all' ? projects.find((p) => p.id === selectedId) : null;
 
+  // 체크리스트만 렌더 (별도 카드 영역에서 호출됨)
+  if (section === 'checklist') {
+    return (
+      <>
+        {selectedProject ? (
+          <>
+            <h3 className="text-base font-bold text-navy-800 mb-3">
+              ✅ {selectedProject.name} 체크리스트
+            </h3>
+            <ProjectChecklist projectId={selectedProject.id} />
+          </>
+        ) : (
+          <>
+            <h3 className="text-base font-bold text-navy-800 mb-3">
+              ✅ 체크리스트
+            </h3>
+            <AggregateChecklist projectIds={allIds} />
+          </>
+        )}
+      </>
+    );
+  }
+
+  // 캘린더(+ 프로젝트 칩 + 정보 카드 + 모달)
   return (
     <>
       <div className="sm:hidden border-b mb-2 overflow-x-auto">
@@ -291,23 +324,6 @@ function FilterableProjectCalendar({ status }) {
           <AggregateCalendar projectIds={filterIds} />
         </>
       )}
-      <div className="mt-6 pt-4 border-t">
-        {selectedProject ? (
-          <>
-            <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
-              ✅ {selectedProject.name} 체크리스트
-            </h3>
-            <ProjectChecklist projectId={selectedProject.id} />
-          </>
-        ) : (
-          <>
-            <h3 className="text-base font-bold text-navy-800 mb-3 px-2 sm:px-0">
-              ✅ 체크리스트
-            </h3>
-            <AggregateChecklist projectIds={allIds} />
-          </>
-        )}
-      </div>
 
       {extractProjectModal && (
         <ExtractScheduleModal

@@ -103,7 +103,7 @@ export default function HomeWeekSchedule() {
           return (
             <div
               key={key}
-              className={`border rounded-md sm:rounded-lg min-h-[80px] sm:min-h-[120px] flex flex-col overflow-hidden ${
+              className={`border rounded-md sm:rounded-lg min-h-[80px] sm:min-h-[80px] flex flex-col overflow-hidden ${
                 isToday ? 'border-navy-500 bg-navy-50/40' : 'border-gray-200 bg-white'
               }`}
             >
