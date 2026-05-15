@@ -3,7 +3,10 @@ const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired } = require('../middlewares/auth');
 const { syncSystemAdvicesForProject } = require('../services/systemAdvicesSync');
+const { inferChecklistTeam } = require('../services/checklistTeam');
 // (deprecated — ChecklistTemplate 폐기, from-templates 라우트도 함께 제거)
+
+const TEAMS = ['FIELD', 'DESIGN', 'ORDER', 'OTHER'];
 
 const router = express.Router({ mergeParams: true });
 const globalRouter = express.Router();
@@ -94,6 +97,7 @@ const createSchema = z.object({
   title: z.string().min(1),
   category: z.enum(CATEGORIES).optional(),
   phase: z.string().optional().nullable(),
+  team: z.enum(TEAMS).optional(), // 미지정 시 자동 추론
   dueDate: z.string().datetime().optional().nullable(),
   requiresPhoto: z.boolean().optional(),
   linkedScheduleId: z.string().optional().nullable(), // 공정 일정 연결 — 일정 confirmed=true 시 자동 isDone
@@ -107,12 +111,15 @@ router.post('/', async (req, res, next) => {
     const project = await assertProjectAccess(projectId, req.user.companyId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
+    const team = data.team || inferChecklistTeam({ phase: data.phase, title: data.title });
+
     const item = await prisma.projectChecklist.create({
       data: {
         projectId,
         title: data.title.trim(),
         category: data.category || 'GENERAL',
         phase: data.phase || null,
+        team,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         requiresPhoto: data.requiresPhoto || false,
         linkedScheduleId: data.linkedScheduleId || null,
@@ -133,6 +140,7 @@ const updateSchema = z.object({
   title: z.string().min(1).optional(),
   category: z.enum(CATEGORIES).optional(),
   phase: z.string().optional().nullable(),
+  team: z.enum(TEAMS).optional(),
   dueDate: z.string().datetime().optional().nullable(),
   requiresPhoto: z.boolean().optional(),
 });
@@ -154,6 +162,7 @@ router.patch('/:id', async (req, res, next) => {
         ...(data.title !== undefined && { title: data.title.trim() }),
         ...(data.category !== undefined && { category: data.category }),
         ...(data.phase !== undefined && { phase: data.phase || null }),
+        ...(data.team !== undefined && { team: data.team }),
         ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
         ...(data.requiresPhoto !== undefined && { requiresPhoto: data.requiresPhoto }),
       },

@@ -28,23 +28,19 @@ function endOfDay(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); retur
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function daysBetween(a, b) { return Math.round((startOfDay(b) - startOfDay(a)) / 86400000); }
 
-const ORDER_KEYWORDS = /발주|자재|주문|매입|배송|입고/;
-const MATERIAL_KEYWORDS = /마감재|샘플|모델|시안|컬러칩|컬러 ?시트|선정/;
-
-function classifyChecklist(item) {
-  const phase = (item.phase || '').trim();
-  const title = item.title || '';
-  if (phase === '발주' || ORDER_KEYWORDS.test(title)) return 'BOTH';
-  if (phase === '마감재' || MATERIAL_KEYWORDS.test(title)) return 'DESIGN';
-  return 'FIELD';
-}
-
-// 사용자 역할이 항목 team을 볼 수 있는지
+// 사용자 역할이 항목 team을 볼 수 있는지.
+// team 값:
+//   FIELD  → 현장팀에만
+//   DESIGN → 디자인팀에만
+//   ORDER  → 양쪽 모두 (발주는 둘 다 챙겨야 함)
+//   BOTH   → 양쪽 모두 (PO·프로젝트 알람용 별칭)
+//   OTHER  → 카드 미노출
 function canSeeTeam(role, team) {
+  if (team === 'OTHER') return false;
   if (role === 'OWNER') return true;
-  if (role === 'FIELD') return team === 'FIELD' || team === 'BOTH';
-  if (role === 'DESIGNER') return team === 'DESIGN' || team === 'BOTH';
-  return true; // 그 외 역할은 풀로 보여줌 (안전 디폴트)
+  if (role === 'FIELD') return team === 'FIELD' || team === 'ORDER' || team === 'BOTH';
+  if (role === 'DESIGNER') return team === 'DESIGN' || team === 'ORDER' || team === 'BOTH';
+  return true;
 }
 
 function dayLabelFromDiff(diff, fallback) {
@@ -120,14 +116,15 @@ router.get('/today-actions', async (req, res, next) => {
             take: 50,
           })
         : Promise.resolve([]),
-      // 4. 체크리스트 — 3일 내 마감, 미완료
+      // 4. 체크리스트 — 3일 내 마감, 미완료, team='OTHER' 제외
       prisma.projectChecklist.findMany({
         where: {
           projectId: { in: projectIds },
           isDone: false,
           dueDate: { not: null, lte: horizonEnd },
+          team: { not: 'OTHER' },
         },
-        select: { id: true, projectId: true, title: true, phase: true, dueDate: true },
+        select: { id: true, projectId: true, title: true, phase: true, team: true, dueDate: true },
         orderBy: { dueDate: 'asc' },
         take: 100,
       }),
@@ -202,22 +199,21 @@ router.get('/today-actions', async (req, res, next) => {
       });
     }
 
-    // 4. 체크리스트
+    // 4. 체크리스트 — team 필드 직접 사용 (자동 추론은 생성 시 적용됨)
+    const TEAM_TAG = { FIELD: '현장', DESIGN: '마감재', ORDER: '발주' };
     for (const c of checklists) {
       const proj = projectById.get(c.projectId);
       if (!proj) continue;
+      if (!canSeeTeam(role, c.team)) continue;
       const diff = daysBetween(today, c.dueDate);
-      const team = classifyChecklist(c);
-      if (!canSeeTeam(role, team)) continue;
-      const tag = team === 'BOTH' ? '발주' : (team === 'DESIGN' ? '마감재' : '체크리스트');
       items.push({
         id: `chk-${c.id}`,
         level: levelFromDiff(diff),
         dayLabel: dayLabelFromDiff(diff),
         kind: 'checklist',
-        team,
+        team: c.team,
         title: `${proj.name} · ${c.title}`,
-        meta: tag,
+        meta: TEAM_TAG[c.team] || '체크리스트',
         href: `/projects/${c.projectId}/checklist`,
         sortKey: diff * 10 + 3,
       });

@@ -16,6 +16,7 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
   const [newDueDate, setNewDueDate] = useState('');
   const [newLinkedSchedule, setNewLinkedSchedule] = useState(null); // {id, date, content, category} — DUE 안에서 일정 가져오기 사용
+  const [newTeam, setNewTeam] = useState('AUTO'); // 'AUTO' | 'FIELD' | 'DESIGN' | 'ORDER' | 'OTHER'
   const [showLinkSheet, setShowLinkSheet] = useState(false);
   const [err, setErr] = useState('');
   const [editingItem, setEditingItem] = useState(null); // prompt() 대체 — 편집 대상
@@ -58,12 +59,14 @@ export default function ProjectChecklist({ projectId } = {}) {
         requiresPhoto: newRequiresPhoto,
         dueDate: dueDateIso,
         linkedScheduleId,
+        ...(newTeam !== 'AUTO' ? { team: newTeam } : {}),
       });
       setNewTitle('');
       setNewRequiresPhoto(false);
       setNewKind('GENERAL');
       setNewDueDate('');
       setNewLinkedSchedule(null);
+      setNewTeam('AUTO');
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -184,6 +187,22 @@ export default function ProjectChecklist({ projectId } = {}) {
               className="w-4 h-4 accent-navy-700"
             />
             사진 첨부 필수
+          </label>
+          {/* 분류 — 홈 '3일 안에 할 일' 카드 노출 분기. 자동은 제목·공종 키워드로 추론. */}
+          <label className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span>분류:</span>
+            <select
+              value={newTeam}
+              onChange={(e) => setNewTeam(e.target.value)}
+              className="border rounded-md px-2 py-1 text-xs bg-white"
+              title="홈 '3일 안에 할 일' 카드에 어느 팀이 보게 할지"
+            >
+              <option value="AUTO">자동 (제목으로 추론)</option>
+              <option value="FIELD">현장</option>
+              <option value="DESIGN">디자인</option>
+              <option value="ORDER">발주 (양쪽)</option>
+              <option value="OTHER">기타 (홈 미노출)</option>
+            </select>
           </label>
         </div>
         {displayErr && <div className="mt-2 text-sm text-rose-600">{displayErr}</div>}
@@ -310,6 +329,7 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
             {item.phase && (
               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
             )}
+            <TeamChip team={item.team} />
             {item.dueDate && <DueBadge dueDate={item.dueDate} isDone={item.isDone} />}
             {item.requiresPhoto && (
               <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">사진 필수</span>
@@ -352,6 +372,19 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
       )}
     </div>
   );
+}
+
+// 분류 칩 — 홈 '3일 안에 할 일' 카드 노출 분기와 동일 색상 톤
+function TeamChip({ team }) {
+  if (!team || team === 'OTHER') return null;
+  const map = {
+    FIELD:  { label: '현장', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+    DESIGN: { label: '디자인', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
+    ORDER:  { label: '발주', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  };
+  const m = map[team];
+  if (!m) return null;
+  return <span className={`px-1.5 py-0.5 rounded border ${m.cls}`}>{m.label}</span>;
 }
 
 // 기한 배지 — D-N + 날짜 텍스트, 긴급도는 색으로 구분

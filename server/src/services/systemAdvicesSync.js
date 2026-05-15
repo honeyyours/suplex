@@ -6,6 +6,7 @@
 // (projectId, linkedScheduleId, title) 조합으로 중복 방지한다.
 
 const { ensureSystemDefaultsForCompany } = require('./standardPhaseAdvices');
+const { inferChecklistTeam } = require('./checklistTeam');
 
 const SYSTEM_PHASE_LABEL = '시스템';
 
@@ -71,6 +72,7 @@ async function syncSystemAdvicesForProject(prisma, { projectId, companyId, userI
           title: rule.title,
           category: 'GENERAL',
           phase: SYSTEM_PHASE_LABEL,
+          team: inferChecklistTeam({ phase: SYSTEM_PHASE_LABEL, title: rule.title }),
           requiresPhoto: rule.requiresPhoto || false,
           dueDate: todayStart, // 미확정 점검 자체는 오늘 처리해야 할 일
           linkedScheduleId: e.id,

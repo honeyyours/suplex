@@ -419,12 +419,22 @@ enum ChecklistCategory {
   URGENT // 긴급
 }
 
+// 홈 대시보드 '3일 안에 할 일' 노출 분기용 (2026-05-15).
+// FIELD = 현장팀에게 / DESIGN = 디자인팀에게 / ORDER = 양쪽 모두 / OTHER = 카드 미노출.
+enum ChecklistTeam {
+  FIELD
+  DESIGN
+  ORDER
+  OTHER
+}
+
 // 프로젝트별 체크리스트 (사용자 관리 + PhaseAdvice 자동 생성 공용)
 model ProjectChecklist {
   id               String            @id @default(cuid())
   projectId        String
   phase            String? // 공종 (철거/목공/전기 등) — 일정 카테고리와 매칭
   category         ChecklistCategory @default(GENERAL)
+  team             ChecklistTeam     @default(OTHER) // 홈 카드 노출 분기
   title            String // 체크 항목 제목
   isDone           Boolean           @default(false)
   requiresPhoto    Boolean           @default(false) // 사진 첨부 필수 여부
