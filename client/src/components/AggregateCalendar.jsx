@@ -3,20 +3,9 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel,
+  toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryBorderClass,
 } from '../utils/date';
 import PhaseInlineContent from './PhaseInlineContent';
-
-const PROJECT_COLORS = [
-  'bg-blue-100 text-blue-800',
-  'bg-pink-100 text-pink-800',
-  'bg-emerald-100 text-emerald-800',
-  'bg-violet-100 text-violet-800',
-  'bg-indigo-100 text-indigo-800',
-  'bg-rose-100 text-rose-800',
-  'bg-yellow-100 text-yellow-800',
-  'bg-teal-100 text-teal-800',
-];
 
 export default function AggregateCalendar({ status, projectIds, emptyText, headerRight } = {}) {
   const [current, setCurrent] = useState(() => {
@@ -48,19 +37,6 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
   });
   const entries = skip ? [] : (data?.entries || []);
   const loading = !skip && isLoading;
-
-  // 프로젝트별 색상 매핑 (일관된 순서)
-  const projectColor = useMemo(() => {
-    const map = {};
-    let i = 0;
-    entries.forEach((e) => {
-      if (e.project?.id && !map[e.project.id]) {
-        map[e.project.id] = PROJECT_COLORS[i % PROJECT_COLORS.length];
-        i++;
-      }
-    });
-    return map;
-  }, [entries]);
 
   const byDate = useMemo(() => {
     const map = {};
@@ -135,22 +111,22 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                     {isFirstOfMonth ? `${date.getMonth() + 1}/1` : date.getDate()}
                   </span>
                 </div>
-                <div className="px-0 sm:px-1 pb-0 sm:pb-1 flex flex-col gap-0 sm:gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
+                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {
-                    const projColor = projectColor[e.project?.id] || 'bg-gray-100 text-gray-700';
+                    const borderColor = categoryBorderClass(e.category);
                     return (
                       <Link
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[10px] rounded-sm sm:rounded px-0.5 sm:px-1.5 py-0 sm:py-0.5 truncate flex items-center gap-1
-                          ${projColor} sm:!bg-white sm:dark:!bg-slate-900 sm:!text-navy-800 sm:dark:!text-slate-200
-                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
+                          relative text-[10px] rounded-sm sm:rounded pl-1 pr-3 py-0.5 truncate flex items-center gap-1
+                          bg-white dark:bg-slate-900 text-navy-800 dark:text-slate-200
+                          border-l-[3px] ${borderColor}
                           hover:brightness-95
                         `}
-                        title={`${e.project?.name || ''} · ${e.content}`}
+                        title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
-                        <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded ${projColor}`}>
+                        <span className="hidden sm:inline text-gray-500 mr-0.5 truncate max-w-[60px]">
                           {e.project?.name}
                         </span>
                         <PhaseInlineContent entry={e} textClassName="flex-1" />

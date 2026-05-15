@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { categoryClass } from '../utils/date';
+import { categoryBorderClass } from '../utils/date';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
 import ContextMenu from './ContextMenu';
@@ -86,7 +86,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
   }
 
 
-  const catColor = entry.category ? categoryClass(entry.category) : 'bg-gray-100 text-gray-700';
+  const borderColor = categoryBorderClass(entry.category);
   return (
     <>
       <div
@@ -106,9 +106,9 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           setContextMenu({ x: e.clientX, y: e.clientY });
         }}
         className={`
-          relative group text-[9px] sm:text-xs rounded-sm sm:rounded px-0.5 sm:px-1.5 py-0 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
-          ${catColor} sm:!bg-white sm:dark:!bg-slate-900 sm:!text-navy-800 sm:dark:!text-slate-200
-          sm:border-l-2 ${entry.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
+          relative group text-[10px] sm:text-xs rounded-sm sm:rounded px-1 sm:px-1.5 py-0.5 sm:py-1 flex items-center gap-1 truncate sm:cursor-pointer
+          bg-white dark:bg-slate-900 text-navy-800 dark:text-slate-200
+          border-l-[3px] ${borderColor}
         `}
       >
         <div className="flex-1 min-w-0">

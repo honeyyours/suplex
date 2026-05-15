@@ -2,13 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
-import { toDateKey, addDays, categoryClass } from '../utils/date';
-
-const STATUS_COLORS = {
-  IN_PROGRESS: 'bg-sky-100 text-sky-800',
-  PLANNED: 'bg-amber-100 text-amber-800',
-};
-const DEFAULT_COLOR = 'bg-gray-100 text-gray-700';
+import { toDateKey, addDays, categoryBorderClass } from '../utils/date';
 
 // 오늘이 포함된 월요일 0시 반환
 function getMonday(date) {
@@ -120,30 +114,25 @@ export default function HomeWeekSchedule() {
                   <div className="text-xs sm:text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
                   dayEntries.map((e) => {
-                    const projColor = STATUS_COLORS[e.project?.status] || DEFAULT_COLOR;
+                    const borderColor = categoryBorderClass(e.category);
                     return (
                       <Link
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[9px] sm:text-[10px] rounded-sm sm:rounded pl-0.5 pr-0 sm:px-1.5 py-0.5 sm:py-0.5 truncate block
-                          ${projColor} sm:!bg-white sm:dark:!bg-slate-900 sm:!text-navy-800 sm:dark:!text-slate-200
-                          sm:border-l-2 ${e.confirmed ? 'sm:border-emerald-500' : 'sm:border-navy-400'}
+                          relative text-[10px] rounded-sm sm:rounded pl-1 pr-3 py-0.5 truncate block
+                          bg-white dark:bg-slate-900 text-navy-800 dark:text-slate-200
+                          border-l-[3px] ${borderColor}
                           hover:brightness-95
                         `}
-                        title={`${e.project?.name || ''} · ${e.content}`}
+                        title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
-                        {e.project?.name && (
-                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded mr-1 ${projColor}`}>
-                            {e.project.name}
-                          </span>
-                        )}
-                        {e.category && (
-                          <span className={`hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded mr-1 ${categoryClass(e.category)}`}>
-                            {e.category}
-                          </span>
-                        )}
-                        <span className="truncate">{e.content}</span>
+                        <span className="truncate">
+                          {e.project?.name && (
+                            <span className="hidden sm:inline text-gray-500 mr-1">{e.project.name}</span>
+                          )}
+                          {e.content}
+                        </span>
                         {e.confirmed && (
                           <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}

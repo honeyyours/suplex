@@ -141,3 +141,32 @@ export function categoryClass(cat) {
   if (CATEGORY_COLORS[cat]) return CATEGORY_COLORS[cat];
   return FALLBACK_PHASE_COLORS[hashString(cat) % FALLBACK_PHASE_COLORS.length];
 }
+
+// 캘린더 일정 막대 좌측 보더용 — 흰 배경 + 좌측 색 보더만으로 카테고리 구분
+const CATEGORY_BORDER_COLORS = {
+  철거:   'border-rose-400',
+  목공:   'border-amber-400',
+  전기:   'border-sky-400',
+  설비:   'border-teal-400',
+  타일:   'border-pink-400',
+  도배:   'border-violet-400',
+  도장:   'border-orange-400',
+  필름:   'border-fuchsia-400',
+  마루:   'border-yellow-500',
+  준공:   'border-emerald-400',
+};
+
+const FALLBACK_PHASE_BORDER_COLORS = [
+  'border-stone-400',
+  'border-lime-500',
+  'border-cyan-400',
+  'border-indigo-400',
+  'border-purple-400',
+  'border-blue-400',
+];
+
+export function categoryBorderClass(cat) {
+  if (!cat) return 'border-gray-300';
+  if (CATEGORY_BORDER_COLORS[cat]) return CATEGORY_BORDER_COLORS[cat];
+  return FALLBACK_PHASE_BORDER_COLORS[hashString(cat) % FALLBACK_PHASE_BORDER_COLORS.length];
+}
