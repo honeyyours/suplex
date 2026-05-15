@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { adminApi } from '../api/admin';
+import api from '../api/client';
 import { totpApi } from '../api/totp';
 import AdminLoungeTab from '../components/AdminLoungeTab';
 
@@ -199,10 +200,19 @@ function CompaniesTab() {
   }
 
   function downloadBackup(c) {
-    // 어드민 토큰을 query로 보낼 수 없으니 fetch + blob 다운로드
+    // 어드민 토큰을 query로 보낼 수 없으니 fetch + blob 다운로드.
+    // axios.defaults.baseURL 재사용 — Vercel rewrite 가 API 요청을 SPA index.html 로 잡지 않도록.
     const token = localStorage.getItem('suplex_token');
-    fetch(adminApi.backupUrl(c.id), { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.ok ? r.blob() : r.json().then((j) => Promise.reject(j)))
+    const base = (api.defaults.baseURL || '/api').replace(/\/$/, '');
+    fetch(`${base}/admin/companies/${c.id}/backup`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        if (!r.ok) return r.json().then((j) => Promise.reject(j));
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          return Promise.reject({ error: `서버 응답이 JSON 이 아닙니다 (${ct}). 배포 상태 확인 필요.` });
+        }
+        return r.blob();
+      })
       .then((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
