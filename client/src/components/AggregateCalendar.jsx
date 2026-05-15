@@ -126,7 +126,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                 key={key}
                 className={`border-r border-b last:border-r-0 min-h-[80px] sm:min-h-28 flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
-                } ${isFirstOfMonth ? 'border-t-2 border-t-navy-400' : ''}`}
+                }`}
               >
                 <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
