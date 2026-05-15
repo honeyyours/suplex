@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi } from '../api/checklists';
 import { photosApi } from '../api/reports';
@@ -280,10 +280,11 @@ function Empty({ text }) {
   return <div className="text-center text-sm text-gray-400 py-8">{text}</div>;
 }
 
-function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
+export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, showProjectChip = false }) {
   const photos = item.photos || [];
   const showPhotos = item.requiresPhoto || photos.length > 0;
   const [expanded, setExpanded] = useState(item.requiresPhoto && photos.length === 0);
+  const effProjectId = projectId || item.project?.id;
   return (
     <div className={`bg-white border rounded-md p-3 group ${item.isDone ? 'opacity-75' : ''}`}>
       <div className="flex items-start gap-2">
@@ -298,6 +299,14 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             {item.title}
           </div>
           <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
+            {showProjectChip && item.project && (
+              <Link
+                to={`/projects/${item.project.id}/checklist`}
+                className="px-1.5 py-0.5 bg-navy-50 text-navy-700 rounded hover:bg-navy-100"
+              >
+                {item.project.name}
+              </Link>
+            )}
             {item.phase && (
               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
             )}
@@ -321,21 +330,25 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             </span>
           </div>
         </div>
-        <div className="sm:opacity-0 sm:group-hover:opacity-100 transition flex gap-1">
-          {!item.isDone && (
-            <button
-              onClick={() => onEdit(item)}
-              className="text-xs text-gray-500 hover:text-navy-700 px-1"
-            >✎</button>
-          )}
-          <button
-            onClick={() => onDelete(item.id)}
-            className="text-xs text-gray-500 hover:text-rose-600 px-1"
-          >✕</button>
-        </div>
+        {(onEdit || onDelete) && (
+          <div className="sm:opacity-0 sm:group-hover:opacity-100 transition flex gap-1">
+            {onEdit && !item.isDone && (
+              <button
+                onClick={() => onEdit(item)}
+                className="text-xs text-gray-500 hover:text-navy-700 px-1"
+              >✎</button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(item.id, effProjectId)}
+                className="text-xs text-gray-500 hover:text-rose-600 px-1"
+              >✕</button>
+            )}
+          </div>
+        )}
       </div>
-      {showPhotos && expanded && (
-        <ChecklistPhotos projectId={projectId} item={item} onChange={onChange} />
+      {showPhotos && expanded && effProjectId && (
+        <ChecklistPhotos projectId={effProjectId} item={item} onChange={onChange} />
       )}
     </div>
   );

@@ -1,9 +1,12 @@
+// 회사 전체(또는 status별) 프로젝트의 체크리스트 통합 뷰.
+// 항목 표시는 ProjectChecklist의 Item을 재사용 — 양식 일관성.
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checklistsApi } from '../api/checklists';
-import { splitChecklistItems } from '../pages/ProjectChecklist';
-import { relativeTime } from '../utils/date';
+import {
+  splitChecklistItems,
+  Item as ChecklistItem,
+} from '../pages/ProjectChecklist';
 
 export default function AggregateChecklist({ projectIds }) {
   const queryClient = useQueryClient();
@@ -19,15 +22,33 @@ export default function AggregateChecklist({ projectIds }) {
     const set = new Set(projectIds);
     return allItems.filter((i) => i.project && set.has(i.project.id));
   }, [allItems, projectIds]);
-  const loading = isLoading;
 
-  async function toggle(projectId, itemId) {
+  async function toggle(itemId, ctx) {
+    // ChecklistItem의 onToggle은 (itemId)만 넘김 — item에서 projectId 추출 필요
+    const item = items.find((i) => i.id === itemId);
+    const pid = item?.project?.id;
+    if (!pid) return;
     try {
-      await checklistsApi.toggle(projectId, itemId);
+      await checklistsApi.toggle(pid, itemId);
       queryClient.invalidateQueries({ queryKey: ['checklists'] });
     } catch (e) {
       alert(e.response?.data?.error || '처리 실패');
     }
+  }
+
+  async function remove(itemId, projectId) {
+    if (!projectId) return;
+    if (!confirm('이 항목을 삭제할까요?')) return;
+    try {
+      await checklistsApi.remove(projectId, itemId);
+      queryClient.invalidateQueries({ queryKey: ['checklists'] });
+    } catch (e) {
+      alert(e.response?.data?.error || '삭제 실패');
+    }
+  }
+
+  function reload() {
+    queryClient.invalidateQueries({ queryKey: ['checklists'] });
   }
 
   const projects = useMemo(() => {
@@ -46,7 +67,7 @@ export default function AggregateChecklist({ projectIds }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
         <div className="text-sm text-gray-600">
           총 {filtered.length}건 · 진행 {upcoming.length + later.length} · 완료 {done.length}
         </div>
@@ -62,28 +83,55 @@ export default function AggregateChecklist({ projectIds }) {
         </select>
       </div>
 
-      {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
+      {isLoading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
       <div className="space-y-4">
-        <Column title="해야할 일" count={upcoming.length} icon="⬜">
+        <Column title="해야할 일" count={upcoming.length}>
           {upcoming.length === 0 ? (
             <Empty text="해야할 항목이 없습니다" />
           ) : (
-            upcoming.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
+            upcoming.map((i) => (
+              <ChecklistItem
+                key={i.id}
+                item={i}
+                onToggle={toggle}
+                onDelete={remove}
+                onChange={reload}
+                showProjectChip
+              />
+            ))
           )}
         </Column>
-        <Column title="나중에" count={later.length} icon="📅" collapsible defaultOpen={false}>
+        <Column title="나중에" count={later.length} collapsible defaultOpen={false}>
           {later.length === 0 ? (
             <Empty text="예정된 항목이 없습니다" />
           ) : (
-            later.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
+            later.map((i) => (
+              <ChecklistItem
+                key={i.id}
+                item={i}
+                onToggle={toggle}
+                onDelete={remove}
+                onChange={reload}
+                showProjectChip
+              />
+            ))
           )}
         </Column>
-        <Column title="완료된 일" count={done.length} icon="✅" collapsible defaultOpen={false}>
+        <Column title="완료된 일" count={done.length} collapsible defaultOpen={false}>
           {done.length === 0 ? (
             <Empty text="완료된 항목이 없습니다" />
           ) : (
-            done.map((i) => <Item key={i.id} item={i} onToggle={toggle} />)
+            done.map((i) => (
+              <ChecklistItem
+                key={i.id}
+                item={i}
+                onToggle={toggle}
+                onDelete={remove}
+                onChange={reload}
+                showProjectChip
+              />
+            ))
           )}
         </Column>
       </div>
@@ -91,11 +139,10 @@ export default function AggregateChecklist({ projectIds }) {
   );
 }
 
-function Column({ title, count, icon, children, collapsible = false, defaultOpen = true }) {
+function Column({ title, count, children, collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   const header = (
     <>
-      <span>{icon}</span>
       <span>{title} ({count})</span>
       {collapsible && <span className="ml-auto text-gray-400 text-xs">{open ? '▼' : '▶'}</span>}
     </>
@@ -122,52 +169,4 @@ function Column({ title, count, icon, children, collapsible = false, defaultOpen
 
 function Empty({ text }) {
   return <div className="text-center text-sm text-gray-400 py-8">{text}</div>;
-}
-
-function Item({ item, onToggle }) {
-  return (
-    <div className={`bg-white border rounded-md p-3 ${item.isDone ? 'opacity-75' : ''}`}>
-      <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          checked={item.isDone}
-          onChange={() => onToggle(item.project.id, item.id)}
-          className="mt-0.5 w-4 h-4 accent-navy-700 flex-shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <div className={`text-sm ${item.isDone ? 'line-through text-gray-500' : 'text-navy-800'}`}>
-            {item.title}
-          </div>
-          <div className="flex items-center gap-2 mt-1.5 text-[11px] flex-wrap">
-            {item.phase && (
-              <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{item.phase}</span>
-            )}
-            {item.dueDate && (
-              <span className="px-1.5 py-0.5 rounded bg-navy-100 text-navy-800 font-medium">
-                📅 {new Date(item.dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
-              </span>
-            )}
-            {item.requiresPhoto && (
-              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                📷 {(item.photos || []).length}장 {item.photos?.length ? '' : '필요'}
-              </span>
-            )}
-            {item.project && (
-              <Link
-                to={`/projects/${item.project.id}/checklist`}
-                className="px-1.5 py-0.5 bg-navy-50 text-navy-700 rounded hover:bg-navy-100"
-              >
-                {item.project.name}
-              </Link>
-            )}
-            <span className="text-gray-400">
-              {item.isDone && item.completedAt
-                ? `완료 ${relativeTime(item.completedAt)}`
-                : `등록 ${relativeTime(item.createdAt)}`}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
