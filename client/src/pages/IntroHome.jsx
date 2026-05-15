@@ -290,9 +290,14 @@ export default function IntroHome() {
             </div>
             <div className="intro-tight font-bold text-lg mb-1.5">회사 도입 문의</div>
             <p className="text-sm text-navy-200 leading-relaxed">
+              관심 있으신 분들의 연락을 기다립니다.<br/>
+              현재 <b className="text-white">클로즈드 베타</b> 준비 중이며,<br/>
+              아래로 연락 주시면 순차적으로 안내드리겠습니다.
+            </p>
+            <div className="mt-3 pt-3 border-t border-navy-700 text-sm text-navy-200 leading-relaxed">
               이메일 <b className="text-white">hello@suplex.kr</b><br/>
               인스타그램 <b className="text-white">@suplex.kr</b>
-            </p>
+            </div>
           </a>
         </div>
       </section>
