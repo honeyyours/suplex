@@ -128,8 +128,9 @@ async function applyBundleFromPreset(prismaOrTx, { sourceCompanyId, targetCompan
       },
     });
     if (rows.length > 0) {
+      // 신규 회사 복사 시 디폴트 비활성 — 사용자가 직접 켜야 적용 (2026-05-15)
       await prismaOrTx.phaseAdvice.createMany({
-        data: rows.map((r) => ({ ...r, companyId: targetCompanyId })),
+        data: rows.map((r) => ({ ...r, companyId: targetCompanyId, active: false })),
       });
     }
     return { applied: true, count: rows.length };

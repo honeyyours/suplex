@@ -95,8 +95,9 @@ async function ensureSystemDefaultsForCompany(prismaOrTx, companyId) {
       select: { id: true },
     });
     if (existing) continue;
+    // 디폴트 비활성 — 사용자가 직접 켜야 적용 (2026-05-15)
     await prismaOrTx.phaseAdvice.create({
-      data: { companyId, ...rule, active: true },
+      data: { companyId, ...rule, active: false },
     });
   }
 }
