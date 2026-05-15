@@ -126,6 +126,12 @@ async function main() {
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
       );
     }
+    // 라이트 모드 강제 — (1) prefers-color-scheme: light emulate
+    //                    (2) 페이지 로드 전 localStorage suplex-theme=light 주입
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
+    await page.evaluateOnNewDocument(() => {
+      try { localStorage.setItem('suplex-theme', 'light'); } catch {}
+    });
 
     await login(page);
 
