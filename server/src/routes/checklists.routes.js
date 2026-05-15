@@ -96,6 +96,7 @@ const createSchema = z.object({
   phase: z.string().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
   requiresPhoto: z.boolean().optional(),
+  linkedScheduleId: z.string().optional().nullable(), // 공정 일정 연결 — 일정 confirmed=true 시 자동 isDone
 });
 
 // POST /api/projects/:projectId/checklists
@@ -114,6 +115,7 @@ router.post('/', async (req, res, next) => {
         phase: data.phase || null,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         requiresPhoto: data.requiresPhoto || false,
+        linkedScheduleId: data.linkedScheduleId || null,
         createdById: req.user.id,
       },
       include: includeUsers,

@@ -5,6 +5,7 @@ import { checklistsApi } from '../api/checklists';
 import { photosApi } from '../api/reports';
 import { relativeTime } from '../utils/date';
 import InputModal from '../components/InputModal';
+import ScheduleLinkSheet from '../components/ScheduleLinkSheet';
 
 export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
@@ -12,8 +13,10 @@ export default function ProjectChecklist({ projectId } = {}) {
   const queryClient = useQueryClient();
   const [newTitle, setNewTitle] = useState('');
   const [newRequiresPhoto, setNewRequiresPhoto] = useState(false);
-  const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
+  const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE' | 'LINK'
   const [newDueDate, setNewDueDate] = useState('');
+  const [newLinkedSchedule, setNewLinkedSchedule] = useState(null); // {id, date, content, category}
+  const [showLinkSheet, setShowLinkSheet] = useState(false);
   const [err, setErr] = useState('');
   const [editingItem, setEditingItem] = useState(null); // prompt() 대체 — 편집 대상
 
@@ -38,16 +41,31 @@ export default function ProjectChecklist({ projectId } = {}) {
       setErr('기한을 선택하거나 "일반"으로 바꿔주세요');
       return;
     }
+    if (newKind === 'LINK' && !newLinkedSchedule) {
+      setErr('연결할 공정 일정을 선택하거나 "일반"으로 바꿔주세요');
+      return;
+    }
     try {
+      let dueDateIso = null;
+      let linkedScheduleId = null;
+      if (newKind === 'DUE' && newDueDate) {
+        dueDateIso = new Date(newDueDate).toISOString();
+      } else if (newKind === 'LINK' && newLinkedSchedule) {
+        // 일정의 날짜를 dueDate로 사용 + linkedScheduleId 동시 저장
+        dueDateIso = new Date(newLinkedSchedule.date).toISOString();
+        linkedScheduleId = newLinkedSchedule.id;
+      }
       await checklistsApi.create(id, {
         title: newTitle.trim(),
         requiresPhoto: newRequiresPhoto,
-        dueDate: newKind === 'DUE' && newDueDate ? new Date(newDueDate).toISOString() : null,
+        dueDate: dueDateIso,
+        linkedScheduleId,
       });
       setNewTitle('');
       setNewRequiresPhoto(false);
       setNewKind('GENERAL');
       setNewDueDate('');
+      setNewLinkedSchedule(null);
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -108,26 +126,55 @@ export default function ProjectChecklist({ projectId } = {}) {
           <div className="inline-flex rounded border overflow-hidden text-xs">
             <button
               type="button"
-              onClick={() => { setNewKind('GENERAL'); setNewDueDate(''); }}
+              onClick={() => { setNewKind('GENERAL'); setNewDueDate(''); setNewLinkedSchedule(null); }}
               className={`px-3 py-1 ${newKind === 'GENERAL' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
               일반
             </button>
             <button
               type="button"
-              onClick={() => setNewKind('DUE')}
+              onClick={() => { setNewKind('DUE'); setNewLinkedSchedule(null); }}
               className={`px-3 py-1 border-l ${newKind === 'DUE' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
-              📅 기한 지정
+              📅 기한
+            </button>
+            <button
+              type="button"
+              onClick={() => { setNewKind('LINK'); setNewDueDate(''); setShowLinkSheet(true); }}
+              className={`px-3 py-1 border-l ${newKind === 'LINK' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              📌 일정 연결
             </button>
           </div>
           {newKind === 'DUE' && (
-            <input
-              type="date"
-              value={newDueDate}
-              onChange={(e) => setNewDueDate(e.target.value)}
-              className="border rounded-md px-2 py-1 text-sm bg-white"
-            />
+            <label className="flex items-center gap-1.5 text-xs text-gray-600">
+              <span>날짜:</span>
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+                className="border rounded-md px-2 py-1 text-sm bg-white"
+              />
+            </label>
+          )}
+          {newKind === 'LINK' && (
+            <button
+              type="button"
+              onClick={() => setShowLinkSheet(true)}
+              className="inline-flex items-center gap-1.5 text-xs px-2 py-1 border border-navy-200 bg-navy-50 text-navy-700 rounded hover:bg-navy-100"
+            >
+              {newLinkedSchedule ? (
+                <>
+                  <span className="tabular-nums">
+                    {new Date(newLinkedSchedule.date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+                  </span>
+                  {newLinkedSchedule.category && <span>[{newLinkedSchedule.category}]</span>}
+                  <span className="truncate max-w-[140px]">{newLinkedSchedule.content}</span>
+                </>
+              ) : (
+                <span className="text-gray-500">일정 선택…</span>
+              )}
+            </button>
           )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -183,6 +230,18 @@ export default function ProjectChecklist({ projectId } = {}) {
           confirmLabel="저장"
           onConfirm={handleEditConfirm}
           onCancel={() => setEditingItem(null)}
+        />
+      )}
+
+      {showLinkSheet && (
+        <ScheduleLinkSheet
+          projectId={id}
+          onSelect={(entry) => {
+            setNewLinkedSchedule(entry);
+            setShowLinkSheet(false);
+            setErr('');
+          }}
+          onClose={() => setShowLinkSheet(false)}
         />
       )}
     </div>
