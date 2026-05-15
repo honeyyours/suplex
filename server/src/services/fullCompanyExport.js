@@ -88,6 +88,8 @@ async function exportFullCompany(prisma, companyId) {
     formatVersion: FORMAT_VERSION,
     kind: KIND,
     projects,
+    // 봉기님이 export 후 "데이터 다 들어있나" 한눈에 확인할 수 있게 모든 카테고리 표시.
+    // 0 인 모델도 명시 — 빠진 게 아니라 회사가 안 썼다는 의미.
     counts: {
       ...assets.counts,
       projects: projects.length,
@@ -101,6 +103,13 @@ async function exportFullCompany(prisma, companyId) {
       dailyScheduleEntries: projects.reduce((s, p) => s + (p.dailyScheduleEntries?.length || 0), 0),
       checklists: projects.reduce((s, p) => s + (p.checklists?.length || 0), 0),
       dailyReports: projects.reduce((s, p) => s + (p.dailyReports?.length || 0), 0),
+      schedules: projects.reduce((s, p) => s + (p.schedules?.length || 0), 0),
+      scheduleChanges: projects.reduce((s, p) => s + (p.scheduleChanges?.length || 0), 0),
+      measurements: projects.reduce((s, p) => s + (p.measurements?.length || 0), 0),
+      materialRequests: projects.reduce((s, p) => s + (p.materialRequests?.length || 0), 0),
+      phaseNotes: projects.reduce((s, p) => s + (p.phaseNotes?.length || 0), 0),
+      settlementNotes: projects.reduce((s, p) => s + (p.settlementNotes?.length || 0), 0),
+      members: projects.reduce((s, p) => s + (p.members?.length || 0), 0),
     },
   };
 }
