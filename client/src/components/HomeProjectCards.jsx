@@ -34,10 +34,14 @@ export default function HomeProjectCards({ status }) {
 
   const v = VARIANTS[status];
 
+  const MOBILE_LIMIT = 5;
+  const mobileVisible = projects.slice(0, MOBILE_LIMIT);
+  const mobileRemaining = projects.length - mobileVisible.length;
+
   return (
-    <section className="bg-white rounded-xl border p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-navy-800 flex items-center gap-2">
+    <section className="bg-white rounded-xl border p-3 sm:p-5">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-base sm:text-lg font-bold text-navy-800 flex items-center gap-2">
           <span>{v.icon}</span>
           <span>{v.title}</span>
           <span className="text-sm font-normal text-gray-500">({projects.length})</span>
@@ -52,38 +56,78 @@ export default function HomeProjectCards({ status }) {
       ) : projects.length === 0 ? (
         <div className="text-center py-6 text-sm text-gray-400">{v.emptyText}</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {projects.map((p) => (
-            <Link
-              key={p.id}
-              to={v.getTo(p)}
-              className={`block rounded-lg border p-3 transition ${v.cardBase}`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <div className={`font-semibold text-sm truncate ${v.titleColor}`}>
-                  {p.name}
+        <>
+          {/* 모바일: 한 줄 리스트 (이름 · D-day · 평수) */}
+          <ul className="sm:hidden divide-y divide-gray-100">
+            {mobileVisible.map((p) => (
+              <li key={p.id}>
+                <Link
+                  to={v.getTo(p)}
+                  className="flex items-center gap-2 py-2.5 -mx-1 px-1 hover:bg-gray-50 rounded"
+                >
+                  <span className={`text-sm font-medium truncate flex-1 min-w-0 ${v.titleColor}`}>
+                    {p.name}
+                  </span>
+                  {p.expectedEndDate && (
+                    <span className="text-[11px] shrink-0">
+                      <DDayBadge date={p.expectedEndDate} />
+                    </span>
+                  )}
+                  {p.area && (
+                    <span className="text-[11px] text-gray-500 tabular-nums shrink-0">
+                      {Number(p.area)}평
+                    </span>
+                  )}
+                  <span className="text-gray-300 shrink-0">›</span>
+                </Link>
+              </li>
+            ))}
+            {mobileRemaining > 0 && (
+              <li>
+                <Link
+                  to="/projects"
+                  className="block text-center py-2 text-xs text-gray-500 hover:text-navy-700"
+                >
+                  +{mobileRemaining}건 더 →
+                </Link>
+              </li>
+            )}
+          </ul>
+
+          {/* 데스크톱: 기존 카드 그리드 */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {projects.map((p) => (
+              <Link
+                key={p.id}
+                to={v.getTo(p)}
+                className={`block rounded-lg border p-3 transition ${v.cardBase}`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className={`font-semibold text-sm truncate ${v.titleColor}`}>
+                    {p.name}
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${v.badge.color}`}>
+                    {v.badge.label}
+                  </span>
                 </div>
-                <span className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${v.badge.color}`}>
-                  {v.badge.label}
-                </span>
-              </div>
-              <div className="text-xs text-gray-600 truncate mb-1">
-                {p.customerName} · {p.siteAddress}
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-gray-500 flex-wrap">
-                {p.startDate && (
-                  <span>📅 {formatDateDot(p.startDate)}</span>
-                )}
-                {p.expectedEndDate && (
-                  <DDayBadge date={p.expectedEndDate} />
-                )}
-                {p.area && (
-                  <span>{Number(p.area)}평</span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="text-xs text-gray-600 truncate mb-1">
+                  {p.customerName} · {p.siteAddress}
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-gray-500 flex-wrap">
+                  {p.startDate && (
+                    <span>📅 {formatDateDot(p.startDate)}</span>
+                  )}
+                  {p.expectedEndDate && (
+                    <DDayBadge date={p.expectedEndDate} />
+                  )}
+                  {p.area && (
+                    <span>{Number(p.area)}평</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
