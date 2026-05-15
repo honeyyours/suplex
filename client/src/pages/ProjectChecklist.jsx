@@ -136,14 +136,14 @@ export default function ProjectChecklist({ projectId } = {}) {
               onClick={() => { setNewKind('DUE'); setNewLinkedSchedule(null); }}
               className={`px-3 py-1 border-l ${newKind === 'DUE' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
-              📅 기한
+              기한
             </button>
             <button
               type="button"
               onClick={() => { setNewKind('LINK'); setNewDueDate(''); setShowLinkSheet(true); }}
               className={`px-3 py-1 border-l ${newKind === 'LINK' ? 'bg-navy-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
-              📌 일정 연결
+              일정 연결
             </button>
           </div>
           {newKind === 'DUE' && (
@@ -183,7 +183,7 @@ export default function ProjectChecklist({ projectId } = {}) {
               onChange={(e) => setNewRequiresPhoto(e.target.checked)}
               className="w-4 h-4 accent-navy-700"
             />
-            📷 사진 첨부 필수
+            사진 첨부 필수
           </label>
         </div>
         {displayErr && <div className="mt-2 text-sm text-rose-600">{displayErr}</div>}
@@ -192,7 +192,7 @@ export default function ProjectChecklist({ projectId } = {}) {
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
       <div className="space-y-4">
-        <Column title="해야할 일" count={upcoming.length} icon="⬜">
+        <Column title="해야할 일" count={upcoming.length}>
           {upcoming.length === 0 ? (
             <Empty text="해야할 항목이 없습니다" />
           ) : (
@@ -202,7 +202,7 @@ export default function ProjectChecklist({ projectId } = {}) {
           )}
         </Column>
 
-        <Column title="나중에" count={later.length} icon="📅" collapsible defaultOpen={false}>
+        <Column title="나중에" count={later.length} collapsible defaultOpen={false}>
           {later.length === 0 ? (
             <Empty text="예정된 항목이 없습니다" />
           ) : (
@@ -212,7 +212,7 @@ export default function ProjectChecklist({ projectId } = {}) {
           )}
         </Column>
 
-        <Column title="완료된 일" count={done.length} icon="✅" collapsible defaultOpen={false}>
+        <Column title="완료된 일" count={done.length} collapsible defaultOpen={false}>
           {done.length === 0 ? (
             <Empty text="완료된 항목이 없습니다" />
           ) : (
@@ -248,11 +248,10 @@ export default function ProjectChecklist({ projectId } = {}) {
   );
 }
 
-function Column({ title, count, icon, children, collapsible = false, defaultOpen = true }) {
+function Column({ title, count, children, collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   const header = (
     <>
-      <span>{icon}</span>
       <span>{title} ({count})</span>
       {collapsible && <span className="ml-auto text-gray-400 text-xs">{open ? '▼' : '▶'}</span>}
     </>
@@ -304,14 +303,14 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
             )}
             {item.dueDate && <DueBadge dueDate={item.dueDate} isDone={item.isDone} />}
             {item.requiresPhoto && (
-              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">📷 사진 필수</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">사진 필수</span>
             )}
             {showPhotos && (
               <button
                 onClick={() => setExpanded((v) => !v)}
                 className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
               >
-                📷 {photos.length}장 {expanded ? '▲' : '▼'}
+                사진 {photos.length}장 {expanded ? '▲' : '▼'}
               </button>
             )}
             <span className="text-gray-500">
@@ -342,7 +341,7 @@ function Item({ item, projectId, onToggle, onDelete, onEdit, onChange }) {
   );
 }
 
-// 기한 배지 — 📅 이모지 대신 D-N + 날짜 텍스트로 긴급도를 색으로 구분
+// 기한 배지 — D-N + 날짜 텍스트, 긴급도는 색으로 구분
 function DueBadge({ dueDate, isDone }) {
   const d = new Date(dueDate);
   const today = new Date();
