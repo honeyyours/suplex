@@ -66,7 +66,7 @@ export default function Schedule() {
             <button
               key={t.key}
               onClick={() => changeTab(t.key)}
-              className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
                 tab === t.key
                   ? 'border-navy-700 text-navy-800'
                   : 'border-transparent text-gray-500 hover:text-navy-700'

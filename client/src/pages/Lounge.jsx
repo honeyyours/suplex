@@ -229,7 +229,7 @@ function CategoryTab({ label, count, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 transition ${
+      className={`px-3 py-2 text-xs sm:text-sm whitespace-nowrap border-b-2 transition ${
         active
           ? 'border-navy-700 text-navy-700 dark:text-navy-300 font-semibold'
           : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'

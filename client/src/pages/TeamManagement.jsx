@@ -41,7 +41,7 @@ function TabButton({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+      className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 -mb-px transition ${
         active
           ? 'border-navy-700 text-navy-800'
           : 'border-transparent text-gray-500 hover:text-gray-700'

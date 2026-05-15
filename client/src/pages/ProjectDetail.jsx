@@ -87,7 +87,7 @@ export default function ProjectDetail() {
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
 
   const tab = ({ isActive }) =>
-    `px-3 sm:px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 transition ${
+    `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 transition ${
       isActive
         ? 'border-navy-700 text-navy-800'
         : 'border-transparent text-gray-500 hover:text-navy-700 hover:border-gray-300'
