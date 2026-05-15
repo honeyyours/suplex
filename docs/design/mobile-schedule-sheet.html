@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suplex — 모바일 일정 바텀시트 (디자인 스펙)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          navy: {
+            50:'#f0f4fa', 100:'#d9e2f0', 200:'#b3c5e1', 300:'#8da8d2',
+            400:'#5a7fb8', 500:'#3a5f9e', 600:'#2a4a80', 700:'#1e3a66',
+            800:'#15294a', 900:'#0c1a33',
+          },
+        },
+        fontFamily: { sans: ['Pretendard', 'system-ui', 'sans-serif'] },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Pretendard', system-ui, sans-serif; }
+  .device {
+    width: 390px; height: 750px;
+    background: #f3f4f6;
+    border-radius: 36px;
+    border: 10px solid #1f2937;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+  }
+  .device::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 24px;
+    background: #1f2937;
+    border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+  .device-screen {
+    width: 100%; height: 100%;
+    position: relative;
+    background: rgba(0,0,0,0.35); /* dim 효과 — 시트 뒤 배경 */
+    overflow: hidden;
+  }
+  .device-screen::before {
+    /* 모바일 캘린더 배경 힌트 (시트 뒤로 살짝 보이는 효과) */
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, #f9fafb 0%, #f9fafb 60px, transparent 60px),
+      repeating-linear-gradient(0deg, transparent 0 90px, #e5e7eb 90px 91px),
+      repeating-linear-gradient(90deg, transparent 0 calc(100%/7), #e5e7eb calc(100%/7) calc(100%/7 + 1px));
+    opacity: 0.55;
+  }
+  .annot {
+    font-size: 12px; color: #475569;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    padding: 8px 10px; border-radius: 4px;
+  }
+  .swatch { width: 28px; height: 28px; border-radius: 6px; }
+  h2.section { font-size: 18px; font-weight: 700; color: #1e3a66; margin: 32px 0 12px; }
+  .legend-row { display: grid; grid-template-columns: 28px 100px 1fr; gap: 10px; align-items: center; font-size: 13px; }
+  .legend-row code { font-size: 11px; color: #6b7280; }
+</style>
+</head>
+<body class="bg-slate-100 p-8 text-slate-800">
+
+<div class="max-w-[1320px] mx-auto">
+
+  <header class="mb-6">
+    <div class="text-xs tracking-[2px] text-slate-500 font-bold mb-1">SUPLEX · DESIGN SPEC</div>
+    <h1 class="text-2xl font-extrabold text-navy-800">모바일 일정 바텀시트</h1>
+    <p class="text-sm text-slate-600 mt-2">전체일정·프로젝트일정·홈 주간 캘린더에서 <strong>모바일</strong> 사용자가 날짜 셀을 탭했을 때 올라오는 바텀시트입니다. 현재 구현 화면을 그대로 추출했습니다(코드: <code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/MobileScheduleSheet.jsx</code>).</p>
+  </header>
+
+  <!-- ============ 두 가지 상태 ============ -->
+  <div class="flex flex-wrap gap-10 items-start justify-center">
+
+    <!-- (A) 일정 있는 상태 + 캡션 -->
+    <div class="flex gap-6 items-start">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-slate-500 mb-2 text-center">A. 일정 있는 상태</div>
+        <div class="device">
+          <div class="device-screen">
+            <!-- ↓↓ MobileScheduleSheet 본체 (코드 그대로 재현) ↓↓ -->
+            <div class="absolute inset-x-0 bottom-0 z-10">
+              <div class="relative w-full bg-white rounded-t-2xl max-h-[85vh] flex flex-col shadow-2xl">
+
+                <!-- Header -->
+                <div class="flex items-center px-3 py-3 border-b">
+                  <button class="px-3 py-1 text-navy-700 text-xl leading-none">‹</button>
+                  <div class="flex-1 text-center font-semibold text-navy-800">5/18 (월)</div>
+                  <button class="px-3 py-1 text-navy-700 text-xl leading-none">›</button>
+                  <button class="ml-2 px-3 py-1 text-gray-500">✕</button>
+                </div>
+
+                <!-- 기존 항목 -->
+                <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
+
+                  <!-- 확정 + 공정(전기) + 잔여 텍스트 -->
+                  <div class="flex items-center gap-2 rounded p-2 bg-emerald-50">
+                    <button class="w-5 h-5 rounded border bg-emerald-500 border-emerald-500 text-white text-xs flex items-center justify-center flex-shrink-0">✓</button>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-navy-800 flex items-center gap-1">
+                        <span class="inline-block text-[10px] px-1 py-0.5 rounded bg-sky-100 text-sky-800">전기</span>
+                        <span class="truncate">콘센트 추가 위치 확인</span>
+                      </div>
+                    </div>
+                    <button class="text-gray-400 px-2">✕</button>
+                  </div>
+
+                  <!-- 미확정 + 공정(타일) + 잔여 텍스트 -->
+                  <div class="flex items-center gap-2 rounded p-2 bg-gray-50">
+                    <button class="w-5 h-5 rounded border bg-white border-gray-300 flex items-center justify-center flex-shrink-0"></button>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-navy-800 flex items-center gap-1">
+                        <span class="inline-block text-[10px] px-1 py-0.5 rounded bg-pink-100 text-pink-800">타일</span>
+                        <span class="truncate">욕실 바닥 보양 작업 들어감</span>
+                      </div>
+                    </div>
+                    <button class="text-gray-400 px-2">✕</button>
+                  </div>
+
+                  <!-- 확정 + 공정(도배) + 잔여 + 협력업체 표시 -->
+                  <div class="flex items-center gap-2 rounded p-2 bg-emerald-50">
+                    <button class="w-5 h-5 rounded border bg-emerald-500 border-emerald-500 text-white text-xs flex items-center justify-center flex-shrink-0">✓</button>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-navy-800 flex items-center gap-1">
+                        <span class="inline-block text-[10px] px-1 py-0.5 rounded bg-violet-100 text-violet-800">도배</span>
+                        <span class="truncate">초벌 풀칠</span>
+                      </div>
+                      <div class="text-[11px] text-violet-700 mt-0.5">🏢 한솔도배</div>
+                    </div>
+                    <button class="text-gray-400 px-2">✕</button>
+                  </div>
+
+                  <!-- 자유 텍스트 (공정 매칭 없음) -->
+                  <div class="flex items-center gap-2 rounded p-2 bg-gray-50">
+                    <button class="w-5 h-5 rounded border bg-white border-gray-300 flex items-center justify-center flex-shrink-0"></button>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-navy-800">
+                        <span class="truncate">사장님 현장 미팅 14시</span>
+                      </div>
+                    </div>
+                    <button class="text-gray-400 px-2">✕</button>
+                  </div>
+
+                </div>
+
+                <!-- 빠른 공종 칩 -->
+                <div class="px-3 py-2 border-t">
+                  <div class="text-[11px] text-gray-500 mb-1.5">탭 한 번으로 추가</div>
+                  <div class="grid grid-cols-5 gap-1.5">
+                    <button class="text-xs py-2 rounded font-medium bg-rose-100 text-rose-800">철거</button>
+                    <button class="text-xs py-2 rounded font-medium bg-amber-100 text-amber-800">목공</button>
+                    <button class="text-xs py-2 rounded font-medium bg-sky-100 text-sky-800">전기</button>
+                    <button class="text-xs py-2 rounded font-medium bg-teal-100 text-teal-800">설비</button>
+                    <button class="text-xs py-2 rounded font-medium bg-pink-100 text-pink-800">타일</button>
+                    <button class="text-xs py-2 rounded font-medium bg-violet-100 text-violet-800">도배</button>
+                    <button class="text-xs py-2 rounded font-medium bg-orange-100 text-orange-800">도장</button>
+                    <button class="text-xs py-2 rounded font-medium bg-fuchsia-100 text-fuchsia-800">필름</button>
+                    <button class="text-xs py-2 rounded font-medium bg-yellow-100 text-yellow-800">마루</button>
+                    <button class="text-xs py-2 rounded font-medium bg-emerald-100 text-emerald-800">준공</button>
+                  </div>
+                </div>
+
+                <!-- 직접 입력 -->
+                <div class="px-3 py-3 border-t bg-gray-50 flex gap-2 items-center">
+                  <input class="flex-1 border rounded px-3 py-2 text-sm bg-white" placeholder="직접 입력 (공종 외)">
+                  <button class="px-4 py-2 bg-navy-700 text-white rounded text-sm font-medium">+</button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 영역 캡션 (A 옆에 붙임) -->
+      <div class="w-[280px] pt-9 space-y-3">
+        <div class="annot"><strong>① 헤더</strong> — 좌우 ‹ ›로 날짜 이동(어제/내일). 가운데는 <code class="bg-white px-1 rounded">M/D (요일)</code> 한국식. 우측 ✕로 닫기.</div>
+        <div class="annot"><strong>② 일정 리스트</strong> — 행 단위. 좌측 체크박스로 확정/미확정 토글. 확정 시 행 배경 <code class="bg-white px-1 rounded">emerald-50</code>, 체크 <code class="bg-white px-1 rounded">emerald-500</code>. 공정이 매칭되면 좌측 컬러 chip + 잔여 텍스트. 협력업체가 태그되어 있으면 행 아래에 🏢 보라색 라벨.</div>
+        <div class="annot"><strong>③ 빠른 공종 칩</strong> — 5열 그리드. 회사가 사용하는 공정만 노출(현재 데모는 10개). 탭 한 번으로 해당 공정 일정이 즉시 추가됩니다. 색상은 공정별 고정 매핑.</div>
+        <div class="annot"><strong>④ 직접 입력</strong> — 공정에 매칭되지 않는 메모(예: "사장님 미팅"). 엔터 또는 + 버튼으로 추가.</div>
+      </div>
+    </div>
+
+    <!-- (B) 빈 상태 -->
+    <div>
+      <div class="text-xs uppercase tracking-wider text-slate-500 mb-2 text-center">B. 일정 없는 상태</div>
+      <div class="device">
+        <div class="device-screen">
+          <div class="absolute inset-x-0 bottom-0 z-10">
+            <div class="relative w-full bg-white rounded-t-2xl max-h-[85vh] flex flex-col shadow-2xl">
+              <div class="flex items-center px-3 py-3 border-b">
+                <button class="px-3 py-1 text-navy-700 text-xl leading-none">‹</button>
+                <div class="flex-1 text-center font-semibold text-navy-800">5/19 (화)</div>
+                <button class="px-3 py-1 text-navy-700 text-xl leading-none">›</button>
+                <button class="ml-2 px-3 py-1 text-gray-500">✕</button>
+              </div>
+              <div class="flex-1 overflow-y-auto px-3 py-2">
+                <div class="text-center text-sm text-gray-400 py-3">아직 일정이 없습니다</div>
+              </div>
+              <div class="px-3 py-2 border-t">
+                <div class="text-[11px] text-gray-500 mb-1.5">탭 한 번으로 추가</div>
+                <div class="grid grid-cols-5 gap-1.5">
+                  <button class="text-xs py-2 rounded font-medium bg-rose-100 text-rose-800">철거</button>
+                  <button class="text-xs py-2 rounded font-medium bg-amber-100 text-amber-800">목공</button>
+                  <button class="text-xs py-2 rounded font-medium bg-sky-100 text-sky-800">전기</button>
+                  <button class="text-xs py-2 rounded font-medium bg-teal-100 text-teal-800">설비</button>
+                  <button class="text-xs py-2 rounded font-medium bg-pink-100 text-pink-800">타일</button>
+                  <button class="text-xs py-2 rounded font-medium bg-violet-100 text-violet-800">도배</button>
+                  <button class="text-xs py-2 rounded font-medium bg-orange-100 text-orange-800">도장</button>
+                  <button class="text-xs py-2 rounded font-medium bg-fuchsia-100 text-fuchsia-800">필름</button>
+                  <button class="text-xs py-2 rounded font-medium bg-yellow-100 text-yellow-800">마루</button>
+                  <button class="text-xs py-2 rounded font-medium bg-emerald-100 text-emerald-800">준공</button>
+                </div>
+              </div>
+              <div class="px-3 py-3 border-t bg-gray-50 flex gap-2 items-center">
+                <input class="flex-1 border rounded px-3 py-2 text-sm bg-white" placeholder="직접 입력 (공종 외)">
+                <button class="px-4 py-2 bg-navy-700 text-white rounded text-sm font-medium">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ 토큰 / 인터랙션 노트 ============ -->
+  <h2 class="section">디자인 토큰</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-lg p-6 border border-slate-200">
+
+    <div>
+      <h3 class="text-sm font-bold text-slate-700 mb-3">브랜드 — Navy 팔레트</h3>
+      <div class="space-y-1.5">
+        <div class="legend-row"><div class="swatch" style="background:#1e3a66"></div><span>navy-700</span><code>#1e3a66 · 본문/제목·CTA 배경</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#15294a"></div><span>navy-800</span><code>#15294a · 헤더 텍스트</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#2a4a80"></div><span>navy-600</span><code>#2a4a80</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#0c1a33"></div><span>navy-900</span><code>#0c1a33</code></div>
+      </div>
+
+      <h3 class="text-sm font-bold text-slate-700 mt-6 mb-3">상태 — 확정/미확정</h3>
+      <div class="space-y-1.5">
+        <div class="legend-row"><div class="swatch" style="background:#d1fae5"></div><span>emerald-50</span><code>확정 행 배경</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#10b981"></div><span>emerald-500</span><code>확정 체크</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#f9fafb"></div><span>gray-50</span><code>미확정 행 배경</code></div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-bold text-slate-700 mb-3">공정별 색상 (10대 표준)</h3>
+      <div class="space-y-1.5 text-xs">
+        <div class="legend-row"><div class="swatch bg-rose-100"></div><span class="font-medium">철거</span><code>rose-100 / rose-800</code></div>
+        <div class="legend-row"><div class="swatch bg-amber-100"></div><span class="font-medium">목공</span><code>amber-100 / amber-800</code></div>
+        <div class="legend-row"><div class="swatch bg-sky-100"></div><span class="font-medium">전기</span><code>sky-100 / sky-800</code></div>
+        <div class="legend-row"><div class="swatch bg-teal-100"></div><span class="font-medium">설비</span><code>teal-100 / teal-800</code></div>
+        <div class="legend-row"><div class="swatch bg-pink-100"></div><span class="font-medium">타일</span><code>pink-100 / pink-800</code></div>
+        <div class="legend-row"><div class="swatch bg-violet-100"></div><span class="font-medium">도배</span><code>violet-100 / violet-800</code></div>
+        <div class="legend-row"><div class="swatch bg-orange-100"></div><span class="font-medium">도장</span><code>orange-100 / orange-800</code></div>
+        <div class="legend-row"><div class="swatch bg-fuchsia-100"></div><span class="font-medium">필름</span><code>fuchsia-100 / fuchsia-800</code></div>
+        <div class="legend-row"><div class="swatch bg-yellow-100"></div><span class="font-medium">마루</span><code>yellow-100 / yellow-800</code></div>
+        <div class="legend-row"><div class="swatch bg-emerald-100"></div><span class="font-medium">준공</span><code>emerald-100 / emerald-800</code></div>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-3">신규 공정은 이름 해시로 6종 보조 팔레트(stone·lime·cyan·indigo·purple·blue) 중 결정론 배정 — 같은 이름은 항상 같은 색.</p>
+    </div>
+
+  </div>
+
+  <!-- 인터랙션 -->
+  <h2 class="section">인터랙션 & 행동</h2>
+  <div class="bg-white rounded-lg p-6 border border-slate-200 space-y-2 text-sm">
+    <div><strong>· 진입</strong> — 모바일에서 캘린더의 날짜 셀을 탭. 바텀시트가 <code class="bg-slate-100 px-1 rounded">slide-up 180ms ease-out</code>로 올라옵니다.</div>
+    <div><strong>· 닫기</strong> — 시트 밖 어두운 영역 탭, 우측 ✕, 또는 ESC.</div>
+    <div><strong>· 날짜 이동</strong> — 헤더 좌우 ‹ ›. 첫날/마지막날에서는 비활성(텍스트 <code class="bg-slate-100 px-1 rounded">gray-300</code>).</div>
+    <div><strong>· 확정 토글</strong> — 행 좌측 체크박스 탭. 행 배경이 <code class="bg-slate-100 px-1 rounded">gray-50 → emerald-50</code>으로 전환.</div>
+    <div><strong>· 빠른 추가</strong> — 빠른 공종 칩 탭 시 같은 이름의 일정이 즉시 추가됨(D-N 룰·체크리스트 자동 시드 연동).</div>
+    <div><strong>· 직접 입력</strong> — 자유 텍스트. 본문에 공정 키워드가 포함되어 있으면 자동으로 chip이 좌측에 붙음("도배 벽지 도착" → chip "도배" + 잔여 "벽지 도착").</div>
+    <div><strong>· 협력업체</strong> — onUpdate가 연결되어 있을 때만 🏢 버튼 노출(현재 베타에서는 등록 UI hide, 표시만 사용).</div>
+    <div><strong>· 시트 높이</strong> — <code class="bg-slate-100 px-1 rounded">max-h-[85vh]</code>. 헤더·빠른 칩·직접 입력은 고정 영역, 일정 리스트만 스크롤.</div>
+  </div>
+
+  <!-- 메타 -->
+  <div class="mt-10 pt-6 border-t border-slate-300 text-xs text-slate-500">
+    <div>출처 코드: <code class="bg-slate-200 px-1 py-0.5 rounded">client/src/components/MobileScheduleSheet.jsx</code> · <code class="bg-slate-200 px-1 py-0.5 rounded">PhaseInlineContent.jsx</code> · <code class="bg-slate-200 px-1 py-0.5 rounded">utils/date.js</code></div>
+    <div class="mt-1">폰트: Pretendard · Tailwind 토큰 그대로 사용 · 다크모드 별도 페이지 필요 시 요청 부탁드립니다.</div>
+    <div class="mt-1">생성일: 2026-05-15</div>
+  </div>
+
+</div>
+
+</body>
+</html>
