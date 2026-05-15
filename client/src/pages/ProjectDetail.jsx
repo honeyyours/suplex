@@ -87,7 +87,7 @@ export default function ProjectDetail() {
   if (!project) return <div className="text-sm text-gray-500">불러오는 중...</div>;
 
   const tab = ({ isActive }) =>
-    `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 transition ${
+    `px-3 sm:px-4 py-3 sm:py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 transition ${
       isActive
         ? 'border-navy-700 text-navy-800'
         : 'border-transparent text-gray-500 hover:text-navy-700 hover:border-gray-300'
@@ -116,7 +116,7 @@ export default function ProjectDetail() {
       />
 
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
-        <div className="flex border-b px-2 overflow-x-auto">
+        <div className="flex border-b px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <NavLink to="process" className={tab}>공정 현황</NavLink>
           <NavLink to="quote-consultations" className={tab}>견적상담</NavLink>
           <NavLink to="quotes" className={tab}>견적</NavLink>

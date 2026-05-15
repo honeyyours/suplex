@@ -61,12 +61,12 @@ export default function Schedule() {
 
       {/* 탭 + 캘린더 카드 */}
       <div className="bg-white border-y sm:border sm:rounded-xl overflow-hidden -mx-2 sm:mx-0">
-        <div className="flex border-b px-2 overflow-x-auto">
+        <div className="flex border-b px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SUBTABS.map((t) => (
             <button
               key={t.key}
               onClick={() => changeTab(t.key)}
-              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
                 tab === t.key
                   ? 'border-navy-700 text-navy-800'
                   : 'border-transparent text-gray-500 hover:text-navy-700'
@@ -261,7 +261,7 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
   // 캘린더(+ 프로젝트 칩 + 정보 카드 + 모달)
   return (
     <>
-      <div className="sm:hidden border-b mt-2 mb-4 overflow-x-auto px-3">
+      <div className="sm:hidden border-b mt-2 mb-4 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex">
           <MobileProjectTab
             active={selectedId === 'all'}
