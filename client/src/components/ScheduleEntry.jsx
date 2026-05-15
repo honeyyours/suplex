@@ -107,8 +107,8 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
           setContextMenu({ x: e.clientX, y: e.clientY });
         }}
         className={`
-          relative group text-[10px] sm:text-sm rounded-sm sm:rounded
-          pl-1 pr-3 py-0.5 sm:px-1.5 sm:py-1
+          relative group text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
+          pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-1
           flex items-center gap-1 truncate sm:cursor-pointer
           ${catColor}
           border-l-0 sm:border-l-[3px] ${borderColor}
@@ -116,7 +116,7 @@ export default function ScheduleEntry({ entry, onUpdate, onDelete, onToggleConfi
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1 flex-wrap">
-            <PhaseInlineContent entry={entry} />
+            <PhaseInlineContent entry={entry} textOnly />
             {entry.vendor && (
               <span className="hidden sm:inline-block text-xs sm:text-[10px] px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
                 🏢 {entry.vendor.name}

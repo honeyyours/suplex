@@ -120,8 +120,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[10px] sm:text-sm rounded-sm sm:rounded
-                          pl-1 pr-3 py-0.5 sm:py-0.5 truncate flex items-center gap-1
+                          relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
+                          pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate flex items-center gap-1
                           ${catColor}
                           border-l-0 sm:border-l-[3px] ${borderColor}
                           hover:brightness-95
@@ -131,7 +131,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         <span className="hidden sm:inline opacity-70 mr-0.5 truncate max-w-[60px]">
                           {e.project?.name}
                         </span>
-                        <PhaseInlineContent entry={e} textClassName="flex-1" />
+                        <PhaseInlineContent entry={e} textOnly textClassName="flex-1" />
                         {e.confirmed && (
                           <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}

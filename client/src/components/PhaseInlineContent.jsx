@@ -8,10 +8,16 @@ import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 //   - phase가 '기타'이거나 매칭 없음 → chip 미표시, 자유 텍스트 그대로 (단순 메모)
 //   - 모바일: chip만 표시 (잔여 텍스트 hidden). 셀 탭/클릭 시 상세 모달에서 전체 확인
 //   - 웹: chip + 잔여 텍스트 같이
-export default function PhaseInlineContent({ entry, textClassName = '', chipClassName = '', alwaysShowRemainder = false }) {
+export default function PhaseInlineContent({ entry, textClassName = '', chipClassName = '', alwaysShowRemainder = false, textOnly = false }) {
   const { displayPhase } = usePhaseLabels();
   const text = entry.content || '';
   const phase = entry.category;
+
+  // textOnly 모드: 공정 chip 미표시, 본문 텍스트 그대로 (인식은 entry.category로 유지).
+  // 캘린더 막대에서 사용 — 색상 배경/보더가 공정 시각 표시 역할을 대신.
+  if (textOnly) {
+    return <span className={`truncate ${textClassName}`}>{text}</span>;
+  }
 
   // phase 매칭 없음 또는 '기타' → 자유 텍스트로 처리
   if (!phase || isOther(phase)) {

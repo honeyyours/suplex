@@ -121,8 +121,8 @@ export default function HomeWeekSchedule() {
                         key={e.id}
                         to={`/projects/${e.project?.id}/schedule`}
                         className={`
-                          relative text-[10px] sm:text-sm rounded-sm sm:rounded
-                          pl-1 pr-3 py-0.5 sm:py-0.5 truncate block
+                          relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
+                          pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate block
                           ${catColor}
                           border-l-0 sm:border-l-[3px] ${borderColor}
                           hover:brightness-95
