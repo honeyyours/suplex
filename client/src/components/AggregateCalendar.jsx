@@ -100,7 +100,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-[56px] sm:min-h-28 flex flex-col overflow-hidden ${
+                className={`border-r border-b last:border-r-0 min-h-[75px] sm:min-h-[100px] flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
                 }`}
               >
