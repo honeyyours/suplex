@@ -24,10 +24,10 @@ export default function TeamManagement() {
 
       <div className="border-b flex gap-1">
         <TabButton active={tab === 'vendors'} onClick={() => setTab('vendors')}>
-          🏢 협력업체
+          협력업체
         </TabButton>
         <TabButton active={tab === 'members'} onClick={() => setTab('members')}>
-          👥 팀원
+          팀원
         </TabButton>
       </div>
 
@@ -102,7 +102,7 @@ function MembersSection({ isOwner, currentUserId }) {
               onClick={() => setShowInvite(true)}
               className="text-sm px-4 py-2 bg-navy-700 text-white rounded hover:bg-navy-800"
             >
-              ✉️ 초대 링크 발송
+              초대 링크 발송
             </button>
             <button
               onClick={() => setShowAdd(true)}
@@ -665,7 +665,7 @@ function InviteModal({ onClose }) {
                   copied ? 'bg-emerald-600 text-white' : 'bg-navy-700 text-white hover:bg-navy-800'
                 }`}
               >
-                {copied ? '✓ 복사됨' : '📋 복사'}
+                {copied ? '✓ 복사됨' : '복사'}
               </button>
             </div>
           </div>
@@ -696,7 +696,7 @@ function InviteModal({ onClose }) {
   }
 
   return (
-    <Modal title="✉️ 초대 링크 발송" onClose={onClose}>
+    <Modal title="초대 링크 발송" onClose={onClose}>
       <div className="space-y-3">
         <Field label="이메일 *">
           <input
@@ -789,7 +789,7 @@ function InvitationsPanel() {
         onClick={() => setOpen(!open)}
         className="w-full px-5 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center justify-between"
       >
-        <span>📨 초대 발송 이력 {list.length > 0 && <span className="text-gray-500">({list.length})</span>}</span>
+        <span>초대 발송 이력 {list.length > 0 && <span className="text-gray-500">({list.length})</span>}</span>
         <span className="text-gray-400">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -859,7 +859,7 @@ function InvRow({ inv, status, copiedId, onCopy, onCancel }) {
               copiedId === inv.id ? 'bg-emerald-600 text-white' : 'border hover:bg-gray-50'
             }`}
           >
-            {copiedId === inv.id ? '✓ 복사됨' : '📋 링크 복사'}
+            {copiedId === inv.id ? '✓ 복사됨' : '링크 복사'}
           </button>
           <button
             onClick={() => onCancel(inv)}

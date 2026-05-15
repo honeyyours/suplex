@@ -149,7 +149,7 @@ export default function ProjectExpenses() {
               총 {orders.length}건 · 대기 {counts.PENDING || 0} · 발주완료 {counts.ORDERED || 0} · 수령 {counts.RECEIVED || 0}
             </div>
             {changedCount > 0 && (
-              <div className="text-xs text-orange-700 mt-0.5 font-medium">⚠️ 마감재 변경 {changedCount}건 (확인 필요)</div>
+              <div className="text-xs text-orange-700 mt-0.5 font-medium">마감재 변경 {changedCount}건 (확인 필요)</div>
             )}
           </div>
           <button onClick={() => setAdding(true)} className="text-sm px-4 py-1.5 border rounded hover:bg-white">+ 즉흥 발주 추가</button>
@@ -161,7 +161,7 @@ export default function ProjectExpenses() {
           <TabBtn active={tab === ALL_TAB} onClick={() => setTab(ALL_TAB)} label={`전체 (${counts.ALL || 0})`} />
           {STATUS_KEYS.map((k) => {
             const meta = PO_STATUS_META[k];
-            return <TabBtn key={k} active={tab === k} onClick={() => setTab(k)} label={`${meta.icon} ${meta.label} (${counts[k] || 0})`} />;
+            return <TabBtn key={k} active={tab === k} onClick={() => setTab(k)} label={`${meta.label} (${counts[k] || 0})`} />;
           })}
         </div>
 
@@ -225,9 +225,9 @@ function OrderRow({ order, onEdit, onChangeStatus, onAcknowledge, onRemove }) {
     <tr className={`hover:bg-gray-50 ${changed ? 'bg-orange-50/60' : ''}`}>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1.5">
-          {changed && <span title="마감재 변경됨" className="text-orange-600 text-xs">⚠️</span>}
+          {changed && <span title="마감재 변경됨" className="text-orange-600 text-xs font-semibold">변경</span>}
           <button onClick={onEdit} className="text-navy-800 font-medium hover:underline text-left">{order.itemName}</button>
-          {linked ? <span className="text-xs text-gray-400">🔗</span> : <span className="text-xs text-gray-300" title="즉흥">📝</span>}
+          {linked ? <span className="text-[10px] text-gray-400" title="마감재 연동">연동</span> : <span className="text-[10px] text-gray-300" title="즉흥">즉흥</span>}
         </div>
         {order.notes && <div className="text-xs text-gray-500 mt-0.5">{order.notes}</div>}
       </td>
@@ -379,7 +379,7 @@ function OrderModal({ projectId, order, onClose, onSaved }) {
     <div onClick={onClose} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl w-full max-w-2xl my-8">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-navy-800">{isNew ? '즉흥 발주 추가' : '발주 항목 편집'}{linked && <span className="ml-2 text-xs text-gray-500">🔗 마감재 연동</span>}</h2>
+          <h2 className="text-lg font-bold text-navy-800">{isNew ? '즉흥 발주 추가' : '발주 항목 편집'}{linked && <span className="ml-2 text-xs text-gray-500">마감재 연동</span>}</h2>
         </div>
         <div className="px-6 py-5 space-y-3">
           <Field label="항목명" required><input value={form.itemName} onChange={(e) => setField('itemName', e.target.value)} className="input" /></Field>

@@ -203,8 +203,8 @@ export default function Expenses() {
       <div className="flex items-center justify-between gap-3 flex-wrap pl-2">
         <h1 className="text-2xl font-bold text-navy-800">지출관리</h1>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📥 CSV 내보내기 ({expenses.length})</button>
-          <button onClick={() => fileInputRef.current?.click()} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">📤 통장 가져오기 (.xls/.xlsx/.csv)</button>
+          <button onClick={handleExport} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">CSV 내보내기 ({expenses.length})</button>
+          <button onClick={() => fileInputRef.current?.click()} className="text-sm px-4 py-2 border rounded-md hover:bg-gray-50">통장 가져오기 (.xls/.xlsx/.csv)</button>
           <input
             ref={fileInputRef}
             type="file"
@@ -228,14 +228,14 @@ export default function Expenses() {
 
       <div className="bg-white border rounded-lg overflow-hidden">
         <div className="flex border-b text-sm">
-          <ViewTab active={view === VIEW_LIST}    onClick={() => setView(VIEW_LIST)}    label="📋 리스트" />
-          <ViewTab active={view === VIEW_PROJECT} onClick={() => setView(VIEW_PROJECT)} label="🏗️ 프로젝트별" />
-          <ViewTab active={view === VIEW_VENDOR}  onClick={() => setView(VIEW_VENDOR)}  label="🏢 거래처별" />
+          <ViewTab active={view === VIEW_LIST}    onClick={() => setView(VIEW_LIST)}    label="리스트" />
+          <ViewTab active={view === VIEW_PROJECT} onClick={() => setView(VIEW_PROJECT)} label="프로젝트별" />
+          <ViewTab active={view === VIEW_VENDOR}  onClick={() => setView(VIEW_VENDOR)}  label="거래처별" />
           {canViewPnl && (
-            <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="💰 프로젝트 손익" />
+            <ViewTab active={view === VIEW_PNL}     onClick={() => setView(VIEW_PNL)}     label="프로젝트 손익" />
           )}
           <div className="ml-auto" />
-          <ViewTab active={view === VIEW_RULES}    onClick={() => setView(VIEW_RULES)}    label="🏷️ 자동분류 룰" />
+          <ViewTab active={view === VIEW_RULES}    onClick={() => setView(VIEW_RULES)}    label="자동분류 룰" />
         </div>
 
         {view !== VIEW_PNL && view !== VIEW_RULES && (
@@ -430,7 +430,7 @@ const ListView = memo(function ListView({ expenses, totalCount, visibleCount, pa
             <button
               onClick={() => onBulkRemove([...selected]).then(() => setSelected(new Set()))}
               className="text-xs px-3 py-1 bg-rose-600 text-white rounded hover:bg-rose-700"
-            >🗑️ {selected.size}건 삭제</button>
+            >{selected.size}건 삭제</button>
           </div>
         </div>
       )}
@@ -625,7 +625,7 @@ function NewRow({ projects, projectOptions, onSave, onCancel }) {
   const formRef = useRef({});
   formRef.current = { date, type, description, memoVal, amount, projectId, workCategory };
 
-  // 자동분류 — 🏷️ 버튼 클릭 시 룰의 공종·현장만 적용 (계정과목 무시)
+  // 자동분류 — 버튼 클릭 시 룰의 공종·현장만 적용 (계정과목 무시)
   async function applyClassify() {
     const desc = description.trim();
     if (!desc) return;
@@ -756,7 +756,7 @@ function NewRow({ projects, projectOptions, onSave, onCancel }) {
           disabled={!description.trim() || classifying}
           className="text-[10px] px-1.5 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-100 disabled:opacity-30 disabled:cursor-not-allowed"
           title="자동분류 룰 적용 — 클릭 시 공종·현장 채움"
-        >{classifying ? '…' : '🏷️'}</button>
+        >{classifying ? '…' : '분류'}</button>
       </td>
     </tr>
   );
@@ -818,7 +818,7 @@ function PnLTable({ pnl, onChanged }) {
             <th className="text-left px-3 py-2">현장명</th>
             <th className="text-left px-3 py-2 w-24">코드</th>
             <th className="text-left px-3 py-2 w-20">상태</th>
-            <th className="text-right px-3 py-2 w-36">계약 금액 <span className="text-gray-400 font-normal">✏️</span></th>
+            <th className="text-right px-3 py-2 w-36">계약 금액</th>
             <th className="text-right px-3 py-2 w-32">총 지출</th>
             <th className="text-right px-3 py-2 w-32">수익</th>
             <th className="text-right px-3 py-2 w-20">수익률</th>
@@ -1067,7 +1067,7 @@ function ExpenseModal({ expense, projects, onClose, onSaved }) {
           <div className="border-t pt-3">
             {form.purchaseOrderId ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded p-2 text-xs flex items-center justify-between">
-                <span className="text-emerald-800">🔗 발주에 연결됨</span>
+                <span className="text-emerald-800">발주에 연결됨</span>
                 <button
                   type="button"
                   onClick={() => set('purchaseOrderId', null)}
@@ -1082,7 +1082,7 @@ function ExpenseModal({ expense, projects, onClose, onSaved }) {
                   disabled={searchingCandidates}
                   className="text-xs px-3 py-1.5 border border-violet-300 text-violet-700 rounded hover:bg-violet-50 disabled:opacity-50"
                 >
-                  {searchingCandidates ? '검색 중…' : '✨ 발주 매칭 후보 검색'}
+                  {searchingCandidates ? '검색 중…' : '발주 매칭 후보 검색'}
                 </button>
                 <span className="text-xs text-gray-400 ml-2">금액·날짜·거래처 입력 후 클릭</span>
                 {poCandidates && poCandidates.length === 0 && (
@@ -1121,7 +1121,7 @@ function ExpenseModal({ expense, projects, onClose, onSaved }) {
                             <div className="shrink-0 text-violet-700 font-bold tabular-nums text-sm">{c.score}점</div>
                           </div>
                           {proj && <div className="text-gray-500 text-[10px] mt-0.5">현장: {proj.name}</div>}
-                          {c.alreadyLinked && <div className="text-amber-600 text-[10px] mt-0.5">⚠ 이미 다른 거래에 연결됨 (분할 결제 가능)</div>}
+                          {c.alreadyLinked && <div className="text-amber-600 text-[10px] mt-0.5">이미 다른 거래에 연결됨 (분할 결제 가능)</div>}
                         </button>
                       );
                     })}
@@ -1381,9 +1381,9 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
     setBusy(true);
     try {
       const { created, skippedDuplicates = 0, total = items.length } = await expensesApi.bulk(items);
-      let msg = `✅ ${created}건 추가됨`;
-      if (skippedDuplicates > 0) msg += `\n🔁 ${skippedDuplicates}건 중복 스킵 (기존 거래 보존, 덮어쓰기 X)`;
-      if (created + skippedDuplicates !== total) msg += `\n⚠ ${total - created - skippedDuplicates}건 처리 실패`;
+      let msg = `${created}건 추가됨`;
+      if (skippedDuplicates > 0) msg += `\n${skippedDuplicates}건 중복 스킵 (기존 거래 보존, 덮어쓰기 X)`;
+      if (created + skippedDuplicates !== total) msg += `\n${total - created - skippedDuplicates}건 처리 실패`;
       alert(msg);
       onSaved();
     } catch (e) {
@@ -1399,11 +1399,11 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
           {prepInfo ? (
             <div className="text-xs text-gray-600 mt-1 bg-emerald-50 border border-emerald-200 rounded p-2 leading-relaxed">
               {prepInfo.lastDate ? (
-                <>📅 마지막 거래일 <b>{prepInfo.lastDate}</b> 이후로 자동 필터 · </>
+                <>마지막 거래일 <b>{prepInfo.lastDate}</b> 이후로 자동 필터 · </>
               ) : (
-                <>📅 첫 가져오기 (기존 거래 없음) · </>
+                <>첫 가져오기 (기존 거래 없음) · </>
               )}
-              🔁 중복 <b>{prepInfo.dupCount}</b>건 · 💰 매출 <b>{prepInfo.incomeCount || 0}</b>건 자동 스킵 · 🏷️ 자동분류 완료
+              중복 <b>{prepInfo.dupCount}</b>건 · 매출 <b>{prepInfo.incomeCount || 0}</b>건 자동 스킵 · 자동분류 완료
               <br /><span className="text-gray-500">지출만 가져옵니다. 전체 불러오기 버튼만 누르시면 됩니다.</span>
             </div>
           ) : (
@@ -1431,7 +1431,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
 
         {/* 날짜 범위 필터 — 데이터 기간 자동 표시, 사용자 조정 가능 */}
         <div className="px-6 py-2 border-b bg-sky-50 text-xs flex items-center gap-2 flex-wrap">
-          <span className="text-gray-700 font-medium">📅 날짜 범위:</span>
+          <span className="text-gray-700 font-medium">날짜 범위:</span>
           <input
             type="date"
             value={dateFilter.from}
@@ -1458,7 +1458,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
             disabled={classifying}
             className="text-xs px-3 py-1 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50 disabled:opacity-50"
           >
-            {classifying ? '분류 중...' : '🏷️ 자동분류 적용'}
+            {classifying ? '분류 중...' : '자동분류 적용'}
           </button>
           <span className="text-gray-600 ml-2">일괄 적용:</span>
           <select onChange={(e) => bulkSetProject(e.target.value)} className="text-xs border rounded px-2 py-1 bg-white" defaultValue="">
@@ -1520,8 +1520,8 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
                     </td>
                     <td className="px-2 py-1 text-gray-700 truncate max-w-xs">
                       {getCell(r, mapping.description)} {getCell(r, mapping.vendor) && <span className="text-gray-400">· {getCell(r, mapping.vendor)}</span>}
-                      {perRow[i].isDuplicate && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">🔁 기존 거래</span>}
-                      {perRow[i].isIncome && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">💰 매출</span>}
+                      {perRow[i].isDuplicate && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">기존 거래</span>}
+                      {perRow[i].isIncome && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">매출</span>}
                     </td>
                     <td className="px-2 py-1">
                       <input
@@ -1550,7 +1550,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
                     </td>
                     <td className="px-2 py-1 text-center">
                       {linkedPo ? (
-                        <span className="text-xs text-emerald-700" title="발주에 연결됨">🔗 연결</span>
+                        <span className="text-xs text-emerald-700" title="발주에 연결됨">연결됨</span>
                       ) : (
                         <button
                           type="button"
@@ -1558,7 +1558,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
                           disabled={skipped || inferringIdx === i || amt === 0}
                           className="text-xs px-2 py-0.5 border border-violet-300 text-violet-700 rounded hover:bg-violet-50 disabled:opacity-40"
                         >
-                          {inferringIdx === i ? '검색…' : '✨ 후보'}
+                          {inferringIdx === i ? '검색…' : '후보'}
                         </button>
                       )}
                     </td>
@@ -1595,7 +1595,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
                                 {proj && <div className="text-gray-500 text-[10px] mt-0.5">현장: {proj.name}</div>}
                                 <div className="text-gray-400 text-[10px] mt-0.5">
                                   거래처 {c.signals.vendor} / 금액 {c.signals.amount} / 날짜 {c.signals.date} / 현장 {c.signals.project} / 상태 {c.signals.statusBoost > 0 ? `+${c.signals.statusBoost}` : c.signals.statusBoost}
-                                  {c.alreadyLinked && <span className="ml-2 text-amber-600">⚠ 이미 다른 거래에 연결됨 (분할 결제 가능)</span>}
+                                  {c.alreadyLinked && <span className="ml-2 text-amber-600">이미 다른 거래에 연결됨 (분할 결제 가능)</span>}
                                 </div>
                               </button>
                             );
@@ -1633,7 +1633,7 @@ function ImportModal({ rows, projects, onClose, onSaved }) {
         <div className="px-6 py-3 border-t flex justify-end gap-2">
           <button onClick={onClose} className="text-sm px-4 py-2 border rounded hover:bg-gray-50">취소</button>
           <button onClick={save} disabled={busy} className="text-sm px-5 py-2 bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50">
-            {busy ? '저장 중...' : `📥 전체 불러오기 (${eligibleCount}건)`}
+            {busy ? '저장 중...' : `전체 불러오기 (${eligibleCount}건)`}
           </button>
         </div>
         <ModalStyles />
@@ -1710,7 +1710,7 @@ function RulesManager() {
   return (
     <div className="p-4 sm:p-5">
       <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 leading-relaxed mb-4">
-        💡 <b>자동분류 룰</b>은 통장 CSV 가져오기·수기 입력 시 거래 텍스트(거래처·내역)에 키워드가 포함되면 자동으로 <b>현장·공종</b>을 라벨링합니다. 우선순위가 높을수록 먼저 매칭되며, 같은 우선순위에선 긴 키워드부터.
+        <b>자동분류 룰</b>은 통장 CSV 가져오기·수기 입력 시 거래 텍스트(거래처·내역)에 키워드가 포함되면 자동으로 <b>현장·공종</b>을 라벨링합니다. 우선순위가 높을수록 먼저 매칭되며, 같은 우선순위에선 긴 키워드부터.
         <br />반복 지출(공과금·임대료·통신비 등)을 등록해두면 매번 손으로 분류하지 않아도 됩니다.
       </div>
 

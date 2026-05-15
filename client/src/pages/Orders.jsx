@@ -166,7 +166,7 @@ export default function Orders({ lockedProjectId = null }) {
                 className={`text-xs px-2.5 py-1 rounded-full ${m.color} hover:opacity-80`}
                 title={`선택된 ${selectedIds.size}개를 ${m.label}로 변경`}
               >
-                {m.icon} {m.label}
+                {m.label}
               </button>
             );
           })}
@@ -181,32 +181,32 @@ export default function Orders({ lockedProjectId = null }) {
         <div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             <SummaryCard
-              label="모델 확인" icon="⚠️" count={summary.pendingModels} tone="amber" highlight
+              label="모델 확인" count={summary.pendingModels} tone="amber" highlight
               active={activeFilter === 'pendingModels'}
               onClick={() => toggleFilter('pendingModels')}
             />
             <SummaryCard
-              label="임박" subLabel="D-7 이내" icon="🔥" count={urgentOrders.length} tone="red" highlight
+              label="임박" subLabel="D-7 이내" count={urgentOrders.length} tone="red" highlight
               active={activeFilter === 'urgent'}
               onClick={() => toggleFilter('urgent')}
             />
             <SummaryCard
-              label="발주 대기" icon="⏳" count={summary.pending} tone="amber"
+              label="발주 대기" count={summary.pending} tone="amber"
               active={activeFilter === 'PENDING'}
               onClick={() => toggleFilter('PENDING')}
             />
             <SummaryCard
-              label="발주됨" icon="📦" count={summary.ordered} tone="sky"
+              label="발주됨" count={summary.ordered} tone="sky"
               active={activeFilter === 'ORDERED'}
               onClick={() => toggleFilter('ORDERED')}
             />
             <SummaryCard
-              label="수령" icon="✅" count={summary.received} tone="emerald"
+              label="수령" count={summary.received} tone="emerald"
               active={activeFilter === 'RECEIVED'}
               onClick={() => toggleFilter('RECEIVED')}
             />
             <SummaryCard
-              label="취소" icon="⊘" count={summary.cancelled} tone="gray"
+              label="취소" count={summary.cancelled} tone="gray"
               active={activeFilter === 'CANCELLED'}
               onClick={() => toggleFilter('CANCELLED')}
             />
@@ -224,7 +224,7 @@ export default function Orders({ lockedProjectId = null }) {
 
       {/* 모델 확인 필요 섹션 — activeFilter 없거나 'pendingModels'일 때 */}
       {pendingModels.length > 0 && (!activeFilter || activeFilter === 'pendingModels') && (
-        <Section title="⚠️ 모델 확인 필요" defaultOpen={activeFilter === 'pendingModels'} count={pendingModels.length}>
+        <Section title="모델 확인 필요" defaultOpen={activeFilter === 'pendingModels'} count={pendingModels.length}>
           <p className="text-xs text-gray-500 mb-2">
             마감재 모델이 미정이라 아직 발주에 들어오지 못한 항목들. 마감재 탭에서 모델을 확정하세요.
           </p>
@@ -248,7 +248,7 @@ export default function Orders({ lockedProjectId = null }) {
 
       {/* 임박 섹션 — activeFilter === 'urgent'일 때만 */}
       {activeFilter === 'urgent' && (
-        <Section title="🔥 임박 (D-7 이내)" defaultOpen={true} count={urgentOrders.length}>
+        <Section title="임박 (D-7 이내)" defaultOpen={true} count={urgentOrders.length}>
           {urgentOrders.length === 0 ? (
             <div className="text-center py-6 text-xs text-gray-400">임박한 발주 항목이 없습니다</div>
           ) : (
@@ -277,7 +277,7 @@ export default function Orders({ lockedProjectId = null }) {
         return (
           <Section
             key={`${s}-${activeFilter || 'all'}`}
-            title={`${meta.icon} ${meta.label}`}
+            title={meta.label}
             count={list.length}
             defaultOpen={s === 'PENDING' || activeFilter === s}
             extraAction={list.length > 0 ? (
@@ -413,7 +413,7 @@ function formatItemLine(o) {
   return o.spec ? `${main} (${o.spec})` : main;
 }
 
-function SummaryCard({ label, subLabel, icon, count, tone, highlight, active, onClick }) {
+function SummaryCard({ label, subLabel, count, tone, highlight, active, onClick }) {
   const toneClass = {
     amber: 'bg-amber-50 text-amber-800 hover:bg-amber-100',
     red: 'bg-rose-50 text-rose-800 hover:bg-rose-100',
@@ -437,7 +437,6 @@ function SummaryCard({ label, subLabel, icon, count, tone, highlight, active, on
       title={subLabel ? `${label} (${subLabel})` : label}
     >
       <span className="flex items-center gap-1 min-w-0 w-full sm:w-auto">
-        <span className="text-sm sm:text-xs flex-shrink-0">{icon}</span>
         <span className="text-[11px] sm:text-[11px] font-medium truncate">{label}</span>
       </span>
       <span className="text-base sm:text-sm font-bold tabular-nums sm:ml-2 self-end sm:self-auto">{count}</span>
@@ -524,7 +523,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
                   await purchaseOrdersApi.acknowledge(order.projectId, order.id);
                   onChange();
                 }}
-              >⚠️ 마감재 변경됨</span>
+              >마감재 변경됨</span>
             )}
             <span className="font-semibold text-gray-900 truncate">{order.itemName}</span>
             {order.project && (
@@ -542,7 +541,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           )}
           {order.notes && (
             <div className="text-xs text-amber-700 truncate mt-0.5" title={order.notes}>
-              📝 {order.notes}
+              {order.notes}
             </div>
           )}
         </div>
@@ -567,7 +566,7 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
           onClick={remove}
           disabled={busy}
           className="text-xs text-gray-400 hover:text-rose-500 px-1 sm:opacity-0 sm:group-hover:opacity-100"
-        >🗑</button>
+        >삭제</button>
       </div>
     </div>
   );
@@ -577,18 +576,17 @@ function OrderRow({ order, onChange, selected, onToggleSelect }) {
 // daysToDeadline: 음수 = 이미 지남, 0~3 = 위험(빨강), 4~7 = 임박(노랑), 그 외 = 회색
 function DeadlineChip({ days, deadline }) {
   let cls = 'bg-gray-100 text-gray-600';
-  let prefix = '';
-  if (days < 0) { cls = 'bg-rose-100 text-rose-800 font-semibold'; prefix = '⚠ '; }
-  else if (days <= 3) { cls = 'bg-rose-100 text-rose-700'; prefix = '🔥 '; }
-  else if (days <= 7) { cls = 'bg-amber-100 text-amber-800'; prefix = '⏰ '; }
+  if (days < 0) { cls = 'bg-rose-100 text-rose-800 font-semibold'; }
+  else if (days <= 3) { cls = 'bg-rose-100 text-rose-700'; }
+  else if (days <= 7) { cls = 'bg-amber-100 text-amber-800'; }
   const d = new Date(deadline);
   const m = d.getMonth() + 1;
   const day = d.getDate();
   const label = days < 0
-    ? `${prefix}${Math.abs(days)}일 지남`
+    ? `${Math.abs(days)}일 지남`
     : days === 0
-    ? `${prefix}오늘까지`
-    : `${prefix}D-${days} (${m}/${day})`;
+    ? `오늘까지`
+    : `D-${days} (${m}/${day})`;
   return (
     <span
       className={`text-xs sm:text-[10px] px-1.5 py-0.5 rounded ${cls}`}
