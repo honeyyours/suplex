@@ -1,34 +1,47 @@
-// 체크리스트 항목을 공정 일정에 연결할 때 일정을 고르는 모달 시트.
-// 선택 시 onSelect({ id, date, category, content })로 콜백.
+// 체크리스트 항목을 공정 일정에 연결할 때 일정을 고르는 모달.
+// 일정 달력 형태 — 월별 7×N 그리드 안에 일정 막대 표시.
+// 일정 막대 클릭 → onSelect(entry).
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
-import { categoryClass } from '../utils/date';
+import {
+  toDateKey, calendarGrid, addMonths, formatMonthLabel,
+  categoryClass, categoryBorderClass,
+} from '../utils/date';
 import { useEscape } from '../hooks/useEscape';
-
-function fmtDay(dateStr) {
-  const d = new Date(dateStr);
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
-}
 
 export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
   useEscape(onClose);
 
-  // 전체 일정 — 프로젝트 시작~종료 범위 알 수 없으니 넓게 1년 (오늘 -1개월 ~ +11개월)
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const end = new Date(today.getFullYear(), today.getMonth() + 11, 31);
-  const startKey = start.toISOString().slice(0, 10);
-  const endKey = end.toISOString().slice(0, 10);
+  const [current, setCurrent] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const grid = useMemo(
+    () => calendarGrid(current.getFullYear(), current.getMonth()),
+    [current],
+  );
+  const startKey = toDateKey(grid[0]);
+  const endKey = toDateKey(grid[grid.length - 1]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['schedules', 'list', projectId, startKey, endKey],
     queryFn: () => schedulesApi.list(projectId, { start: startKey, end: endKey }),
     enabled: !!projectId,
   });
-  const entries = (data?.entries || []).slice().sort((a, b) =>
-    a.date.localeCompare(b.date) || (a.orderIndex || 0) - (b.orderIndex || 0),
-  );
+  const entries = data?.entries || [];
+
+  const byDate = useMemo(() => {
+    const map = {};
+    entries.forEach((e) => {
+      const key = e.date.slice(0, 10);
+      (map[key] = map[key] || []).push(e);
+    });
+    return map;
+  }, [entries]);
+
+  const todayKey = toDateKey(new Date());
 
   return (
     <div
@@ -36,9 +49,10 @@ export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[80vh] flex flex-col"
+        className="bg-white dark:bg-slate-900 w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[88vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 헤더 */}
         <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
           <h3 className="font-semibold text-navy-800 dark:text-navy-200">📌 공정 일정 선택</h3>
           <button
@@ -50,44 +64,102 @@ export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3">
-          {isLoading ? (
-            <div className="text-center text-sm text-gray-400 py-8">불러오는 중...</div>
-          ) : entries.length === 0 ? (
-            <div className="text-center text-sm text-gray-400 py-8">
-              등록된 일정이 없습니다.
-              <div className="text-xs text-gray-300 mt-1">공정 일정 탭에서 먼저 일정을 등록해주세요.</div>
+        {/* 월 네비 */}
+        <div className="flex items-center justify-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+          <button
+            onClick={() => setCurrent(addMonths(current, -1))}
+            className="text-navy-700 hover:text-navy-900 text-lg leading-none px-2 py-0.5"
+            aria-label="이전 달"
+          >‹</button>
+          <div className="font-semibold text-base sm:text-lg text-navy-800 dark:text-navy-200 whitespace-nowrap min-w-[80px] text-center">
+            {formatMonthLabel(current)}
+          </div>
+          <button
+            onClick={() => setCurrent(addMonths(current, 1))}
+            className="text-navy-700 hover:text-navy-900 text-lg leading-none px-2 py-0.5"
+            aria-label="다음 달"
+          >›</button>
+          {isLoading && <span className="text-xs text-gray-400 ml-2">불러오는 중...</span>}
+        </div>
+
+        {/* 캘린더 */}
+        <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+          <div className="border border-gray-200 dark:border-slate-800 rounded-lg overflow-hidden">
+            {/* 요일 헤더 */}
+            <div className="grid grid-cols-7 text-[10px] sm:text-xs font-semibold bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800">
+              {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+                <div
+                  key={d}
+                  className={`text-center py-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`}
+                >
+                  {d}
+                </div>
+              ))}
             </div>
-          ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-slate-800">
-              {entries.map((e) => {
-                const catColor = categoryClass(e.category);
+            {/* 날짜 셀 */}
+            <div className="grid grid-cols-7">
+              {grid.map((date) => {
+                const key = toDateKey(date);
+                const dayEntries = byDate[key] || [];
+                const isCurrentMonth = date.getMonth() === current.getMonth();
+                const isToday = key === todayKey;
+                const dow = date.getDay();
                 return (
-                  <li key={e.id}>
-                    <button
-                      onClick={() => onSelect(e)}
-                      className="w-full text-left flex items-center gap-3 py-3 px-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded transition"
-                    >
-                      <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums w-16 flex-shrink-0">
-                        {fmtDay(e.date)}
+                  <div
+                    key={key}
+                    className={`border-r border-b last:border-r-0 border-gray-100 dark:border-slate-800 min-h-[60px] sm:min-h-[80px] flex flex-col overflow-hidden ${
+                      isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-gray-50/50 dark:bg-slate-900/30'
+                    }`}
+                  >
+                    <div className={`px-1 py-0.5 text-[10px] sm:text-xs flex-shrink-0 ${
+                      !isCurrentMonth ? 'text-gray-300 dark:text-gray-600' :
+                      dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
+                    }`}>
+                      <span className={isToday ? 'bg-navy-700 text-white rounded-full px-1' : ''}>
+                        {date.getDate()}
                       </span>
-                      {e.category && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${catColor} flex-shrink-0`}>
-                          {e.category}
+                    </div>
+                    <div className="px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden">
+                      {dayEntries.slice(0, 3).map((e) => {
+                        const catColor = categoryClass(e.category);
+                        const borderColor = categoryBorderClass(e.category);
+                        return (
+                          <button
+                            key={e.id}
+                            onClick={() => onSelect(e)}
+                            className={`
+                              text-left text-[10px] leading-tight rounded-sm pl-0.5 pr-0.5 py-0
+                              truncate ${catColor}
+                              border-l-0 sm:border-l-[3px] ${borderColor}
+                              hover:brightness-95
+                            `}
+                            title={`${e.category ? `[${e.category}] ` : ''}${e.content}`}
+                          >
+                            {e.content}
+                          </button>
+                        );
+                      })}
+                      {dayEntries.length > 3 && (
+                        <span className="text-[10px] text-gray-400 text-center leading-none">
+                          +{dayEntries.length - 3}
                         </span>
                       )}
-                      <span className="text-sm text-gray-800 dark:text-gray-200 truncate flex-1">
-                        {e.content}
-                      </span>
-                      {e.confirmed && (
-                        <span className="text-emerald-600 dark:text-emerald-400 text-xs flex-shrink-0">✓</span>
-                      )}
-                    </button>
-                  </li>
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
+          </div>
+
+          {!isLoading && entries.length === 0 && (
+            <div className="text-center text-xs text-gray-400 py-4">
+              이번 달에 등록된 일정이 없습니다.
+            </div>
           )}
+        </div>
+
+        <div className="px-4 py-2 border-t border-gray-100 dark:border-slate-800 text-[11px] text-gray-500 dark:text-gray-400 text-center flex-shrink-0">
+          일정 막대를 눌러 선택하세요
         </div>
       </div>
     </div>
