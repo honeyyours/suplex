@@ -80,8 +80,8 @@ export default function Schedule() {
           {tab === 'site' && <FilterableProjectCalendar status="IN_PROGRESS" section="calendar" />}
           {tab === 'planned' && <FilterableProjectCalendar status="PLANNED" section="calendar" />}
           {tab === 'all' && (
-            <>
-              <div className="flex justify-end mb-2 px-2 sm:px-0">
+            <AggregateCalendar
+              headerRight={
                 <button
                   onClick={() => setExtractAllOpen(true)}
                   className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
@@ -89,9 +89,8 @@ export default function Schedule() {
                 >
                   일정 복사
                 </button>
-              </div>
-              <AggregateCalendar />
-            </>
+              }
+            />
           )}
         </div>
       </div>
@@ -262,7 +261,7 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
   // 캘린더(+ 프로젝트 칩 + 정보 카드 + 모달)
   return (
     <>
-      <div className="sm:hidden border-b mb-3 overflow-x-auto px-2">
+      <div className="sm:hidden border-b mt-2 mb-4 overflow-x-auto px-3">
         <div className="flex">
           <MobileProjectTab
             active={selectedId === 'all'}
@@ -311,8 +310,9 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
           <ScheduleCalendar projectId={selectedProject.id} project={selectedProject} />
         </div>
       ) : (
-        <>
-          <div className="flex justify-end mb-2 px-2 sm:px-0">
+        <AggregateCalendar
+          projectIds={filterIds}
+          headerRight={
             <button
               onClick={() => setExtractScopedOpen(true)}
               className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50"
@@ -320,9 +320,8 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
             >
               일정 복사
             </button>
-          </div>
-          <AggregateCalendar projectIds={filterIds} />
-        </>
+          }
+        />
       )}
 
       {extractProjectModal && (

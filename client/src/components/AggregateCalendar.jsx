@@ -51,30 +51,26 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap px-2 sm:px-0">
-        <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="grid grid-cols-3 items-center mb-3 gap-2 px-2 sm:px-0">
+        <div className="justify-self-start">
           <button
             onClick={() => setCurrent(addMonths(current, -1))}
             className="px-3 py-1 border rounded hover:bg-gray-50"
+            aria-label="이전 달"
           >‹</button>
-          <div className="font-semibold text-lg text-navy-800 min-w-24 text-center">
-            {formatMonthLabel(current)}
-          </div>
+        </div>
+        <div className="text-center font-semibold text-base sm:text-lg text-navy-800 truncate">
+          {formatMonthLabel(current)}
+          {loading && <span className="text-xs text-gray-400 ml-1">불러오는 중...</span>}
+        </div>
+        <div className="flex items-center gap-2 justify-self-end">
           <button
             onClick={() => setCurrent(addMonths(current, 1))}
             className="px-3 py-1 border rounded hover:bg-gray-50"
+            aria-label="다음 달"
           >›</button>
-          <button
-            onClick={() => setCurrent(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
-            className="ml-2 text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
-          >오늘</button>
-          {loading && <span className="text-xs text-gray-400 ml-2">불러오는 중...</span>}
+          {headerRight}
         </div>
-        {headerRight && (
-          <div className="hidden sm:flex items-center gap-1 min-w-0 flex-1 justify-end overflow-x-auto">
-            {headerRight}
-          </div>
-        )}
       </div>
 
       <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
