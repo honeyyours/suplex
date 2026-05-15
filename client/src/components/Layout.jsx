@@ -188,9 +188,9 @@ export default function Layout() {
             <a href="https://instagram.com/suplex.kr" target="_blank" rel="noopener noreferrer" className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">@suplex.kr</a>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-            <span>사업자등록번호 491-86-04017</span>
+            <span>사업자 491-86-04017</span>
             <span aria-hidden>·</span>
-            <span>법인등록번호 140111-0012507</span>
+            <span>법인 140111-0012507</span>
           </div>
         </div>
       </footer>
