@@ -19,14 +19,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <HomeWeekSchedule />
-
-      <HomeWeeklyBrief />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <HomeProjectCards status="IN_PROGRESS" />
         <HomeProjectCards status="PLANNED" />
       </div>
+
+      <HomeWeekSchedule />
+
+      <HomeWeeklyBrief />
     </div>
   );
 }
