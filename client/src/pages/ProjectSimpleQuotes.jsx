@@ -520,6 +520,10 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   function handleCellKeyDown(e, rowIdx, col) {
     const target = e.target;
     if (e.key === 'Enter') {
+      // 비고 셀에서 Ctrl/⌘ + Enter → 네이티브 줄바꿈 허용
+      if (col === 'notes' && (e.ctrlKey || e.metaKey)) {
+        return;
+      }
       e.preventDefault();
       // 그룹 안에서 다음 행이 그룹 종료 마커거나 다른 그룹 헤더면, 같은 그룹 안에 새 라인 추가
       const current = lines[rowIdx];
@@ -1279,7 +1283,7 @@ function LineRow({
           }}
           rows={1}
           className={inputCls + ' resize-none overflow-hidden leading-snug'}
-          placeholder="설명/규격/색상 등 (Enter 줄바꿈)"
+          placeholder="설명/규격/색상 등 (Ctrl+Enter 줄바꿈)"
         />
       </td>
       <td className="px-1">
