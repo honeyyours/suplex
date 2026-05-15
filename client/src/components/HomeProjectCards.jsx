@@ -6,7 +6,6 @@ import { formatDateDot } from '../utils/date';
 const VARIANTS = {
   IN_PROGRESS: {
     title: '진행중 프로젝트',
-    icon: '🏗️',
     cardBase: 'bg-white border-navy-200 hover:border-navy-400',
     titleColor: 'text-navy-800',
     badge: { color: 'bg-sky-100 text-sky-700', label: '진행중' },
@@ -15,7 +14,6 @@ const VARIANTS = {
   },
   PLANNED: {
     title: '견적단계 프로젝트',
-    icon: '📝',
     cardBase: 'bg-gray-50 border-gray-200 hover:border-amber-400',
     titleColor: 'text-gray-700',
     badge: { color: 'bg-amber-100 text-amber-800', label: '예정' },
@@ -42,7 +40,6 @@ export default function HomeProjectCards({ status }) {
     <section className="bg-white rounded-xl border p-3 sm:p-5">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <h2 className="text-base sm:text-lg font-bold text-navy-800 flex items-center gap-2">
-          <span>{v.icon}</span>
           <span>{v.title}</span>
           <span className="text-sm font-normal text-gray-500">({projects.length})</span>
         </h2>
@@ -115,7 +112,7 @@ export default function HomeProjectCards({ status }) {
                 </div>
                 <div className="flex items-center gap-2 text-[11px] text-gray-500 flex-wrap">
                   {p.startDate && (
-                    <span>📅 {formatDateDot(p.startDate)}</span>
+                    <span>{formatDateDot(p.startDate)}</span>
                   )}
                   {p.expectedEndDate && (
                     <DDayBadge date={p.expectedEndDate} />

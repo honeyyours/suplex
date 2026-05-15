@@ -106,14 +106,12 @@ export default function HomeWeeklyBrief() {
   return (
     <div className="space-y-3">
       <BriefSection
-        emoji="✅"
         label="이번주"
         range={thisRange}
         groups={thisWeekGroups}
         emptyText="이번주 등록된 일정이 없습니다"
       />
       <BriefSection
-        emoji="📅"
         label="다음주 예정"
         range={nextRange}
         groups={nextWeekGroups}
@@ -123,13 +121,13 @@ export default function HomeWeeklyBrief() {
   );
 }
 
-function BriefSection({ emoji, label, range, groups, emptyText }) {
+function BriefSection({ label, range, groups, emptyText }) {
   const total = groups.reduce((s, g) => s + g.entries.length, 0);
   return (
     <section className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
       <div className="flex items-baseline justify-between mb-3 pb-2 border-b border-gray-100 dark:border-slate-800">
         <h2 className="text-base font-bold text-navy-800 dark:text-navy-200">
-          <span className="mr-1.5">{emoji}</span>{label}
+          {label}
           <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">{range}</span>
         </h2>
         {total > 0 && (
@@ -160,7 +158,7 @@ function ProjectRow({ group }) {
         className="text-sm font-semibold text-navy-700 dark:text-navy-300 hover:underline shrink-0 sm:w-44 sm:truncate"
         title={project.name}
       >
-        🏠 {project.name}
+        {project.name}
       </Link>
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs text-gray-700 dark:text-gray-300 flex-1">
         {visible.map((e) => (
