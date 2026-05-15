@@ -261,8 +261,8 @@ function FilterableProjectCalendar({ status, section = 'calendar' }) {
   // 캘린더(+ 프로젝트 칩 + 정보 카드 + 모달)
   return (
     <>
-      <div className="sm:hidden border-b mt-2 mb-4 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex">
+      <div className="sm:hidden mt-2 mb-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1.5">
           <MobileProjectTab
             active={selectedId === 'all'}
             onClick={() => setSelectedId('all')}
@@ -353,10 +353,10 @@ function MobileProjectTab({ active, onClick, title, children }) {
     <button
       onClick={onClick}
       title={title}
-      className={`px-3 py-1.5 text-xs whitespace-nowrap border-b-2 flex-shrink-0 max-w-[160px] truncate ${
+      className={`px-3 py-1 text-xs whitespace-nowrap rounded-full flex-shrink-0 max-w-[160px] truncate border transition ${
         active
-          ? 'border-navy-700 text-navy-800 font-medium'
-          : 'border-transparent text-gray-500'
+          ? 'bg-navy-700 text-white border-navy-700 font-medium'
+          : 'bg-gray-100 text-gray-600 border-gray-200'
       }`}
     >
       {children}
