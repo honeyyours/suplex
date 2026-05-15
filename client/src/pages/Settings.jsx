@@ -152,11 +152,14 @@ export default function Settings() {
       {isOwner && <CompanyAssetsSection />}
 
       {isOwner && (
-        <Section title="데이터 백업 (프로젝트 단위)">
-          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-3">
-            ⚠️ 정식 백업 기능 준비 중입니다. 현재 내보내기는 회사 전체 데이터를 JSON으로 떨어뜨리지만, 복원 기능은 일정·체크리스트만 처리되어 임시로 비활성화했습니다.
+        <Section title="프로젝트 백업 (일정·체크리스트·메모)">
+          <div className="text-sm text-gray-600 mb-3 leading-relaxed">
+            프로젝트의 <b>일정·체크리스트·메모</b>만 JSON으로 백업·복원됩니다.
+            마감재·견적·지출·발주·사진은 포함되지 않습니다 (정식 출시 시 지원 예정).
+            <br />
+            <span className="text-xs text-gray-500">회사 자산(거래처·템플릿·룰 등)은 위 "회사 자산 가져오기/내보내기" 섹션을 사용하세요.</span>
           </div>
-          <BackupMenu importDisabled />
+          <BackupMenu />
         </Section>
       )}
     </div>

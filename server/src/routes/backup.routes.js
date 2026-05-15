@@ -19,6 +19,7 @@ router.get('/export', async (req, res, next) => {
         include: {
           dailyScheduleEntries: { orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }] },
           checklists: { orderBy: { createdAt: 'asc' } },
+          memos: { orderBy: { createdAt: 'asc' } },
           scheduleChanges: { orderBy: { createdAt: 'desc' }, take: 500 },
         },
       });
@@ -43,6 +44,7 @@ router.get('/export', async (req, res, next) => {
           include: {
             dailyScheduleEntries: { orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }] },
             checklists: { orderBy: { createdAt: 'asc' } },
+            memos: { orderBy: { createdAt: 'asc' } },
             scheduleChanges: { orderBy: { createdAt: 'desc' }, take: 500 },
           },
         },
@@ -150,10 +152,28 @@ router.post('/import', async (req, res, next) => {
         });
       }
 
+      if (p.memos?.length) {
+        await prisma.projectMemo.createMany({
+          data: p.memos.map((m) => ({
+            projectId: project.id,
+            title: m.title || null,
+            content: m.content || '',
+            tag: m.tag || null,
+            pinned: !!m.pinned,
+            orderIndex: m.orderIndex || 0,
+          })),
+        });
+      }
+
       createdProjects.push({ id: project.id, name: project.name });
     }
 
-    res.json({ ok: true, projects: createdProjects });
+    res.json({
+      ok: true,
+      projects: createdProjects,
+      restoredTypes: ['dailyScheduleEntries', 'checklists', 'memos'],
+      note: '현재 일정·체크리스트·메모만 복원됩니다. 마감재·견적·지출·발주 등은 정식 출시 후 지원 예정입니다.',
+    });
   } catch (e) {
     console.error('import error:', e);
     next(e);
