@@ -8,6 +8,8 @@ export const companyAssetsApi = {
   exportUrl: () => '/api/company-assets/export',
   import: (payload, mode = 'seed') =>
     api.post('/company-assets/import', { payload, mode }).then((r) => r.data),
+  importFull: (payload) =>
+    api.post('/company-assets/import-full', { payload }, { timeout: 5 * 60 * 1000 }).then((r) => r.data),
 };
 
 // 다운로드는 axios 가 아닌 fetch 직접 호출(Blob 받기 위해). baseURL 은 axios 와 동일하게 맞춰야

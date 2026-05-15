@@ -12,6 +12,7 @@ const { authRequired, requireRole } = require('../middlewares/auth');
 const { exportCompanyAssets } = require('../services/companyAssetExport');
 const { importCompanyAssets } = require('../services/companyAssetImport');
 const { exportFullCompany } = require('../services/fullCompanyExport');
+const { importFullCompany } = require('../services/fullCompanyImport');
 const { audit } = require('../services/audit');
 
 const router = express.Router();
@@ -59,6 +60,24 @@ router.get('/export-full', async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', contentDispositionAttachment(`suplex_full_${safeName}_${date}.json`));
     res.json(payload);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
+    next(e);
+  }
+});
+
+// 회사 전체 데이터 import — 빈 회사에만 (트랜잭션 5분 timeout)
+router.post('/import-full', async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const ownerUserId = req.user.id;
+    const { payload } = req.body || {};
+
+    const report = await importFullCompany(prisma, { companyId, ownerUserId, payload });
+
+    audit(req, 'company-assets.import-full', { metadata: { report } });
+
+    res.json({ ok: true, report });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ error: e.message });
     next(e);

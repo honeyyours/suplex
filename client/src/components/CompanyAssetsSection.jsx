@@ -20,6 +20,8 @@ export default function CompanyAssetsSection() {
   const [result, setResult] = useState(null);
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
+  const fullFileRef = useRef(null);
+  const [fullResult, setFullResult] = useState(null);
 
   async function handleExport() {
     setBusy(true); setErr(''); setResult(null);
@@ -45,6 +47,46 @@ export default function CompanyAssetsSection() {
 
   function triggerImport() {
     fileRef.current?.click();
+  }
+
+  function triggerFullImport() {
+    fullFileRef.current?.click();
+  }
+
+  async function handleFullFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setErr(''); setResult(null); setFullResult(null);
+    let parsed;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      setErr('JSON 파싱 실패: 올바른 전체 데이터 파일인지 확인하세요');
+      return;
+    }
+    if (parsed.kind !== 'company-full') {
+      setErr('전체 데이터 JSON 이 아닙니다. "📦 전체 데이터 내보내기" 로 만든 파일을 사용하거나, "자산 가져오기" 버튼을 사용해주세요.');
+      return;
+    }
+
+    const counts = parsed.counts || {};
+    const projCount = counts.projects ?? (parsed.projects?.length || 0);
+    const sourceName = parsed.sourceCompanyName ? `\n원본 회사: ${parsed.sourceCompanyName}` : '';
+    if (!confirm(
+      `⚠️ 전체 데이터 가져오기는 빈 회사에서만 가능합니다.\n${sourceName}\n\n프로젝트 ${projCount}개 + 회사 자산 9종 + 모든 하위 데이터(견적·마감재·지출·발주·일정·체크리스트·메모·사진 등)를 통째로 가져옵니다.\n\n진행할까요?`
+    )) return;
+
+    setBusy(true);
+    try {
+      const res = await companyAssetsApi.importFull(parsed);
+      setFullResult(res.report);
+    } catch (e) {
+      setErr(e.response?.data?.error || e.message || '전체 가져오기 실패');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleFile(e) {
@@ -117,13 +159,28 @@ export default function CompanyAssetsSection() {
         >
           📥 자산 가져오기 (Seed)
         </button>
-        {busy && <span className="text-xs text-gray-400 self-center">처리 중...</span>}
+        <button
+          onClick={triggerFullImport}
+          disabled={busy}
+          className="text-sm px-3 py-1.5 border border-emerald-300 bg-emerald-50 text-emerald-800 rounded hover:bg-emerald-100 disabled:opacity-50 font-medium"
+          title="빈 회사에서만 사용 가능. 프로젝트 통째로 가져옴"
+        >
+          🌱 전체 데이터 가져오기 (빈 회사 한정)
+        </button>
+        {busy && <span className="text-xs text-gray-400 self-center">처리 중... (큰 데이터는 1-2분 걸릴 수 있어요)</span>}
       </div>
       <input
         ref={fileRef}
         type="file"
         accept=".json,application/json"
         onChange={handleFile}
+        className="hidden"
+      />
+      <input
+        ref={fullFileRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleFullFile}
         className="hidden"
       />
 
@@ -135,7 +192,7 @@ export default function CompanyAssetsSection() {
 
       {result && (
         <div className="mt-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-          <div className="font-medium mb-1">✅ 임포트 완료</div>
+          <div className="font-medium mb-1">✅ 자산 가져오기 완료</div>
           <ul className="text-xs space-y-0.5">
             {Object.entries(SECTION_LABELS).map(([k, label]) => {
               const inserted = result.inserted?.[k];
@@ -152,12 +209,34 @@ export default function CompanyAssetsSection() {
         </div>
       )}
 
+      {fullResult && (
+        <div className="mt-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+          <div className="font-medium mb-1">🌱 전체 데이터 가져오기 완료</div>
+          <ul className="text-xs space-y-0.5">
+            <li>· 회사 메타: {fullResult.company ? '업데이트' : '변경 없음'}</li>
+            <li>· 거래처: <b>{fullResult.vendors?.inserted || 0}개</b></li>
+            <li>· 마감재 템플릿: <b>{fullResult.materialTemplates || 0}개</b></li>
+            <li>· 견적 라인: <b>{fullResult.quoteLineItemTemplates || 0}개</b></li>
+            <li>· 공정 룰 4종: 키워드 {fullResult.phaseKeywordRules}, 데드라인 {fullResult.phaseDeadlineRules}, 어드바이스 {fullResult.phaseAdvices}, 가이드 {fullResult.companyPhaseTips}</li>
+            <li>· 회계: 계정과목 {fullResult.accountCodes}, 자동분류 룰 {fullResult.expenseCategoryRules}</li>
+            <li className="pt-1 border-t border-emerald-200">· <b>프로젝트 {fullResult.projects}개</b></li>
+            <li>· 견적: 상세 {fullResult.quotes}({fullResult.quoteLines}줄) · 간편 {fullResult.simpleQuotes}({fullResult.simpleQuoteLines}줄)</li>
+            <li>· 마감재 {fullResult.materials} · 발주 {fullResult.purchaseOrders} · 지출 <b>{fullResult.expenses}</b></li>
+            <li>· 일정 {fullResult.dailyScheduleEntries} · 체크 {fullResult.checklists} · 메모 {fullResult.projectMemos} · 사진 {fullResult.photos}</li>
+            <li>· 변경 이력 {fullResult.scheduleChanges} · 공정메모 {fullResult.phaseNotes} · 정산메모 {fullResult.settlementNotes}</li>
+            <li>· 현장보고 {fullResult.dailyReports} · 수량 {fullResult.measurements} · 자재요청 {fullResult.materialRequests}</li>
+          </ul>
+        </div>
+      )}
+
       <div className="text-[11px] text-gray-400 mt-3 leading-relaxed space-y-1">
         <p>
           <b>자산만 내보내기/가져오기</b>: 거래처·템플릿·룰 9종(반복 사용 설정). Seed 모드는 기존 데이터를 절대 덮어쓰지 않고 비어있는 자리에만 추가합니다. 외부 AI(ChatGPT·Claude)에게 양식 문서를 주고 JSON을 만들게 한 뒤 가져올 수 있습니다.
         </p>
         <p>
-          <b>전체 데이터 내보내기</b>: 자산 9종 + 모든 프로젝트(견적·마감재·일정·지출·메모·발주·사진) 통째. 회사 백업·이전·표준 회사 양식 추출 용도. <span className="text-amber-600">전체 데이터 <b>가져오기</b>는 외래키 그래프 검증이 완료된 뒤 다음 사이클에 열립니다.</span>
+          <b>전체 데이터 내보내기/가져오기</b>: 자산 9종 + 모든 프로젝트(견적·마감재·일정·지출·메모·발주·사진) 통째. 회사 백업·이전·신규 가입 시 기존 자료 옮기기 용도.
+          가져오기는 <b>빈 회사에서만 가능</b>합니다(기존 프로젝트가 있으면 거부). 새 회사 만든 직후에만 사용하세요.
+          외부 AI(ChatGPT·Claude)에 양식 문서 + 회사 데이터를 주고 우리 양식 JSON 만들게 한 뒤 업로드 가능합니다.
         </p>
       </div>
     </div>
