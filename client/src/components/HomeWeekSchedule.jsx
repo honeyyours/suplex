@@ -66,7 +66,6 @@ export default function HomeWeekSchedule() {
           >‹</button>
           <div className="text-sm font-medium text-navy-700 min-w-[140px] text-center">
             {formatRange(rangeStart, rangeEnd)}
-            {isThisWeek && <span className="ml-1 text-xs sm:text-[10px] bg-navy-700 text-white px-1.5 py-0.5 rounded">이번주</span>}
           </div>
           <button
             onClick={() => setWeekStart(addDays(weekStart, 7))}
@@ -101,17 +100,18 @@ export default function HomeWeekSchedule() {
                 isToday ? 'border-navy-500 bg-navy-50/40' : 'border-gray-200 bg-white'
               }`}
             >
-              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm font-semibold border-b flex items-center justify-between ${
+              {/* 모바일: 요일→날짜 위→아래 스택. 데스크톱: 가로 분리 유지 */}
+              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm font-semibold border-b flex flex-col items-center sm:flex-row sm:items-center sm:justify-between leading-tight ${
                 isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
               }`}>
-                <span>{DAY_LABELS[i]}</span>
-                <span className={isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''}>
+                <span className="text-[9px] sm:text-sm text-gray-400 sm:text-inherit font-normal sm:font-semibold">{DAY_LABELS[i]}</span>
+                <span className={`text-[12px] sm:text-sm font-bold sm:font-semibold ${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''}`}>
                   {d.getDate()}
                 </span>
               </div>
               <div className="px-0.5 py-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
                 {dayEntries.length === 0 ? (
-                  <div className="text-xs sm:text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
+                  <div className="flex-1" />
                 ) : (
                   dayEntries.map((e) => {
                     const projColor = projectClass(e.project?.id);

@@ -36,6 +36,7 @@ const activityRoutes = require('./activity.routes');
 const applianceSpecsRoutes = require('./applianceSpecs.routes');
 const announcementsRoutes = require('./announcements.routes');
 const loungeRoutes = require('./lounge.routes');
+const dashboardRoutes = require('./dashboard.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -103,6 +104,7 @@ router.use('/activity', activityRoutes);
 router.use('/appliance-specs', applianceSpecsRoutes);
 router.use('/announcements', announcementsRoutes);
 router.use('/lounge', loungeRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);

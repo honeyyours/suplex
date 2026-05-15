@@ -54,27 +54,23 @@ export default function HomeProjectCards({ status }) {
         <div className="text-center py-6 text-sm text-gray-400">{v.emptyText}</div>
       ) : (
         <>
-          {/* 모바일: 한 줄 리스트 (이름 · D-day · 평수) */}
+          {/* 모바일: 한 줄 리스트 (이름 · D-day pill · 평수) — 영역 너비 고정으로 정렬 일관 */}
           <ul className="sm:hidden divide-y divide-gray-100">
             {mobileVisible.map((p) => (
               <li key={p.id}>
                 <Link
                   to={v.getTo(p)}
-                  className="flex items-center gap-2 py-2.5 -mx-1 px-1 hover:bg-gray-50 rounded"
+                  className="flex items-center gap-2 py-2 -mx-1 px-1 hover:bg-gray-50 rounded"
                 >
                   <span className={`text-sm font-medium truncate flex-1 min-w-0 ${v.titleColor}`}>
                     {p.name}
                   </span>
-                  {p.expectedEndDate && (
-                    <span className="text-[11px] shrink-0">
-                      <DDayBadge date={p.expectedEndDate} />
-                    </span>
-                  )}
-                  {p.area && (
-                    <span className="text-[11px] text-gray-500 tabular-nums shrink-0">
-                      {Number(p.area)}평
-                    </span>
-                  )}
+                  <div className="text-[11px] shrink-0 flex items-center justify-end" style={{ minWidth: 56 }}>
+                    {p.expectedEndDate && <DDayPill date={p.expectedEndDate} />}
+                  </div>
+                  <div className="text-[11px] text-gray-500 tabular-nums shrink-0 text-right" style={{ minWidth: 34 }}>
+                    {p.area ? `${Number(p.area)}평` : ''}
+                  </div>
                   <span className="text-gray-300 shrink-0">›</span>
                 </Link>
               </li>
@@ -143,6 +139,19 @@ function DDayBadge({ date }) {
     return <span className="text-amber-700 font-semibold">D-{days}</span>;
   }
   return <span>D-{days}</span>;
+}
+
+// 모바일 행 전용 — 컬러 pill. D-30 이하 amber, D-DAY/지남 rose, 그 외 회색
+function DDayPill({ date }) {
+  const days = daysUntil(date);
+  if (days === null) return null;
+  let cls;
+  let label;
+  if (days < 0) { cls = 'bg-rose-100 text-rose-700'; label = `D+${Math.abs(days)}`; }
+  else if (days === 0) { cls = 'bg-rose-100 text-rose-700 font-semibold'; label = 'D-DAY'; }
+  else if (days <= 30) { cls = 'bg-amber-100 text-amber-800 font-medium'; label = `D-${days}`; }
+  else { cls = 'bg-gray-100 text-gray-600'; label = `D-${days}`; }
+  return <span className={`px-1.5 py-0.5 rounded ${cls} tabular-nums`}>{label}</span>;
 }
 
 function daysUntil(dateStr) {

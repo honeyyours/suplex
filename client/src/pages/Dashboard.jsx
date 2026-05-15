@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import HomeTodayActions from '../components/HomeTodayActions';
 import HomeWeeklyBrief from '../components/HomeWeeklyBrief';
 import HomeWeekSchedule from '../components/HomeWeekSchedule';
 import HomeProjectCards from '../components/HomeProjectCards';
@@ -18,6 +19,8 @@ export default function Dashboard() {
           {formatToday()}
         </div>
       </div>
+
+      <HomeTodayActions />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <HomeProjectCards status="IN_PROGRESS" />

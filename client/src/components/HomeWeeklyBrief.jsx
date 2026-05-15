@@ -155,28 +155,36 @@ function ProjectRow({ group }) {
     <li className="py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
       <Link
         to={`/projects/${project.id}/schedule`}
-        className="text-sm font-semibold text-navy-700 dark:text-navy-300 hover:underline shrink-0 sm:w-44 sm:truncate"
+        className="text-sm font-semibold text-navy-700 dark:text-navy-300 hover:underline shrink-0 sm:w-44 sm:truncate tracking-tight"
         title={project.name}
       >
         {project.name}
       </Link>
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs text-gray-700 dark:text-gray-300 flex-1">
-        {visible.map((e) => (
-          <span key={e.id} className="inline-flex items-baseline gap-1 whitespace-nowrap">
-            <span className="text-gray-500 dark:text-gray-400 tabular-nums">{dayLabel(e.date)}</span>
-            {e.category && (
-              <span className="text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
-                {e.category}
-              </span>
-            )}
-            <span className={e.confirmed ? '' : 'text-gray-600 dark:text-gray-400'}>
-              {e.content}
+      {/* 모바일: 한 줄 한 일정. 데스크톱: 가로 wrap */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-baseline gap-y-1 sm:gap-y-1.5 gap-x-0 sm:gap-x-5 text-xs text-gray-700 dark:text-gray-300 flex-1">
+        {visible.map((e) => {
+          const cat = (e.category || '').trim();
+          const content = (e.content || '').trim();
+          const sameLabel = cat && cat === content;
+          return (
+            <span key={e.id} className="inline-flex items-baseline gap-1 whitespace-nowrap">
+              <span className="text-gray-500 dark:text-gray-400 tabular-nums shrink-0">{dayLabel(e.date)}</span>
+              {cat && (
+                <span className="text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
+                  {cat}
+                </span>
+              )}
+              {!sameLabel && (
+                <span className={`truncate ${e.confirmed ? '' : 'text-gray-600 dark:text-gray-400'}`}>
+                  {content}
+                </span>
+              )}
+              {e.confirmed && (
+                <span className="text-emerald-600 dark:text-emerald-400 shrink-0" title="확정">✓</span>
+              )}
             </span>
-            {e.confirmed && (
-              <span className="text-emerald-600 dark:text-emerald-400" title="확정">✓</span>
-            )}
-          </span>
-        ))}
+          );
+        })}
         {remaining > 0 && (
           <span className="text-xs text-gray-500 dark:text-gray-400">+{remaining}건</span>
         )}
