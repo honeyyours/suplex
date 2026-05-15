@@ -53,16 +53,23 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
           <h2 className={`font-bold text-navy-800 leading-tight break-keep ${compact ? 'text-base sm:text-lg' : 'text-lg sm:text-2xl'}`}>
             {project.name}
           </h2>
-          {/* 3행: 견적 chip — 별도 줄 + 한 줄 유지 */}
+          {/* 3행: 견적 활성 카드 — 클릭 시 견적 탭 이동 */}
           {activeQuote && (
             <Link
               to={`/projects/${project.id}/quotes`}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-navy-50 text-navy-700 hover:bg-navy-100 flex-wrap"
+              className="mt-3 flex items-center justify-between gap-3 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
               title="견적 탭으로 이동"
             >
-              <span className="whitespace-nowrap">📄 견적 {activeQuote.title}</span>
-              <span className="tabular-nums font-medium whitespace-nowrap">{formatWon(activeQuote.total)}원</span>
-              <span className={`px-1 rounded text-[10px] whitespace-nowrap ${quoteMeta.color}`}>{quoteMeta.label}</span>
+              <div className="min-w-0">
+                <div className="text-[11px] text-gray-500 mb-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span>견적 {activeQuote.title}</span>
+                  <span className={`px-1 rounded text-[10px] ${quoteMeta.color}`}>{quoteMeta.label}</span>
+                </div>
+                <div className="text-base sm:text-lg font-semibold text-navy-800 tabular-nums">
+                  {formatWon(activeQuote.total)}원
+                </div>
+              </div>
+              <span className="text-gray-400 text-lg flex-shrink-0">›</span>
             </Link>
           )}
         </div>
@@ -82,6 +89,12 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
         <InfoRow label="주소">
           {project.siteAddress || <span className="text-gray-300">—</span>}
         </InfoRow>
+        <InfoRow label="연락처">
+          {project.customerPhone || <span className="text-gray-300">—</span>}
+        </InfoRow>
+        <InfoRow label="면적">
+          {project.area ? `${Number(project.area).toLocaleString('ko-KR')} 평` : <span className="text-gray-300">—</span>}
+        </InfoRow>
         <InfoRow label="출입번호">
           {project.doorPassword ? (
             <span className="font-mono bg-gray-100 px-2 py-0.5 rounded tracking-wider">
@@ -90,12 +103,6 @@ export default function ProjectInfoCard({ project, showHeader = true, actions = 
           ) : (
             <span className="text-gray-300">—</span>
           )}
-        </InfoRow>
-        <InfoRow label="연락처">
-          {project.customerPhone || <span className="text-gray-300">—</span>}
-        </InfoRow>
-        <InfoRow label="면적">
-          {project.area ? `${Number(project.area).toLocaleString('ko-KR')} 평` : <span className="text-gray-300">—</span>}
         </InfoRow>
         <InfoRow label="현장정보" full>
           {project.siteNotes ? (
