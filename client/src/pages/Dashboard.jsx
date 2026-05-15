@@ -2,7 +2,6 @@ import { useAuth } from '../contexts/AuthContext';
 import HomeWeeklyBrief from '../components/HomeWeeklyBrief';
 import HomeWeekSchedule from '../components/HomeWeekSchedule';
 import HomeProjectCards from '../components/HomeProjectCards';
-import HomeActivityFeed from '../components/HomeActivityFeed';
 
 export default function Dashboard() {
   const { auth } = useAuth();
@@ -20,16 +19,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <HomeWeeklyBrief />
-
       <HomeWeekSchedule />
+
+      <HomeWeeklyBrief />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <HomeProjectCards status="IN_PROGRESS" />
         <HomeProjectCards status="PLANNED" />
       </div>
-
-      <HomeActivityFeed days={7} limit={20} />
     </div>
   );
 }
