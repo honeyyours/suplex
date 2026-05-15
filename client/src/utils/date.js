@@ -170,3 +170,35 @@ export function categoryBorderClass(cat) {
   if (CATEGORY_BORDER_COLORS[cat]) return CATEGORY_BORDER_COLORS[cat];
   return FALLBACK_PHASE_BORDER_COLORS[hashString(cat) % FALLBACK_PHASE_BORDER_COLORS.length];
 }
+
+// 프로젝트별 색 — 전체 일정(여러 프로젝트가 한 화면) 캘린더 막대용
+const PROJECT_BG_COLORS = [
+  'bg-blue-100 text-blue-800',
+  'bg-pink-100 text-pink-800',
+  'bg-emerald-100 text-emerald-800',
+  'bg-violet-100 text-violet-800',
+  'bg-indigo-100 text-indigo-800',
+  'bg-rose-100 text-rose-800',
+  'bg-amber-100 text-amber-800',
+  'bg-teal-100 text-teal-800',
+];
+const PROJECT_BORDER_COLORS = [
+  'border-blue-400',
+  'border-pink-400',
+  'border-emerald-400',
+  'border-violet-400',
+  'border-indigo-400',
+  'border-rose-400',
+  'border-amber-400',
+  'border-teal-400',
+];
+
+export function projectClass(projectId) {
+  if (!projectId) return 'bg-gray-100 text-gray-700';
+  return PROJECT_BG_COLORS[hashString(projectId) % PROJECT_BG_COLORS.length];
+}
+
+export function projectBorderClass(projectId) {
+  if (!projectId) return 'border-gray-300';
+  return PROJECT_BORDER_COLORS[hashString(projectId) % PROJECT_BORDER_COLORS.length];
+}

@@ -88,7 +88,7 @@ export default function Layout() {
       )}
       {auth && !isAdmin && <AnnouncementBanners />}
       <header className="bg-navy-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="text-xl font-bold tracking-tight">SUPLEX</Link>
             <nav className="hidden sm:flex gap-1">
@@ -153,12 +153,12 @@ export default function Layout() {
         </nav>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <Outlet />
       </main>
 
       <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
+        <div className="max-w-[1600px] mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span className="font-semibold tracking-wide">SUPLEX</span>
             <span aria-hidden>·</span>

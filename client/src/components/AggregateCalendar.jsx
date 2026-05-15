@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel, categoryClass, categoryBorderClass,
+  toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
 import PhaseInlineContent from './PhaseInlineContent';
 
@@ -104,7 +104,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
                 }`}
               >
-                <div className={`px-0.5 py-0 sm:px-1.5 sm:py-1 text-[11px] sm:text-xs flex-shrink-0 ${
+                <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
                   <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''} ${isFirstOfMonth && !isToday ? 'font-semibold text-navy-700' : ''}`}>
@@ -113,8 +113,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                 </div>
                 <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {
-                    const catColor = categoryClass(e.category);
-                    const borderColor = categoryBorderClass(e.category);
+                    const projColor = projectClass(e.project?.id);
+                    const projBorder = projectBorderClass(e.project?.id);
                     return (
                       <Link
                         key={e.id}
@@ -122,15 +122,12 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                         className={`
                           relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
                           pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate flex items-center gap-1
-                          ${catColor}
-                          border-l-0 sm:border-l-[3px] ${borderColor}
+                          ${projColor}
+                          border-l-0 sm:border-l-[3px] ${projBorder}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
-                        <span className="hidden sm:inline opacity-70 mr-0.5 truncate max-w-[60px]">
-                          {e.project?.name}
-                        </span>
                         <PhaseInlineContent entry={e} textOnly textClassName="flex-1" />
                         {e.confirmed && (
                           <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>

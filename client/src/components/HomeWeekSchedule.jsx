@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
-import { toDateKey, addDays, categoryClass, categoryBorderClass } from '../utils/date';
+import { toDateKey, addDays, projectClass, projectBorderClass } from '../utils/date';
 
 // 오늘이 포함된 월요일 0시 반환
 function getMonday(date) {
@@ -101,7 +101,7 @@ export default function HomeWeekSchedule() {
                 isToday ? 'border-navy-500 bg-navy-50/40' : 'border-gray-200 bg-white'
               }`}
             >
-              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-xs font-semibold border-b flex items-center justify-between ${
+              <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm font-semibold border-b flex items-center justify-between ${
                 isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
               }`}>
                 <span>{DAY_LABELS[i]}</span>
@@ -114,8 +114,8 @@ export default function HomeWeekSchedule() {
                   <div className="text-xs sm:text-[10px] text-gray-300 text-center py-1 sm:py-2">—</div>
                 ) : (
                   dayEntries.map((e) => {
-                    const catColor = categoryClass(e.category);
-                    const borderColor = categoryBorderClass(e.category);
+                    const projColor = projectClass(e.project?.id);
+                    const projBorder = projectBorderClass(e.project?.id);
                     return (
                       <Link
                         key={e.id}
@@ -123,18 +123,13 @@ export default function HomeWeekSchedule() {
                         className={`
                           relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
                           pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate block
-                          ${catColor}
-                          border-l-0 sm:border-l-[3px] ${borderColor}
+                          ${projColor}
+                          border-l-0 sm:border-l-[3px] ${projBorder}
                           hover:brightness-95
                         `}
                         title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
-                        <span className="truncate">
-                          {e.project?.name && (
-                            <span className="hidden sm:inline opacity-70 mr-1">{e.project.name}</span>
-                          )}
-                          {e.content}
-                        </span>
+                        <span className="truncate">{e.content}</span>
                         {e.confirmed && (
                           <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                         )}

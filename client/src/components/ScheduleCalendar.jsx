@@ -233,7 +233,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                       inRange ? 'bg-white' : 'bg-gray-100/70 dark:bg-slate-900/40 cursor-default'
                     }`}
                   >
-                    <div className={`flex items-center justify-between px-0.5 py-0 sm:px-1.5 sm:py-1 text-xs sm:text-xs flex-shrink-0 ${
+                    <div className={`flex items-center justify-between px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
                       !inRange ? 'text-gray-300' :
                       dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                     }`}>
