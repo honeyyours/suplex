@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
-import { toDateKey, rangeGrid, formatDateDot } from '../utils/date';
+import { toDateKey, rangeGrid } from '../utils/date';
 import ScheduleEntry from './ScheduleEntry';
 import InlineScheduleInput from './InlineScheduleInput';
 import MobileScheduleSheet from './MobileScheduleSheet';
@@ -174,23 +174,14 @@ export default function ScheduleCalendar({ projectId, project }) {
   }
 
   const todayKey = toDateKey(new Date());
-  const totalDays = Math.round((new Date(projEndKey) - new Date(projStartKey)) / (1000 * 60 * 60 * 24)) + 1;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2 px-2 sm:px-0">
-        <div className="text-sm text-navy-700">
-          <span className="font-semibold">{formatDateDot(projStartKey)}</span>
-          <span className="mx-2 text-gray-400">~</span>
-          <span className="font-semibold">{formatDateDot(projEndKey)}</span>
-          <span className="ml-2 text-xs text-gray-500">(총 {totalDays}일)</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-[11px] text-gray-400">
-            💡 셀 클릭=입력 · Enter/Tab/방향키=이동 · 항목 클릭=수정 · 우클릭=메뉴
-          </span>
-          {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
-        </div>
+      <div className="flex items-center justify-end mb-3 flex-wrap gap-2 px-2 sm:px-0">
+        <span className="hidden sm:inline text-[11px] text-gray-400">
+          💡 셀 클릭=입력 · Enter/Tab/방향키=이동 · 항목 클릭=수정 · 우클릭=메뉴
+        </span>
+        {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
       </div>
 
       {err && <div className="mb-3 text-sm text-rose-600 px-2 sm:px-0">{err}</div>}
