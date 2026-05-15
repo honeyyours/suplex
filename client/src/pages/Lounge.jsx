@@ -139,7 +139,7 @@ export default function Lounge() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-900/60 text-xs text-gray-600 dark:text-gray-400">
             <tr>
-              <th className="px-3 py-2 w-16 text-center font-medium">번호</th>
+              <th className="px-1 sm:px-3 py-2 w-10 sm:w-16 text-center font-medium">번호</th>
               <th className="px-3 py-2 text-left font-medium">제목</th>
               <th className="px-3 py-2 w-32 text-center font-medium hidden sm:table-cell">글쓴이</th>
               <th className="px-3 py-2 w-24 text-center font-medium hidden md:table-cell">작성일</th>
@@ -251,7 +251,7 @@ function PostRow({ post: p, categories, isNotice = false, rowNumber }) {
     : 'hover:bg-gray-50 dark:hover:bg-gray-900';
   return (
     <tr className={rowClass}>
-      <td className="px-3 py-2 text-center text-xs text-gray-500 tabular-nums">
+      <td className="px-1 sm:px-3 py-2 text-center text-xs text-gray-500 tabular-nums">
         {isNotice ? (
           <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-white text-[10px] font-semibold">공지</span>
         ) : (
