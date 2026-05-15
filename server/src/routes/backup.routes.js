@@ -1,9 +1,10 @@
 const express = require('express');
 const prisma = require('../config/prisma');
-const { authRequired } = require('../middlewares/auth');
+const { authRequired, requireRole } = require('../middlewares/auth');
 
 const router = express.Router();
 router.use(authRequired);
+router.use(requireRole('OWNER'));
 
 // GET /api/backup/export?projectId=XXX   (단일 프로젝트)
 // GET /api/backup/export                  (회사 전체)

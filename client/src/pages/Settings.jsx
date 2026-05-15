@@ -148,12 +148,14 @@ export default function Settings() {
         </div>
       </Section>
 
-      <Section title="데이터 백업">
-        <p className="text-sm text-gray-500 mb-3">
-          회사 전체 데이터를 JSON으로 내보내거나, 백업 파일에서 프로젝트를 복원합니다.
-        </p>
-        <BackupMenu />
-      </Section>
+      {isOwner && (
+        <Section title="데이터 백업">
+          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-3">
+            ⚠️ 정식 백업 기능 준비 중입니다. 현재 내보내기는 회사 전체 데이터를 JSON으로 떨어뜨리지만, 복원 기능은 일정·체크리스트만 처리되어 임시로 비활성화했습니다.
+          </div>
+          <BackupMenu importDisabled />
+        </Section>
+      )}
     </div>
   );
 }

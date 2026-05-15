@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { backupApi, downloadJson } from '../api/backup';
 
-export default function BackupMenu({ projectId, projectName, onRestored }) {
+export default function BackupMenu({ projectId, projectName, onRestored, importDisabled = false }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
@@ -86,10 +86,12 @@ export default function BackupMenu({ projectId, projectName, onRestored }) {
               💾 JSON 내보내기
             </button>
             <button
-              onClick={triggerImport}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-t"
+              onClick={importDisabled ? undefined : triggerImport}
+              disabled={importDisabled}
+              title={importDisabled ? '복원 기능은 준비 중입니다 (일정·체크리스트만 복원되어 데이터 손실 위험)' : undefined}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-t disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
-              📥 JSON 복원
+              📥 JSON 복원{importDisabled && ' (준비 중)'}
             </button>
           </div>
         </>
