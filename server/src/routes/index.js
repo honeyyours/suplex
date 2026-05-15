@@ -31,6 +31,7 @@ const invitationRoutes = require('./invitations.routes');
 const adminRoutes = require('./admin.routes');
 const vendorRoutes = require('./vendors.routes');
 const backupRoutes = require('./backup.routes');
+const companyAssetsRoutes = require('./companyAssets.routes');
 const activityRoutes = require('./activity.routes');
 const applianceSpecsRoutes = require('./applianceSpecs.routes');
 const announcementsRoutes = require('./announcements.routes');
@@ -105,5 +106,6 @@ router.use('/lounge', loungeRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
+router.use('/company-assets', companyAssetsRoutes);
 
 module.exports = router;

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
+import CompanyAssetsSection from '../components/CompanyAssetsSection';
 import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
@@ -148,8 +149,10 @@ export default function Settings() {
         </div>
       </Section>
 
+      {isOwner && <CompanyAssetsSection />}
+
       {isOwner && (
-        <Section title="데이터 백업">
+        <Section title="데이터 백업 (프로젝트 단위)">
           <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-3">
             ⚠️ 정식 백업 기능 준비 중입니다. 현재 내보내기는 회사 전체 데이터를 JSON으로 떨어뜨리지만, 복원 기능은 일정·체크리스트만 처리되어 임시로 비활성화했습니다.
           </div>
