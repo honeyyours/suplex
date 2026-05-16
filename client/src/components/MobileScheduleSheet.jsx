@@ -242,20 +242,20 @@ export default function MobileScheduleSheet({
         </div>
 
         {/* 빠른 추가 — 섹션 라벨 */}
-        <div className="px-4 pt-3 pb-2 text-[11px] font-medium text-slate-400 tracking-tight border-t border-[#eef0f4] bg-[#fafbfc]">
+        <div className="px-4 pt-2 pb-1 text-[11px] font-medium text-slate-400 tracking-tight border-t border-[#eef0f4] bg-[#fafbfc]">
           빠른 추가 <span className="text-slate-300 ml-1.5 font-normal">공정을 탭하면 바로 등록</span>
         </div>
 
-        {/* 빠른 공종 칩 — 흰 카드 + 좌측 색 dot */}
-        <div className="grid grid-cols-5 gap-1.5 px-3 pb-3.5 bg-[#fafbfc]">
+        {/* 빠른 공종 — dot + 텍스트 인라인 (버튼 카드 X) */}
+        <div className="grid grid-cols-5 px-2 pb-2 bg-[#fafbfc]">
           {phases.map((c) => (
             <button
               key={c}
               onClick={() => quickAddCategory(c)}
-              className="flex flex-col items-center gap-[3px] py-2.5 px-1 rounded-lg bg-white border border-[#eef0f4] text-[12px] font-medium text-gray-800 active:scale-[0.97] transition-transform"
+              className="flex items-center justify-center gap-1.5 py-1.5 text-[12px] font-medium text-gray-700 active:opacity-50 transition-opacity"
             >
-              <span className={`w-2.5 h-2.5 rounded-full ${categoryDotClass(c)}`} />
-              {displayPhase(c)}
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${categoryDotClass(c)}`} />
+              <span>{displayPhase(c)}</span>
             </button>
           ))}
         </div>
