@@ -117,7 +117,13 @@
     <div class="annot mt-4 max-w-3xl">
       <strong>의뢰 핵심</strong> — 디자이너가 자유롭게 풀어주세요. 아래는 시방서가 아닌 출발점입니다.
       ① 좁은 셀(모바일 한 칸 약 50px 너비) 안에서도 작동해야 함 ② 공정 색(배경/보더)과 충돌하지 않아야 함
-      ③ 협력업체 태그·삭제 아이콘과 겹치지 않아야 함 ④ 미확정도 함께 보일 때 위계가 분명해야 함.
+      ③ 호버 시 삭제 아이콘과 겹치지 않아야 함 ④ 미확정도 함께 보일 때 위계가 분명해야 함.
+    </div>
+    <div class="annot mt-3 max-w-3xl">
+      <strong>현재 셀 표시 규칙 (참고)</strong> — 셀 안 막대에는 <strong>공정 chip([전기]/[타일] 같은 라벨)을 표시하지 않습니다</strong>.
+      공정 식별은 <em>배경색 + 좌측 보더색</em>에 위임돼 있고, 본문은 입력 텍스트만 truncate되어 나옵니다.
+      빠른추가로 만들어진 일정은 content가 곧 공정명이라 셀에 "전기"·"타일"처럼 짧게 표시됩니다.
+      <strong>협력업체 태그</strong>는 현재 등록 UI가 숨김 처리되어 화면에 사실상 노출되지 않습니다 — 이번 브리프 범위에서 제외해도 됩니다.
     </div>
   </header>
 
@@ -158,20 +164,20 @@
                 <div class="px-2 py-1.5 text-sm text-gray-600">18</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-sky-100 text-sky-800 border-l-[3px] border-sky-400">
-                    <span class="text-[10px] mr-1">전기</span>콘센트
+                    콘센트 추가
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                   <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-pink-100 text-pink-800 border-l-[3px] border-pink-400">
-                    <span class="text-[10px] mr-1">타일</span>욕실 보양
+                    욕실 보양
                   </div>
                 </div>
               </div>
-              <!-- 셀 3: 확정 + vendor -->
+              <!-- 셀 3: 확정 -->
               <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
                 <div class="px-2 py-1.5 text-sm text-gray-600">19</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-violet-100 text-violet-800 border-l-[3px] border-violet-400">
-                    <span class="text-[10px] mr-1">도배</span>초벌
+                    초벌풀칠
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                 </div>
@@ -181,7 +187,7 @@
                 <div class="px-2 py-1.5 text-sm text-gray-600">20</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-amber-100 text-amber-800 border-l-[3px] border-amber-400">
-                    <span class="text-[10px] mr-1">목공</span>몰딩
+                    몰딩
                   </div>
                 </div>
               </div>
@@ -190,7 +196,7 @@
                 <div class="px-2 py-1.5 text-sm text-gray-600">21</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-rose-100 text-rose-800 border-l-[3px] border-rose-400">
-                    <span class="text-[10px] mr-1">철거</span>거실
+                    거실 철거
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                 </div>
@@ -235,11 +241,11 @@
                 <div class="flex flex-col gap-0.5">
                   <!-- 프로젝트별 색 (현장 sky / 견적 amber 예시) -->
                   <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-sky-50 text-sky-800 border-l-[3px] border-sky-400">
-                    한남 콘센트 추가
+                    콘센트 추가
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                   <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-amber-50 text-amber-800 border-l-[3px] border-amber-400">
-                    잠원 견적상담
+                    견적상담
                   </div>
                 </div>
               </div>
@@ -247,7 +253,7 @@
                 <div class="px-2 py-1.5 text-sm text-gray-600">19</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-emerald-50 text-emerald-800 border-l-[3px] border-emerald-400">
-                    반포 초벌풀칠
+                    초벌풀칠
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                 </div>
@@ -257,7 +263,7 @@
                 <div class="px-2 py-1.5 text-sm text-gray-600">21</div>
                 <div class="flex flex-col gap-0.5">
                   <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-rose-50 text-rose-800 border-l-[3px] border-rose-400">
-                    개포 철거 시작
+                    철거
                     <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                   </div>
                 </div>
@@ -269,7 +275,8 @@
         </div>
       </div>
       <div class="annot annot-bad mt-3">
-        <strong>문제 (특히 심함):</strong> 전체일정은 <em>프로젝트별 색</em>으로 칠해져 있어 색이 더 어수선합니다. ✓는 거의 보이지 않음. "확정된 일정만 보기" 필터를 누르지 않으면 무용지물.
+        <strong>문제 (특히 심함):</strong> 전체일정은 <em>프로젝트별 색</em>으로 칠해져 있어 색이 더 어수선합니다. ✓는 거의 보이지 않음. "확정된 일정만 보기" 필터를 누르지 않으면 무용지물.<br>
+        <strong>참고:</strong> 본문에 프로젝트명은 표시되지 않습니다 — 막대를 호버하면 툴팁으로만 표시(<code>title</code> 속성).
       </div>
     </div>
 
@@ -287,11 +294,11 @@
               <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>월</span><span class="bg-navy-700 text-white rounded-full px-1.5">18</span></div>
               <div class="p-1 flex flex-col gap-1">
                 <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-sky-50 text-sky-800 border-l-[3px] border-sky-400">
-                  한남 콘센트
+                  전기
                   <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                 </div>
                 <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-amber-50 text-amber-800 border-l-[3px] border-amber-400">
-                  잠원 견적
+                  견적상담
                 </div>
               </div>
             </div>
@@ -299,7 +306,7 @@
               <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>화</span><span>19</span></div>
               <div class="p-1 flex flex-col gap-1">
                 <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-emerald-50 text-emerald-800 border-l-[3px] border-emerald-400">
-                  반포 초벌
+                  초벌풀칠
                   <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                 </div>
               </div>
@@ -308,7 +315,7 @@
               <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>수</span><span>20</span></div>
               <div class="p-1 flex flex-col gap-1">
                 <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-violet-50 text-violet-800 border-l-[3px] border-violet-400">
-                  개포 입주
+                  입주청소
                 </div>
               </div>
             </div>
@@ -316,7 +323,7 @@
               <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>목</span><span>21</span></div>
               <div class="p-1 flex flex-col gap-1">
                 <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-rose-50 text-rose-800 border-l-[3px] border-rose-400">
-                  개포 철거
+                  철거
                   <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
                 </div>
               </div>
@@ -334,7 +341,8 @@
         </div>
       </div>
       <div class="annot annot-bad mt-3">
-        <strong>문제:</strong> 홈 대시보드 첫 화면이라 노출 빈도가 매우 높음 — "오늘 진짜 확정된 일정이 뭔지" 빠르게 알아야 할 동선.
+        <strong>문제:</strong> 홈 대시보드 첫 화면이라 노출 빈도가 매우 높음 — "오늘 진짜 확정된 일정이 뭔지" 빠르게 알아야 할 동선.<br>
+        <strong>참고:</strong> 홈 주간은 본문에 <em>입력 content 그대로</em> 표시됩니다. 빠른추가로 등록된 일정은 content가 곧 공정명이라 "전기"·"철거"처럼 짧게 보이고, 프로젝트명은 없습니다(툴팁에만).
       </div>
     </div>
 
@@ -480,7 +488,7 @@
     <li><strong>좁은 모바일 셀(약 50px)에서도 "확정/미확정"이 한눈에 구분</strong>되어야 합니다. 텍스트 라벨은 들어갈 자리가 없습니다.</li>
     <li><strong>공정 색 배경과 충돌하지 않아야 합니다.</strong> 현재 막대 배경은 공정별 파스텔 톤(sky/pink/violet/amber/rose…), 전체일정 화면에서는 프로젝트별 색까지 더해져 시각 부담이 큽니다.</li>
     <li>막대는 <strong>좌측 3px 보더 컬러바</strong>가 이미 공정/프로젝트 색을 점유하고 있습니다. 좌측 컬러바를 확정 시그널로 다시 쓰기는 어렵습니다 — 다른 위치/도구가 필요합니다.</li>
-    <li>웹 호버에서 우측에 <strong>삭제·협력업체 태그 아이콘 팝업</strong>이 뜹니다 — 호버 시 확정 시그널이 가려져도 됩니다(클릭 가능하면 됨).</li>
+    <li>웹 호버에서 우측에 <strong>삭제 아이콘</strong>이 흰 배경 + 그림자로 떠오릅니다 — 호버 시 확정 시그널이 가려져도 됩니다(클릭 가능하면 됨).</li>
     <li><strong>미확정 일정도 함께 보일 때 위계</strong>가 분명해야 합니다 — 모든 일정이 똑같이 강조되면 의미가 없습니다.</li>
     <li>확정/미확정 비율은 보통 <strong>3:7 정도</strong>(확정이 소수)입니다. 확정 쪽이 더 눈에 띄어야 합니다.</li>
   </ol>
@@ -534,7 +542,7 @@
     <li><strong>토글 방법 (모바일):</strong> 셀 탭 → 바텀시트 진입 → pill 클릭</li>
     <li><strong>막대 클릭 (웹):</strong> 인라인 텍스트 편집 모드 진입</li>
     <li><strong>막대 클릭 (모바일):</strong> 무시 (셀 단위 탭만 동작)</li>
-    <li><strong>호버 (웹):</strong> 우측에 [협력업체 태그] [✕ 삭제] 두 버튼이 흰 배경 + 그림자로 떠오름 — 확정 시그널을 일시 가려도 됨</li>
+    <li><strong>호버 (웹):</strong> 우측에 [✕ 삭제] 버튼이 흰 배경 + 그림자로 떠오름 — 확정 시그널을 일시 가려도 됨</li>
   </ul>
 
   <!-- ============ 출처 ============ -->
