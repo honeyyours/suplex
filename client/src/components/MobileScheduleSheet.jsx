@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { categoryDotClass, fromDateKey } from '../utils/date';
 import { useCompanyPhases } from '../hooks/useCompanyPhases';
 import VendorPicker from './VendorPicker';
@@ -70,8 +70,28 @@ export default function MobileScheduleSheet({
   useEscape(true, onClose);
   const [content, setContent] = useState('');
   const [vendorMenu, setVendorMenu] = useState(null);
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStartYRef = useRef(0);
   const phases = useCompanyPhases();
   const { displayPhase } = usePhaseLabels();
+
+  function handleDragStart(e) {
+    dragStartYRef.current = e.touches[0].clientY;
+    setDragging(true);
+  }
+  function handleDragMove(e) {
+    const delta = e.touches[0].clientY - dragStartYRef.current;
+    setDragY(delta > 0 ? delta : 0);
+  }
+  function handleDragEnd() {
+    setDragging(false);
+    if (dragY > 90) {
+      onClose();
+    } else {
+      setDragY(0);
+    }
+  }
 
   const date = fromDateKey(dateKey);
   const dateLabel = `${date.getMonth() + 1}월 ${date.getDate()}일`;
@@ -99,10 +119,22 @@ export default function MobileScheduleSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden">
       <div className="absolute inset-0 bg-black/45" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-[18px] max-h-[88vh] flex flex-col shadow-2xl animate-slide-up overflow-hidden">
+      <div
+        className="relative w-full bg-white rounded-t-[18px] max-h-[88vh] flex flex-col shadow-2xl animate-slide-up overflow-hidden"
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragging ? 'none' : 'transform 0.18s ease-out',
+        }}
+      >
 
-        {/* Drag handle */}
-        <div className="flex justify-center pt-2 pb-1">
+        {/* Drag handle — 잡고 아래로 슬라이드하면 닫힘 */}
+        <div
+          className="flex justify-center pt-2 pb-2 cursor-grab active:cursor-grabbing touch-none"
+          onTouchStart={handleDragStart}
+          onTouchMove={handleDragMove}
+          onTouchEnd={handleDragEnd}
+          onTouchCancel={handleDragEnd}
+        >
           <div className="w-9 h-1 bg-gray-300 rounded-full" aria-hidden="true" />
         </div>
 
