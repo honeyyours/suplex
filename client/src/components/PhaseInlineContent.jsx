@@ -55,13 +55,25 @@ export default function PhaseInlineContent({ entry, textClassName = '', chipClas
     remainder = (text.slice(0, start) + text.slice(start + len)).replace(/\s+/g, ' ').trim();
   }
 
+  // chipSize='plain'은 버튼/뱃지 느낌 제거 — bg·padding·rounded 없이 공정 색만 입힌 텍스트.
+  const plainMode = chipSize === 'plain';
   const chipSizeClass = chipSize === 'lg'
     ? 'text-[10.5px] px-[7px] py-0.5 font-semibold tracking-tight'
     : 'text-[9px] sm:text-[10px] px-1 py-0.5';
+  // plain 모드: catColor에서 bg- 토큰 제거하고 text- 토큰만 남김
+  const plainColor = plainMode
+    ? catColor.split(' ').filter((c) => c.startsWith('text-')).join(' ')
+    : '';
 
   return (
     <>
-      <span className={`inline-block rounded ${chipSizeClass} ${catColor} ${chipClassName}`}>
+      <span
+        className={
+          plainMode
+            ? `inline ${plainColor} font-semibold text-[13.5px] tracking-tight ${chipClassName}`
+            : `inline-block rounded ${chipSizeClass} ${catColor} ${chipClassName}`
+        }
+      >
         {displayPhase(phase)}
       </span>
       {/* 잔여 텍스트는 웹에서만 표시 (모바일은 chip만 — 좁은 셀 가독성).

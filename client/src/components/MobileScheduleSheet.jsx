@@ -213,7 +213,7 @@ export default function MobileScheduleSheet({
                   {/* 본문 */}
                   <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <PhaseInlineContent entry={e} alwaysShowRemainder chipSize="lg" textClassName="text-[13.5px] text-gray-800" />
+                      <PhaseInlineContent entry={e} alwaysShowRemainder chipSize="plain" textClassName="text-[13.5px] text-gray-800" />
                     </div>
                     {e.vendor && (
                       <span className="inline-flex items-center gap-1 text-[11px] text-violet-700">
