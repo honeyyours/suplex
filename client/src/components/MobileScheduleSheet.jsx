@@ -26,9 +26,9 @@ function IconX({ className = '', size = 16 }) {
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
   );
 }
-function IconCheck({ className = '' }) {
+function IconCheck({ className = '', size = 16 }) {
   return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"/></svg>
   );
 }
 function IconPlus({ className = '', size = 18 }) {
@@ -53,7 +53,7 @@ function IconCalendarPlus({ className = '' }) {
  * - 직접 입력
  * - 기존 항목 보기/삭제
  * - 좌우 화살표로 날짜 이동
- * - 행 전체 탭으로 확정 토글 (2026-05-15: 디자이너 시안 반영)
+ * - 체크 pill(미확정/확정 라벨)로 확정 토글 (2026-05-16: 디자이너 시안 리파인)
  */
 export default function MobileScheduleSheet({
   dateKey,
@@ -175,19 +175,10 @@ export default function MobileScheduleSheet({
               return (
                 <div
                   key={e.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onToggleConfirm(e.id)}
-                  onKeyDown={(ev) => {
-                    if (ev.key === 'Enter' || ev.key === ' ') {
-                      ev.preventDefault();
-                      onToggleConfirm(e.id);
-                    }
-                  }}
-                  className={`relative flex items-center gap-3 rounded-lg cursor-pointer transition-colors py-3 pr-3 ${
+                  className={`relative flex items-center gap-2.5 rounded-lg transition-colors py-2.5 pr-2.5 border ${
                     confirmed
-                      ? 'bg-emerald-50 border border-emerald-200 pl-[18px] active:bg-emerald-100'
-                      : 'bg-slate-50 border border-[#eef0f4] pl-3.5 active:bg-slate-100'
+                      ? 'bg-emerald-50 border-emerald-200 pl-[18px]'
+                      : 'bg-slate-50 border-[#eef0f4] pl-3'
                   }`}
                 >
                   {/* 좌측 확정 컬러바 */}
@@ -198,16 +189,26 @@ export default function MobileScheduleSheet({
                     />
                   )}
 
-                  {/* 체크박스 — 원형 28x28, 점선(미확정) / 실선+그림자(확정) */}
-                  <span
-                    className={`w-7 h-7 rounded-full inline-flex items-center justify-center flex-shrink-0 transition-all ${
+                  {/* 체크 pill — 클릭 시 확정 토글, 미확정/확정 라벨 표시 */}
+                  <button
+                    type="button"
+                    onClick={(ev) => { ev.stopPropagation(); onToggleConfirm(e.id); }}
+                    aria-pressed={confirmed}
+                    className={`h-[30px] pl-2 pr-2.5 rounded-full inline-flex items-center gap-1 flex-shrink-0 text-[11.5px] font-semibold tracking-tight transition-all ${
                       confirmed
                         ? 'bg-emerald-500 border-[1.5px] border-emerald-500 text-white shadow-[0_1px_3px_rgba(16,185,129,0.35)]'
-                        : 'bg-white border-[1.5px] border-dashed border-slate-300 text-transparent'
+                        : 'bg-white border-[1.5px] border-dashed border-slate-400 text-slate-500'
                     }`}
                   >
-                    <IconCheck />
-                  </span>
+                    <span
+                      className={`w-3.5 h-3.5 rounded-full border-[1.5px] inline-flex items-center justify-center ${
+                        confirmed ? 'bg-white border-white text-emerald-500' : 'border-slate-400 text-transparent'
+                      }`}
+                    >
+                      <IconCheck size={10} />
+                    </span>
+                    {confirmed ? '확정' : '미확정'}
+                  </button>
 
                   {/* 본문 */}
                   <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
