@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suplex — 일정 확정 표시 가시성 (리디자인 브리프)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          navy: {
+            50:'#f0f4fa', 100:'#d9e2f0', 200:'#b3c5e1', 300:'#8da8d2',
+            400:'#5a7fb8', 500:'#3a5f9e', 600:'#2a4a80', 700:'#1e3a66',
+            800:'#15294a', 900:'#0c1a33',
+          },
+        },
+        fontFamily: { sans: ['Pretendard', 'system-ui', 'sans-serif'] },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Pretendard', system-ui, sans-serif; }
+  /* 디바이스 프레임 */
+  .device-mobile {
+    width: 390px; height: 720px;
+    background: #f9fafb;
+    border-radius: 36px;
+    border: 10px solid #1f2937;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+  }
+  .device-mobile::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 24px;
+    background: #1f2937;
+    border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+  .device-desktop {
+    width: 920px;
+    background: #fff;
+    border-radius: 12px;
+    border: 8px solid #1f2937;
+    box-shadow: 0 20px 40px -16px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+  }
+  .device-desktop::before {
+    content: '';
+    display: block;
+    height: 22px;
+    background: #1f2937;
+  }
+  .device-desktop::after {
+    content: '● ● ●';
+    position: absolute;
+    top: -2px; left: 10px;
+    color: #4b5563;
+    font-size: 10px;
+    letter-spacing: 6px;
+  }
+  .annot {
+    font-size: 12.5px; color: #475569;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    padding: 8px 10px; border-radius: 4px;
+    line-height: 1.55;
+  }
+  .annot-good {
+    background: #ecfdf5;
+    border-left-color: #10b981;
+    color: #065f46;
+  }
+  .annot-bad {
+    background: #fef2f2;
+    border-left-color: #ef4444;
+    color: #991b1b;
+  }
+  .swatch { width: 28px; height: 28px; border-radius: 6px; }
+  h2.section { font-size: 18px; font-weight: 700; color: #1e3a66; margin: 32px 0 12px; }
+  .legend-row { display: grid; grid-template-columns: 28px 110px 1fr; gap: 10px; align-items: center; font-size: 13px; }
+  .legend-row code { font-size: 11px; color: #6b7280; }
+  .scrn-label {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #64748b; font-weight: 700;
+    margin-bottom: 6px; text-align: center;
+  }
+  .arrow-down {
+    width: 0; height: 0;
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-top: 10px solid #94a3b8;
+    margin: 8px auto;
+  }
+</style>
+</head>
+<body class="bg-slate-100 p-8 text-slate-800">
+
+<div class="max-w-[1320px] mx-auto">
+
+  <header class="mb-8">
+    <div class="text-xs tracking-[2px] text-slate-500 font-bold mb-1">SUPLEX · DESIGN BRIEF</div>
+    <h1 class="text-3xl font-extrabold text-navy-800">일정 확정 표시 — 가시성 개선</h1>
+    <p class="text-sm text-slate-600 mt-3 leading-relaxed max-w-3xl">
+      Suplex의 캘린더(전체일정 · 프로젝트 일정 · 홈 주간 브리프)에서 일정 항목이 <strong>확정(confirmed)</strong> 상태일 때
+      체크 표시(✓)가 너무 작고 흐려서 한눈에 들어오지 않는다는 피드백입니다.
+      모바일 바텀시트(개별 일정 상세 화면)는 최근 <strong>알약 pill + 좌측 컬러바</strong>로 리뉴얼되어 충분히 눈에 띄지만,
+      <strong>달력 격자 안 작은 일정 막대</strong>에서는 여전히 ✓ 한 글자로만 표시됩니다.
+      이 작은 막대들에서도 확정/미확정이 한눈에 구분되도록 다듬어 주세요.
+    </p>
+    <div class="annot mt-4 max-w-3xl">
+      <strong>의뢰 핵심</strong> — 디자이너가 자유롭게 풀어주세요. 아래는 시방서가 아닌 출발점입니다.
+      ① 좁은 셀(모바일 한 칸 약 50px 너비) 안에서도 작동해야 함 ② 공정 색(배경/보더)과 충돌하지 않아야 함
+      ③ 협력업체 태그·삭제 아이콘과 겹치지 않아야 함 ④ 미확정도 함께 보일 때 위계가 분명해야 함.
+    </div>
+  </header>
+
+  <!-- ============ 영향 받는 4개 화면 ============ -->
+  <h2 class="section">① 영향 받는 화면 — 현재 상태</h2>
+  <p class="text-sm text-slate-600 mb-5">
+    아래 네 화면은 모두 <strong>같은 ✓ 마커 패턴</strong>을 씁니다 — <code class="bg-slate-200 px-1.5 py-0.5 rounded text-[11px]">absolute right + text-emerald-600 + drop-shadow</code>.
+    공정 색 배경 위에서 너무 작아 잘 안 보입니다.
+  </p>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+    <!-- (1) 프로젝트 일정 — 웹 -->
+    <div>
+      <div class="scrn-label">A · 프로젝트 일정 (웹)</div>
+      <div class="device-desktop">
+        <div class="p-4 bg-white">
+          <div class="flex items-center justify-end mb-3">
+            <span class="text-[11px] text-gray-400">셀 클릭=입력 · 우클릭=메뉴</span>
+          </div>
+          <div class="border rounded-lg overflow-hidden">
+            <div class="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+              <div class="px-2 py-2 text-center text-red-500">일</div>
+              <div class="px-2 py-2 text-center text-gray-600">월</div>
+              <div class="px-2 py-2 text-center text-gray-600">화</div>
+              <div class="px-2 py-2 text-center text-gray-600">수</div>
+              <div class="px-2 py-2 text-center text-gray-600">목</div>
+              <div class="px-2 py-2 text-center text-gray-600">금</div>
+              <div class="px-2 py-2 text-center text-blue-500">토</div>
+            </div>
+            <div class="grid grid-cols-7">
+              <!-- 셀 1 -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-red-500">17</div>
+              </div>
+              <!-- 셀 2: 확정 + 미확정 혼합 -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">18</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-sky-100 text-sky-800 border-l-[3px] border-sky-400">
+                    <span class="text-[10px] mr-1">전기</span>콘센트
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                  <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-pink-100 text-pink-800 border-l-[3px] border-pink-400">
+                    <span class="text-[10px] mr-1">타일</span>욕실 보양
+                  </div>
+                </div>
+              </div>
+              <!-- 셀 3: 확정 + vendor -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">19</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-violet-100 text-violet-800 border-l-[3px] border-violet-400">
+                    <span class="text-[10px] mr-1">도배</span>초벌
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 셀 4 -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">20</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-amber-100 text-amber-800 border-l-[3px] border-amber-400">
+                    <span class="text-[10px] mr-1">목공</span>몰딩
+                  </div>
+                </div>
+              </div>
+              <!-- 셀 5: 확정 -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">21</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded leading-tight px-1.5 py-1 truncate bg-rose-100 text-rose-800 border-l-[3px] border-rose-400">
+                    <span class="text-[10px] mr-1">철거</span>거실
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 셀 6 -->
+              <div class="border-r border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">22</div>
+              </div>
+              <!-- 셀 7 -->
+              <div class="border-b min-h-[100px] flex flex-col px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-blue-500">23</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot annot-bad mt-3">
+        <strong>문제:</strong> ✓가 우측 끝 모서리에 작게 붙어 있어 공정 색·잔여 텍스트와 묻혀버림. 행 전체가 "확정"인지 한눈에 안 보임.
+      </div>
+    </div>
+
+    <!-- (2) 전체일정 (Aggregate) -->
+    <div>
+      <div class="scrn-label">B · 전체일정 — 회사 전체 (웹)</div>
+      <div class="device-desktop">
+        <div class="p-4 bg-white">
+          <div class="text-center font-semibold text-navy-800 mb-3">2026년 5월</div>
+          <div class="border rounded-lg overflow-hidden">
+            <div class="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+              <div class="px-2 py-2 text-center text-red-500">일</div>
+              <div class="px-2 py-2 text-center text-gray-600">월</div>
+              <div class="px-2 py-2 text-center text-gray-600">화</div>
+              <div class="px-2 py-2 text-center text-gray-600">수</div>
+              <div class="px-2 py-2 text-center text-gray-600">목</div>
+              <div class="px-2 py-2 text-center text-gray-600">금</div>
+              <div class="px-2 py-2 text-center text-blue-500">토</div>
+            </div>
+            <div class="grid grid-cols-7">
+              <div class="border-r border-b min-h-[100px] px-1 pb-1"><div class="px-2 py-1.5 text-sm text-red-500">17</div></div>
+              <div class="border-r border-b min-h-[100px] px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">18</div>
+                <div class="flex flex-col gap-0.5">
+                  <!-- 프로젝트별 색 (현장 sky / 견적 amber 예시) -->
+                  <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-sky-50 text-sky-800 border-l-[3px] border-sky-400">
+                    한남 콘센트 추가
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                  <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-amber-50 text-amber-800 border-l-[3px] border-amber-400">
+                    잠원 견적상담
+                  </div>
+                </div>
+              </div>
+              <div class="border-r border-b min-h-[100px] px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">19</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-emerald-50 text-emerald-800 border-l-[3px] border-emerald-400">
+                    반포 초벌풀칠
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                </div>
+              </div>
+              <div class="border-r border-b min-h-[100px] px-1 pb-1"><div class="px-2 py-1.5 text-sm text-gray-600">20</div></div>
+              <div class="border-r border-b min-h-[100px] px-1 pb-1">
+                <div class="px-2 py-1.5 text-sm text-gray-600">21</div>
+                <div class="flex flex-col gap-0.5">
+                  <div class="relative text-sm rounded px-1.5 py-0.5 truncate bg-rose-50 text-rose-800 border-l-[3px] border-rose-400">
+                    개포 철거 시작
+                    <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                  </div>
+                </div>
+              </div>
+              <div class="border-r border-b min-h-[100px] px-1 pb-1"><div class="px-2 py-1.5 text-sm text-gray-600">22</div></div>
+              <div class="border-b min-h-[100px] px-1 pb-1"><div class="px-2 py-1.5 text-sm text-blue-500">23</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot annot-bad mt-3">
+        <strong>문제 (특히 심함):</strong> 전체일정은 <em>프로젝트별 색</em>으로 칠해져 있어 색이 더 어수선합니다. ✓는 거의 보이지 않음. "확정된 일정만 보기" 필터를 누르지 않으면 무용지물.
+      </div>
+    </div>
+
+    <!-- (3) 홈 주간 (HomeWeekSchedule) -->
+    <div>
+      <div class="scrn-label">C · 홈 — 이번주 일정 (웹)</div>
+      <div class="device-desktop">
+        <div class="p-4 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-navy-800">이번주 일정</h3>
+            <div class="text-sm text-navy-700">5/18 – 5/24</div>
+          </div>
+          <div class="grid grid-cols-7 gap-2">
+            <div class="border rounded-lg min-h-[110px] border-navy-500 bg-navy-50/40 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>월</span><span class="bg-navy-700 text-white rounded-full px-1.5">18</span></div>
+              <div class="p-1 flex flex-col gap-1">
+                <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-sky-50 text-sky-800 border-l-[3px] border-sky-400">
+                  한남 콘센트
+                  <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                </div>
+                <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-amber-50 text-amber-800 border-l-[3px] border-amber-400">
+                  잠원 견적
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>화</span><span>19</span></div>
+              <div class="p-1 flex flex-col gap-1">
+                <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-emerald-50 text-emerald-800 border-l-[3px] border-emerald-400">
+                  반포 초벌
+                  <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>수</span><span>20</span></div>
+              <div class="p-1 flex flex-col gap-1">
+                <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-violet-50 text-violet-800 border-l-[3px] border-violet-400">
+                  개포 입주
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>목</span><span>21</span></div>
+              <div class="p-1 flex flex-col gap-1">
+                <div class="relative text-xs rounded px-1.5 py-0.5 truncate bg-rose-50 text-rose-800 border-l-[3px] border-rose-400">
+                  개포 철거
+                  <span class="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-gray-700 flex justify-between"><span>금</span><span>22</span></div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-blue-500 flex justify-between"><span>토</span><span>23</span></div>
+            </div>
+            <div class="border rounded-lg min-h-[110px] border-gray-200 flex flex-col">
+              <div class="px-2 py-1.5 text-sm font-semibold border-b text-red-500 flex justify-between"><span>일</span><span>24</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot annot-bad mt-3">
+        <strong>문제:</strong> 홈 대시보드 첫 화면이라 노출 빈도가 매우 높음 — "오늘 진짜 확정된 일정이 뭔지" 빠르게 알아야 할 동선.
+      </div>
+    </div>
+
+    <!-- (4) 모바일 셀 (프로젝트 일정 / 전체일정 동일 패턴) -->
+    <div>
+      <div class="scrn-label">D · 모바일 — 캘린더 셀 안 일정 막대</div>
+      <div class="flex justify-center">
+        <div class="device-mobile">
+          <div class="absolute inset-0 bg-white p-3">
+            <div class="text-center font-semibold text-navy-800 mb-2">2026년 5월</div>
+            <div class="border rounded-md overflow-hidden">
+              <div class="grid grid-cols-7 text-[11px] font-semibold bg-gray-50 border-b">
+                <div class="px-1 py-1 text-center text-red-500">일</div>
+                <div class="px-1 py-1 text-center text-gray-600">월</div>
+                <div class="px-1 py-1 text-center text-gray-600">화</div>
+                <div class="px-1 py-1 text-center text-gray-600">수</div>
+                <div class="px-1 py-1 text-center text-gray-600">목</div>
+                <div class="px-1 py-1 text-center text-gray-600">금</div>
+                <div class="px-1 py-1 text-center text-blue-500">토</div>
+              </div>
+              <div class="grid grid-cols-7">
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-red-500">17</div>
+                </div>
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-gray-600">18</div>
+                  <div class="flex flex-col gap-0">
+                    <div class="relative text-[10px] rounded-sm leading-tight pl-0.5 pr-0.5 py-0 truncate bg-sky-100 text-sky-800">
+                      전기
+                      <span class="absolute right-0 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                    </div>
+                    <div class="relative text-[10px] rounded-sm leading-tight pl-0.5 pr-0.5 py-0 truncate bg-pink-100 text-pink-800">
+                      타일
+                    </div>
+                  </div>
+                </div>
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-gray-600">19</div>
+                  <div class="flex flex-col gap-0">
+                    <div class="relative text-[10px] rounded-sm leading-tight pl-0.5 pr-0.5 py-0 truncate bg-violet-100 text-violet-800">
+                      도배
+                      <span class="absolute right-0 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-gray-600">20</div>
+                  <div class="flex flex-col gap-0">
+                    <div class="relative text-[10px] rounded-sm leading-tight pl-0.5 pr-0.5 py-0 truncate bg-amber-100 text-amber-800">
+                      목공
+                    </div>
+                  </div>
+                </div>
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-gray-600">21</div>
+                  <div class="flex flex-col gap-0">
+                    <div class="relative text-[10px] rounded-sm leading-tight pl-0.5 pr-0.5 py-0 truncate bg-rose-100 text-rose-800">
+                      철거
+                      <span class="absolute right-0 top-1/2 -translate-y-1/2 text-emerald-600 text-[10px] font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="border-r border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-gray-600">22</div>
+                </div>
+                <div class="border-b min-h-[75px] flex flex-col">
+                  <div class="px-1 py-0.5 text-[10px] text-blue-500">23</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot annot-bad mt-3 max-w-[420px] mx-auto">
+        <strong>문제 (가장 심함):</strong> 모바일 셀은 너비가 좁아 텍스트가 거의 1~2글자만 보임 — ✓가 그 위에 작게 겹쳐 거의 보이지 않음. 사용자가 막대만 보고는 확정 여부를 판단 불가능.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ 이미 정돈된 짝 — 모바일 바텀시트 ============ -->
+  <h2 class="section">② 이미 정돈된 짝 — 모바일 바텀시트</h2>
+  <p class="text-sm text-slate-600 mb-4 max-w-3xl">
+    셀을 <strong>탭하면 올라오는 모바일 바텀시트</strong>는 최근 리뉴얼되었습니다 —
+    <strong>알약 형태 pill + "확정/미확정" 텍스트 라벨 + 좌측 4px 컬러바</strong> 조합으로 확정 상태가 매우 분명합니다.
+    이 의도(같은 시각 언어)를 셀 안 작은 막대에서도 살릴 수 있는 방안을 부탁드립니다 —
+    좁은 공간에서도 작동하는 압축된 변형이 필요합니다.
+  </p>
+
+  <div class="flex justify-center mb-4">
+    <div class="device-mobile">
+      <div class="absolute inset-0 bg-black/35 flex items-end">
+        <div class="w-full bg-white rounded-t-[18px] flex flex-col" style="max-height: 88%;">
+          <!-- handle -->
+          <div class="flex justify-center pt-2 pb-2"><div class="w-9 h-1 bg-gray-300 rounded-full"></div></div>
+          <!-- header -->
+          <div class="flex items-center gap-1 px-2 pt-1.5 pb-3 border-b">
+            <button class="w-9 h-9 inline-flex items-center justify-center text-navy-700 text-lg">‹</button>
+            <div class="flex-1 text-center font-semibold text-[15px] text-navy-900">5월 18일 <span class="text-gray-500 font-medium text-[13px] ml-1">월요일</span></div>
+            <button class="w-9 h-9 inline-flex items-center justify-center text-navy-700 text-lg">›</button>
+            <button class="w-9 h-9 inline-flex items-center justify-center text-gray-500">✕</button>
+          </div>
+          <!-- 항목 리스트 -->
+          <div class="px-3 pt-2 pb-1 flex flex-col gap-1.5">
+            <!-- 확정 -->
+            <div class="relative flex items-center gap-2.5 rounded-lg py-2.5 pr-2.5 pl-[18px] border bg-emerald-50 border-emerald-200">
+              <span class="absolute left-0 top-1.5 bottom-1.5 w-1 bg-emerald-500 rounded-r"></span>
+              <span class="h-[30px] pl-2 pr-2.5 rounded-full inline-flex items-center gap-1 flex-shrink-0 text-[11.5px] font-semibold bg-emerald-500 border-[1.5px] border-emerald-500 text-white shadow">
+                <span class="w-3.5 h-3.5 rounded-full border-[1.5px] inline-flex items-center justify-center bg-white border-white text-emerald-500 text-[9px]">✓</span>
+                확정
+              </span>
+              <div class="flex-1 min-w-0 flex items-center gap-1.5">
+                <span class="text-sky-800 font-semibold text-[13.5px]">전기</span>
+                <span class="text-[13.5px] text-gray-800 truncate">콘센트 추가 위치 확인</span>
+              </div>
+              <button class="p-1.5 text-slate-300">✕</button>
+            </div>
+            <!-- 미확정 -->
+            <div class="relative flex items-center gap-2.5 rounded-lg py-2.5 pr-2.5 pl-3 border bg-slate-50 border-[#eef0f4]">
+              <span class="h-[30px] pl-2 pr-2.5 rounded-full inline-flex items-center gap-1 flex-shrink-0 text-[11.5px] font-semibold bg-white border-[1.5px] border-dashed border-slate-400 text-slate-500">
+                <span class="w-3.5 h-3.5 rounded-full border-[1.5px] border-slate-400 inline-flex items-center justify-center text-transparent">✓</span>
+                미확정
+              </span>
+              <div class="flex-1 min-w-0 flex items-center gap-1.5">
+                <span class="text-pink-800 font-semibold text-[13.5px]">타일</span>
+                <span class="text-[13.5px] text-gray-800 truncate">욕실 바닥 보양</span>
+              </div>
+              <button class="p-1.5 text-slate-300">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="annot annot-good max-w-3xl mx-auto">
+    <strong>좋은 점 (유지):</strong> pill의 <em>형태 변화</em>(점선 → 실선·채워짐) + <em>텍스트 라벨</em>(미확정 → 확정) + <em>좌측 컬러바</em>가 한 번에 작동합니다.
+    이 의도를 캘린더 격자 셀의 좁은 막대에서도 살리려면 어떤 시각 도구를 골라야 할까요?
+  </div>
+
+  <!-- ============ 풀어야 할 문제 (Brief) ============ -->
+  <h2 class="section">③ 풀어야 할 문제</h2>
+  <ol class="space-y-3 text-sm text-slate-700 max-w-3xl leading-relaxed list-decimal pl-5">
+    <li><strong>좁은 모바일 셀(약 50px)에서도 "확정/미확정"이 한눈에 구분</strong>되어야 합니다. 텍스트 라벨은 들어갈 자리가 없습니다.</li>
+    <li><strong>공정 색 배경과 충돌하지 않아야 합니다.</strong> 현재 막대 배경은 공정별 파스텔 톤(sky/pink/violet/amber/rose…), 전체일정 화면에서는 프로젝트별 색까지 더해져 시각 부담이 큽니다.</li>
+    <li>막대는 <strong>좌측 3px 보더 컬러바</strong>가 이미 공정/프로젝트 색을 점유하고 있습니다. 좌측 컬러바를 확정 시그널로 다시 쓰기는 어렵습니다 — 다른 위치/도구가 필요합니다.</li>
+    <li>웹 호버에서 우측에 <strong>삭제·협력업체 태그 아이콘 팝업</strong>이 뜹니다 — 호버 시 확정 시그널이 가려져도 됩니다(클릭 가능하면 됨).</li>
+    <li><strong>미확정 일정도 함께 보일 때 위계</strong>가 분명해야 합니다 — 모든 일정이 똑같이 강조되면 의미가 없습니다.</li>
+    <li>확정/미확정 비율은 보통 <strong>3:7 정도</strong>(확정이 소수)입니다. 확정 쪽이 더 눈에 띄어야 합니다.</li>
+  </ol>
+
+  <h2 class="section">④ 가능한 방향 (예시 — 자유 변형)</h2>
+  <ul class="space-y-2 text-sm text-slate-700 max-w-3xl list-disc pl-5">
+    <li>막대 <strong>배경 채도/투명도를 미확정은 낮추고 확정은 진하게</strong> — 색 자체로 위계</li>
+    <li>확정 시 막대 <strong>좌측 컬러바를 두껍게(3px → 5px)</strong> + 공정 색이 아닌 <strong>일관된 emerald</strong>로 전환</li>
+    <li>확정 막대 <strong>전체 보더 외곽선</strong> 추가(공정 색 외곽선)</li>
+    <li>✓ 아이콘을 <strong>좌측 prefix</strong>로 옮기고 배경에 작은 원형 chip으로 감싸기</li>
+    <li>확정 막대만 <strong>약한 그림자/inset shadow</strong>로 "들려있는" 느낌</li>
+    <li>미확정 막대를 <strong>점선 보더</strong>로 처리해 확정과 형태로 구분(모바일 시트 pill과 같은 언어)</li>
+  </ul>
+  <div class="annot mt-3 max-w-3xl">
+    위 항목은 <em>자유 변형의 예시</em>일 뿐입니다. 디자이너의 본 시각으로 풀어주세요 — 단일 도구든 조합이든 무방합니다.
+  </div>
+
+  <!-- ============ 토큰 팔레트 ============ -->
+  <h2 class="section">⑤ 현재 사용 중인 토큰 (참고용)</h2>
+  <div class="bg-white border rounded-lg p-5 max-w-3xl">
+    <div class="text-xs text-slate-500 mb-3 font-semibold tracking-wide">CONFIRMED · 현재</div>
+    <div class="space-y-2.5">
+      <div class="legend-row"><div class="swatch bg-emerald-600"></div><span>emerald-600</span><code>text-emerald-600 — ✓ 아이콘 색상</code></div>
+      <div class="legend-row"><div class="swatch bg-emerald-500"></div><span>emerald-500</span><code>모바일 시트 pill 배경 + 좌측 컬러바</code></div>
+      <div class="legend-row"><div class="swatch bg-emerald-50 border border-emerald-200"></div><span>emerald-50</span><code>모바일 시트 확정 행 배경</code></div>
+      <div class="legend-row"><div class="swatch bg-emerald-200"></div><span>emerald-200</span><code>모바일 시트 확정 행 보더</code></div>
+    </div>
+    <div class="text-xs text-slate-500 mt-5 mb-3 font-semibold tracking-wide">UNCONFIRMED · 현재</div>
+    <div class="space-y-2.5">
+      <div class="legend-row"><div class="swatch" style="background: #fff; border: 1.5px dashed #94a3b8"></div><span>slate-400 dashed</span><code>모바일 시트 pill 점선 보더</code></div>
+      <div class="legend-row"><div class="swatch bg-slate-50 border"></div><span>slate-50</span><code>모바일 시트 미확정 행 배경</code></div>
+    </div>
+    <div class="text-xs text-slate-500 mt-5 mb-3 font-semibold tracking-wide">PHASE (공정 색 — 예시)</div>
+    <div class="grid grid-cols-2 gap-y-2">
+      <div class="legend-row"><div class="swatch bg-sky-100 border border-sky-400"></div><span>전기</span><code>bg-sky-100 / border-sky-400</code></div>
+      <div class="legend-row"><div class="swatch bg-pink-100 border border-pink-400"></div><span>타일</span><code>bg-pink-100 / border-pink-400</code></div>
+      <div class="legend-row"><div class="swatch bg-violet-100 border border-violet-400"></div><span>도배</span><code>bg-violet-100 / border-violet-400</code></div>
+      <div class="legend-row"><div class="swatch bg-amber-100 border border-amber-400"></div><span>목공</span><code>bg-amber-100 / border-amber-400</code></div>
+      <div class="legend-row"><div class="swatch bg-rose-100 border border-rose-400"></div><span>철거</span><code>bg-rose-100 / border-rose-400</code></div>
+      <div class="legend-row"><div class="swatch bg-emerald-100 border border-emerald-400"></div><span>준공</span><code>bg-emerald-100 / border-emerald-400</code></div>
+    </div>
+    <div class="annot mt-4">
+      <strong>주의:</strong> 공정 색에 이미 emerald(준공)·rose(철거) 등이 사용 중입니다. 확정 표시로 추가 색을 도입할 때 충돌 가능성을 고려해 주세요.
+    </div>
+  </div>
+
+  <!-- ============ 인터랙션 노트 ============ -->
+  <h2 class="section">⑥ 인터랙션 노트</h2>
+  <ul class="space-y-2 text-sm text-slate-700 max-w-3xl list-disc pl-5">
+    <li><strong>토글 방법 (웹):</strong> 막대 우클릭 → 컨텍스트 메뉴 "✓ 확정" / "✓ 확정 해제"</li>
+    <li><strong>토글 방법 (모바일):</strong> 셀 탭 → 바텀시트 진입 → pill 클릭</li>
+    <li><strong>막대 클릭 (웹):</strong> 인라인 텍스트 편집 모드 진입</li>
+    <li><strong>막대 클릭 (모바일):</strong> 무시 (셀 단위 탭만 동작)</li>
+    <li><strong>호버 (웹):</strong> 우측에 [협력업체 태그] [✕ 삭제] 두 버튼이 흰 배경 + 그림자로 떠오름 — 확정 시그널을 일시 가려도 됨</li>
+  </ul>
+
+  <!-- ============ 출처 ============ -->
+  <h2 class="section">⑦ 출처 (코드 경로)</h2>
+  <div class="bg-white border rounded-lg p-5 max-w-3xl text-sm">
+    <div class="space-y-2">
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/ScheduleEntry.jsx</code> — 프로젝트 일정 셀 안의 막대 (✓ 마커 line 127-129)</div>
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/ScheduleCalendar.jsx</code> — 프로젝트 일정 캘린더 컨테이너</div>
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/AggregateCalendar.jsx</code> — 전체일정 (✓ 마커 line 132-134)</div>
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/HomeWeekSchedule.jsx</code> — 홈 주간 (✓ 마커 line 133-135)</div>
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/MobileScheduleSheet.jsx</code> — 이미 리뉴얼된 모바일 바텀시트 (참조)</div>
+      <div><code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/utils/date.js</code> — 공정 색·프로젝트 색 토큰 매핑</div>
+    </div>
+  </div>
+
+  <footer class="mt-12 pt-6 border-t text-xs text-slate-500">
+    <div>Suplex · 2026-05-16 · 디자이너 의뢰용 브리프 (시방서 아님)</div>
+    <div class="mt-1">의뢰 후 받은 시안은 기존 토큰에 맞춰 자연스럽게 이식됩니다 — 1:1 복제가 아닌 의도 보존 원칙.</div>
+  </footer>
+
+</div>
+
+</body>
+</html>
