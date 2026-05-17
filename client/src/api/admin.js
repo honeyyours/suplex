@@ -2,7 +2,12 @@ import api from './client';
 
 export const adminApi = {
   listCompanies: (params = {}) => api.get('/admin/companies', { params }).then((r) => r.data),
-  listUsers: (q) => api.get('/admin/users', { params: q ? { q } : {} }).then((r) => r.data),
+  listUsers: (params) => {
+    // 호환: 문자열이면 q로 취급, 객체면 그대로 전달
+    const p = typeof params === 'string' ? { q: params } : (params || {});
+    const clean = Object.fromEntries(Object.entries(p).filter(([, v]) => v !== '' && v != null));
+    return api.get('/admin/users', { params: clean }).then((r) => r.data);
+  },
   deleteUser: (id) => api.delete(`/admin/users/${id}`).then((r) => r.data),
   deleteCompany: (id) => api.delete(`/admin/companies/${id}`).then((r) => r.data),
   resetPassword: (id) => api.post(`/admin/users/${id}/reset-password`).then((r) => r.data),

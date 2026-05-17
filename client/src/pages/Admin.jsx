@@ -449,21 +449,59 @@ function TransferOwnerDialog({ company, onClose, onDone }) {
 // ============================================================
 // 사용자 탭
 // ============================================================
+function FilterChip({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-full border ${
+        active
+          ? 'bg-navy-700 text-white border-navy-700'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function AccountTypeBadge({ user }) {
+  if (user.isSuperAdmin) {
+    return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-violet-100 text-violet-800 border border-violet-200 whitespace-nowrap">🛡️ 어드민</span>;
+  }
+  if (user.accountType === 'CREW') {
+    return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">🔧 시공팀</span>;
+  }
+  return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-sky-50 text-sky-700 border border-sky-200 whitespace-nowrap">🏢 회사</span>;
+}
+
 function UsersTab({ currentUserId }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [accountTypeFilter, setAccountTypeFilter] = useState('ALL'); // ALL | COMPANY | CREW | ADMIN
 
   async function load() {
     setLoading(true);
     try {
-      const { users } = await adminApi.listUsers(q.trim());
-      setUsers(users);
+      const params = { q: q.trim() };
+      if (accountTypeFilter === 'COMPANY' || accountTypeFilter === 'CREW') {
+        params.accountType = accountTypeFilter;
+      }
+      const { users } = await adminApi.listUsers(params);
+      const filtered = accountTypeFilter === 'ADMIN' ? users.filter((u) => u.isSuperAdmin) : users;
+      setUsers(filtered);
     } catch (e) {
       alert('사용자 목록 로드 실패: ' + (e.response?.data?.error || e.message));
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [accountTypeFilter]);
+
+  // 칩별 카운트 (상단 표시용 — 현재 응답 기준)
+  const counts = {
+    company: users.filter((u) => u.accountType === 'COMPANY' && !u.isSuperAdmin).length,
+    crew: users.filter((u) => u.accountType === 'CREW').length,
+    admin: users.filter((u) => u.isSuperAdmin).length,
+  };
 
   async function handleDelete(u) {
     if (u.id === currentUserId) {
@@ -510,23 +548,40 @@ function UsersTab({ currentUserId }) {
 
   return (
     <div className="bg-white rounded-xl border">
-      <div className="px-5 py-3 border-b bg-gray-50 flex gap-2">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load()}
-          placeholder="이메일·이름 검색 (Enter)"
-          className="flex-1 px-3 py-1.5 border rounded text-sm"
-        />
-        <button onClick={load} className="text-xs px-3 py-1.5 border rounded">검색</button>
+      <div className="px-5 py-3 border-b bg-gray-50 space-y-2">
+        <div className="flex gap-2">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && load()}
+            placeholder="이메일·이름 검색 (Enter)"
+            className="flex-1 px-3 py-1.5 border rounded text-sm"
+          />
+          <button onClick={load} className="text-xs px-3 py-1.5 border rounded">검색</button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 text-xs">
+          <FilterChip active={accountTypeFilter === 'ALL'} onClick={() => setAccountTypeFilter('ALL')}>
+            전체
+          </FilterChip>
+          <FilterChip active={accountTypeFilter === 'COMPANY'} onClick={() => setAccountTypeFilter('COMPANY')}>
+            🏢 회사 {accountTypeFilter === 'ALL' && counts.company > 0 ? `(${counts.company})` : ''}
+          </FilterChip>
+          <FilterChip active={accountTypeFilter === 'CREW'} onClick={() => setAccountTypeFilter('CREW')}>
+            🔧 시공팀 {accountTypeFilter === 'ALL' && counts.crew > 0 ? `(${counts.crew})` : ''}
+          </FilterChip>
+          <FilterChip active={accountTypeFilter === 'ADMIN'} onClick={() => setAccountTypeFilter('ADMIN')}>
+            🛡️ 슈퍼어드민 {accountTypeFilter === 'ALL' && counts.admin > 0 ? `(${counts.admin})` : ''}
+          </FilterChip>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
             <tr>
+              <th className="px-4 py-3 text-left">계정</th>
               <th className="px-4 py-3 text-left">이름</th>
               <th className="px-4 py-3 text-left">이메일</th>
-              <th className="px-4 py-3 text-left">소속</th>
+              <th className="px-4 py-3 text-left">소속 / 공종</th>
               <th className="px-4 py-3 text-left">마지막 접속</th>
               <th className="px-4 py-3 text-right">30일 활동</th>
               <th className="px-4 py-3 text-left">가입일</th>
@@ -535,25 +590,34 @@ function UsersTab({ currentUserId }) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">사용자가 없습니다</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">사용자가 없습니다</td></tr>
             ) : users.map((u) => {
               const a = u.activity30d || { total: 0 };
               const tooltip = `프로젝트 ${a.projects || 0} · 일정 ${a.schedules || 0} · 보고 ${a.reports || 0} · 체크 ${a.checklistsDone || 0}`;
               return (
                 <tr key={u.id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <AccountTypeBadge user={u} />
+                  </td>
                   <td className="px-4 py-3 font-medium text-gray-800">
                     {u.name}
-                    {u.isSuperAdmin && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-violet-100 text-violet-800 rounded border border-violet-200">🛡️ ADMIN</span>}
                     {u.id === currentUserId && <span className="ml-2 text-xs text-gray-400">(나)</span>}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{u.email}</td>
                   <td className="px-4 py-3 text-xs text-gray-500">
-                    {u.memberships.length === 0 ? <span className="italic text-gray-400">— 회사 없음</span> :
+                    {u.accountType === 'CREW' ? (
+                      u.crewCategory
+                        ? <span className="inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">{u.crewCategory}</span>
+                        : <span className="italic text-gray-400">— 공종 미입력</span>
+                    ) : u.memberships.length === 0 ? (
+                      <span className="italic text-gray-400">— 회사 없음</span>
+                    ) : (
                       u.memberships.map((m) => (
                         <div key={m.companyId}>{m.companyName} <span className="text-gray-400">· {ROLE_LABEL[m.role] || m.role}</span></div>
-                      ))}
+                      ))
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {u.lastSeenAt ? (

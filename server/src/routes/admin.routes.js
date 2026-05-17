@@ -111,12 +111,17 @@ router.get('/companies', async (req, res, next) => {
 router.get('/users', async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
-    const where = q ? {
-      OR: [
+    const accountTypeFilter = (req.query.accountType || '').toString().trim().toUpperCase();
+    const where = {};
+    if (q) {
+      where.OR = [
         { email: { contains: q, mode: 'insensitive' } },
         { name: { contains: q, mode: 'insensitive' } },
-      ],
-    } : {};
+      ];
+    }
+    if (accountTypeFilter === 'CREW' || accountTypeFilter === 'COMPANY') {
+      where.accountType = accountTypeFilter;
+    }
     const users = await prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -142,8 +147,13 @@ router.get('/users', async (req, res, next) => {
         id: u.id,
         email: u.email,
         name: u.name,
+        nickname: u.nickname,
         phone: u.phone,
         isSuperAdmin: u.isSuperAdmin,
+        accountType: u.accountType || 'COMPANY',
+        // CREW 전용 프로필 — UI에서 시공팀 행에만 노출
+        crewCategory: u.crewCategory || null,
+        crewBankAccount: u.crewBankAccount || null,
         createdAt: u.createdAt,
         lastSeenAt: u.lastSeenAt,
         activity30d: {
