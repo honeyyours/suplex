@@ -501,7 +501,7 @@ function L({ label, children }) {
 // 메모 카드 (현장보고 카드 패턴) — 흰 배경 + 태그 chip + 인라인 편집(자동 저장)
 // ===========================================
 function MemoCard({ memo, onUpdate, onRemove, onAddPhotos, onRemovePhoto }) {
-  const auth = useAuth();
+  const { auth } = useAuth();
   const [title, setTitle] = useState(memo.title || '');
   const [content, setContent] = useState(memo.content || '');
   const [tag, setTag] = useState(memo.tag || '일반');

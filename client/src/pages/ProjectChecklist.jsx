@@ -57,7 +57,7 @@ export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
   const id = projectId || params.id;
   const queryClient = useQueryClient();
-  const auth = useAuth();
+  const { auth } = useAuth();
   const [newTitle, setNewTitle] = useState('');
   const [newRequiresPhoto, setNewRequiresPhoto] = useState(false);
   const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
@@ -504,7 +504,7 @@ export function Item({
   const showPhotos = item.requiresPhoto || photos.length > 0;
   const [expanded, setExpanded] = useState(item.requiresPhoto && photos.length === 0);
   const [copied, setCopied] = useState(false);
-  const auth = useAuth();
+  const { auth } = useAuth();
   const effProjectId = projectId || item.project?.id;
 
   async function copyForWorker() {

@@ -7,7 +7,7 @@ import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 export default function ExtractModal({ projectId, project, onClose }) {
   useEscape(true, onClose);
-  const auth = useAuth();
+  const { auth } = useAuth();
   const [keyword, setKeyword] = useState('');
   const [fromToday, setFromToday] = useState(true);
   const [results, setResults] = useState(null);

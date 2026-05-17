@@ -13,7 +13,7 @@ import MoneyInput from './MoneyInput';
 
 export default function LaborSettlementModal({ project, projectId, onClose }) {
   useEscape(true, onClose);
-  const auth = useAuth();
+  const { auth } = useAuth();
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState('');
   const [vendors, setVendors] = useState([]);
