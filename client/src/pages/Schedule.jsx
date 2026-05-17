@@ -12,6 +12,7 @@ import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectChecklist from './ProjectChecklist';
 import { appendKakaoFooter } from '../utils/kakaoFooter';
 import TeamCalendar from './TeamCalendar';
+import { crewApi } from '../api/vendors';
 
 const SUBTABS = [
   { key: 'site',    label: '현장 일정',  status: 'IN_PROGRESS' },
@@ -25,8 +26,9 @@ export default function Schedule() {
   const { auth } = useAuth();
   const isCrew = auth?.user?.accountType === 'CREW';
   // 시공팀: 프로젝트 없으니 팀캘린더 패턴(회사 자체 일정 + 자유 입력)을 일정 화면으로 사용. (2026-05-17)
+  // 거래 회사 vendor 매핑 일정은 같은 캘린더에 합쳐 표시(읽기 전용, 회사별 색상).
   if (isCrew) {
-    return <TeamCalendar />;
+    return <CrewScheduleView />;
   }
   const { data: companyData } = useQuery({
     queryKey: ['company'],
@@ -664,4 +666,22 @@ function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
   return appendKakaoFooter(lines.join('\n').trim(), company?.plan);
+}
+
+
+// ============================================================
+// 시공팀(CREW) 일정 화면 — 본인 회사 일정 + 거래 회사 vendor 매핑 일정 통합 (2026-05-17)
+// ============================================================
+function CrewScheduleView() {
+  const today = new Date();
+  // TeamCalendar가 월 단위 grid를 자체 계산하므로 from/to는 넉넉히 (현재 월 전후 한 달)
+  const monthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const { data } = useQuery({
+    queryKey: ['crew-schedules', fmt(monthStart), fmt(monthEnd)],
+    queryFn: () => crewApi.schedules(fmt(monthStart), fmt(monthEnd)),
+  });
+  const extra = data?.schedules || [];
+  return <TeamCalendar crewExtraEntries={extra} />;
 }

@@ -22,7 +22,25 @@ function memberDisplay(m) {
   return m.nickname || m.name;
 }
 
-export default function TeamCalendar() {
+// 회사별 색상 팔레트 — 시공팀 모드에서 거래 회사 일정 분리 표시용
+const CREW_COMPANY_PALETTE = [
+  'bg-sky-100 text-sky-800 border-sky-300',
+  'bg-emerald-100 text-emerald-800 border-emerald-300',
+  'bg-violet-100 text-violet-800 border-violet-300',
+  'bg-amber-100 text-amber-800 border-amber-300',
+  'bg-rose-100 text-rose-800 border-rose-300',
+  'bg-cyan-100 text-cyan-800 border-cyan-300',
+  'bg-pink-100 text-pink-800 border-pink-300',
+  'bg-indigo-100 text-indigo-800 border-indigo-300',
+];
+function crewCompanyColor(companyId) {
+  if (!companyId) return CREW_COMPANY_PALETTE[0];
+  let h = 0;
+  for (let i = 0; i < companyId.length; i++) h = (h * 31 + companyId.charCodeAt(i)) >>> 0;
+  return CREW_COMPANY_PALETTE[h % CREW_COMPANY_PALETTE.length];
+}
+
+export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
   const queryClient = useQueryClient();
   const [current, setCurrent] = useState(() => {
     const now = new Date();
@@ -47,7 +65,21 @@ export default function TeamCalendar() {
       assigneeId: assigneeFilter || undefined,
     }),
   });
-  const entries = data?.entries || [];
+  const ownEntries = data?.entries || [];
+  // 시공팀 모드: 거래 회사 vendor 매핑 일정도 같은 캘린더에 합쳐 표시 (읽기 전용, 회사 색상)
+  const entries = useMemo(() => {
+    if (!crewExtraEntries || crewExtraEntries.length === 0) return ownEntries;
+    const extras = crewExtraEntries.map((e) => ({
+      ...e,
+      date: typeof e.date === 'string' ? e.date : new Date(e.date).toISOString(),
+      isExternal: true,
+      externalCompanyId: e.company?.id || null,
+      externalCompanyName: e.company?.name || null,
+      externalProjectName: e.project?.name || null,
+      externalCategory: e.vendor?.category || e.category || null,
+    }));
+    return [...ownEntries, ...extras];
+  }, [ownEntries, crewExtraEntries]);
 
   const { data: membersData } = useQuery({
     queryKey: ['team', 'members'],
@@ -477,6 +509,23 @@ function FilterChip({ label, active, onClick, muted = false }) {
 }
 
 function EntryCard({ entry: e, onRemove }) {
+  // 시공팀 모드 외부(거래 회사) 일정 — 회사 색상·자물쇠·읽기 전용
+  if (e.isExternal) {
+    const extCls = crewCompanyColor(e.externalCompanyId);
+    const titleExt = `[${e.externalCompanyName || '거래 회사'}]${e.externalProjectName ? ' · ' + e.externalProjectName : ''} · ${e.content}`;
+    return (
+      <div
+        data-entry
+        className={`relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate border border-dashed ${extCls} opacity-90`}
+        title={titleExt}
+      >
+        <span className="flex items-center gap-1 truncate">
+          <span className="text-[10px] opacity-70" title="거래 회사 일정 (읽기 전용)">🔧</span>
+          <span className="truncate">{e.externalCompanyName ? `${e.externalCompanyName} · ` : ''}{e.content}</span>
+        </span>
+      </div>
+    );
+  }
   const projColor = e.project ? projectClass(e.project.id) : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200';
   const projBorder = e.project ? projectBorderClass(e.project.id) : 'border-slate-400';
   const inner = (
