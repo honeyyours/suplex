@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { crewApi } from '../api/vendors';
-import CrewScheduleList from '../components/CrewScheduleList';
+import CrewScheduleGrid from '../components/CrewScheduleGrid';
 
 // 시공팀(CREW) 전용 홈 — 가입 직후·로그인 후 도착하는 1차 화면. (2026-05-17)
 // Step 2: placeholder + 본인 정보. Step 3: 거래 회사 매핑 목록 표시.
@@ -27,7 +27,7 @@ export default function CrewHome() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🔧</span>
             <span className="font-bold text-navy-800 dark:text-navy-200">수플렉스 시공팀</span>
@@ -41,7 +41,7 @@ export default function CrewHome() {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
         <section className="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm dark:ring-1 dark:ring-white/5">
           <div className="text-xs text-gray-500 mb-1">반갑습니다</div>
           <div className="text-lg font-bold text-navy-800 dark:text-navy-200">
@@ -52,7 +52,7 @@ export default function CrewHome() {
           )}
         </section>
 
-        <CrewScheduleList />
+        <CrewScheduleGrid />
 
         {/* 거래 회사 목록 — 회사별로 묶음 (목공팀이면 한 회사에 Vendor 3개 가능) */}
         {me.loading ? (
