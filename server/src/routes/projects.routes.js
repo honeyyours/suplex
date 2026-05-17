@@ -324,6 +324,13 @@ const createSchema = z.object({
 
 router.post('/', async (req, res, next) => {
   try {
+    // 시공팀(CREW) 계정은 프로젝트 생성 차단 — 인테리어 회사 전용 기능 (2026-05-17)
+    if (req.user.accountType === 'CREW') {
+      return res.status(403).json({
+        error: '시공팀 계정은 프로젝트를 만들 수 없습니다',
+        code: 'CREW_NO_PROJECT_CREATE',
+      });
+    }
     const data = createSchema.parse(req.body);
 
     // 디폴트 정책 (2026-05-14): 회사 모든 직원이 자동 멤버.

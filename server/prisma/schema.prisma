@@ -203,7 +203,11 @@ enum CompanyApprovalStatus {
 }
 
 // 구독 등급 — Company.plan. PLAN_FEATURES 매트릭스(features.js)와 매칭.
+// FREE: 시공팀(CREW) 회사 디폴트. 프로젝트 생성 X, 그 외 운영 기능은 STARTER 수준.
+// CREW: 시공팀 명시 식별용(현재는 FREE와 동등 — 가격정책 v7과 정합, 2026-05-17).
 enum CompanyPlan {
+  FREE
+  CREW
   STARTER
   PRO
   ENTERPRISE

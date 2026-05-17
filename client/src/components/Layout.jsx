@@ -56,6 +56,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const isAdmin = !!auth?.isSuperAdmin;
   const isImpersonating = !!auth?.impersonating;
+  const isCrew = auth?.user?.accountType === 'CREW';
   const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
 
   // 어드민이 일반 페이지 접근 시 /admin으로 자동 이동 (회사 컨텍스트 없을 수 있어서)
@@ -130,8 +131,9 @@ export default function Layout() {
             </nav>
           </div>
           <div className="text-sm text-navy-100 flex items-center gap-3">
-            {/* + 새 프로젝트 (데스크톱 헤더, 홈에서만 노출). 모바일은 우하단 FAB가 대체 */}
-            {auth && !isAdmin && auth.company && auth.company.approvalStatus === 'APPROVED' &&
+            {/* + 새 프로젝트 (데스크톱 헤더, 홈에서만 노출). 모바일은 우하단 FAB가 대체.
+                시공팀(CREW)은 프로젝트 생성 X — 봉기님 결정(2026-05-17) */}
+            {auth && !isAdmin && !isCrew && auth.company && auth.company.approvalStatus === 'APPROVED' &&
              location.pathname === '/' && (
               <Link
                 to="/projects/new"
@@ -163,6 +165,11 @@ export default function Layout() {
                     <span>{auth?.company?.name}</span>
                   )}
                   {auth?.company?.plan && <PlanBadge plan={auth.company.plan} />}
+                  {isCrew && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                      🔧 시공팀
+                    </span>
+                  )}
                 </>
               )}
               <span>· {auth?.user?.name}</span>
@@ -182,8 +189,9 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* + 새 프로젝트 모바일 FAB — 홈에서만 노출. 데스크톱은 헤더 버튼이 대체 */}
-      {auth && !isAdmin && auth.company && auth.company.approvalStatus === 'APPROVED' &&
+      {/* + 새 프로젝트 모바일 FAB — 홈에서만 노출. 데스크톱은 헤더 버튼이 대체.
+          시공팀(CREW)은 프로젝트 생성 X */}
+      {auth && !isAdmin && !isCrew && auth.company && auth.company.approvalStatus === 'APPROVED' &&
        location.pathname === '/' && (
         <Link
           to="/projects/new"

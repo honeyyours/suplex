@@ -188,9 +188,9 @@ const signupGeneralSchema = z.object({
   phone: z.string().optional(),
 });
 
-// 시공팀(CREW) 가입 — 회사·멤버십 없이 별도 계정 타입으로 가입. (2026-05-17 양면 플랫폼)
-// 인테리어 회사와 분리된 paying X 사용자. 가입 후 다중 회사 일정 통합 캘린더만 사용.
-// 가입 단계에서 받은 프로필이 초대 수락 시 Vendor row의 입력값으로 사용됨 (공종 필수).
+// 시공팀(CREW) 가입 — 본인 1인 회사를 자동 생성 + OWNER로 합류 (2026-05-17 봉기님 정정).
+// FREE 등급과 동등하게 모든 운영 기능 사용 가능, 프로젝트 생성만 제외(별도 가드).
+// 가입 단계에서 받은 프로필이 거래 회사의 초대 수락 시 Vendor row 자동 생성 입력값으로 사용됨.
 const signupCrewSchema = z.object({
   email: emailField,
   password: z.string().min(8),
@@ -220,46 +220,89 @@ router.post('/signup-crew', signupLimiter, async (req, res, next) => {
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash,
-        name: data.name,
-        nickname: data.nickname,
-        phone: data.phone,
-        accountType: 'CREW',
-        crewCategories: data.crewCategories.map((c) => c.trim()).filter(Boolean),
-        crewBankAccount: data.crewBankAccount?.trim() || null,
-        crewDefaultUnitPrice: data.crewDefaultUnitPrice ?? null,
-        crewDefaultMeal: data.crewDefaultMeal ?? null,
-        crewDefaultTransport: data.crewDefaultTransport ?? null,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: data.email,
+          passwordHash,
+          name: data.name,
+          nickname: data.nickname,
+          phone: data.phone,
+          accountType: 'CREW',
+          crewCategories: data.crewCategories.map((c) => c.trim()).filter(Boolean),
+          crewBankAccount: data.crewBankAccount?.trim() || null,
+          crewDefaultUnitPrice: data.crewDefaultUnitPrice ?? null,
+          crewDefaultMeal: data.crewDefaultMeal ?? null,
+          crewDefaultTransport: data.crewDefaultTransport ?? null,
+        },
+      });
+
+      // 시공팀 회사 자동 생성 — 1인 사업자 패턴. 이름=시공팀 본인 이름. 추후 설정에서 수정 가능.
+      // CREW 등급은 자동 승인 (베타 진입 통제 우회) — 시공팀은 paying X, 즉시 사용 가능.
+      const company = await tx.company.create({
+        data: {
+          name: data.name,
+          representative: data.name,
+          email: data.email,
+          phone: data.phone || null,
+          plan: 'CREW',
+          approvalStatus: 'APPROVED',
+        },
+        select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true },
+      });
+
+      await tx.membership.create({
+        data: { userId: user.id, companyId: company.id, role: 'OWNER' },
+      });
+
+      // 시드 — FREE/CREW도 키워드·시스템 룰은 가지고 시작 (FREE 회사로 운영 가능)
+      const presetResult = await seedAllBundlesFromPresetIfAvailable(tx, { targetCompanyId: company.id });
+      if (!presetResult.applied) {
+        const seedRows = buildPhaseKeywordSeedRows().map((r) => ({ ...r, companyId: company.id }));
+        await tx.phaseKeywordRule.createMany({ data: seedRows, skipDuplicates: true });
+      }
+      await ensureSystemDefaultsForCompany(tx, company.id);
+      await ensureLoungeMembership(tx, user.id, '시공팀 가입');
+
+      return { user, company };
     });
 
-    // 회사 컨텍스트 없는 토큰 + accountType=CREW. authRequired에서 req.user.accountType로 노출됨.
+    // OWNER + 회사 컨텍스트로 정식 토큰 발급
     const token = jwt.sign(
-      { sub: user.id, tv: 0 },
+      {
+        sub: result.user.id,
+        companyId: result.company.id,
+        role: 'OWNER',
+        tv: 0,
+      },
       env.jwt.secret,
       { expiresIn: env.jwt.expiresIn }
     );
 
-    audit({ user: { id: user.id, role: null }, headers: req.headers, ip: req.ip }, 'auth.signup-crew', {
-      targetType: 'USER',
-      targetId: user.id,
-      metadata: { email: user.email },
+    audit({ user: { id: result.user.id, role: 'OWNER' }, headers: req.headers, ip: req.ip }, 'auth.signup-crew', {
+      companyId: result.company.id,
+      targetType: 'COMPANY',
+      targetId: result.company.id,
+      metadata: { companyName: result.company.name, email: result.user.email },
     });
 
     res.status(201).json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        nickname: user.nickname,
-        accountType: user.accountType,
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        nickname: result.user.nickname,
+        accountType: result.user.accountType,
       },
-      company: null,
-      role: null,
+      company: {
+        id: result.company.id,
+        name: result.company.name,
+        hideExpenses: result.company.hideExpenses,
+        approvalStatus: result.company.approvalStatus,
+        plan: result.company.plan,
+      },
+      role: 'OWNER',
       permissions: {},
     });
   } catch (e) {

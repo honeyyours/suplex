@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import { formatDateDot, weeksBetween } from '../utils/date';
+import { useAuth } from '../contexts/AuthContext';
 
 const STATUS_META = {
   PLANNED:     { label: '예정',     color: 'bg-amber-100 text-amber-700' },
@@ -21,6 +22,8 @@ function projectYear(p) {
 }
 
 export default function Projects() {
+  const { auth } = useAuth();
+  const isCrew = auth?.user?.accountType === 'CREW';
   const currentYear = new Date().getFullYear();
   const [yearFilter, setYearFilter] = useState(currentYear); // 'ALL' | number
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | PLANNED | IN_PROGRESS | ...
@@ -113,20 +116,24 @@ export default function Projects() {
       <div className="flex items-center justify-between gap-3 flex-wrap pl-2">
         <h1 className="text-2xl font-bold text-navy-800">프로젝트</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSeedSample}
-            disabled={seeding}
-            className="hidden sm:inline-block text-xs px-3 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50"
-            title="견적/일정/마감재/발주/메모가 모두 들어간 시연용 샘플 프로젝트 생성"
-          >
-            {seeding ? '생성 중...' : '🧪 샘플 시연용 생성'}
-          </button>
-          <Link
-            to="/projects/new"
-            className="bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2 rounded-md"
-          >
-            + 새 프로젝트
-          </Link>
+          {!isCrew && (
+            <>
+              <button
+                onClick={handleSeedSample}
+                disabled={seeding}
+                className="hidden sm:inline-block text-xs px-3 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50"
+                title="견적/일정/마감재/발주/메모가 모두 들어간 시연용 샘플 프로젝트 생성"
+              >
+                {seeding ? '생성 중...' : '🧪 샘플 시연용 생성'}
+              </button>
+              <Link
+                to="/projects/new"
+                className="bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2 rounded-md"
+              >
+                + 새 프로젝트
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -227,13 +234,17 @@ export default function Projects() {
       )}
       {!loading && projects.length === 0 && (
         <div className="text-center py-16 bg-white border rounded-lg">
-          <div className="text-gray-400 text-sm mb-3">아직 등록된 프로젝트가 없습니다</div>
-          <Link
-            to="/projects/new"
-            className="inline-block bg-navy-700 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-navy-800"
-          >
-            + 첫 프로젝트 만들기
-          </Link>
+          <div className="text-gray-400 text-sm mb-3">
+            {isCrew ? '거래 회사가 잡은 일정만 시공팀 캘린더에 표시됩니다.' : '아직 등록된 프로젝트가 없습니다'}
+          </div>
+          {!isCrew && (
+            <Link
+              to="/projects/new"
+              className="inline-block bg-navy-700 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-navy-800"
+            >
+              + 첫 프로젝트 만들기
+            </Link>
+          )}
         </div>
       )}
       {!loading && projects.length > 0 && filtered.length === 0 && (
