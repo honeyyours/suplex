@@ -2,6 +2,7 @@ const app = require('./app');
 const env = require('./config/env');
 const prisma = require('./config/prisma');
 const { seedLoungeTags, backfillLoungeMemberships } = require('./services/lounge');
+const { refreshDemoDates } = require('./services/demoDateRefresh');
 
 const server = app.listen(env.port, '0.0.0.0', () => {
   console.log(`[suplex] API listening on port ${env.port}`);
@@ -14,6 +15,12 @@ const server = app.listen(env.port, '0.0.0.0', () => {
   backfillLoungeMemberships(prisma)
     .then(({ scanned, granted }) => console.log(`[suplex] lounge memberships backfilled: ${granted}/${scanned}`))
     .catch((e) => console.error('[suplex] backfillLoungeMemberships failed:', e.message));
+  // 데모 계정 날짜 자동 refresh — 데모 회사 한정. 데모 없으면 skip (안전)
+  refreshDemoDates(prisma)
+    .then((r) => {
+      if (r.applied) console.log(`[suplex] demo dates refreshed: shifted ${r.offsetDays}d (${JSON.stringify(r.counts)})`);
+    })
+    .catch((e) => console.error('[suplex] refreshDemoDates failed:', e.message));
 });
 
 process.on('SIGINT', () => {
