@@ -89,6 +89,9 @@ export default function TeamCalendar() {
   // 셀 인라인 입력 — 캘린더 셀 클릭 시 활성화. 빠른 추가용 (담당자=현재 필터, isPrivate=false).
   const [activeCellKey, setActiveCellKey] = useState(null);
 
+  // 모바일에서 입력 폼은 기본 접힘 (셀 인라인으로 빠른 추가 가능, 자세한 옵션은 토글).
+  const [mobileFormOpen, setMobileFormOpen] = useState(false);
+
   async function quickAddInCell(dateKey, content) {
     try {
       await companySchedulesApi.create({
@@ -193,40 +196,52 @@ export default function TeamCalendar() {
 
   return (
     <div className="space-y-3">
-      <div>
-        <h1 className="text-2xl font-bold text-navy-800 dark:text-navy-200">팀 캘린더</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          회사 자체 일정 · 견적미팅 · 사무실미팅 · 디자이너·현장팀 개인 일정. 연관 프로젝트 연결 시 프로젝트 일정에도 함께 노출됩니다.
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-navy-800 dark:text-navy-200">팀 캘린더</h1>
+          <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mt-1">
+            회사 자체 일정 · 견적미팅 · 사무실미팅 · 디자이너·현장팀 개인 일정. 연관 프로젝트 연결 시 프로젝트 일정에도 함께 노출됩니다.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMobileFormOpen((o) => !o)}
+          className="sm:hidden flex-shrink-0 text-xs px-2.5 py-1.5 border border-navy-200 dark:border-navy-700 text-navy-700 dark:text-navy-300 rounded-md whitespace-nowrap"
+          aria-expanded={mobileFormOpen}
+        >
+          {mobileFormOpen ? '닫기' : '+ 자세히 추가'}
+        </button>
       </div>
 
-      {/* 멤버 필터 칩 */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <FilterChip
-          label="전체"
-          active={assigneeFilter === ''}
-          onClick={() => setAssigneeFilter('')}
-        />
-        {members.map((m) => (
+      {/* 멤버 필터 칩 — 모바일은 가로 스크롤로 한 줄 유지 */}
+      <div className="-mx-2 sm:mx-0 px-2 sm:px-0 overflow-x-auto sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-1.5 flex-nowrap sm:flex-wrap">
           <FilterChip
-            key={m.userId}
-            label={`${memberDisplay(m)} · ${ROLE_LABEL[m.role] || m.role}`}
-            active={assigneeFilter === m.userId}
-            onClick={() => setAssigneeFilter(m.userId)}
+            label="전체"
+            active={assigneeFilter === ''}
+            onClick={() => setAssigneeFilter('')}
           />
-        ))}
-        <FilterChip
-          label="미배정"
-          active={assigneeFilter === 'unassigned'}
-          onClick={() => setAssigneeFilter('unassigned')}
-          muted
-        />
+          {members.map((m) => (
+            <FilterChip
+              key={m.userId}
+              label={`${memberDisplay(m)} · ${ROLE_LABEL[m.role] || m.role}`}
+              active={assigneeFilter === m.userId}
+              onClick={() => setAssigneeFilter(m.userId)}
+            />
+          ))}
+          <FilterChip
+            label="미배정"
+            active={assigneeFilter === 'unassigned'}
+            onClick={() => setAssigneeFilter('unassigned')}
+            muted
+          />
+        </div>
       </div>
 
-      {/* 입력 폼 */}
+      {/* 입력 폼 — 데스크톱은 항상, 모바일은 토글 */}
       <form
         onSubmit={submit}
-        className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 space-y-2"
+        className={`${mobileFormOpen ? 'block' : 'hidden'} sm:block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 space-y-2`}
       >
         <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
           <input
@@ -448,7 +463,7 @@ function TeamEmptySlot() {
 }
 
 function FilterChip({ label, active, onClick, muted = false }) {
-  const base = 'px-2.5 py-1 rounded-full text-xs font-medium transition border';
+  const base = 'px-2.5 py-1 rounded-full text-xs font-medium transition border whitespace-nowrap flex-shrink-0';
   const tone = active
     ? 'bg-navy-700 border-navy-700 text-white'
     : muted
