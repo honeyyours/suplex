@@ -1,7 +1,7 @@
 // 팀 캘린더 v2 — 회사 일정 + 디자이너·현장팀 개인별 캘린더 (2026-05-17 갱신)
 // AggregateCalendar 스타일의 그리드 + 멤버 필터 칩 + 입력 폼.
 // 봉기님 일정 시리즈 UI 일관성 유지.
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
@@ -12,6 +12,7 @@ import { STANDARD_PHASES } from '../utils/phases';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
+import InlineScheduleInput from '../components/InlineScheduleInput';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
@@ -80,9 +81,44 @@ export default function TeamCalendar() {
     category: '',
     vendorId: '',
     assigneeId: '',
+    isPrivate: false,
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  // 셀 인라인 입력 — 캘린더 셀 클릭 시 활성화. 빠른 추가용 (담당자=현재 필터, isPrivate=false).
+  const [activeCellKey, setActiveCellKey] = useState(null);
+
+  async function quickAddInCell(dateKey, content) {
+    try {
+      await companySchedulesApi.create({
+        date: dateKey,
+        content,
+        assigneeId: (assigneeFilter && assigneeFilter !== 'unassigned') ? assigneeFilter : null,
+      });
+      reload();
+    } catch (e) {
+      console.error('quickAdd failed:', e);
+    }
+  }
+
+  const navigateCell = useCallback((currentKey, direction) => {
+    if (direction === 'esc') {
+      setActiveCellKey(null);
+      return;
+    }
+    const idx = grid.findIndex((d) => toDateKey(d) === currentKey);
+    if (idx < 0) return;
+    let step;
+    if (direction === 'next') step = 1;
+    else if (direction === 'prev') step = -1;
+    else if (direction === 'down') step = 7;
+    else if (direction === 'up') step = -7;
+    else { setActiveCellKey(null); return; }
+    const target = idx + step;
+    if (target < 0 || target >= grid.length) { setActiveCellKey(null); return; }
+    setActiveCellKey(toDateKey(grid[target]));
+  }, [grid]);
 
   async function submit(e) {
     e?.preventDefault?.();
@@ -100,8 +136,9 @@ export default function TeamCalendar() {
         category: form.category || null,
         vendorId: form.vendorId || null,
         assigneeId: form.assigneeId || null,
+        isPrivate: form.isPrivate,
       });
-      setForm({ ...form, content: '', projectId: '', category: '', vendorId: '' });
+      setForm({ ...form, content: '', projectId: '', category: '', vendorId: '', isPrivate: false });
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -247,6 +284,15 @@ export default function TeamCalendar() {
               ))}
             </select>
           </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isPrivate}
+              onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })}
+              className="w-3.5 h-3.5 accent-navy-700"
+            />
+            <span title="작성자 본인과 담당자에게만 보이는 일정">나만보기</span>
+          </label>
         </div>
         {err && <div className="text-sm text-rose-600">{err}</div>}
       </form>
@@ -293,12 +339,18 @@ export default function TeamCalendar() {
               const isToday = key === todayKey;
               const dayOfWeek = date.getDay();
               const isFirstOfMonth = date.getDate() === 1;
+              const isActive = activeCellKey === key;
+              function handleCellClick(ev) {
+                if (ev.target.closest('a, button, input, select, textarea, [data-entry]')) return;
+                setActiveCellKey(key);
+              }
               return (
                 <div
                   key={key}
-                  className={`border-r border-b border-gray-200 dark:border-slate-700 last:border-r-0 min-h-[75px] sm:min-h-[100px] flex flex-col overflow-hidden ${
+                  onClick={handleCellClick}
+                  className={`border-r border-b border-gray-200 dark:border-slate-700 last:border-r-0 min-h-[75px] sm:min-h-[100px] flex flex-col overflow-hidden cursor-pointer ${
                     isCurrentMonth ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50 dark:bg-slate-900/30'
-                  }`}
+                  } ${isActive ? 'ring-2 ring-navy-500 ring-inset' : 'hover:bg-navy-50/40 dark:hover:bg-slate-700/40'}`}
                 >
                   <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
                     dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
@@ -309,7 +361,15 @@ export default function TeamCalendar() {
                   </div>
                   <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>*:nth-child(n+4)]:hidden sm:[&>*:nth-child(n+4)]:flex">
                     {dayEntries.map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
-                    {dayEntries.length > 3 && (
+                    {isActive && (
+                      <div data-entry>
+                        <InlineScheduleInput
+                          onSave={(content) => quickAddInCell(key, content)}
+                          onNavigate={(dir) => navigateCell(key, dir)}
+                        />
+                      </div>
+                    )}
+                    {!isActive && dayEntries.length > 3 && (
                       <span className="sm:hidden text-[11px] text-gray-400 text-center leading-none mt-0.5">
                         +{dayEntries.length - 3}
                       </span>
@@ -344,6 +404,7 @@ function EntryCard({ entry: e, onRemove }) {
   const projBorder = e.project ? projectBorderClass(e.project.id) : 'border-slate-400';
   const inner = (
     <span className="flex items-center gap-1 truncate flex-1">
+      {e.isPrivate && <span className="text-[10px] opacity-70" title="나만보기">🔒</span>}
       {e.category && <span className="text-[10px] opacity-70">[{e.category}]</span>}
       <span className="truncate">{e.content}</span>
       {e.assignee && (
@@ -351,17 +412,19 @@ function EntryCard({ entry: e, onRemove }) {
       )}
     </span>
   );
-  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.category ? `[${e.category}] ` : ''}${e.content}${e.assignee ? ` · ${e.assignee.nickname || e.assignee.name}` : ''}`;
+  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.category ? `[${e.category}] ` : ''}${e.content}${e.assignee ? ` · ${e.assignee.nickname || e.assignee.name}` : ''}${e.isPrivate ? ' · 나만보기' : ''}`;
   const cls = `relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate ${projColor} border-l-0 sm:border-l-[3px] ${projBorder} hover:brightness-95 group/entry`;
   if (e.project) {
     return (
-      <Link to={`/projects/${e.project.id}/schedule`} className={cls} title={titleText}>
+      <Link data-entry to={`/projects/${e.project.id}/schedule`} className={cls} title={titleText}>
         {inner}
       </Link>
     );
   }
   return (
     <span
+      data-entry
+      onClick={(ev) => ev.stopPropagation()}
       onContextMenu={(ev) => { ev.preventDefault(); onRemove?.(); }}
       onDoubleClick={() => onRemove?.()}
       className={`${cls} cursor-default block`}

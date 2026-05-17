@@ -24,11 +24,17 @@ router.get('/', async (req, res, next) => {
         { companyWide: true, project: { companyId: req.user.companyId } },
       ],
     };
-    const where = assigneeId === 'unassigned'
-      ? { AND: [baseFilter, { assigneeId: null }] }
-      : assigneeId
-      ? { AND: [baseFilter, { assigneeId }] }
-      : baseFilter;
+    // 나만보기(isPrivate) 권한 — 본인이 만들거나 본인이 담당자인 경우만. OWNER 우회 X.
+    const privacyFilter = {
+      OR: [
+        { isPrivate: false },
+        { isPrivate: true, AND: [{ OR: [{ createdById: req.user.id }, { assigneeId: req.user.id }] }] },
+      ],
+    };
+    const filters = [baseFilter, privacyFilter];
+    if (assigneeId === 'unassigned') filters.push({ assigneeId: null });
+    else if (assigneeId) filters.push({ assigneeId });
+    const where = { AND: filters };
     if (from && to) {
       where.date = { gte: new Date(from), lte: new Date(to) };
     }
@@ -59,6 +65,7 @@ const createSchema = z.object({
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
+  isPrivate: z.boolean().optional(),
 });
 
 async function assertMemberOfCompany(userId, companyId) {
@@ -115,6 +122,7 @@ router.post('/', async (req, res, next) => {
         category: data.category?.trim() || null,
         vendorId,
         assigneeId,
+        isPrivate: !!data.isPrivate,
         // 프로젝트 연결된 경우 companyWide=true로 양쪽 노출. 회사 단독은 굳이 플래그 필요 없음.
         companyWide: !!data.projectId,
         createdById: req.user.id,
@@ -146,9 +154,10 @@ const updateSchema = z.object({
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
+  isPrivate: z.boolean().optional(),
 });
 
-async function findOwned(id, companyId) {
+async function findOwned(id, userId, companyId) {
   const entry = await prisma.dailyScheduleEntry.findFirst({
     where: {
       id,
@@ -158,13 +167,18 @@ async function findOwned(id, companyId) {
       ],
     },
   });
+  if (!entry) return null;
+  // 나만보기 일정이면 본인(작성자 또는 담당자)만 수정·삭제 가능
+  if (entry.isPrivate && entry.createdById !== userId && entry.assigneeId !== userId) {
+    return null;
+  }
   return entry;
 }
 
 router.patch('/:id', async (req, res, next) => {
   try {
     const data = updateSchema.parse(req.body);
-    const existing = await findOwned(req.params.id, req.user.companyId);
+    const existing = await findOwned(req.params.id, req.user.id, req.user.companyId);
     if (!existing) return res.status(404).json({ error: 'Entry not found' });
 
     const patch = {
@@ -196,6 +210,7 @@ router.patch('/:id', async (req, res, next) => {
         patch.assigneeId = null;
       }
     }
+    if (data.isPrivate !== undefined) patch.isPrivate = !!data.isPrivate;
 
     const updated = await prisma.dailyScheduleEntry.update({
       where: { id: req.params.id },
@@ -220,7 +235,7 @@ router.patch('/:id', async (req, res, next) => {
 // ============================================
 router.delete('/:id', async (req, res, next) => {
   try {
-    const existing = await findOwned(req.params.id, req.user.companyId);
+    const existing = await findOwned(req.params.id, req.user.id, req.user.companyId);
     if (!existing) return res.status(404).json({ error: 'Entry not found' });
     await prisma.dailyScheduleEntry.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
