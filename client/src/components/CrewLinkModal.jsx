@@ -65,7 +65,7 @@ export default function CrewLinkModal({ vendor, onClose, onChanged }) {
         {linked ? (
           <div className="space-y-4">
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-              <div className="text-xs text-emerald-700 mb-1">🔧 시공팀 동기화 중</div>
+              <div className="text-xs text-emerald-700 mb-1">시공팀 동기화 중</div>
               <div className="font-semibold text-emerald-900">{vendor.linkedCrew.name}</div>
               {vendor.linkedCrew.nickname && (
                 <div className="text-xs text-emerald-700 mt-0.5">@{vendor.linkedCrew.nickname}</div>

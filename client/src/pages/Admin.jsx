@@ -469,7 +469,7 @@ function AccountTypeBadge({ user }) {
     return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-violet-100 text-violet-800 border border-violet-200 whitespace-nowrap">🛡️ 어드민</span>;
   }
   if (user.accountType === 'CREW') {
-    return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">🔧 시공팀</span>;
+    return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">시공팀</span>;
   }
   return <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-sky-50 text-sky-700 border border-sky-200 whitespace-nowrap">🏢 회사</span>;
 }
@@ -567,7 +567,7 @@ function UsersTab({ currentUserId }) {
             🏢 회사 {accountTypeFilter === 'ALL' && counts.company > 0 ? `(${counts.company})` : ''}
           </FilterChip>
           <FilterChip active={accountTypeFilter === 'CREW'} onClick={() => setAccountTypeFilter('CREW')}>
-            🔧 시공팀 {accountTypeFilter === 'ALL' && counts.crew > 0 ? `(${counts.crew})` : ''}
+            시공팀 {accountTypeFilter === 'ALL' && counts.crew > 0 ? `(${counts.crew})` : ''}
           </FilterChip>
           <FilterChip active={accountTypeFilter === 'ADMIN'} onClick={() => setAccountTypeFilter('ADMIN')}>
             🛡️ 슈퍼어드민 {accountTypeFilter === 'ALL' && counts.admin > 0 ? `(${counts.admin})` : ''}

@@ -170,7 +170,7 @@ export default function Layout() {
                   {auth?.company?.plan && <PlanBadge plan={auth.company.plan} />}
                   {isCrew && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                      🔧 시공팀
+                      시공팀
                     </span>
                   )}
                 </>

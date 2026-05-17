@@ -17,7 +17,7 @@ export default function CrewLinkBadge({ vendor, isOwner, onChanged }) {
           className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-emerald-50 text-emerald-700 border border-emerald-200"
           title={`${vendor.linkedCrew.name}${vendor.linkedCrew.nickname ? ' (@' + vendor.linkedCrew.nickname + ')' : ''}`}
         >
-          🔧 {vendor.linkedCrew.name}
+          {vendor.linkedCrew.name}
         </span>
       ) : (
         <span className="text-xs text-gray-400">-</span>

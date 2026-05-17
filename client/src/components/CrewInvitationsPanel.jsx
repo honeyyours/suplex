@@ -31,7 +31,7 @@ export default function CrewInvitationsPanel({ isOwner }) {
     <div className="mb-6 p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-sm font-semibold text-amber-900 dark:text-amber-200">🔧 시공팀 초대</div>
+          <div className="text-sm font-semibold text-amber-900 dark:text-amber-200">시공팀 초대</div>
           <div className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
             링크를 시공팀 반장에게 전달하면 가입·수락 즉시 협력업체로 자동 등록됩니다.
           </div>

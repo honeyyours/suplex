@@ -76,11 +76,17 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
       isExternal: true,
       externalCompanyId: e.company?.id || null,
       externalCompanyName: e.company?.name || null,
+      externalProjectId: e.project?.id || null,
       externalProjectName: e.project?.name || null,
+      externalProjectAddress: e.project?.siteAddress || null,
       externalCategory: e.vendor?.category || e.category || null,
+      externalVendorName: e.vendor?.name || null,
     }));
     return [...ownEntries, ...extras];
   }, [ownEntries, crewExtraEntries]);
+
+  // 외부 일정 클릭 → 상세 모달 + 카톡 복사
+  const [externalDetail, setExternalDetail] = useState(null); // entry | null
 
   const { data: membersData } = useQuery({
     queryKey: ['team', 'members'],
@@ -444,7 +450,7 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
                   {/* 데스크톱 — lane 모드: 같은 주에서 같은 프로젝트는 같은 행 */}
                   <div className="hidden sm:flex sm:flex-col px-1 pb-1 gap-0.5 flex-1 overflow-hidden">
                     {slots.map((e, i) =>
-                      e ? <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} /> : <TeamEmptySlot key={`empty-${i}`} />
+                      e ? <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} onExternalClick={setExternalDetail} /> : <TeamEmptySlot key={`empty-${i}`} />
                     )}
                     {isActive && (
                       <div data-entry>
@@ -505,6 +511,100 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
           }}
         />
       )}
+
+      {externalDetail && (
+        <CrewExternalDetailModal
+          entry={externalDetail}
+          onClose={() => setExternalDetail(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// 시공팀 캘린더 — 거래 회사에서 넘어온 일정 카드 클릭 시 상세 모달.
+// 회사·프로젝트·주소·공종·내용·날짜·확정 상태 표시 + 카톡 복사 버튼.
+function CrewExternalDetailModal({ entry: e, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const dateLabel = (() => {
+    const d = new Date(e.date);
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} (${days[d.getDay()]})`;
+  })();
+  const lines = [
+    `[${e.externalCompanyName || '거래 회사'}] ${e.externalProjectName || ''}`.trim(),
+    `일정: ${dateLabel}`,
+    e.externalCategory ? `공종: ${e.externalCategory}` : null,
+    e.content ? `내용: ${e.content}` : null,
+    e.externalProjectAddress ? `주소: ${e.externalProjectAddress}` : null,
+    `상태: ${e.confirmed ? '확정' : '미확정'}`,
+  ].filter(Boolean);
+  const copyText = lines.join('\n');
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = copyText; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-slate-900 rounded-t-xl sm:rounded-xl shadow-xl dark:ring-1 dark:ring-white/5 w-full sm:max-w-md max-h-[80vh] overflow-y-auto"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-white dark:bg-slate-900 px-5 py-4 border-b dark:border-slate-700 flex items-center justify-between">
+          <div>
+            <div className="text-lg font-bold text-navy-800 dark:text-navy-200">
+              {e.externalCompanyName || '거래 회사'}
+            </div>
+            {e.externalProjectName && (
+              <div className="text-sm text-gray-500 mt-0.5">{e.externalProjectName}</div>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <div className="p-5 space-y-3 text-sm">
+          <Row label="일정" value={dateLabel} />
+          {e.externalCategory && <Row label="공종" value={e.externalCategory} />}
+          {e.content && <Row label="내용" value={e.content} />}
+          {e.externalProjectAddress && <Row label="주소" value={e.externalProjectAddress} />}
+          <Row
+            label="상태"
+            value={e.confirmed
+              ? <span className="text-emerald-700 font-semibold">확정</span>
+              : <span className="text-amber-700">미확정</span>}
+          />
+          <div className="pt-1 text-xs text-gray-500 leading-relaxed">
+            거래 회사가 잡은 일정입니다. 변경은 거래 회사 측에서만 가능합니다.
+          </div>
+        </div>
+        <div className="px-5 pb-5">
+          <button
+            onClick={copy}
+            className="w-full bg-navy-700 hover:bg-navy-800 text-white font-medium py-2.5 rounded-md"
+          >
+            {copied ? '복사됨' : '카톡 복사'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex gap-3">
+      <span className="text-gray-500 w-12 flex-shrink-0">{label}</span>
+      <span className="text-gray-800 dark:text-gray-200 break-words flex-1">{value}</span>
     </div>
   );
 }
@@ -544,22 +644,25 @@ function MobileEntryBar({ entry: e }) {
   );
 }
 
-function EntryCard({ entry: e, onRemove }) {
-  // 시공팀 모드 외부(거래 회사) 일정 — 회사 색상·자물쇠·읽기 전용
+function EntryCard({ entry: e, onRemove, onExternalClick }) {
+  // 시공팀 모드 외부(거래 회사) 일정 — 회사 색상·읽기 전용 + 클릭 시 모달
+  // 확정 = 실선 테두리, 미확정 = 점선 테두리(투명도 ↓)
   if (e.isExternal) {
     const extCls = crewCompanyColor(e.externalCompanyId);
-    const titleExt = `[${e.externalCompanyName || '거래 회사'}]${e.externalProjectName ? ' · ' + e.externalProjectName : ''} · ${e.content}`;
+    const isConfirmed = !!e.confirmed;
+    const titleExt = `[${e.externalCompanyName || '거래 회사'}]${e.externalProjectName ? ' · ' + e.externalProjectName : ''} · ${e.content}${isConfirmed ? ' · 확정' : ' · 미확정'}`;
     return (
-      <div
+      <button
+        type="button"
         data-entry
-        className={`relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate border border-dashed ${extCls} opacity-90`}
+        onClick={(ev) => { ev.stopPropagation(); onExternalClick?.(e); }}
+        className={`relative w-full text-left text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate border ${isConfirmed ? '' : 'border-dashed opacity-65'} ${extCls} hover:brightness-95`}
         title={titleExt}
       >
         <span className="flex items-center gap-1 truncate">
-          <span className="text-[10px] opacity-70" title="거래 회사 일정 (읽기 전용)">🔧</span>
           <span className="truncate">{e.externalCompanyName ? `${e.externalCompanyName} · ` : ''}{e.content}</span>
         </span>
-      </div>
+      </button>
     );
   }
   const projColor = e.project ? projectClass(e.project.id) : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200';
