@@ -130,7 +130,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             return (
               <div
                 key={key}
-                className={`border-r border-b last:border-r-0 min-h-[75px] sm:min-h-[100px] flex flex-col overflow-hidden ${
+                className={`border-r border-b last:border-r-0 min-h-[90px] sm:min-h-[100px] flex flex-col overflow-hidden ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
                 }`}
               >
@@ -145,18 +145,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                   )}
                 </div>
 
-                {/* 모바일 — 빽빽 모드: 셀 안에서 일정만 위에서부터 채움 */}
-                <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden">
-                  {dayEntries.map((e) => <EntryBar key={e.id} entry={e} />)}
-                  {dayEntries.length > 3 && (
-                    <span className="text-[11px] text-gray-400 text-center leading-none mt-0.5">
-                      +{dayEntries.length - 3}
-                    </span>
-                  )}
-                </div>
-
-                {/* 데스크톱 — lane 모드: 같은 주에서 같은 프로젝트는 같은 행 */}
-                <div className="hidden sm:flex sm:flex-col px-1 pb-1 gap-0.5 flex-1 overflow-hidden">
+                {/* lane 모드 — 같은 주에서 같은 프로젝트는 같은 행 (모바일·데스크톱 공통) */}
+                <div className="flex flex-col px-0.5 pb-0.5 sm:px-1 sm:pb-1 gap-0.5 flex-1 overflow-hidden">
                   {slots.map((e, i) =>
                     e ? <EntryBar key={e.id} entry={e} /> : <EmptySlot key={`empty-${i}`} />
                   )}
@@ -223,10 +213,10 @@ function EntryBar({ entry: e }) {
   );
 }
 
-// 막대와 같은 padding·line-height로 invisible — 같은 행 정렬 유지
+// 막대와 같은 padding·line-height로 invisible — 같은 행 정렬 유지 (모바일/데스크톱 막대 사이즈와 동일하게)
 function EmptySlot() {
   return (
-    <div className="text-sm leading-tight px-1.5 py-0.5 invisible" aria-hidden="true">
+    <div className="text-[10px] sm:text-sm leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 invisible" aria-hidden="true">
       &nbsp;
     </div>
   );

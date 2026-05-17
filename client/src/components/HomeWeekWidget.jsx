@@ -44,6 +44,22 @@ export default function HomeWeekWidget() {
 
   const laneInfo = useMemo(() => buildLaneInfo(days, byDate), [days, byDate]);
 
+  const legendItems = useMemo(() => {
+    const map = new Map();
+    for (const e of entries) {
+      if (!e.project?.id) continue;
+      if (!map.has(e.project.id)) {
+        map.set(e.project.id, {
+          id: e.project.id,
+          name: e.project.name || '(이름 없음)',
+          projColor: projectClass(e.project.id),
+          projBorder: projectBorderClass(e.project.id),
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [entries]);
+
   return (
     <section className="sm:hidden block bg-white border border-gray-200 rounded-xl px-2 py-3 -mx-2">
       <div className="flex items-center justify-between mb-2 px-1">
@@ -106,6 +122,26 @@ export default function HomeWeekWidget() {
           );
         })}
       </div>
+
+      {legendItems.length > 1 && (
+        <div className="mt-3 px-1 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+          <span className="text-[10px] text-gray-500 mr-0.5">현장</span>
+          {legendItems.map(({ id, name, projColor, projBorder }) => (
+            <Link
+              key={id}
+              to={`/projects/${id}/schedule`}
+              className="inline-flex items-center gap-1 text-[11px] text-gray-700 active:text-navy-800"
+              title={name}
+            >
+              <span
+                className={`inline-block w-3 h-3 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
+                aria-hidden="true"
+              />
+              <span className="truncate max-w-[100px]">{name}</span>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
