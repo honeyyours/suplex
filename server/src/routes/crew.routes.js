@@ -254,7 +254,7 @@ router.get('/schedules', requireCrew, async (req, res, next) => {
         content: true,
         confirmed: true,
         orderIndex: true,
-        project: { select: { id: true, name: true, address: true } },
+        project: { select: { id: true, name: true, siteAddress: true } },
         vendor: { select: { id: true, name: true, category: true } },
         company: { select: { id: true, name: true } },
       },
