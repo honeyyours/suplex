@@ -12,6 +12,7 @@ import { STANDARD_PHASES } from '../utils/phases';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
+import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
 import InlineScheduleInput from '../components/InlineScheduleInput';
 
@@ -166,6 +167,13 @@ export default function TeamCalendar() {
     });
     return map;
   }, [entries]);
+
+  // 주별 lane — 같은 프로젝트는 같은 행에 정렬
+  const weekLaneInfo = useMemo(() => {
+    const weeks = [];
+    for (let i = 0; i < grid.length; i += 7) weeks.push(grid.slice(i, i + 7));
+    return weeks.map((week) => buildLaneInfo(week, byDate));
+  }, [grid, byDate]);
 
   // 하단 현장 인덱스 — 이번 달에 프로젝트가 연결된 일정만
   const legendItems = useMemo(() => {
@@ -350,9 +358,11 @@ export default function TeamCalendar() {
             ))}
           </div>
           <div className="grid grid-cols-7">
-            {grid.map((date) => {
+            {grid.map((date, idx) => {
               const key = toDateKey(date);
               const dayEntries = byDate[key] || [];
+              const weekIdx = Math.floor(idx / 7);
+              const slots = assignSlots(weekLaneInfo[weekIdx], dayEntries);
               const isCurrentMonth = date.getMonth() === current.getMonth();
               const isToday = key === todayKey;
               const dayOfWeek = date.getDay();
@@ -382,8 +392,15 @@ export default function TeamCalendar() {
                       <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
                     )}
                   </div>
-                  <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>*:nth-child(n+4)]:hidden sm:[&>*:nth-child(n+4)]:flex">
-                    {dayEntries.map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
+
+                  {/* 모바일 — 빽빽 */}
+                  <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden">
+                    {dayEntries.slice(0, 3).map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
+                    {!isActive && dayEntries.length > 3 && (
+                      <span className="text-[11px] text-gray-400 text-center leading-none mt-0.5">
+                        +{dayEntries.length - 3}
+                      </span>
+                    )}
                     {isActive && (
                       <div data-entry>
                         <InlineScheduleInput
@@ -392,10 +409,20 @@ export default function TeamCalendar() {
                         />
                       </div>
                     )}
-                    {!isActive && dayEntries.length > 3 && (
-                      <span className="sm:hidden text-[11px] text-gray-400 text-center leading-none mt-0.5">
-                        +{dayEntries.length - 3}
-                      </span>
+                  </div>
+
+                  {/* 데스크톱 — lane 모드: 같은 주에서 같은 프로젝트는 같은 행 */}
+                  <div className="hidden sm:flex sm:flex-col px-1 pb-1 gap-0.5 flex-1 overflow-hidden">
+                    {slots.map((e, i) =>
+                      e ? <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} /> : <TeamEmptySlot key={`empty-${i}`} />
+                    )}
+                    {isActive && (
+                      <div data-entry>
+                        <InlineScheduleInput
+                          onSave={(content) => quickAddInCell(key, content)}
+                          onNavigate={(dir) => navigateCell(key, dir)}
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -406,24 +433,32 @@ export default function TeamCalendar() {
 
         {legendItems.length > 1 && (
           <div className="mt-2 sm:mt-3 px-2 sm:px-0 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <span className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 mr-0.5">현장</span>
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mr-0.5">현장</span>
             {legendItems.map(({ id, name, projColor, projBorder }) => (
               <Link
                 key={id}
                 to={`/projects/${id}/schedule`}
-                className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 hover:text-navy-800 dark:hover:text-navy-200"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:text-navy-800 dark:hover:text-navy-200"
                 title={name}
               >
                 <span
-                  className={`inline-block w-3 h-3 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
+                  className={`inline-block w-3.5 h-3.5 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
                   aria-hidden="true"
                 />
-                <span className="truncate max-w-[140px]">{name}</span>
+                <span className="truncate max-w-[160px]">{name}</span>
               </Link>
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function TeamEmptySlot() {
+  return (
+    <div className="text-sm leading-tight px-1.5 py-0.5 invisible" aria-hidden="true">
+      &nbsp;
     </div>
   );
 }

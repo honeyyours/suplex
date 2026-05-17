@@ -5,6 +5,7 @@ import { schedulesApi } from '../api/schedules';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
+import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
 import PhaseInlineContent from './PhaseInlineContent';
 
@@ -48,7 +49,14 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
     return map;
   }, [entries]);
 
-  // 하단 현장 인덱스 — 이번 달에 실제로 일정이 있는 프로젝트만 모아 색→이름 매핑
+  // 주 단위 chunk + 주별 lane 사전 계산 — 같은 프로젝트가 같은 행에 정렬되도록
+  const weekLaneInfo = useMemo(() => {
+    const weeks = [];
+    for (let i = 0; i < grid.length; i += 7) weeks.push(grid.slice(i, i + 7));
+    return weeks.map((week) => buildLaneInfo(week, byDate));
+  }, [grid, byDate]);
+
+  // 하단 현장 인덱스
   const legendItems = useMemo(() => {
     const map = new Map();
     for (const e of entries) {
@@ -107,9 +115,11 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
           ))}
         </div>
         <div className="grid grid-cols-7">
-          {grid.map((date) => {
+          {grid.map((date, idx) => {
             const key = toDateKey(date);
             const dayEntries = byDate[key] || [];
+            const weekIdx = Math.floor(idx / 7);
+            const slots = assignSlots(weekLaneInfo[weekIdx], dayEntries);
             const isCurrentMonth = date.getMonth() === current.getMonth();
             const isToday = key === todayKey;
             const dayOfWeek = date.getDay();
@@ -134,41 +144,21 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                     <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
                   )}
                 </div>
-                <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
-                  {dayEntries.map((e) => {
-                    const projColor = projectClass(e.project?.id);
-                    const projBorder = projectBorderClass(e.project?.id);
-                    return (
-                      <Link
-                        key={e.id}
-                        to={`/projects/${e.project?.id}/schedule`}
-                        className={`
-                          relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
-                          pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate flex items-center gap-1
-                          ${projColor}
-                          border-l-0 sm:border-l-[3px] ${projBorder}
-                          hover:brightness-95
-                          ${e.confirmed ? '' : 'opacity-[0.55]'}
-                        `}
-                        title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
-                      >
-                        <PhaseInlineContent entry={e} textOnly textClassName="flex-1" />
-                        {e.confirmed && (
-                          <span
-                            aria-label="확정됨"
-                            className="absolute top-1/2 -translate-y-1/2 right-[1px] w-[15px] h-[15px] sm:w-[18px] sm:h-[18px] rounded-full bg-emerald-500 text-white inline-flex items-center justify-center pointer-events-none z-[2]"
-                            style={{ boxShadow: '0 0 0 1.5px #fff, 0 1px 3px rgba(0,0,0,0.2)' }}
-                          >
-                            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-[9px] h-[9px] sm:w-[11px] sm:h-[11px]"><path d="M3 6.5L5 8.5L9 4"/></svg>
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
+
+                {/* 모바일 — 빽빽 모드: 셀 안에서 일정만 위에서부터 채움 */}
+                <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden">
+                  {dayEntries.map((e) => <EntryBar key={e.id} entry={e} />)}
                   {dayEntries.length > 3 && (
-                    <span className="sm:hidden text-[11px] sm:text-[9px] text-gray-400 text-center leading-none mt-0.5">
+                    <span className="text-[11px] text-gray-400 text-center leading-none mt-0.5">
                       +{dayEntries.length - 3}
                     </span>
+                  )}
+                </div>
+
+                {/* 데스크톱 — lane 모드: 같은 주에서 같은 프로젝트는 같은 행 */}
+                <div className="hidden sm:flex sm:flex-col px-1 pb-1 gap-0.5 flex-1 overflow-hidden">
+                  {slots.map((e, i) =>
+                    e ? <EntryBar key={e.id} entry={e} /> : <EmptySlot key={`empty-${i}`} />
                   )}
                 </div>
               </div>
@@ -179,23 +169,65 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
 
       {legendItems.length > 1 && (
         <div className="mt-2 sm:mt-3 px-2 sm:px-0 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <span className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 mr-0.5">현장</span>
+          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mr-0.5">현장</span>
           {legendItems.map(({ id, name, projColor, projBorder }) => (
             <Link
               key={id}
               to={`/projects/${id}/schedule`}
-              className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 hover:text-navy-800 dark:hover:text-navy-200"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:text-navy-800 dark:hover:text-navy-200"
               title={name}
             >
               <span
-                className={`inline-block w-3 h-3 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
+                className={`inline-block w-3.5 h-3.5 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
                 aria-hidden="true"
               />
-              <span className="truncate max-w-[140px]">{name}</span>
+              <span className="truncate max-w-[160px]">{name}</span>
             </Link>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================
+// 일정 막대 + 빈 슬롯 placeholder
+// ============================================
+function EntryBar({ entry: e }) {
+  const projColor = projectClass(e.project?.id);
+  const projBorder = projectBorderClass(e.project?.id);
+  return (
+    <Link
+      to={`/projects/${e.project?.id}/schedule`}
+      className={`
+        relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight
+        pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate flex items-center gap-1
+        ${projColor}
+        border-l-0 sm:border-l-[3px] ${projBorder}
+        hover:brightness-95
+        ${e.confirmed ? '' : 'opacity-[0.55]'}
+      `}
+      title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
+    >
+      <PhaseInlineContent entry={e} textOnly textClassName="flex-1" />
+      {e.confirmed && (
+        <span
+          aria-label="확정됨"
+          className="absolute top-1/2 -translate-y-1/2 right-[1px] w-[15px] h-[15px] sm:w-[18px] sm:h-[18px] rounded-full bg-emerald-500 text-white inline-flex items-center justify-center pointer-events-none z-[2]"
+          style={{ boxShadow: '0 0 0 1.5px #fff, 0 1px 3px rgba(0,0,0,0.2)' }}
+        >
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-[9px] h-[9px] sm:w-[11px] sm:h-[11px]"><path d="M3 6.5L5 8.5L9 4"/></svg>
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// 막대와 같은 padding·line-height로 invisible — 같은 행 정렬 유지
+function EmptySlot() {
+  return (
+    <div className="text-sm leading-tight px-1.5 py-0.5 invisible" aria-hidden="true">
+      &nbsp;
     </div>
   );
 }
