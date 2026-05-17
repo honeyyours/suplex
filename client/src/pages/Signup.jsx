@@ -244,16 +244,22 @@ export default function Signup() {
             <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
 
             {/* 데이터 안전 약속 — 회사 기밀(견적·거래처·고객 정보)을 운영팀이 들여다본다는 의심이 도입 마찰 1순위 */}
-            <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 leading-relaxed">
-              <div className="font-semibold text-emerald-800 mb-1.5 flex items-center gap-1">
-                <span>🔒</span>
-                <span>데이터 안전 약속</span>
+            <div className="mt-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 leading-relaxed space-y-3">
+              <div className="font-semibold text-emerald-900 text-sm">
+                데이터 안전 약속
               </div>
-              <ul className="space-y-1 list-disc pl-4 marker:text-emerald-400">
-                <li>운영팀은 회사 데이터(견적·거래처·고객 정보 등)를 <b>일상적으로 열람하지 않습니다</b>.</li>
-                <li>사용자 요청 CS 지원 시 사칭 접근은 <b>감사 로그 + 회사 대표 즉시 알림</b>으로 투명하게 기록됩니다.</li>
-                <li>통계는 <b>비식별·총계</b> 형태로만 수집되며, 개별 회사 식별 가능 형태로 분석·공유하지 않습니다.</li>
-              </ul>
+              <div>
+                <div className="font-semibold mb-1">데이터 임의 열람 불가</div>
+                <div>운영팀은 회사의 핵심 자산인 데이터(견적, 거래처, 고객 정보 등)를 일상적으로 절대 열람하지 않습니다.</div>
+              </div>
+              <div>
+                <div className="font-semibold mb-1">투명한 접근 통제 및 즉시 알림</div>
+                <div>CS 지원 요청 등으로 부득이하게 데이터 접근이 필요한 경우, 모든 내역이 감사 로그에 기록됩니다. 더불어 회사 대표자에게 즉시 알림이 발송되어 무단 사칭 접근을 원천 차단합니다.</div>
+              </div>
+              <div>
+                <div className="font-semibold mb-1">철저한 비식별 통계 활용</div>
+                <div>시스템 통계는 오직 비식별·총계 형태로만 안전하게 수집됩니다. 특정 기업을 식별할 수 있는 형태의 분석이나 외부 공유는 절대 발생하지 않습니다.</div>
+              </div>
             </div>
 
             <div className="space-y-2 pt-2 border-t">
