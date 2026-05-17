@@ -307,7 +307,7 @@ export default function IntroHome() {
         <div className="max-w-5xl mx-auto px-6 py-10 space-y-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded bg-navy-900 text-white flex items-center justify-center font-extrabold text-xs intro-display">S</div>
+              <img src="/suplex-logo.png" alt="수플렉스" className="w-7 h-7 rounded object-cover" />
               <div className="text-sm font-semibold text-navy-900">
                 수플렉스 <span className="text-navy-400 font-normal">Suplex</span>
               </div>
@@ -473,7 +473,7 @@ function HeroMockup() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-navy-100">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-navy-900 text-white flex items-center justify-center font-extrabold text-[10px] intro-display">S</div>
+            <img src="/suplex-logo.png" alt="수플렉스" className="w-6 h-6 rounded object-cover" />
             <div className="text-xs font-semibold text-navy-900">현장 — 강남 102동</div>
           </div>
           <div className="text-[10px] text-navy-400">D-3</div>
