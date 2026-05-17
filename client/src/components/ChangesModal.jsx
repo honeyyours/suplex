@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useEscape } from '../hooks/useEscape';
+import { useAuth } from '../contexts/AuthContext';
 import { scheduleChangesApi } from '../api/schedules';
 import { relativeTime, formatDateDisplay } from '../utils/date';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 const ACTION_LABEL = {
   ADD: { label: '추가', color: 'bg-emerald-100 text-emerald-700' },
@@ -13,6 +15,7 @@ const ACTION_LABEL = {
 
 export default function ChangesModal({ projectId, onClose }) {
   useEscape(true, onClose);
+  const { auth } = useAuth();
   const [days, setDays] = useState(3);
   const [changes, setChanges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +45,7 @@ export default function ChangesModal({ projectId, onClose }) {
       else detail = c.oldContent || c.newContent || '';
       return `[${a}] ${date} · ${detail} (${c.changedByName}, ${when})`;
     });
-    navigator.clipboard.writeText(lines.join('\n'));
+    navigator.clipboard.writeText(appendKakaoFooter(lines.join('\n'), auth?.company?.plan));
     alert(`${lines.length}건 복사됨`);
   }
 
