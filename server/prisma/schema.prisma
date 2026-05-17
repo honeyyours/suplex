@@ -142,6 +142,9 @@ model User {
   // AI 비서 대화 기록
   aiChatThreads AiChatThread[]
 
+  // 시공팀 계정이 거래하는 인테리어 회사들의 Vendor 매핑 (1 반장 → 여러 Vendor 가능: 목공 3:1)
+  linkedVendors Vendor[] @relation("VendorLinkedCrew")
+
   @@map("users")
 }
 
@@ -286,13 +289,23 @@ model Vendor {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // 시공팀(CrewAccount) 연동 (2026-05-17). 1 반장 = 1 CrewAccount.
+  // 목공팀은 3:1 — 반장·기공·조공 Vendor 3개가 같은 반장 가리킴(자동 통합 캘린더).
+  // 매핑 정책: 자세히 메모리 [[crewaccount]].
+  linkedCrewUserId      String?
+  crewInviteToken       String?   @unique // 발급 직후 1회용 (수락 시 null)
+  crewInviteSentAt      DateTime?
+  crewInviteExpiresAt   DateTime? // 디폴트 7일
+
   company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  linkedCrew           User?                @relation("VendorLinkedCrew", fields: [linkedCrewUserId], references: [id], onDelete: SetNull)
   scheduleTasks        ScheduleTask[]
   expenses             Expense[]
   purchaseOrders       PurchaseOrder[]
   dailyScheduleEntries DailyScheduleEntry[]
 
   @@index([companyId, category])
+  @@index([linkedCrewUserId])
   @@map("vendors")
 }
 

@@ -39,6 +39,7 @@ const loungeRoutes = require('./lounge.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const companySchedulesRoutes = require('./companySchedules.routes');
 const checklistFavoritesRoutes = require('./checklistFavorites.routes');
+const crewRoutes = require('./crew.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -56,7 +57,8 @@ router.use('/auth', authRoutes);
 router.use((req, res, next) => {
   // /admin, /backup은 별도 라우터에서 super admin 체크. 여기선 통과.
   // /lounge는 회사 미승인·퇴사자도 접근 가능 (라운지 자체 멤버십 가드 사용).
-  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge')) return next();
+  // /crew는 CREW 계정 전용 라우트 — 회사 가드 우회 (crew.routes.js가 자체 requireCrew 적용).
+  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge') || req.path.startsWith('/crew')) return next();
   // 그 외는 인증 + 승인 가드 적용
   authRequired(req, res, (err) => {
     if (err || res.headersSent) return;
@@ -112,6 +114,7 @@ router.use('/appliance-specs', applianceSpecsRoutes);
 router.use('/announcements', announcementsRoutes);
 router.use('/lounge', loungeRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/crew', crewRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);
