@@ -12,15 +12,17 @@ import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 // 작업자 카톡 양식 — 단일·복수 자동 분기. 회사·현장명 컨텍스트 포함.
 // 봉기님 제안(2026-05-17): "회사에서 알려드립니다. 현장 [공정] 확인·처리 부탁드립니다." 톤.
+// 회사명 없으면 인사 줄 자체 생략 (어색한 '저희' 폴백 X).
 function formatItemsForWorker(items, { company, project, plan }) {
-  const companyName = company?.name || '저희';
+  const companyName = company?.name || '';
   const projectName = project?.name || '';
   const lines = [];
+
+  if (companyName) lines.push(`${companyName}에서 알려드립니다.`);
 
   if (items.length === 1) {
     const it = items[0];
     const phaseStr = it.phase ? `[${it.phase}] ` : '';
-    lines.push(`${companyName}에서 알려드립니다.`);
     if (projectName) lines.push(`${projectName} ${phaseStr}${it.title}`);
     else lines.push(`${phaseStr}${it.title}`);
     if (it.dueDate) {
@@ -31,7 +33,6 @@ function formatItemsForWorker(items, { company, project, plan }) {
     lines.push('');
     lines.push('확인·처리 부탁드립니다.');
   } else {
-    lines.push(`${companyName}에서 알려드립니다.`);
     if (projectName) lines.push(`${projectName} 아래 항목 확인·처리 부탁드립니다.`);
     else lines.push('아래 항목 확인·처리 부탁드립니다.');
     lines.push('');
@@ -311,20 +312,26 @@ export default function ProjectChecklist({ projectId } = {}) {
       </div>
 
       {/* 작업자 묶음 카톡 복사 — 항목 다중 선택 → 한 번에 카톡 텍스트 생성 */}
-      {!bulkMode && (
-        <div className="mb-3 flex justify-end">
+      {!bulkMode ? (
+        <div className="mb-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-emerald-900 min-w-0">
+            <span className="text-base">📋</span>
+            <span className="font-medium">여러 항목 묶어서 작업자에게 카톡 전달</span>
+            <span className="text-xs text-emerald-700 hidden sm:inline">— 선택 모드 시작 후 항목을 골라 한 번에 복사</span>
+          </div>
           <button
             type="button"
             onClick={() => setBulkMode(true)}
-            className="text-xs px-3 py-1.5 border border-navy-200 text-navy-700 bg-white rounded hover:bg-navy-50 transition"
+            className="flex-shrink-0 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition"
           >
-            📋 작업자에게 묶음 복사
+            선택 시작
           </button>
         </div>
-      )}
-      {bulkMode && (
-        <div className="mb-3 px-3 py-2 bg-navy-50 border border-navy-200 rounded text-xs text-navy-700 flex items-center gap-2">
-          <span>항목 선택 후 하단 [복사] 버튼을 눌러주세요</span>
+      ) : (
+        <div className="mb-3 bg-navy-50 border border-navy-200 rounded-lg px-3 py-2.5 text-sm text-navy-800 flex items-center gap-2">
+          <span className="text-base">☑️</span>
+          <span className="font-medium">선택 모드</span>
+          <span className="text-xs text-navy-700">— 항목을 클릭해서 선택하세요. 하단 바에 복사 버튼이 있습니다.</span>
         </div>
       )}
 
