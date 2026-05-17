@@ -1,12 +1,27 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { crewApi } from '../api/vendors';
 
-// 시공팀(CREW) 전용 홈 — 가입 직후·로그인 후 도착하는 1차 화면. (2026-05-17 Step 2 placeholder)
+// 시공팀(CREW) 전용 홈 — 가입 직후·로그인 후 도착하는 1차 화면. (2026-05-17)
+// Step 2: placeholder + 본인 정보. Step 3: 거래 회사 매핑 목록 표시.
 // 모바일 우선·카톡과 결이 비슷한 가벼움. 회사 NAV 일절 노출 X.
 // 후속 Step: 다중 회사 통합 캘린더 본격 구현.
 export default function CrewHome() {
   const { auth, logout } = useAuth();
   const user = auth?.user;
+
+  const [me, setMe] = useState({ companies: [], totalVendors: 0, loading: true });
+
+  useEffect(() => {
+    let alive = true;
+    crewApi.me()
+      .then((data) => { if (alive) setMe({ ...data, loading: false }); })
+      .catch(() => { if (alive) setMe((p) => ({ ...p, loading: false })); });
+    return () => { alive = false; };
+  }, []);
+
+  const hasCompanies = me.companies.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -36,19 +51,52 @@ export default function CrewHome() {
           )}
         </section>
 
-        <section className="bg-amber-50 border border-amber-200 rounded-lg p-5">
-          <div className="font-semibold text-amber-900 mb-2">아직 거래 회사가 없습니다</div>
-          <div className="text-sm text-amber-900 leading-relaxed space-y-2">
-            <p>
-              거래하는 인테리어 회사가 수플렉스에서 시공팀으로 초대하면,
-              잡힌 일정이 이 화면에 모입니다.
+        {/* 거래 회사 목록 — 회사별로 묶음 (목공팀이면 한 회사에 Vendor 3개 가능) */}
+        {me.loading ? (
+          <section className="bg-white dark:bg-slate-900 rounded-lg p-5 text-center text-gray-400 text-sm">
+            거래 회사 불러오는 중...
+          </section>
+        ) : hasCompanies ? (
+          <section className="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm dark:ring-1 dark:ring-white/5">
+            <div className="text-sm font-semibold mb-3">
+              거래 회사 <span className="text-gray-400">({me.companies.length})</span>
+            </div>
+            <ul className="space-y-3">
+              {me.companies.map((c) => (
+                <li key={c.companyId} className="border border-gray-200 dark:border-slate-700 rounded p-3">
+                  <div className="font-semibold text-navy-800 dark:text-navy-200">{c.companyName}</div>
+                  <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-1.5">
+                    {c.vendors.map((v) => (
+                      <span
+                        key={v.id}
+                        className="inline-block px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"
+                      >
+                        {v.category}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-gray-500 mt-3 leading-relaxed">
+              위 회사들이 잡은 일정은 곧 한 화면에서 통합 확인하실 수 있습니다 (준비 중).
             </p>
-            <p className="text-xs text-amber-800">
-              회사가 여러 곳이어도 한 화면에서 통합 확인하실 수 있습니다.
-              더블 부킹 알림도 함께 작동합니다 (준비 중).
-            </p>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="bg-amber-50 border border-amber-200 rounded-lg p-5">
+            <div className="font-semibold text-amber-900 mb-2">아직 거래 회사가 없습니다</div>
+            <div className="text-sm text-amber-900 leading-relaxed space-y-2">
+              <p>
+                거래하는 인테리어 회사가 수플렉스에서 시공팀으로 초대하면,
+                잡힌 일정이 이 화면에 모입니다.
+              </p>
+              <p className="text-xs text-amber-800">
+                회사가 여러 곳이어도 한 화면에서 통합 확인하실 수 있습니다.
+                더블 부킹 알림도 함께 작동합니다 (준비 중).
+              </p>
+            </div>
+          </section>
+        )}
 
         <section className="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm dark:ring-1 dark:ring-white/5">
           <div className="text-sm font-semibold mb-3">계정 정보</div>

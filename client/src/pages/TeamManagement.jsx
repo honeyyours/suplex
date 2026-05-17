@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
 import { invitationsApi } from '../api/invitations';
 import { vendorsApi } from '../api/vendors';
+import CrewLinkBadge from '../components/CrewLinkBadge';
 import {
   TOGGLEABLE_FEATURES,
   TOGGLE_FEATURE_META,
@@ -980,14 +981,15 @@ function VendorsSection({ isOwner, role }) {
               <th className="px-4 py-3 text-right">단가</th>
               <th className="px-4 py-3 text-left">계좌</th>
               <th className="px-4 py-3 text-left">메모</th>
+              <th className="px-4 py-3 text-left">시공팀</th>
               {canEdit && <th className="px-4 py-3 text-right">관리</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={canEdit ? 8 : 7} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
+              <tr><td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-gray-400">로딩...</td></tr>
             ) : vendors.length === 0 ? (
-              <tr><td colSpan={canEdit ? 8 : 7} className="px-4 py-8 text-center text-gray-400">
+              <tr><td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-gray-400">
                 협력업체가 없습니다. 위 "+ 협력업체 추가"로 첫 업체를 등록하세요.
               </td></tr>
             ) : (
@@ -1011,6 +1013,9 @@ function VendorsSection({ isOwner, role }) {
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs max-w-[240px] truncate">
                     {v.memo || '-'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <CrewLinkBadge vendor={v} isOwner={isOwner} onChanged={() => { invalidateVendors(); load(); }} />
                   </td>
                   {canEdit && (
                     <td className="px-4 py-3 text-right space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import CrewSignup from './pages/CrewSignup';
 import CrewHome from './pages/CrewHome';
+import CrewInviteAccept from './pages/CrewInviteAccept';
 import InviteAccept from './pages/InviteAccept';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -69,6 +70,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/crew/signup" element={<CrewSignup />} />
+      <Route path="/crew/invite/:token" element={<CrewInviteAccept />} />
       <Route path="/invite/:token" element={<InviteAccept />} />
 
       {/* 시공팀(CREW) 전용 — Layout(회사 NAV) 밖. 자체 헤더로 가벼움 유지 */}
