@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스몰테이블 인테리어 자재 계산기 v1.0</title>
+<meta name="description" content="평수만 입력하면 타일, 도배, 마루 자재 수량이 30초 안에 계산되는 무료 프로그램. 7년 현장 경험 기반.">
+<meta name="author" content="스몰테이블디자인그룹">
+
+<style>
+/* ============ FONTS (system stack with Pretendard fallback) ============ */
+@font-face {
+  font-family: 'PretendardLocal';
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Pretendard Variable'), local('Pretendard');
+}
+
+:root {
+  --bg: #0A0A0A;
+  --bg-section: #0D0D0D;
+  --bg-card: #141414;
+  --bg-card-2: #1A1A1A;
+  --bg-card-hover: #1F1F1F;
+  --bg-input: #0F0F0F;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-input: rgba(255, 255, 255, 0.1);
+
+  --text: #FFFFFF;
+  --text-soft: #B5B5B5;
+  --text-mute: #6B6B6B;
+  --text-dim: #4A4A4A;
+
+  --green: #10D876;
+  --green-soft: rgba(16, 216, 118, 0.12);
+  --green-border: rgba(16, 216, 118, 0.3);
+  --green-deep: #0BA85C;
+
+  --orange: #FF8C42;
+  --orange-soft: rgba(255, 140, 66, 0.12);
+  --orange-border: rgba(255, 140, 66, 0.3);
+  --orange-deep: #E5732C;
+
+  --gold: #FFC857;
+  --gold-soft: rgba(255, 200, 87, 0.12);
+  --gold-border: rgba(255, 200, 87, 0.3);
+  --gold-deep: #E5B143;
+
+  --purple: #A78BFA;
+  --purple-soft: rgba(167, 139, 250, 0.12);
+  --purple-border: rgba(167, 139, 250, 0.3);
+  --purple-deep: #8B6FE5;
+
+  --red: #FF6B6B;
+  --red-soft: rgba(255, 107, 107, 0.1);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'PretendardLocal', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+
+/* ============ OFFLINE NOTICE ============ */
+.offline-notice {
+  background: var(--green-soft);
+  border: 1px solid var(--green-border);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.offline-notice-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: var(--green);
+  color: #051410;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.offline-notice-text {
+  flex: 1;
+}
+
+.offline-notice-text b { color: var(--green); font-weight: 700; }
+
+.offline-notice-close {
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* ============ NAV ============ */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-bottom: 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  background: var(--green);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.nav-version {
+  font-size: 12px;
+  color: var(--text-mute);
+  font-weight: 500;
+}
+
+/* ============ HERO ============ */
+.hero {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 28px;
+}
+
+.hero-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--green);
+}
+
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.hero h1 .accent { color: var(--green); }
+
+.hero-sub {
+  font-size: clamp(15px, 2vw, 17px);
+  color: var(--text-soft);
+  max-width: 540px;
+  margin: 0 auto 28px;
+  line-height: 1.6;
+}
+
+.hero-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 12px;
+  color: var(--text-mute);
+  font-weight: 500;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-meta b { color: var(--text); font-weight: 700; }
+
+.dot { width: 3px; height: 3px; background: var(--text-dim); border-radius: 50%; }
+
+/* ============ TABS ============ */
+.tab-label {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.tab-label-kicker {
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.tab-label-title {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 6px;
+  gap: 4px;
+  margin: 24px 0;
+}
+
+@media (max-width: 720px) {
+  .tabs { grid-template-columns: repeat(3, 1fr); }
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  padding: 12px 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: var(--r-md);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tab:hover { color: var(--text); background: var(--bg-card-2); }
+
+.tab.active {
+  background: var(--green);
+  color: #051410;
+  font-weight: 700;
+}
+
+.tab-emoji { font-size: 20px; }
+
+/* ============ PANEL ============ */
+.panel { display: none; }
+.panel.active { display: block; }
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .panel-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px 24px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.card-label.orange { background: var(--orange-soft); color: var(--orange); }
+
+/* ============ FORM ============ */
+.field { margin-bottom: 20px; }
+.field:last-child { margin-bottom: 0; }
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+input[type="number"], select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-input);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  transition: all 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23B5B5B5' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+input[type="number"]:focus, select:focus {
+  outline: none;
+  border-color: var(--green);
+  background: var(--bg-card-2);
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.input-row .field { margin-bottom: 0; }
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  gap: 2px;
+}
+
+.segmented button {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.segmented button.active {
+  background: var(--bg-card-2);
+  color: var(--text);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--green);
+}
+
+.checkbox-field label {
+  font-size: 13px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ============ OUTPUT ============ */
+.result-card {
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-2) 100%);
+  border: 1px solid var(--border);
+}
+
+.result-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-soft);
+  transition: all 0.15s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-card-2);
+  color: var(--green);
+  border-color: var(--green-border);
+}
+
+.result-headline {
+  padding: 20px 22px;
+  background: var(--bg-input);
+  border: 1px solid var(--green-border);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-headline::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, var(--green-soft) 0%, transparent 70%);
+}
+
+.result-headline-label {
+  font-size: 12px;
+  color: var(--green);
+  margin-bottom: 8px;
+  font-weight: 700;
+  position: relative;
+}
+
+.result-headline-value {
+  font-size: clamp(40px, 6vw, 56px);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  position: relative;
+}
+
+.result-headline-unit {
+  font-size: 20px;
+  color: var(--green);
+  font-weight: 700;
+  margin-left: 8px;
+  letter-spacing: -0.02em;
+  position: relative;
+}
+
+.result-headline-sub {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-mute);
+  position: relative;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.result-cell {
+  padding: 14px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.result-cell-label {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.result-cell-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-cell-value .unit {
+  font-size: 12px;
+  color: var(--text-mute);
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.note-box {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--orange-soft);
+  border: 1px solid var(--orange-border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  display: flex;
+  gap: 10px;
+}
+
+.note-box::before {
+  content: "💡";
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.note-box b { color: var(--text); font-weight: 700; }
+
+/* ============ DUAL CTA SECTION ============ */
+.cta-section {
+  margin-top: 80px;
+}
+
+.cta-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.cta-kicker {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.cta-headline {
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+
+.cta-headline .green { color: var(--green); }
+
+.cta-sub {
+  font-size: 15px;
+  color: var(--text-soft);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .cta-grid { grid-template-columns: 1fr; }
+}
+
+.cta-card {
+  padding: 32px 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.cta-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.cta-card.featured {
+  border-color: var(--green-border);
+  background: linear-gradient(180deg, var(--bg-card) 0%, rgba(16, 216, 118, 0.04) 100%);
+}
+
+.cta-card.featured::before {
+  content: "추천";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--green);
+  color: #051410;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 0 0 8px 8px;
+  letter-spacing: -0.01em;
+}
+
+/* 곧 오픈 상태 - 비활성 카드 */
+.cta-card.coming-soon {
+  cursor: not-allowed;
+  opacity: 0.92;
+  position: relative;
+}
+
+.cta-card.coming-soon::before {
+  content: "🔜 5월 30일 (토) 오픈 예정";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--orange);
+  color: #1a0d05;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 18px;
+  border-radius: 0 0 8px 8px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4); }
+  50% { box-shadow: 0 4px 20px rgba(255, 140, 66, 0.7); }
+}
+
+.cta-card.coming-soon:hover {
+  transform: none;
+  border-color: var(--green-border);
+}
+
+.cta-card-btn.disabled {
+  background: var(--bg-input);
+  color: var(--orange);
+  cursor: not-allowed;
+  border: 1px dashed var(--orange-border);
+  font-weight: 700;
+}
+
+.cta-card-btn.disabled:hover {
+  background: var(--bg-input);
+}
+
+.cta-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
+.cta-card.featured .cta-card-badge {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.cta-card:not(.featured) .cta-card-badge {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.cta-card.gold .cta-card-badge {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.cta-card.purple .cta-card-badge {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.cta-card-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.cta-card-title .green { color: var(--green); }
+.cta-card-title .orange { color: var(--orange); }
+.cta-card-title .gold { color: var(--gold); }
+.cta-card-title .purple { color: var(--purple); }
+
+.cta-card-desc {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.cta-card-features {
+  list-style: none;
+  margin-bottom: 24px;
+}
+
+.cta-card-features li {
+  font-size: 13px;
+  color: var(--text-soft);
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cta-card-features li::before {
+  content: "✓";
+  color: var(--green);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cta-card:not(.featured) .cta-card-features li::before { color: var(--orange); }
+.cta-card.gold .cta-card-features li::before { color: var(--gold); }
+.cta-card.purple .cta-card-features li::before { color: var(--purple); }
+
+.cta-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  border-radius: var(--r-md);
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.cta-card.featured .cta-card-btn {
+  background: var(--green);
+  color: #051410;
+}
+.cta-card.featured .cta-card-btn:hover { background: var(--green-deep); }
+
+.cta-card:not(.featured) .cta-card-btn {
+  background: var(--orange);
+  color: #1a0d05;
+}
+.cta-card:not(.featured) .cta-card-btn:hover { background: var(--orange-deep); }
+
+.cta-card.gold .cta-card-btn {
+  background: var(--gold);
+  color: #1a1308;
+}
+.cta-card.gold .cta-card-btn:hover { background: var(--gold-deep); }
+
+.cta-card.purple .cta-card-btn {
+  background: var(--purple);
+  color: #0d0820;
+}
+.cta-card.purple .cta-card-btn:hover { background: var(--purple-deep); }
+
+.cta-card-price {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 12px;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+/* ============ SHARE STRIP ============ */
+.share-strip {
+  margin-top: 40px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.share-strip-text {
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.share-strip-text b { color: var(--text); font-weight: 700; }
+
+.share-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.share-btn:hover {
+  background: var(--bg-card-2);
+  border-color: var(--text-soft);
+}
+
+/* ============ FOOTER ============ */
+footer {
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-products {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.footer-products a {
+  color: var(--text-soft);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.footer-products a:hover { color: var(--green); }
+
+.footer-info {
+  font-size: 11px;
+  color: var(--text-mute);
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+.footer-disclaimer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.result-headline-value, .result-cell-value {
+  animation: fadeUp 0.2s ease-out;
+}
+
+/* ============ TOAST ============ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--green);
+  color: #051410;
+  padding: 12px 20px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============ PRINT ============ */
+@media print {
+  body { background: white; color: black; }
+  .nav, .offline-notice, .tabs, .cta-section, .share-strip, footer, .result-actions { display: none; }
+  .container { max-width: 100%; padding: 0; }
+  .panel:not(.active) { display: none; }
+  .card { border: 1px solid #ccc; background: white; box-shadow: none; }
+  .card-label { background: #eee; color: black; }
+  input, select { border: 1px solid #ccc; background: white; color: black; }
+  .result-headline { background: #f5f5f5; border: 2px solid #10D876; color: black; }
+  .result-headline-label, .result-headline-unit { color: #0BA85C; }
+  .result-headline-value, .result-cell-value, .field-label { color: black; }
+  .result-cell { background: white; border: 1px solid #ddd; }
+  .note-box { background: #fff8f0; border: 1px solid #FF8C42; color: black; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- OFFLINE NOTICE -->
+  <div class="offline-notice" id="offline-notice">
+    <div class="offline-notice-icon">💾</div>
+    <div class="offline-notice-text">
+      이 파일을 <b>PC에 저장(Ctrl+S)</b>하면 인터넷 없이도 사용할 수 있습니다. 현장에서도 바로 활용하세요.
+    </div>
+    <button class="offline-notice-close" onclick="document.getElementById('offline-notice').style.display='none'">✕</button>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-logo">🏠</div>
+      <div>
+        <span class="brand-name">스몰테이블</span>
+        <span class="brand-tag">자재 계산기</span>
+      </div>
+    </div>
+    <div class="nav-version">v1.0 · 무료 배포</div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">1,294건 자재 데이터 기반 · 현장 검증 완료</div>
+    <h1>인테리어 자재 발주량,<br><span class="accent">30초만에</span></h1>
+    <p class="hero-sub">평수 한 번 입력으로 타일·도배·마루·페인트의 정확한 발주량과 조명·에어컨의 권장 사양까지 한 번에 계산됩니다.<br>현장 경험으로 검증된 표준값이 자동 적용됩니다.</p>
+    <div class="hero-meta">
+      <b>FREE</b><span class="dot"></span>회원가입 불필요<span class="dot"></span>오프라인 작동<span class="dot"></span>인쇄 가능
+    </div>
+  </section>
+
+  <!-- TABS -->
+  <div class="tab-label">
+    <div class="tab-label-kicker">자재 선택</div>
+    <div class="tab-label-title">어떤 자재를 계산하시겠어요?</div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="tile" role="tab">
+      <span class="tab-emoji">🧱</span><span>타일</span>
+    </button>
+    <button class="tab" data-tab="wallpaper" role="tab">
+      <span class="tab-emoji">🎨</span><span>도배</span>
+    </button>
+    <button class="tab" data-tab="floor" role="tab">
+      <span class="tab-emoji">🪵</span><span>마루</span>
+    </button>
+    <button class="tab" data-tab="paint" role="tab">
+      <span class="tab-emoji">🖌️</span><span>페인트</span>
+    </button>
+    <button class="tab" data-tab="light" role="tab">
+      <span class="tab-emoji">💡</span><span>조명</span>
+    </button>
+    <button class="tab" data-tab="aircon" role="tab">
+      <span class="tab-emoji">❄️</span><span>에어컨</span>
+    </button>
+  </div>
+
+  <!-- ============= TILE PANEL ============= -->
+  <div class="panel active" id="panel-tile">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">시공 부위</label>
+          <div class="segmented" id="tile-area-type">
+            <button class="active" data-val="floor">바닥</button>
+            <button data-val="wall">벽</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">면적 입력 방식</label>
+          <div class="segmented" id="tile-input-mode">
+            <button class="active" data-val="pyeong">평수</button>
+            <button data-val="size">가로 × 세로</button>
+          </div>
+        </div>
+
+        <div class="field" id="tile-pyeong-field">
+          <label class="field-label">시공 평수</label>
+          <input type="number" id="tile-pyeong" value="10" min="0" step="0.5">
+          <div class="field-hint">1평 = 3.3058㎡</div>
+        </div>
+
+        <div class="field" id="tile-size-field" style="display:none">
+          <div class="input-row">
+            <div>
+              <label class="field-label">가로 (m)</label>
+              <input type="number" id="tile-width" value="5" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="field-label">세로 (m)</label>
+              <input type="number" id="tile-height" value="6" min="0" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">타일 규격 (mm)</label>
+          <select id="tile-spec">
+            <option value="300x300">300 × 300</option>
+            <option value="300x600">300 × 600</option>
+            <option value="600x600" selected>600 × 600</option>
+            <option value="600x1200">600 × 1200</option>
+            <option value="900x1800">900 × 1800</option>
+            <option value="custom">직접 입력</option>
+          </select>
+        </div>
+
+        <div class="field" id="tile-custom-field" style="display:none">
+          <div class="input-row">
+            <div>
+              <label class="field-label">가로 (mm)</label>
+              <input type="number" id="tile-custom-w" value="600" min="50">
+            </div>
+            <div>
+              <label class="field-label">세로 (mm)</label>
+              <input type="number" id="tile-custom-h" value="600" min="50">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">박스당 매수</label>
+          <input type="number" id="tile-perbox" value="4" min="1">
+          <div class="field-hint">자재상 카탈로그 기준. 모르면 4 입력.</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">로스율 (%)</label>
+          <input type="number" id="tile-loss" value="10" min="0" max="50">
+          <div class="field-hint">권장: 바닥 10% · 욕실벽 15% · 대형타일 12%</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('tile')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label">발주 권장 매수</div>
+          <div>
+            <span class="result-headline-value" id="tile-result-pieces">—</span><span class="result-headline-unit">매</span>
+          </div>
+          <div class="result-headline-sub" id="tile-result-sub">로스 포함</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">시공 면적</div>
+            <div class="result-cell-value"><span id="tile-result-area">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">시공 평수</div>
+            <div class="result-cell-value"><span id="tile-result-pyeong">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">순수 필요 매수</div>
+            <div class="result-cell-value"><span id="tile-result-net">—</span><span class="unit">매</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">박스 수</div>
+            <div class="result-cell-value"><span id="tile-result-boxes">—</span><span class="unit">박스</span></div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div><b>현장 메모</b> · 욕실·주방 등 절단이 많은 부위는 로스율 15% 이상 권장. 동일 LOT 확보를 위해 박스 단위 발주가 안전합니다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= WALLPAPER PANEL ============= -->
+  <div class="panel" id="panel-wallpaper">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">벽지 종류</label>
+          <select id="wp-type">
+            <option value="silk" selected>실크벽지 (1롤 ≒ 5평 시공)</option>
+            <option value="paper">합지벽지 (1롤 ≒ 2평 시공)</option>
+            <option value="widepaper">광폭합지 (1롤 ≒ 5평 시공)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">시공 평수</label>
+          <input type="number" id="wp-pyeong" value="32" min="0" step="0.5">
+          <div class="field-hint">실평수 기준. 도배 평수는 한국 표준 환산식으로 자동 계산됩니다.</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">천장 높이 (m)</label>
+          <input type="number" id="wp-ceiling" value="2.4" min="2" max="4" step="0.1">
+        </div>
+
+        <div class="checkbox-field">
+          <input type="checkbox" id="wp-include-ceiling">
+          <label for="wp-include-ceiling">천장 도배 포함</label>
+        </div>
+
+        <div class="field">
+          <label class="field-label">추가 로스율 (%)</label>
+          <input type="number" id="wp-loss" value="0" min="0" max="50">
+          <div class="field-hint">기본 자연 로스는 환산식에 포함. 큰 무늬 매칭 시 +10%, 사선·헤링본 +15% 추가</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('wp')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label">발주 권장 롤 수</div>
+          <div>
+            <span class="result-headline-value" id="wp-result-rolls">—</span><span class="result-headline-unit">롤</span>
+          </div>
+          <div class="result-headline-sub" id="wp-result-sub">로스 포함</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">도배 평수</div>
+            <div class="result-cell-value"><span id="wp-result-wall">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">도배 면적</div>
+            <div class="result-cell-value"><span id="wp-result-total">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">롤당 시공평수</div>
+            <div class="result-cell-value"><span id="wp-result-perroll">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">예상 풀</div>
+            <div class="result-cell-value"><span id="wp-result-glue">—</span><span class="unit">kg</span></div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div><b>현장 메모</b> · 한국 도배 표준 (32평 천장포함 = 실크 15롤 기준) 적용. 환산식에 자연 로스가 포함되어 있어 일반 시공은 추가 로스 0%로 충분. 큰 무늬 매칭이나 사선·헤링본 시공 시에만 추가 로스를 입력하세요.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= FLOOR PANEL ============= -->
+  <div class="panel" id="panel-floor">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">마루 종류</label>
+          <select id="fl-type">
+            <option value="laminate" selected>강화마루 (박스당 0.7평)</option>
+            <option value="engineered">강마루 (박스당 0.55평)</option>
+            <option value="hardwood">원목마루 (박스당 0.45평)</option>
+            <option value="custom">직접 입력</option>
+          </select>
+        </div>
+
+        <div class="field" id="fl-custom-field" style="display:none">
+          <label class="field-label">박스당 면적 (평)</label>
+          <input type="number" id="fl-custom-perbox" value="0.7" min="0.1" step="0.05">
+        </div>
+
+        <div class="field">
+          <label class="field-label">면적 입력 방식</label>
+          <div class="segmented" id="fl-input-mode">
+            <button class="active" data-val="pyeong">평수</button>
+            <button data-val="size">가로 × 세로</button>
+          </div>
+        </div>
+
+        <div class="field" id="fl-pyeong-field">
+          <label class="field-label">시공 평수</label>
+          <input type="number" id="fl-pyeong" value="20" min="0" step="0.5">
+        </div>
+
+        <div class="field" id="fl-size-field" style="display:none">
+          <div class="input-row">
+            <div>
+              <label class="field-label">가로 (m)</label>
+              <input type="number" id="fl-width" value="8" min="0" step="0.1">
+            </div>
+            <div>
+              <label class="field-label">세로 (m)</label>
+              <input type="number" id="fl-height" value="8" min="0" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">실 둘레 (m)</label>
+          <input type="number" id="fl-perimeter" value="20" min="0" step="0.5">
+          <div class="field-hint">걸레받이 계산용</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">로스율 (%)</label>
+          <input type="number" id="fl-loss" value="7" min="0" max="50">
+          <div class="field-hint">권장: 직선시공 5% · 일반 7~8% · 헤링본 10%</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('fl')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label">발주 권장 박스 수</div>
+          <div>
+            <span class="result-headline-value" id="fl-result-boxes">—</span><span class="result-headline-unit">박스</span>
+          </div>
+          <div class="result-headline-sub" id="fl-result-sub">로스 포함</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">시공 면적</div>
+            <div class="result-cell-value"><span id="fl-result-area">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">시공 평수</div>
+            <div class="result-cell-value"><span id="fl-result-pyeong">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">발주 평수</div>
+            <div class="result-cell-value"><span id="fl-result-order">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">걸레받이</div>
+            <div class="result-cell-value"><span id="fl-result-baseboard">—</span><span class="unit">m</span></div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div><b>현장 메모</b> · 마루는 동일 LOT 확보를 위해 박스 단위 발주 필수. 헤링본·사선 시공은 로스율 10% 이상 발주하세요.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= PAINT PANEL ============= -->
+  <div class="panel" id="panel-paint">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">페인트 종류</label>
+          <select id="pt-type">
+            <option value="water" selected>수성 페인트 (1L ≒ 10㎡, 1회)</option>
+            <option value="oil">유성 페인트 (1L ≒ 8㎡, 1회)</option>
+            <option value="eco">친환경 페인트 (1L ≒ 8㎡, 1회)</option>
+            <option value="putty">퍼티/프라이머 (1L ≒ 5㎡, 1회)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">시공 부위</label>
+          <div class="segmented" id="pt-area-type">
+            <button class="active" data-val="wall">벽</button>
+            <button data-val="ceiling">천장</button>
+            <button data-val="custom">직접 면적</button>
+          </div>
+        </div>
+
+        <div class="field" id="pt-pyeong-field">
+          <label class="field-label">실 평수</label>
+          <input type="number" id="pt-pyeong" value="30" min="0" step="0.5">
+          <div class="field-hint">벽: 실평수 × 1.65 자동 환산 / 천장: 실평수 그대로</div>
+        </div>
+
+        <div class="field" id="pt-custom-field" style="display:none">
+          <label class="field-label">직접 시공 면적 (㎡)</label>
+          <input type="number" id="pt-custom-area" value="100" min="0" step="1">
+        </div>
+
+        <div class="field">
+          <label class="field-label">천장 높이 (m)</label>
+          <input type="number" id="pt-ceiling" value="2.4" min="2" max="4" step="0.1">
+        </div>
+
+        <div class="field">
+          <label class="field-label">도장 횟수</label>
+          <select id="pt-coats">
+            <option value="1">1회 도장</option>
+            <option value="2" selected>2회 도장 (표준)</option>
+            <option value="3">3회 도장</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">로스율 (%)</label>
+          <input type="number" id="pt-loss" value="10" min="0" max="50">
+          <div class="field-hint">권장: 평탄면 10% · 거친면/요철 15~20%</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('pt')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label">발주 권장 (말통)</div>
+          <div>
+            <span class="result-headline-value" id="pt-result-cans">—</span><span class="result-headline-unit">말통</span>
+          </div>
+          <div class="result-headline-sub" id="pt-result-sub">로스 포함</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">시공 면적</div>
+            <div class="result-cell-value"><span id="pt-result-area">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">도장 면적 (×횟수)</div>
+            <div class="result-cell-value"><span id="pt-result-coat-area">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">순수 필요 페인트</div>
+            <div class="result-cell-value"><span id="pt-result-liter">—</span><span class="unit">L</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">발주 (로스포함)</div>
+            <div class="result-cell-value"><span id="pt-result-total">—</span><span class="unit">L</span></div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div><b>현장 메모</b> · 1말통 = 18L (한국 도료 표준). 2회 도장 기준. 색상 변경(밝→어두)·거친면은 로스율 15~20%로 올리세요. 프라이머는 흡수율이 높아 1L당 5㎡로 별도 산정 권장.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= LIGHT PANEL ============= -->
+  <div class="panel" id="panel-light">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">공간 종류</label>
+          <select id="lt-space">
+            <option value="livingroom" selected>거실 (150~300 lux)</option>
+            <option value="bedroom">침실 (100~150 lux)</option>
+            <option value="kitchen">주방 (300~500 lux)</option>
+            <option value="bathroom">욕실 (100~200 lux)</option>
+            <option value="study">공부방·홈오피스 (300~500 lux)</option>
+            <option value="office">사무실 (500~1000 lux)</option>
+            <option value="cafe">카페·상가 (300~500 lux)</option>
+            <option value="hallway">복도·현관 (100~150 lux)</option>
+          </select>
+          <div class="field-hint">한국산업표준(KS) 권장 조도 기준</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">시공 평수</label>
+          <input type="number" id="lt-pyeong" value="10" min="0" step="0.5">
+        </div>
+
+        <div class="field">
+          <label class="field-label">천장 높이 (m)</label>
+          <input type="number" id="lt-ceiling" value="2.4" min="2" max="4" step="0.1">
+          <div class="field-hint">천장이 높을수록 더 많은 광량 필요</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('lt')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label">권장 총 와트수 (LED)</div>
+          <div>
+            <span class="result-headline-value" id="lt-result-watts">—</span><span class="result-headline-unit">W</span>
+          </div>
+          <div class="result-headline-sub" id="lt-result-sub">한국 인테리어 표준</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">권장 조도</div>
+            <div class="result-cell-value"><span id="lt-result-lux">—</span><span class="unit">lux</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">시공 면적</div>
+            <div class="result-cell-value"><span id="lt-result-area">—</span><span class="unit">㎡</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">LED 7W 다운라이트</div>
+            <div class="result-cell-value"><span id="lt-result-led7">—</span><span class="unit">개</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">LED 10W 다운라이트</div>
+            <div class="result-cell-value"><span id="lt-result-led10">—</span><span class="unit">개</span></div>
+          </div>
+        </div>
+
+        <div class="note-box">
+          <div><b>현장 메모</b> · 실제 시공은 메인등(실링·펜던트) + 다운라이트 조합이 일반적. 메인등 사용 시 다운라이트는 보조용으로 50~70% 수준 시공. 주방 싱크대·공부방 책상은 작업면 조명 별도 권장.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= AIRCON PANEL ============= -->
+  <div class="panel" id="panel-aircon">
+    <div class="panel-grid">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-label">📝 입력 정보</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">사용 목적</label>
+          <div class="segmented" id="ac-purpose">
+            <button class="active" data-val="home">가정용</button>
+            <button data-val="commercial">상업용</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">에어컨 종류</label>
+          <div class="segmented" id="ac-system-type">
+            <button class="active" data-val="stand">스탠드</button>
+            <button data-val="system">시스템</button>
+          </div>
+          <div class="field-hint" id="ac-system-hint">스탠드: 거실 스탠드 + 방 벽걸이 / 시스템: 천장 매립 멀티</div>
+        </div>
+
+        <div class="field" id="ac-usage-field" style="display:none">
+          <label class="field-label">상업 공간 종류</label>
+          <select id="ac-usage">
+            <option value="office" selected>사무실</option>
+            <option value="cafe">카페·상가</option>
+            <option value="restaurant">음식점 (화기 있음)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">시공 평수</label>
+          <input type="number" id="ac-pyeong" value="20" min="0" step="0.5">
+          <div class="field-hint">에어컨이 직접 냉방할 공간만</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">햇빛 노출 (방향)</label>
+          <select id="ac-direction">
+            <option value="north">북향·그늘</option>
+            <option value="east">동향·일반</option>
+            <option value="south" selected>남향·햇빛 보통</option>
+            <option value="west">서향·햇빛 많음</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">천장 높이 (m)</label>
+          <input type="number" id="ac-ceiling" value="2.4" min="2" max="5" step="0.1">
+        </div>
+
+        <div class="checkbox-field">
+          <input type="checkbox" id="ac-open">
+          <label for="ac-open">거실 + 주방 오픈형 (한 공간)</label>
+        </div>
+
+        <div class="checkbox-field">
+          <input type="checkbox" id="ac-top">
+          <label for="ac-top">탑층 (단열 취약)</label>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <div class="card-header">
+          <div class="card-label orange">📊 계산 결과</div>
+          <div class="result-actions">
+            <button class="icon-btn" onclick="copyResult('ac')" title="결과 복사">📋</button>
+            <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+          </div>
+        </div>
+
+        <div class="result-headline">
+          <div class="result-headline-label" id="ac-headline-label">권장 실내기 합계</div>
+          <div>
+            <span class="result-headline-value" id="ac-result-tons">—</span><span class="result-headline-unit" id="ac-result-unit">대</span>
+          </div>
+          <div class="result-headline-sub" id="ac-result-sub">한국 시장 기준</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">시공 평수</div>
+            <div class="result-cell-value"><span id="ac-result-pyeong">—</span><span class="unit">평</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">필요 냉방 능력</div>
+            <div class="result-cell-value"><span id="ac-result-kcal">—</span><span class="unit">kcal/h</span></div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label" id="ac-label-3">거실 스탠드</div>
+            <div class="result-cell-value" id="ac-result-stand" style="font-size:16px">—</div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label" id="ac-label-4">방 벽걸이</div>
+            <div class="result-cell-value" id="ac-result-wall" style="font-size:16px">—</div>
+          </div>
+        </div>
+
+        <div class="note-box" id="ac-note">
+          <div><b>현장 메모</b> · 한국 에어컨 "평형"은 실제 시공 평수보다 작게 표기됨. 단열·창호 상태에 따라 ±20% 보정 필요. 거실+주방 오픈형이나 탑층은 한 단계 위 평형 권장.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= DUAL CTA ============= -->
+  <section class="cta-section">
+    <div class="cta-header">
+      <div class="cta-kicker">이 계산기가 도움이 되셨다면</div>
+      <h2 class="cta-headline">스몰테이블의 <span class="green">네 가지 도구</span>를<br>더 알려드릴게요</h2>
+      <p class="cta-sub">인테리어 현장에서 쌓은 데이터와 노하우를, 누구나 쓸 수 있는 형태로 만들었습니다.</p>
+    </div>
+
+    <div class="cta-grid">
+
+      <!-- 인테리어코치 (Primary - 업체용 SaaS) -->
+      <div class="cta-card featured coming-soon" id="interior-coach-card">
+        <span class="cta-card-badge">🏗️ 업체 전용</span>
+        <div class="cta-card-title"><span class="green">인테리어코치</span></div>
+        <div class="cta-card-desc">인테리어 업체 전용 통합 관리 프로그램. 현장 정보 한 번 입력으로 견적·발주·공정·손익까지 한 번에.</div>
+        <ul class="cta-card-features">
+          <li>공정매니저 · 현장손익 · 견적서</li>
+          <li>1,294건 자재 단가 DB 탑재</li>
+          <li>자재발주 · 수금 · 인력풀 통합</li>
+        </ul>
+        <span class="cta-card-btn disabled">⏳ 5월 30일 (토) 오픈 예정</span>
+        <div class="cta-card-price">월 정액 · 초기 비용 없음</div>
+      </div>
+
+      <!-- 견적코치 (Secondary - 견적서 검증) -->
+      <a href="https://견적코치.com" class="cta-card" target="_blank" rel="noopener">
+        <span class="cta-card-badge">🔍 견적서 확인</span>
+        <div class="cta-card-title"><span class="orange">견적코치</span></div>
+        <div class="cta-card-desc">인테리어 견적서 적정가 분석 프로그램. AI가 12개 공정별 시장 평균과 비교해 30초 안에 결과를 알려드립니다.</div>
+        <ul class="cta-card-features">
+          <li>견적서 적정성 등급 (A~D)</li>
+          <li>12개 공정별 시세 비교</li>
+          <li>예상 절감 금액 · 협상 팁</li>
+        </ul>
+        <span class="cta-card-btn">견적 분석하기 →</span>
+        <div class="cta-card-price">건당 39,900원 · 무료 체험 제공</div>
+      </a>
+
+      <!-- 오픈채팅방 (Tertiary - 커뮤니티) -->
+      <a href="https://open.kakao.com/o/gAgaeGui" class="cta-card gold" target="_blank" rel="noopener">
+        <span class="cta-card-badge">💬 사장님 모임</span>
+        <div class="cta-card-title"><span class="gold">오픈채팅방</span></div>
+        <div class="cta-card-desc">인테리어 업체 사장님들이 모이는 카카오톡 오픈채팅방. 현장 노하우 공유, 신규 무료 도구 우선 안내.</div>
+        <ul class="cta-card-features">
+          <li>인테리어 업체 실무자 소통</li>
+          <li>현장·자재·견적 정보 공유</li>
+          <li>신규 무료 도구 우선 안내</li>
+        </ul>
+        <span class="cta-card-btn">채팅방 참여하기 →</span>
+        <div class="cta-card-price">무료 · 익명 참여 가능</div>
+      </a>
+
+      <!-- 마케팅 1:1 상담 (Quaternary - 신사업 입구) -->
+      <a href="https://naver.me/xrzSlGlA" class="cta-card purple" target="_blank" rel="noopener" id="consult-card">
+        <span class="cta-card-badge">🎯 1:1 상담</span>
+        <div class="cta-card-title"><span class="purple">마케팅 상담</span></div>
+        <div class="cta-card-desc">인테리어 업체 전용 마케팅 무료 상담. 현직 인테리어 업체 전문 마케팅 대표가 직접 상담 진행합니다.</div>
+        <ul class="cta-card-features">
+          <li>업체 현황 무료 진단</li>
+          <li>SNS · 블로그 · 검색 마케팅 전략</li>
+          <li>실전 사례 기반 1:1 컨설팅</li>
+        </ul>
+        <span class="cta-card-btn">상담 신청하기 →</span>
+        <div class="cta-card-price">무료 · 사전 신청 필수</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ============= SHARE STRIP ============= -->
+  <div class="share-strip">
+    <div class="share-strip-text">
+      <b>이 계산기가 유용했다면</b> · 동료 사장님께도 공유해주세요
+    </div>
+    <div class="share-buttons">
+      <button class="share-btn" onclick="copyLink()">🔗 링크 복사</button>
+      <button class="share-btn" onclick="window.print()">🖨️ 인쇄</button>
+    </div>
+  </div>
+
+  <!-- ============= FOOTER ============= -->
+  <footer>
+    <div class="footer-row">
+      <div class="footer-brand-block">
+        <div class="brand">
+          <div class="brand-logo" style="width:28px;height:28px;font-size:14px">🏠</div>
+          <div>
+            <span class="brand-name" style="font-size:15px">스몰테이블</span>
+            <span class="brand-tag" style="font-size:10px">자재 계산기 v1.0</span>
+          </div>
+        </div>
+        <div class="footer-products">
+          <span style="color:var(--text-mute);cursor:not-allowed">→ 인테리어코치 <span style="color:var(--orange);font-size:10px;font-weight:700">[5/30 토 오픈]</span></span>
+          <a href="https://견적코치.com" target="_blank" rel="noopener">→ 견적코치</a>
+          <a href="https://open.kakao.com/o/gAgaeGui" target="_blank" rel="noopener">→ 오픈채팅방</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-info">
+      상호명: 스몰테이블 | 대표자명: 배다솜 | 사업자등록번호: 511-27-58367<br>
+      사업장 주소: 인천광역시 연수구 인천타워대로 301, A동 3014호 | 유선번호: 0507-1315-3173<br>
+      통신판매업 신고번호: 2026-인천연수구-0926
+    </div>
+    <div class="footer-disclaimer">
+      본 계산기는 표준 환산식과 평균 로스율을 기반으로 한 추정치이며, 실제 시공 조건(절단량, 패턴 매칭, 시공 방식)에 따라 차이가 발생할 수 있습니다. 발주 전 자재상 확인을 권장합니다. · 본 파일은 무료로 자유롭게 공유·배포 가능합니다.<br>
+      © 2026 스몰테이블디자인그룹. All rights reserved.
+    </div>
+  </footer>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">복사되었습니다</div>
+
+<script>
+// ============ TAB SWITCHING ============
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ============ SEGMENTED CONTROLS ============
+function setupSegmented(id, callback) {
+  const seg = document.getElementById(id);
+  if (!seg) return;
+  const buttons = seg.querySelectorAll('button');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (callback) callback(btn.dataset.val);
+      calculateAll();
+    });
+  });
+}
+
+setupSegmented('tile-area-type');
+setupSegmented('tile-input-mode', (val) => {
+  document.getElementById('tile-pyeong-field').style.display = val === 'pyeong' ? '' : 'none';
+  document.getElementById('tile-size-field').style.display = val === 'size' ? '' : 'none';
+});
+setupSegmented('fl-input-mode', (val) => {
+  document.getElementById('fl-pyeong-field').style.display = val === 'pyeong' ? '' : 'none';
+  document.getElementById('fl-size-field').style.display = val === 'size' ? '' : 'none';
+});
+setupSegmented('pt-area-type', (val) => {
+  document.getElementById('pt-pyeong-field').style.display = val === 'custom' ? 'none' : '';
+  document.getElementById('pt-custom-field').style.display = val === 'custom' ? '' : 'none';
+  const label = document.querySelector('#pt-pyeong-field .field-label');
+  if (val === 'wall') label.textContent = '실 평수 (벽 도장)';
+  else if (val === 'ceiling') label.textContent = '실 평수 (천장 도장)';
+});
+setupSegmented('ac-purpose', (val) => {
+  document.getElementById('ac-usage-field').style.display = val === 'commercial' ? '' : 'none';
+  const hint = document.getElementById('ac-system-hint');
+  if (val === 'home') {
+    hint.textContent = '스탠드: 거실 스탠드 + 방 벽걸이 / 시스템: 천장 매립 멀티';
+  } else {
+    hint.textContent = '스탠드: 단일/분리 시공 (평형) / 시스템: 천장 카세트 (HP)';
+  }
+});
+setupSegmented('ac-system-type');
+
+// ============ HELPERS ============
+const PYEONG_TO_M2 = 3.3058;
+const fmt = (n, dec = 1) => {
+  if (!isFinite(n) || isNaN(n)) return '—';
+  return n.toLocaleString('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: dec });
+};
+const fmtInt = (n) => isFinite(n) ? Math.ceil(n).toLocaleString('ko-KR') : '—';
+
+function getActiveSeg(id) {
+  return document.querySelector(`#${id} button.active`)?.dataset.val;
+}
+
+// ============ TILE CALCULATOR ============
+function calcTile() {
+  const mode = getActiveSeg('tile-input-mode');
+  let area_m2 = 0;
+  if (mode === 'pyeong') {
+    const pyeong = parseFloat(document.getElementById('tile-pyeong').value) || 0;
+    area_m2 = pyeong * PYEONG_TO_M2;
+  } else {
+    const w = parseFloat(document.getElementById('tile-width').value) || 0;
+    const h = parseFloat(document.getElementById('tile-height').value) || 0;
+    area_m2 = w * h;
+  }
+  const pyeong = area_m2 / PYEONG_TO_M2;
+
+  const spec = document.getElementById('tile-spec').value;
+  document.getElementById('tile-custom-field').style.display = spec === 'custom' ? '' : 'none';
+
+  let tileW, tileH;
+  if (spec === 'custom') {
+    tileW = parseFloat(document.getElementById('tile-custom-w').value) || 600;
+    tileH = parseFloat(document.getElementById('tile-custom-h').value) || 600;
+  } else {
+    [tileW, tileH] = spec.split('x').map(Number);
+  }
+  const tileArea_m2 = (tileW / 1000) * (tileH / 1000);
+
+  const netPieces = area_m2 / tileArea_m2;
+  const loss = parseFloat(document.getElementById('tile-loss').value) || 0;
+  const orderPieces = Math.ceil(netPieces * (1 + loss / 100));
+
+  const perBox = parseFloat(document.getElementById('tile-perbox').value) || 1;
+  const boxes = Math.ceil(orderPieces / perBox);
+
+  document.getElementById('tile-result-pieces').textContent = fmtInt(orderPieces);
+  document.getElementById('tile-result-area').textContent = fmt(area_m2, 2);
+  document.getElementById('tile-result-pyeong').textContent = fmt(pyeong, 2);
+  document.getElementById('tile-result-net').textContent = fmtInt(netPieces);
+  document.getElementById('tile-result-boxes').textContent = fmtInt(boxes);
+  document.getElementById('tile-result-sub').textContent = `순수 ${fmtInt(netPieces)}매 + 로스 ${loss}%`;
+}
+
+// ============ WALLPAPER CALCULATOR ============
+// 한국 도배 업계 표준 환산식 (7년 현장 검증)
+// 기준: 32평 천장포함 = 실크 15롤, 30평 천장포함 = 실크 14롤
+// 벽 = 실평 × 1.65 (× 천장높이 보정), 천장 = 실평 × 0.65
+// 환산식에 이미 자연 로스가 포함됨. 추가 로스는 큰 무늬/사선시공 시에만 가산.
+function calcWallpaper() {
+  const pyeong = parseFloat(document.getElementById('wp-pyeong').value) || 0;
+  const ceiling = parseFloat(document.getElementById('wp-ceiling').value) || 2.4;
+  const includeCeiling = document.getElementById('wp-include-ceiling').checked;
+  const loss = parseFloat(document.getElementById('wp-loss').value) || 0;
+  const type = document.getElementById('wp-type').value;
+
+  // 한국 도배 표준 환산 배수
+  const WALL_MULT = 1.65;       // 벽 배수 (천장 2.4m 기준)
+  const CEILING_MULT = 0.65;    // 천장 배수
+  const ceilingFactor = ceiling / 2.4; // 천장 높이 보정 (벽에만 적용)
+
+  // 도배 평수 = 벽 + (천장 포함 시 천장)
+  const wallPyeong = pyeong * WALL_MULT * ceilingFactor;
+  const ceilingPyeong = includeCeiling ? pyeong * CEILING_MULT : 0;
+  const dobaePyeong = wallPyeong + ceilingPyeong;
+  const dobae_m2 = dobaePyeong * PYEONG_TO_M2;
+
+  // 롤당 시공 평수 (한국 표준)
+  let perRollPyeong;
+  if (type === 'silk') perRollPyeong = 5;       // 실크: 5평/롤
+  else if (type === 'paper') perRollPyeong = 2; // 합지: 2평/롤
+  else perRollPyeong = 5;                       // 광폭합지: 5평/롤
+
+  const netRolls = dobaePyeong / perRollPyeong;
+  const orderRolls = Math.ceil(netRolls * (1 + loss / 100));
+
+  // 풀 계산 (㎡당 표준)
+  const glue = type === 'paper' ? Math.ceil(dobae_m2 / 8) : Math.ceil(dobae_m2 / 15);
+
+  document.getElementById('wp-result-rolls').textContent = fmtInt(orderRolls);
+  document.getElementById('wp-result-wall').textContent = fmt(dobaePyeong, 1);
+  document.getElementById('wp-result-total').textContent = fmt(dobae_m2, 1);
+  document.getElementById('wp-result-perroll').textContent = fmt(perRollPyeong, 1);
+  document.getElementById('wp-result-glue').textContent = fmtInt(glue);
+  const lossLabel = loss > 0 ? ` + 추가로스 ${loss}%` : ' · 추가로스 없음';
+  document.getElementById('wp-result-sub').textContent = `순수 ${fmt(netRolls, 1)}롤${lossLabel}`;
+}
+
+// ============ FLOOR CALCULATOR ============
+function calcFloor() {
+  const mode = getActiveSeg('fl-input-mode');
+  let area_m2 = 0;
+  if (mode === 'pyeong') {
+    const pyeong = parseFloat(document.getElementById('fl-pyeong').value) || 0;
+    area_m2 = pyeong * PYEONG_TO_M2;
+  } else {
+    const w = parseFloat(document.getElementById('fl-width').value) || 0;
+    const h = parseFloat(document.getElementById('fl-height').value) || 0;
+    area_m2 = w * h;
+  }
+  const pyeong = area_m2 / PYEONG_TO_M2;
+
+  const type = document.getElementById('fl-type').value;
+  document.getElementById('fl-custom-field').style.display = type === 'custom' ? '' : 'none';
+
+  let perBox;
+  if (type === 'laminate') perBox = 0.7;
+  else if (type === 'engineered') perBox = 0.55;
+  else if (type === 'hardwood') perBox = 0.45;
+  else perBox = parseFloat(document.getElementById('fl-custom-perbox').value) || 0.7;
+
+  const loss = parseFloat(document.getElementById('fl-loss').value) || 0;
+  const orderPyeong = pyeong * (1 + loss / 100);
+  const boxes = Math.ceil(orderPyeong / perBox);
+
+  const perimeter = parseFloat(document.getElementById('fl-perimeter').value) || Math.sqrt(area_m2) * 4;
+
+  document.getElementById('fl-result-boxes').textContent = fmtInt(boxes);
+  document.getElementById('fl-result-area').textContent = fmt(area_m2, 2);
+  document.getElementById('fl-result-pyeong').textContent = fmt(pyeong, 2);
+  document.getElementById('fl-result-order').textContent = fmt(orderPyeong, 2);
+  document.getElementById('fl-result-baseboard').textContent = fmt(perimeter, 1);
+  document.getElementById('fl-result-sub').textContent = `순수 ${fmt(pyeong, 1)}평 + 로스 ${loss}%`;
+}
+
+function calculateAll() {
+  calcTile();
+  calcWallpaper();
+  calcFloor();
+  calcPaint();
+  calcLight();
+  calcAircon();
+}
+
+// ============ PAINT CALCULATOR ============
+// 한국 인테리어 표준: 수성 1L = 10㎡ (1회 도장), 2회 도장 표준
+function calcPaint() {
+  const type = document.getElementById('pt-type').value;
+  const areaType = getActiveSeg('pt-area-type');
+  const ceiling = parseFloat(document.getElementById('pt-ceiling').value) || 2.4;
+  const pyeong = parseFloat(document.getElementById('pt-pyeong').value) || 0;
+  const coats = parseInt(document.getElementById('pt-coats').value) || 2;
+  const loss = parseFloat(document.getElementById('pt-loss').value) || 0;
+
+  let area_m2 = 0;
+  const ceilingFactor = ceiling / 2.4;
+  if (areaType === 'wall') {
+    // 벽 도장: 실평수 × 1.65 (도배 환산식과 동일)
+    area_m2 = pyeong * 1.65 * ceilingFactor * PYEONG_TO_M2;
+  } else if (areaType === 'ceiling') {
+    // 천장 도장: 실평수 그대로
+    area_m2 = pyeong * PYEONG_TO_M2;
+  } else {
+    // 직접 입력
+    area_m2 = parseFloat(document.getElementById('pt-custom-area').value) || 0;
+  }
+
+  // 페인트 종류별 1L당 도장 면적 (㎡, 1회 기준)
+  let coverage;
+  if (type === 'water') coverage = 10;
+  else if (type === 'oil') coverage = 8;
+  else if (type === 'eco') coverage = 8;
+  else coverage = 5; // 퍼티/프라이머
+
+  const coatArea = area_m2 * coats;
+  const netLiters = coatArea / coverage;
+  const totalLiters = Math.ceil(netLiters * (1 + loss / 100));
+  // 1말통 = 18L (한국 도료 표준)
+  const maltong = Math.ceil(totalLiters / 18);
+
+  document.getElementById('pt-result-cans').textContent = fmtInt(maltong);
+  document.getElementById('pt-result-area').textContent = fmt(area_m2, 1);
+  document.getElementById('pt-result-coat-area').textContent = fmt(coatArea, 1);
+  document.getElementById('pt-result-liter').textContent = fmt(netLiters, 1);
+  document.getElementById('pt-result-total').textContent = fmtInt(totalLiters);
+  document.getElementById('pt-result-sub').textContent = `${coats}회 도장 · 로스 ${loss}% · 말통 ${maltong}통 (≒ ${maltong * 18}L)`;
+}
+
+// ============ LIGHT CALCULATOR ============
+// 한국 인테리어 표준 W/평 환산 (실제 시공 기준)
+function calcLight() {
+  const space = document.getElementById('lt-space').value;
+  const pyeong = parseFloat(document.getElementById('lt-pyeong').value) || 0;
+  const ceilingH = parseFloat(document.getElementById('lt-ceiling').value) || 2.4;
+
+  // 공간별 권장 lux + 권장 LED W/평 (한국 시공 표준)
+  const spec = {
+    livingroom: { lux: 200, watt: 6 },
+    bedroom: { lux: 120, watt: 4 },
+    kitchen: { lux: 400, watt: 10 },
+    bathroom: { lux: 150, watt: 5 },
+    study: { lux: 400, watt: 10 },
+    office: { lux: 700, watt: 14 },
+    cafe: { lux: 400, watt: 10 },
+    hallway: { lux: 120, watt: 4 }
+  };
+
+  const s = spec[space];
+  const ceilingFactor = Math.max(1, ceilingH / 2.4);
+  const totalW = Math.ceil(pyeong * s.watt * ceilingFactor);
+  const area_m2 = pyeong * PYEONG_TO_M2;
+
+  const led7 = Math.ceil(totalW / 7);
+  const led10 = Math.ceil(totalW / 10);
+
+  document.getElementById('lt-result-watts').textContent = fmtInt(totalW);
+  document.getElementById('lt-result-lux').textContent = s.lux;
+  document.getElementById('lt-result-area').textContent = fmt(area_m2, 1);
+  document.getElementById('lt-result-led7').textContent = led7;
+  document.getElementById('lt-result-led10').textContent = led10;
+  document.getElementById('lt-result-sub').textContent = `${pyeong}평 · ${s.watt}W/평 · 천장 ${ceilingH}m`;
+}
+
+// ============ AIRCON CALCULATOR ============
+// 4가지 조합: (가정용 × 상업용) × (스탠드 × 시스템)
+// 한국 시장 시공 관행:
+// - 가정용 스탠드: 거실 스탠드 1대 + 방 벽걸이 N대
+// - 가정용 시스템: 거실 카세트 + 방 매립 (멀티 시스템, 1실외기)
+// - 상업용 스탠드: 평형 단위, 단일 또는 분리 시공
+// - 상업용 시스템: HP 단위, 천장형 카세트 분산
+function calcAircon() {
+  const purpose = getActiveSeg('ac-purpose');       // 'home' | 'commercial'
+  const systemType = getActiveSeg('ac-system-type'); // 'stand' | 'system'
+  const pyeong = parseFloat(document.getElementById('ac-pyeong').value) || 0;
+  const direction = document.getElementById('ac-direction').value;
+  const ceilingH = parseFloat(document.getElementById('ac-ceiling').value) || 2.4;
+  const isOpen = document.getElementById('ac-open').checked;
+  const isTop = document.getElementById('ac-top').checked;
+
+  // baseKcal: 가정용 자동 home, 상업용은 ac-usage 참조
+  let baseKcal;
+  if (purpose === 'home') {
+    baseKcal = 250;
+  } else {
+    const usage = document.getElementById('ac-usage').value;
+    if (usage === 'office') baseKcal = 350;
+    else if (usage === 'cafe') baseKcal = 450;
+    else baseKcal = 550;
+  }
+
+  const dirMult = { north: 0.85, east: 1.0, south: 1.1, west: 1.25 }[direction];
+  const ceilFactor = Math.max(1, ceilingH / 2.4);
+  let extraMult = 1;
+  if (isOpen) extraMult *= 1.15;
+  if (isTop) extraMult *= 1.15;
+
+  const requiredKcal = pyeong * baseKcal * dirMult * ceilFactor * extraMult;
+  const effPyeong = pyeong * dirMult * ceilFactor * extraMult;
+
+  // 공통 출력
+  document.getElementById('ac-result-pyeong').textContent = fmt(pyeong, 1);
+  document.getElementById('ac-result-kcal').textContent = fmtInt(requiredKcal);
+
+  const standardTypes = [6, 7, 8, 10, 13, 15, 17, 18, 20, 22, 25, 27, 30, 36];
+
+  if (purpose === 'home') {
+    // ===== 가정용 =====
+    // 한국 아파트 평수별 방 개수 추정
+    let numRooms;
+    if (pyeong <= 12) numRooms = 0;
+    else if (pyeong <= 20) numRooms = 1;
+    else if (pyeong <= 30) numRooms = 2;
+    else if (pyeong <= 40) numRooms = 3;
+    else numRooms = 4;
+
+    if (systemType === 'stand') {
+      // ----- 가정용 스탠드 -----
+      // 거실용 스탠드: 전체 필요 냉방 기준 평형 (한국 가정 시공 관행)
+      const livingPyeong = Math.ceil(requiredKcal / 450);
+      const livingRec = standardTypes.find(t => t >= livingPyeong) || 36;
+      const roomRec = 7; // 표준 방용 벽걸이
+
+      const totalUnits = 1 + numRooms;
+
+      document.getElementById('ac-headline-label').textContent = '권장 실내기 합계';
+      document.getElementById('ac-result-unit').textContent = '대';
+      document.getElementById('ac-label-3').textContent = '거실 스탠드';
+      document.getElementById('ac-label-4').textContent = '방 벽걸이';
+      document.getElementById('ac-result-tons').textContent = totalUnits;
+      document.getElementById('ac-result-stand').textContent = `${livingRec}평형 스탠드 1대`;
+      document.getElementById('ac-result-wall').textContent = numRooms > 0 ? `${roomRec}평형 × ${numRooms}대` : '추가 없음';
+      document.getElementById('ac-result-sub').textContent = `${pyeong}평 ${numRooms + 1}실 가정 · 거실+방 분산`;
+      document.getElementById('ac-note').innerHTML = '<div><b>현장 메모</b> · 가정용 스탠드는 거실 메인 + 방 벽걸이가 한국 시공 표준. 거실/방 동시 가동 빈도가 낮아 합계 평형이 커도 실 사용량은 적습니다.</div>';
+
+    } else {
+      // ----- 가정용 시스템 (멀티 매립) -----
+      // 한국 가정용 시스템에어컨 표준 (LG 휘센 가정용 시스템 기준)
+      let livingSysRec;
+      if (effPyeong <= 15) livingSysRec = 5;
+      else if (effPyeong <= 25) livingSysRec = 7;
+      else if (effPyeong <= 40) livingSysRec = 10;
+      else livingSysRec = 13;
+
+      const roomSysRec = 4; // 표준 방용 매립
+
+      const totalUnits = 1 + numRooms;
+
+      document.getElementById('ac-headline-label').textContent = '권장 실내기 합계';
+      document.getElementById('ac-result-unit').textContent = '대';
+      document.getElementById('ac-label-3').textContent = '거실 매립';
+      document.getElementById('ac-label-4').textContent = '방 매립';
+      document.getElementById('ac-result-tons').textContent = totalUnits;
+      document.getElementById('ac-result-stand').textContent = `${livingSysRec}평형 카세트 1대`;
+      document.getElementById('ac-result-wall').textContent = numRooms > 0 ? `${roomSysRec}평형 × ${numRooms}대` : '추가 없음';
+      document.getElementById('ac-result-sub').textContent = `1실외기 + ${totalUnits}실내기 · 멀티 시스템`;
+      document.getElementById('ac-note').innerHTML = '<div><b>현장 메모</b> · 가정용 시스템은 1실외기에 여러 실내기 연결하는 멀티 방식. 신축·리모델링 천장 마감 시 시공. 천장 매립이라 스탠드 대비 작은 평형으로도 충분합니다.</div>';
+    }
+
+  } else {
+    // ===== 상업용 =====
+    if (systemType === 'stand') {
+      // ----- 상업용 스탠드 -----
+      const requiredPyeongType = Math.ceil(requiredKcal / 450);
+      const recommendedStand = standardTypes.find(t => t >= requiredPyeongType) || 36;
+
+      let standText, wallText;
+      if (requiredPyeongType <= 8) {
+        standText = `${recommendedStand}평형 벽걸이`;
+        wallText = '단일로 충분';
+      } else if (requiredPyeongType <= 17) {
+        standText = `${recommendedStand}평형 스탠드`;
+        wallText = '단일로 충분';
+      } else {
+        standText = `${recommendedStand}평형 스탠드`;
+        const standMain = standardTypes.find(t => t >= Math.ceil(requiredPyeongType * 0.7)) || 18;
+        const wallSub = standardTypes.find(t => t >= Math.ceil(requiredPyeongType * 0.4)) || 7;
+        wallText = `${standMain}+${wallSub}평형`;
+      }
+
+      document.getElementById('ac-headline-label').textContent = '권장 냉방 평형';
+      document.getElementById('ac-result-unit').textContent = '평형';
+      document.getElementById('ac-label-3').textContent = '단일 추천';
+      document.getElementById('ac-label-4').textContent = '분리 시공';
+      document.getElementById('ac-result-tons').textContent = recommendedStand;
+      document.getElementById('ac-result-stand').textContent = standText;
+      document.getElementById('ac-result-wall').textContent = wallText;
+      document.getElementById('ac-result-sub').textContent = `${pyeong}평 · 1평당 ${baseKcal}kcal × 보정`;
+      document.getElementById('ac-note').innerHTML = '<div><b>현장 메모</b> · 상업용 스탠드는 사무실·작은 카페에 적합. 17평형 이상 공간은 분리 시공이 효율적. 영업시간 길수록 한 단계 위 평형 권장.</div>';
+
+    } else {
+      // ----- 상업용 시스템 -----
+      // 1HP ≈ 2,500 kcal/h (한국 시스템 에어컨 표준)
+      const requiredHP = requiredKcal / 2500;
+      const standardHP = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+      const recommendedHP = standardHP.find(hp => hp >= requiredHP) || 10;
+
+      let ceilingText, distributeText;
+      if (recommendedHP <= 2.5) {
+        ceilingText = `${recommendedHP}HP 4-way 카세트 1대`;
+        distributeText = '단일로 충분';
+      } else if (recommendedHP <= 5) {
+        const half = standardHP.find(hp => hp >= recommendedHP / 2) || 2;
+        ceilingText = `${recommendedHP}HP 카세트 1대`;
+        distributeText = `${half}HP × 2대 분산`;
+      } else if (recommendedHP <= 8) {
+        const half = standardHP.find(hp => hp >= recommendedHP / 2) || 3;
+        ceilingText = `${recommendedHP}HP 시스템 1대`;
+        distributeText = `${half}HP × 2대 분산`;
+      } else {
+        const third = standardHP.find(hp => hp >= recommendedHP / 3) || 4;
+        ceilingText = `${recommendedHP}HP 시스템 1대`;
+        distributeText = `${third}HP × 3대 분산`;
+      }
+
+      document.getElementById('ac-headline-label').textContent = '권장 시스템 마력';
+      document.getElementById('ac-result-unit').textContent = 'HP';
+      document.getElementById('ac-label-3').textContent = '천장형 권장';
+      document.getElementById('ac-label-4').textContent = '분산 시공';
+      document.getElementById('ac-result-tons').textContent = recommendedHP;
+      document.getElementById('ac-result-stand').textContent = ceilingText;
+      document.getElementById('ac-result-wall').textContent = distributeText;
+      document.getElementById('ac-result-sub').textContent = `${pyeong}평 · 1평당 ${baseKcal}kcal × 보정`;
+      document.getElementById('ac-note').innerHTML = '<div><b>현장 메모</b> · 시스템 에어컨은 천장 매립/카세트형이 일반적. 1HP ≈ 2,500 kcal/h 환산. 공간이 넓을수록 단일 대형보다 분산 시공이 효율적.</div>';
+    }
+  }
+}
+
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', calculateAll);
+  el.addEventListener('change', calculateAll);
+});
+
+calculateAll();
+
+// ============ TOAST ============
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============ COPY RESULT ============
+function copyResult(prefix) {
+  let text = '';
+  if (prefix === 'tile') {
+    text = `[타일 자재 계산]
+━━━━━━━━━━━━━━━
+발주 권장: ${document.getElementById('tile-result-pieces').textContent}매 (${document.getElementById('tile-result-boxes').textContent}박스)
+시공 면적: ${document.getElementById('tile-result-area').textContent}㎡ (${document.getElementById('tile-result-pyeong').textContent}평)
+순수 매수: ${document.getElementById('tile-result-net').textContent}매
+${document.getElementById('tile-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  } else if (prefix === 'wp') {
+    text = `[도배 자재 계산]
+━━━━━━━━━━━━━━━
+발주 권장: ${document.getElementById('wp-result-rolls').textContent}롤
+도배 평수: ${document.getElementById('wp-result-wall').textContent}평
+도배 면적: ${document.getElementById('wp-result-total').textContent}㎡
+예상 풀: ${document.getElementById('wp-result-glue').textContent}kg
+${document.getElementById('wp-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  } else if (prefix === 'fl') {
+    text = `[마루 자재 계산]
+━━━━━━━━━━━━━━━
+발주 권장: ${document.getElementById('fl-result-boxes').textContent}박스
+시공 면적: ${document.getElementById('fl-result-area').textContent}㎡ (${document.getElementById('fl-result-pyeong').textContent}평)
+발주 평수: ${document.getElementById('fl-result-order').textContent}평
+걸레받이: ${document.getElementById('fl-result-baseboard').textContent}m
+${document.getElementById('fl-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  } else if (prefix === 'pt') {
+    text = `[페인트 자재 계산]
+━━━━━━━━━━━━━━━
+발주 권장: ${document.getElementById('pt-result-cans').textContent}말통 (18L/통)
+시공 면적: ${document.getElementById('pt-result-area').textContent}㎡
+도장 면적: ${document.getElementById('pt-result-coat-area').textContent}㎡
+총 발주: ${document.getElementById('pt-result-total').textContent}L
+${document.getElementById('pt-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  } else if (prefix === 'lt') {
+    text = `[조명 계산]
+━━━━━━━━━━━━━━━
+권장 와트수: ${document.getElementById('lt-result-watts').textContent}W
+권장 조도: ${document.getElementById('lt-result-lux').textContent} lux
+시공 면적: ${document.getElementById('lt-result-area').textContent}㎡
+LED 7W 다운라이트: ${document.getElementById('lt-result-led7').textContent}개
+LED 10W 다운라이트: ${document.getElementById('lt-result-led10').textContent}개
+${document.getElementById('lt-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  } else if (prefix === 'ac') {
+    const headLabel = document.getElementById('ac-headline-label').textContent;
+    const unit = document.getElementById('ac-result-unit').textContent;
+    const label3 = document.getElementById('ac-label-3').textContent;
+    const label4 = document.getElementById('ac-label-4').textContent;
+    text = `[에어컨 ${unit === 'HP' ? '시스템' : '냉방'} 계산]
+━━━━━━━━━━━━━━━
+${headLabel}: ${document.getElementById('ac-result-tons').textContent}${unit}
+시공 평수: ${document.getElementById('ac-result-pyeong').textContent}평
+필요 냉방 능력: ${document.getElementById('ac-result-kcal').textContent} kcal/h
+${label3}: ${document.getElementById('ac-result-stand').textContent}
+${label4}: ${document.getElementById('ac-result-wall').textContent}
+${document.getElementById('ac-result-sub').textContent}
+━━━━━━━━━━━━━━━
+스몰테이블 자재 계산기 v1.0`;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('📋 결과가 복사되었습니다');
+  }).catch(() => {
+    showToast('복사 실패. 다시 시도해주세요');
+  });
+}
+
+// ============ COPY LINK ============
+function copyLink() {
+  const url = window.location.href;
+  if (url.startsWith('file://')) {
+    showToast('이 프로그램 파일을 카톡으로 공유하세요');
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('🔗 링크가 복사되었습니다');
+    });
+  }
+}
+</script>
+
+</body>
+</html>

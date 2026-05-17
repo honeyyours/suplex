@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>자재 산출 모듈 — 설계 계획서 (v2)</title>
+<style>
+  @font-face {
+    font-family: 'PretendardLocal';
+    font-weight: 100 900;
+    font-display: swap;
+    src: local('Pretendard Variable'), local('Pretendard');
+  }
+  :root {
+    --navy-900: #0B1F3A;
+    --navy-800: #142B4D;
+    --navy-700: #1F3C66;
+    --navy-100: #E8EEF6;
+    --navy-50:  #F4F7FB;
+    --gold:     #B58A2A;
+    --gold-soft:#FBF1D4;
+    --green:    #1E7F4F;
+    --green-soft:#DDF1E5;
+    --red:      #B33A3A;
+    --text:     #1A1F2B;
+    --text-soft:#4A5468;
+    --text-mute:#7A8294;
+    --border:   #D8DEE8;
+    --border-soft:#E8ECF2;
+    --bg:       #FFFFFF;
+    --bg-alt:   #F8FAFC;
+    --code-bg:  #F4F6F9;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg-alt);
+    color: var(--text);
+    font-family: 'PretendardLocal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+  }
+  .page {
+    max-width: 880px;
+    margin: 24px auto;
+    background: var(--bg);
+    padding: 56px 64px 80px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 6px 24px rgba(11,31,58,.06);
+  }
+  .cover { border-bottom: 3px solid var(--navy-900); padding-bottom: 28px; margin-bottom: 32px; }
+  .cover .eyebrow { font-size: 12px; letter-spacing: 0.18em; color: var(--gold); font-weight: 700; text-transform: uppercase; margin: 0 0 8px; }
+  .cover h1 { font-size: 32px; font-weight: 800; color: var(--navy-900); margin: 0 0 12px; letter-spacing: -0.02em; }
+  .cover .version-badge {
+    display: inline-block;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .cover .meta { display: grid; grid-template-columns: 110px 1fr; gap: 4px 16px; margin-top: 20px; font-size: 13px; }
+  .cover .meta dt { color: var(--text-mute); font-weight: 600; }
+  .cover .meta dd { margin: 0; color: var(--text); }
+  .cover .meta code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--navy-800); }
+  h2 {
+    font-size: 22px; color: var(--navy-900);
+    margin: 56px 0 18px;
+    padding: 12px 0 12px 16px;
+    border-left: 6px solid var(--navy-700);
+    background: linear-gradient(90deg, var(--navy-50) 0%, transparent 60%);
+    letter-spacing: -0.01em;
+  }
+  h3 { font-size: 17px; color: var(--navy-800); margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); letter-spacing: -0.01em; }
+  h4 { font-size: 14px; color: var(--navy-700); margin: 20px 0 8px; font-weight: 700; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 4px 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  .tldr { background: var(--gold-soft); border-left: 4px solid var(--gold); padding: 16px 20px; border-radius: 6px; margin: 16px 0 24px; }
+  .tldr-label { font-size: 11px; letter-spacing: 0.16em; color: var(--gold); font-weight: 700; margin-bottom: 4px; }
+  .tldr-body { font-size: 15px; color: var(--navy-900); font-weight: 500; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0 20px; }
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; background: var(--bg); }
+  .card.green { border-color: #B7D8C5; background: #F1F8F4; }
+  .card.red { border-color: #E5C4C4; background: #FBF3F3; }
+  .card .card-label { font-size: 11px; letter-spacing: 0.14em; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+  .card.green .card-label { color: var(--green); }
+  .card.red .card-label { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  thead th { background: var(--navy-900); color: #FFF; text-align: left; padding: 9px 12px; font-weight: 600; font-size: 12.5px; letter-spacing: 0.02em; }
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child  { border-radius: 0 6px 0 0; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+  tbody tr:nth-child(even) { background: var(--bg-alt); }
+  tbody tr:hover { background: var(--navy-50); }
+  table.compact { font-size: 12.5px; }
+  table.compact tbody td { padding: 7px 10px; }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th.center, td.center { text-align: center; }
+  pre, code { font-family: 'JetBrains Mono', 'D2Coding', Consolas, ui-monospace, monospace; font-size: 12.5px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 18px; line-height: 1.55; }
+  :not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; color: var(--navy-800); }
+  .ws { border: 1px solid var(--border); border-radius: 10px; padding: 22px 26px 18px; margin: 18px 0 28px; background: var(--bg); }
+  .ws-head { display: flex; align-items: baseline; justify-content: space-between; margin: -2px 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+  .ws-title { font-size: 19px; font-weight: 800; color: var(--navy-900); margin: 0; }
+  .ws-tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.06em; }
+  .ws-tag.win { background: var(--green-soft); color: var(--green); }
+  .ws-tag.verified { background: #DCE9F9; color: var(--navy-800); }
+  .ws-tag.warn { background: #FBE3CC; color: #A55300; }
+  .ws-section-title { font-size: 11.5px; letter-spacing: 0.14em; font-weight: 700; color: var(--text-mute); text-transform: uppercase; margin: 18px 0 6px; }
+  .mode-card { background: var(--navy-50); border: 1px solid var(--navy-100); border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .mode-card-label { font-size: 11px; letter-spacing: 0.12em; font-weight: 700; color: var(--navy-700); margin-bottom: 6px; text-transform: uppercase; }
+  .phase { border-left: 4px solid var(--navy-100); padding: 4px 0 4px 16px; margin: 0 0 14px; }
+  .phase.phase-now { border-left-color: var(--gold); background: linear-gradient(90deg, var(--gold-soft) 0%, transparent 70%); padding: 8px 0 8px 16px; }
+  .phase.phase-next { border-left-color: var(--navy-700); }
+  .phase-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 1px 8px; border-radius: 4px; background: var(--navy-100); color: var(--navy-800); margin-right: 6px; }
+  .wire { background: #0F1622; color: #E0E7F3; border-radius: 8px; padding: 18px 22px; font-family: 'JetBrains Mono', 'D2Coding', Consolas, ui-monospace, monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre; margin: 10px 0 20px; }
+  .summary { margin-top: 56px; border-top: 3px solid var(--navy-900); padding-top: 24px; }
+  .toc { background: var(--navy-50); border-radius: 8px; padding: 18px 22px; margin: 20px 0 32px; font-size: 13px; }
+  .toc ol { columns: 2; column-gap: 30px; padding-left: 22px; margin: 0; }
+  .toc li { break-inside: avoid; margin-bottom: 3px; }
+  .toc a { color: var(--navy-800); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media print {
+    body { background: white; font-size: 12.5px; }
+    .page { box-shadow: none; border-radius: 0; max-width: none; margin: 0; padding: 18mm 16mm 22mm; }
+    h2 { page-break-before: auto; margin-top: 32px; }
+    h3 { page-break-after: avoid; }
+    .ws { page-break-inside: avoid; }
+    .wire { background: #F0F2F5; color: #1A1F2B; }
+    a { color: var(--navy-800); text-decoration: none; }
+    @page { size: A4; margin: 16mm; }
+  }
+  .small { font-size: 12.5px; color: var(--text-soft); }
+  .muted { color: var(--text-mute); }
+  .strong { color: var(--navy-900); font-weight: 700; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 3px; letter-spacing: 0.02em; }
+  .pill.do { background: var(--green-soft); color: var(--green); }
+  .pill.dont { background: #F5D7D7; color: var(--red); }
+  .pill.maybe { background: var(--gold-soft); color: var(--gold); }
+  .check-mark { color: var(--green); font-weight: 700; }
+  .star { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- COVER -->
+  <section class="cover">
+    <p class="eyebrow">Suplex — Project Design Document</p>
+    <h1>자재 산출 모듈 설계 계획서 <span class="version-badge">v2 · 검증 반영</span></h1>
+    <dl class="meta">
+      <dt>위치</dt>          <dd>프로젝트 → <strong>편의기능</strong> 탭 <code>/projects/:id/tools</code> 안 새 카드</dd>
+      <dt>자재 범위</dt>     <dd><strong>4종</strong> (타일·도배·마루·페인트) — 조명·에어컨·가구 제외</dd>
+      <dt>분석 출처</dt>     <dd><code>docs/competitor-analysis/COMPARISON.md</code> · <code>docs/검증_자재산식_2026-05-17.md</code> (한국 플랫폼 8곳 검증)</dd>
+      <dt>작성일</dt>        <dd>2026-05-17 (v2)</dd>
+      <dt>결정자</dt>        <dd>봉기님</dd>
+    </dl>
+  </section>
+
+  <div class="tldr">
+    <div class="tldr-label">한 줄 요약</div>
+    <div class="tldr-body">
+      자재 4종(타일·도배·마루·페인트) 평수 → 발주 권장량 즉시 계산기를 편의기능 탭 단축 도구로 추가.
+      산식은 한국 4대 제조사·시공자 커뮤니티·B2C 플랫폼 검증값 채택, <strong>간편/상세 모드 토글</strong> + <strong>회사 카탈로그 override</strong>로 락인.
+      결과는 카톡 복사 + 메모 자동 기록. 자동 push X (격리 정책).
+    </div>
+  </div>
+
+  <nav class="toc">
+    <strong>목차</strong>
+    <ol>
+      <li><a href="#sec-1">범위 (확정)</a></li>
+      <li><a href="#sec-2">진입점·위치</a></li>
+      <li><a href="#sec-3">자재 4종 메커니즘</a></li>
+      <li><a href="#sec-4">공통 설계</a></li>
+      <li><a href="#sec-5">UI/UX 와이어</a></li>
+      <li><a href="#sec-6">구현 단계 (Phase)</a></li>
+      <li><a href="#sec-7">측정·검증</a></li>
+      <li><a href="#sec-8">검증으로 결정된 사항</a></li>
+      <li><a href="#sec-9">정리 (확정/대기)</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. 범위 -->
+  <h2 id="sec-1">1. 범위 <span class="muted small">(2026-05-17 봉기님 결정)</span></h2>
+
+  <table class="compact">
+    <thead><tr><th>자재</th><th>채택</th><th>신뢰도</th><th>핵심 결정</th></tr></thead>
+    <tbody>
+      <tr><td>🧱 타일</td><td class="center"><span class="check-mark">✓</span></td><td>⭐⭐⭐⭐⭐</td><td>박스당 매수 규격별 자동 매핑 + 부위별 로스 7/10/15%</td></tr>
+      <tr><td>🎨 도배</td><td class="center"><span class="check-mark">✓</span></td><td>⭐⭐⭐⭐⭐</td><td><strong>간편(×2.5) / 상세(1.65+0.65) 토글</strong></td></tr>
+      <tr><td>📦 마루</td><td class="center"><span class="check-mark">✓</span></td><td>⭐⭐⭐⭐⭐</td><td><strong>강마루 1.0평/박스</strong> (검증된 시장 표준)</td></tr>
+      <tr><td>🪣 페인트</td><td class="center"><span class="check-mark">✓</span></td><td>⭐⭐⭐⭐⭐</td><td><strong>수성 6 ㎡/L</strong> (4대 제조사 공통)</td></tr>
+      <tr><td>💡 조명</td><td class="center muted">✗</td><td>—</td><td>본 모듈 제외</td></tr>
+      <tr><td>❄️ 에어컨</td><td class="center muted">✗</td><td>—</td><td>본 모듈 제외</td></tr>
+      <tr><td>🧰 가구</td><td class="center muted">✗</td><td>—</td><td>본 모듈 제외</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="card green">
+      <div class="card-label">✓ 한다</div>
+      <ul>
+        <li>자재 4종 평수·옵션 → <strong>발주 권장량</strong> 즉시 출력</li>
+        <li>자재마다 <strong>간편 / 상세 모드 토글</strong></li>
+        <li>결과 <strong>카톡 복사</strong> + 메모 탭 자동 기록</li>
+        <li>회사 <strong>카탈로그 override</strong> (계수·박스값·coverage)</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <div class="card-label">✗ 안 한다</div>
+      <ul>
+        <li>견적·지출·발주에 <strong>자동 push</strong> (격리 정책)</li>
+        <li>AI 자동 분석·추천 (보류)</li>
+        <li>시공비·재료비 단가 환산 (견적 모듈 영역)</li>
+        <li>도면 기반 자동 산출 (BIM·CAD)</li>
+        <li>조명·에어컨·가구 (이후 별도 검토)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2. 진입점 -->
+  <h2 id="sec-2">2. 진입점·위치</h2>
+  <div class="wire">[ 일정 복사 ]   [ 인건비 정산 ]   [ ★ 자재 산출 ]   [ 입주민 안내문 (준비 중) ]</div>
+  <ul>
+    <li>코드: <code>client/src/pages/ProjectUtilities.jsx</code> <code>tools</code> 배열에 카드 1개 추가</li>
+    <li>모달 컴포넌트: <code>client/src/components/MaterialCalcModal.jsx</code> 신규</li>
+    <li>모달 내부에서 자재 4종 탭 + 자재마다 <strong>간편/상세 모드 토글</strong></li>
+  </ul>
+
+  <!-- 3. 자재 4종 -->
+  <h2 id="sec-3">3. 자재 4종 메커니즘 <span class="muted small">(검증 반영)</span></h2>
+
+  <!-- 3.1 타일 -->
+  <div class="ws">
+    <div class="ws-head">
+      <h3 class="ws-title" style="border:none; padding:0; margin:0;">3.1 타일</h3>
+      <span class="ws-tag verified">⭐⭐⭐⭐⭐ 검증 완료</span>
+    </div>
+
+    <div class="ws-section-title">입력</div>
+    <ul>
+      <li>평수 ↔ 가로·세로(m) 토글</li>
+      <li>시공 부위 세그먼티드: <strong>욕실/주방 · 바닥 · 일반벽</strong> (로스 디폴트 자동 변경)</li>
+      <li>타일 규격: 300×300, 300×600, 600×600, 600×1200, 800×800, + 직접 입력(mm)</li>
+      <li>박스당 매수 (규격 선택 시 자동 채움 + 직접 수정 가능)</li>
+      <li>로스율 % — 프리셋 <code>7 / 10 / 15 / 20</code></li>
+    </ul>
+
+    <div class="ws-section-title">산식</div>
+    <pre>타일1매 ㎡ = (W_mm / 1000) × (H_mm / 1000)
+순수 매수  = 시공㎡ / 타일1매
+발주 매수  = ceil(순수 × (1 + 로스%))
+박스 수    = ceil(발주 / 박스당매수)</pre>
+
+    <div class="ws-section-title">박스당 매수 자동 매핑 (★ 검증)</div>
+    <table class="compact">
+      <thead><tr><th>규격 (mm)</th><th class="num">박스당 매수</th></tr></thead>
+      <tbody>
+        <tr><td>300 × 300</td><td class="num">16</td></tr>
+        <tr><td>300 × 600</td><td class="num">8</td></tr>
+        <tr><td>600 × 600</td><td class="num">4</td></tr>
+        <tr><td>600 × 1200</td><td class="num">2</td></tr>
+        <tr><td>800 × 800</td><td class="num">2</td></tr>
+        <tr><td>custom</td><td class="num">직접 입력</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ws-section-title">부위별 로스 디폴트 (★ 오늘의집·인테리스 절충)</div>
+    <ul>
+      <li><strong>일반벽 7%</strong> · <strong>바닥 10%</strong> · <strong>욕실·주방 15%</strong></li>
+      <li>사용자가 프리셋 버튼으로 즉시 변경 가능</li>
+    </ul>
+  </div>
+
+  <!-- 3.2 도배 -->
+  <div class="ws">
+    <div class="ws-head">
+      <h3 class="ws-title" style="border:none; padding:0; margin:0;">3.2 도배</h3>
+      <span class="ws-tag win">⭐⭐⭐⭐⭐ 간편/상세 토글</span>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-card-label">간편 모드 — 한국 B2C 통설</div>
+      <pre style="margin:6px 0 0;">도배 평수 = 실평 × 2.5
+도배 ㎡   = 도배평수 × 3.3058
+
+(이하 동일)</pre>
+      <p class="small muted">마미견적서·꾸미고·세민직업학교 공통값</p>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-card-label">상세 모드 — B 사이트 산식 (한국 통설 동등)</div>
+      <pre style="margin:6px 0 0;">벽 도배 평수    = 실평 × 1.65 × (천장/2.4)
+천장 도배 평수  = 실평 × 0.65   (천장 포함 시)
+도배 평수      = 벽 + 천장
+
+검증식: 32 × 1.65 + 32 × 0.65 = 73.6평 ÷ 5 = 15롤
+        ("32평 천장포함 = 실크 15롤" 정확히 일치)</pre>
+    </div>
+
+    <div class="ws-section-title">공통 산식</div>
+    <pre>롤당 시공평수 (LX Z:IN 공식):
+  실크    5평/롤    (1.06m × 15.6m = 16.5㎡)
+  합지    2평/롤    (소폭 0.53m × 12.5m)
+  광폭합지 5평/롤    (시리즈별 다름)
+
+순수 롤 = 도배평수 / 롤당시공평수
+발주 롤 = ceil(순수 × (1 + 로스%))
+풀 (kg) = ceil(도배㎡ / 12)    ← 종류 통일 (검증: 실크·합지 풀량 비슷)</pre>
+
+    <div class="ws-section-title">★ 검증으로 변경된 점</div>
+    <ul>
+      <li>B의 "실크 ㎡/15, 합지 ㎡/8" 풀 격차는 <strong>과장 → 단일값 ㎡/12로 통일</strong></li>
+      <li>합지·실크 차이는 농도·희석비지 풀 총량은 비슷 (LX 공식 출처)</li>
+    </ul>
+  </div>
+
+  <!-- 3.3 마루 -->
+  <div class="ws">
+    <div class="ws-head">
+      <h3 class="ws-title" style="border:none; padding:0; margin:0;">3.3 마루</h3>
+      <span class="ws-tag win">⭐⭐⭐⭐⭐ Q6 정답 = 1.0평/박스</span>
+    </div>
+
+    <div class="ws-section-title">입력</div>
+    <ul>
+      <li>평수 ↔ 가로·세로 토글</li>
+      <li>마루 종류: 강화 / 강마루 / 원목 / 헤링본 / 직접 입력</li>
+      <li>박스당 평수 (종류 선택 시 자동 채움 + 직접 수정 가능)</li>
+      <li>실 둘레 m (걸레받이용)</li>
+      <li>로스율 % — 프리셋 <code>5 / 8 / 10 / 15</code></li>
+    </ul>
+
+    <div class="ws-section-title">산식</div>
+    <pre>순수 박스 = 평 / 박스당평수
+발주 박스 = ceil(순수 × (1 + 로스%))
+발주 평수 = 평 × (1 + 로스%)</pre>
+
+    <div class="ws-section-title">카탈로그 시드값 (★ 검증으로 결정)</div>
+    <table class="compact">
+      <thead><tr><th>종류</th><th class="num">시드값</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td>강화마루</td><td class="num">0.5 평/박스</td><td>1.65㎡ = 0.5평 시장 표준</td></tr>
+        <tr style="background:#FFF8E6;"><td><strong>강마루</strong></td><td class="num"><strong>1.0 평/박스</strong></td><td>구정·동화·장판나라 SKU 재확인</td></tr>
+        <tr><td>원목마루</td><td class="num">0.5 평/박스</td><td>마루안 등 다수</td></tr>
+        <tr><td>헤링본</td><td class="num">0.5 평/박스</td><td>구정 프라하강 등</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><strong>중요</strong>: 박스당 평수는 <strong>net (박스 안 자재 실제 면적)</strong>, 로스율은 별도 적용. 이중계산 없음.</p>
+
+    <div class="ws-section-title">검증된 한국 표준 (영구 지식)</div>
+    <ul>
+      <li>LX 공식: <code>소요량 = 평수 × 1.1</code> → 로스 10%와 정확히 일치</li>
+      <li>강마루 1.0평/박스: 장판나라·동화·구정 모두 "1박스 1평" 표기</li>
+      <li>걸레받이 <strong>1본 = 2440mm (8자)</strong> MDF/PVC 한국 표준</li>
+    </ul>
+  </div>
+
+  <!-- 3.4 페인트 -->
+  <div class="ws">
+    <div class="ws-head">
+      <h3 class="ws-title" style="border:none; padding:0; margin:0;">3.4 페인트</h3>
+      <span class="ws-tag win">⭐⭐⭐⭐⭐ 6㎡/L (4대 제조사 공통)</span>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-card-label">간편 모드 — coverage 6 ㎡/L</div>
+      <pre style="margin:6px 0 0;">벽 도장 ㎡  = 평 × 1.65 × (천장/2.4) × 3.3058
+천장 도장   = 평 × 3.3058
+직접 입력   = 직접 ㎡
+
+도장면적 = 시공㎡ × 도장횟수
+순수 L  = 도장면적 / 6   ← LX·노루·삼화·오늘의집 공통
+발주 L  = ceil(순수 × (1 + 로스%))
+말통    = ceil(발주 / 18)</pre>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-card-label">상세 모드 — 페인트 종류별 분리 + "이론 vs 실측" 두 줄 표기</div>
+      <table class="compact" style="margin:6px 0 0;">
+        <thead><tr><th>종류</th><th class="num">실측 coverage</th><th>(이론값 참고)</th></tr></thead>
+        <tbody>
+          <tr><td>수성</td><td class="num"><strong>6 ㎡/L</strong></td><td>이론 10 (노루 공식 명시)</td></tr>
+          <tr><td>친환경</td><td class="num"><strong>6~7 ㎡/L</strong></td><td>이론 8</td></tr>
+          <tr><td>유성</td><td class="num"><strong>8 ㎡/L</strong></td><td>거의 동일</td></tr>
+          <tr><td>퍼티/프라이머</td><td class="num"><strong>5 ㎡/L</strong></td><td>OK</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted">"이론도포량은 손실 미포함" — 노루 공식 입장</p>
+    </div>
+
+    <div class="ws-section-title">공통 입력</div>
+    <ul>
+      <li>시공 부위 세그먼티드: 벽 / 천장 / 직접 면적</li>
+      <li>실 평수 · 천장 높이 m</li>
+      <li>도장 횟수: 1 / 2 / 3 (디폴트 <strong>2</strong> — 한국 표준)</li>
+      <li>로스율 % — 프리셋 <code>10 / 30</code> (붓·롤러 10% / 스프레이 30% — 노루 공식)</li>
+      <li>(옵션) 벽지 위 도장 → coverage 자동 -20~50% 보정 (오늘의집 발견)</li>
+    </ul>
+
+    <div class="ws-section-title">★ 검증으로 변경된 점</div>
+    <ul>
+      <li>coverage 디폴트 <strong>10 → 7 → 6 ㎡/L</strong> (두 사이트 다 후하게 잡음)</li>
+      <li>4대 제조사·플랫폼 (LX Z:IN·노루·삼화·오늘의집) 공통값 적용</li>
+      <li>1말통 = 18L 한국 표준 ✓ (KCC·삼화·노루·제비스코)</li>
+    </ul>
+  </div>
+
+  <!-- 4. 공통 설계 -->
+  <h2 id="sec-4">4. 공통 설계</h2>
+
+  <h3>4.1 카탈로그 override 데이터 모델 (자재 4종 슬림)</h3>
+<pre>CompanyMaterialCalcConfig {
+  companyId          PK FK
+  updatedAt
+
+  -- 타일
+  tileDefaultLossWall            Decimal?  default 7
+  tileDefaultLossFloor           Decimal?  default 10
+  tileDefaultLossBathKitchen     Decimal?  default 15
+  tileBoxPerSpec                 Json?     ({ "300x300":16, "600x600":4, ... })
+
+  -- 도배
+  wallpaperSimpleMultiplier      Decimal?  default 2.5
+  wallpaperWallMultiplier        Decimal?  default 1.65
+  wallpaperCeilingMultiplier     Decimal?  default 0.65
+  wallpaperRollSilkPyeong        Decimal?  default 5
+  wallpaperRollPaperPyeong       Decimal?  default 2
+  wallpaperRollWidePyeong        Decimal?  default 5
+  wallpaperGlueArea              Decimal?  default 12
+
+  -- 마루 (★ 강마루 1.0평/박스 확정)
+  floorBoxLaminated              Decimal?  default 0.5
+  floorBoxEngineered             Decimal?  default 1.0    ★ 시장 표준
+  floorBoxHardwood               Decimal?  default 0.5
+  floorBoxHerringbone            Decimal?  default 0.5
+
+  -- 페인트 (★ 6㎡/L 확정)
+  paintCoverageWater             Decimal?  default 6     ★ 4대 제조사 공통
+  paintCoverageEco               Decimal?  default 6
+  paintCoverageOil               Decimal?  default 8
+  paintCoveragePrimer            Decimal?  default 5
+  paintWallMultiplier            Decimal?  default 1.65
+}</pre>
+
+  <h3>4.2 결과 출구 (격리 정책 준수)</h3>
+  <table>
+    <thead><tr><th>출구</th><th class="center">Phase 1</th><th class="center">Phase 2~</th></tr></thead>
+    <tbody>
+      <tr><td>📋 카톡 복사</td><td class="center"><span class="pill do">✓ 기본</span></td><td class="center"><span class="pill do">✓</span></td></tr>
+      <tr><td>📝 메모 탭 자동 기록</td><td class="center"><span class="pill do">✓ (인건비 정산 패턴)</span></td><td class="center"><span class="pill do">✓</span></td></tr>
+      <tr><td>📐 견적에 prefill</td><td class="center"><span class="pill dont">✗</span></td><td class="center"><span class="pill maybe">★ 수동 1-클릭</span></td></tr>
+      <tr><td>📦 발주에 prefill</td><td class="center"><span class="pill dont">✗</span></td><td class="center"><span class="pill maybe">★ 수동 1-클릭</span></td></tr>
+      <tr><td>자동 push</td><td class="center"><span class="pill dont">✗ 절대</span></td><td class="center"><span class="pill dont">✗ 절대 (격리 정책)</span></td></tr>
+    </tbody>
+  </table>
+
+  <h4>카톡 포맷</h4>
+<div class="wire">[현장명] 자재 산출 - 도배
+━━━━━━━━━━━━━━━
+발주 권장: 16롤 (실크)
+도배 평수: 70.3평 (간편 모드 ×2.5)
+도배 면적: 232.4㎡
+예상 풀: 16kg
+순수 15.5롤 · 추가로스 0%
+━━━━━━━━━━━━━━━
+공간: 거실</div>
+
+  <h3>4.3 권한·플래그</h3>
+  <ul>
+    <li>신규 Feature Flag: <code>F.MATERIAL_CALC</code> (디폴트 ON · 모든 직원)</li>
+    <li>카탈로그 override 편집: OWNER만</li>
+  </ul>
+
+  <!-- 5. UI -->
+  <h2 id="sec-5">5. UI/UX 와이어</h2>
+
+<div class="wire">┌─────────────────────────────────────────────┐
+│  📐 자재 산출            [현장명·공간 자동]  ✕ │
+├─────────────────────────────────────────────┤
+│ [타일][도배][마루][페인트]                       │
+├──────────────────────────────────────────────┤
+│ ◯ 간편 모드   ● 상세 모드            ⓘ      │
+├──────────────────┬──────────────────────────┤
+│                  │  발주 권장 매수            │
+│  입력 패널        │  ━━━━━━━━━━━━━━━━━     │
+│  (자재·모드별)    │  ▣ 200 매                 │
+│                  │  순수 180매 + 로스 10%    │
+│  · 평수          │  ━━━━━━━━━━━━━━━━━     │
+│  · 규격          │  ┌─────┬─────┬─────┐    │
+│  · 박스당 매수    │  │시공평│박스수│㎡   │    │
+│  · 로스 [프리셋]  │  └─────┴─────┴─────┘    │
+│                  │                          │
+│                  │  💡 현장 메모             │
+│                  │  · 욕실은 로스 15%↑      │
+│                  │                          │
+│                  │  [📋 카톡 복사] [📝 메모] │
+└──────────────────┴──────────────────────────┘</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label" style="color:var(--navy-700);">📱 모바일</div>
+      <ul>
+        <li>입력·결과 1-column 세로 (입력 → 결과)</li>
+        <li>자재 탭 가로 스크롤 + 이모지</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--navy-700);">🖥 데스크톱</div>
+      <ul>
+        <li>좌측 입력 35% · 우측 결과 65%</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><strong>모달 vs 페이지</strong>: 채택 = <strong>모달</strong> (가벼움, 다른 탭에서도 호출 가능) + 결과 내 "🔗 링크 복사"</p>
+
+  <!-- 6. Phase -->
+  <h2 id="sec-6">6. 구현 단계 (Phase)</h2>
+
+  <div class="phase phase-now">
+    <span class="phase-tag" style="background:var(--gold-soft); color:var(--gold);">PHASE 1 · 1~2주</span>
+    <strong>핵심 MVP</strong>
+    <ul>
+      <li>ProjectUtilities.jsx에 카드 추가</li>
+      <li>MaterialCalcModal.jsx 신규 (자재 4종)</li>
+      <li><strong>간편/상세 모드 토글</strong> 구현</li>
+      <li>산식 하드코딩 (검증된 시드값)</li>
+      <li>카톡 복사 + 메모 자동 기록</li>
+      <li>Feature Flag <code>F.MATERIAL_CALC</code></li>
+    </ul>
+  </div>
+
+  <div class="phase phase-next">
+    <span class="phase-tag">PHASE 2 · 1주</span>
+    <strong>회사 카탈로그 override</strong>
+    <ul>
+      <li>CompanyMaterialCalcConfig 모델 신설</li>
+      <li>시스템 프리셋 snapshot 시드</li>
+      <li>/settings 안에 편집 UI</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <span class="phase-tag">PHASE 3 · 협의</span>
+    <strong>부가 진입점·고급 기능</strong>
+    <ul>
+      <li>마감재 탭·간편견적에서 호출</li>
+      <li>견적·발주 수동 1-클릭 prefill</li>
+      <li>줄눈·압착시멘트·걸레받이 본 환산 등 보조 산출</li>
+    </ul>
+  </div>
+
+  <!-- 7. 측정 -->
+  <h2 id="sec-7">7. 측정·검증</h2>
+
+  <h3>채택 가설</h3>
+  <ul>
+    <li>"자재 산출 기능이 있으면 사장님이 평소 도구로도 들어와서 머문다" (참여도 ↑)</li>
+    <li>카톡 복사 횟수 = 핵심 성공 지표</li>
+  </ul>
+
+  <h3>트래킹 이벤트</h3>
+  <ul>
+    <li><code>material_calc_open</code> (자재·모드별 라벨)</li>
+    <li><code>material_calc_copy</code></li>
+    <li><code>material_calc_memo_save</code></li>
+  </ul>
+
+  <h3>검증 기준 (이미 산식 단계에서 통과)</h3>
+  <ul>
+    <li>도배: "32평 천장포함 = 실크 15롤" 산식 정확히 일치 <span class="check-mark">✓</span></li>
+    <li>마루: LX 공식 <code>평수 × 1.1</code>과 로스 10% 일치 <span class="check-mark">✓</span></li>
+    <li>페인트: 노루·삼화 계산기와 1L=6㎡ 동일 결과 <span class="check-mark">✓</span></li>
+  </ul>
+
+  <!-- 8. 검증으로 결정된 사항 -->
+  <h2 id="sec-8">8. 검증으로 결정된 사항 (영구 지식)</h2>
+
+  <table>
+    <thead><tr><th>항목</th><th>결정값</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>자재 범위</td><td><strong>타일·도배·마루·페인트 4종</strong></td><td>봉기님 결정</td></tr>
+      <tr><td>타일 박스당 매수 디폴트</td><td>규격별 자동 매핑</td><td>디폴트 4 고정 시 사용자 실수</td></tr>
+      <tr><td>타일 부위별 로스</td><td>벽 7% / 바닥 10% / 욕실·주방 15%</td><td>오늘의집·인테리스 절충</td></tr>
+      <tr style="background:#FFF8E6;"><td><strong>도배 산식</strong></td><td><strong>간편 ×2.5 / 상세 1.65+0.65 토글</strong></td><td>LX·마미견적서·꾸미고 통설 + B 검증</td></tr>
+      <tr><td>도배 1롤 시공평수</td><td>실크 5·합지 2·광폭 5</td><td>LX Z:IN 공식</td></tr>
+      <tr><td>도배 풀</td><td>㎡/12 단일값</td><td>종류별 격차 없다는 검증</td></tr>
+      <tr style="background:#FFF8E6;"><td><strong>강마루 박스당 평수</strong></td><td><strong>1.0 평/박스</strong></td><td>구정·동화·장판나라 시장 표준</td></tr>
+      <tr><td>강화·원목·헤링본 박스</td><td>0.5 평/박스</td><td>마루안·구정 등 다수 SKU</td></tr>
+      <tr><td>마루 로스 디폴트</td><td>10%</td><td>LX 공식 <code>평수 × 1.1</code>과 일치</td></tr>
+      <tr><td>걸레받이 1본</td><td>2440mm (8자)</td><td>MDF·PVC 한국 표준</td></tr>
+      <tr style="background:#FFF8E6;"><td><strong>페인트 수성 coverage</strong></td><td><strong>6 ㎡/L</strong></td><td>LX·노루·삼화·오늘의집 4사 공통</td></tr>
+      <tr><td>1말통</td><td>18L</td><td>KCC·삼화·노루·제비스코 공통</td></tr>
+      <tr><td>페인트 표준 도장 횟수</td><td>2회</td><td>노루 공식 TDS</td></tr>
+      <tr><td>페인트 로스</td><td>붓·롤러 10% / 스프레이 30%</td><td>노루 공식</td></tr>
+      <tr><td>결과 출구</td><td>카톡 복사 + 메모 자동 기록</td><td>인건비 정산 패턴</td></tr>
+      <tr><td>자동 push</td><td>절대 금지</td><td>격리 정책</td></tr>
+      <tr><td>모듈 구조</td><td>간편/상세 모드 토글</td><td>B2C/B2B 두 층 사용자</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 9. 정리 -->
+  <section class="summary" id="sec-9">
+    <h2 style="margin-top:0;">9. 정리 (확정/대기)</h2>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-label">✓ 확정 (v2로)</div>
+        <ul>
+          <li>자재 범위 4종, 간편/상세 토글, 검증된 시드값 전면 반영</li>
+          <li>Q6 사실상 자동 해결 (강마루 1.0평/박스)</li>
+          <li>페인트 수성 6 ㎡/L, 도배 간편 ×2.5 추가</li>
+          <li>격리 정책 유지 (자동 push X)</li>
+          <li>결정 질문 19개 → <strong>6개로 축소</strong></li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:#F0DDA0; background:#FFF8E6;">
+        <div class="card-label" style="color:var(--gold);">⏳ 남은 봉기님 결정 (6개)</div>
+        <ul>
+          <li>Q1 — 줄눈·압착시멘트 보조 산출 (Phase 1/2)</li>
+          <li>Q3 — 벽지 종류 추가 (점착메모리얼·뮤럴)</li>
+          <li>Q7 — 걸레받이 본 환산 (Phase 1/2)</li>
+          <li>Q8 — 도배+페인트 동시 시공 경고</li>
+          <li>Q15 — 회사 override 슬롯 Phase 1/2</li>
+          <li>Q16·Q17 — 견적·발주 수동 prefill (Phase 2)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h4 style="margin-top:18px;">📌 다음 액션</h4>
+    <ol>
+      <li>메모리 신규: <code>수플렉스_규칙_자재산식근거.md</code> (한국 표준값 영구 지식)</li>
+      <li>메모리 신규: <code>수플렉스_기능_자재산출모듈.md</code> (모듈 결정사항)</li>
+      <li>편의기능 메모리 업데이트 (4번째 카드 추가 예정)</li>
+      <li>Phase 1 착수 (남은 6개 결정 받으면 즉시)</li>
+    </ol>
+  </section>
+
+  <footer style="margin-top:48px; padding-top:18px; border-top:1px solid var(--border); text-align:center; color:var(--text-mute); font-size:11px;">
+    Suplex · 자재 산출 모듈 설계 계획서 v2 · 2026-05-17 · 결정자 봉기님
+  </footer>
+
+</div>
+</body>
+</html>

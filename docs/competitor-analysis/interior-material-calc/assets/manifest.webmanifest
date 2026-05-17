@@ -1,0 +1,19 @@
+{
+  "name": "자재 물량 계산기",
+  "short_name": "자재계산기",
+  "description": "타일, 도배, 마루, 페인트, 조명, 에어컨, 제작가구 기준값을 빠르게 계산합니다.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0a08",
+  "theme_color": "#0b0a08",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

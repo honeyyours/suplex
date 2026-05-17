@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="타일, 도배, 마루, 페인트, 조명, 에어컨, 제작가구 물량과 권장 사양을 빠르게 계산하는 인테리어 계산기"
+    />
+    <meta name="theme-color" content="#070807" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="자재 계산기" />
+    <meta property="og:title" content="자재 물량 계산기" />
+    <meta
+      property="og:description"
+      content="타일, 도배, 마루, 페인트, 조명, 에어컨, 제작가구 기준값을 빠르게 계산하세요."
+    />
+    <meta property="og:type" content="website" />
+    <title>자재 물량 계산기</title>
+    <link rel="icon" href="./app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./app-icon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest?v=10" />
+    <link rel="stylesheet" href="./styles.css?v=15" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JXSQ33FBC4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-JXSQ33FBC4");
+    </script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Interior calculator</p>
+          <h1>현장 물량 계산 보드</h1>
+        </div>
+        <p class="header-note">자재부터 설비 권장값까지 한 화면에서 계산합니다</p>
+      </header>
+
+      <section class="material-tabs" aria-label="자재 선택">
+        <button class="tab is-active" type="button" data-material="tile">
+          <span aria-hidden="true">🧱</span>
+          <span>타일</span>
+        </button>
+        <button class="tab" type="button" data-material="wallpaper">
+          <span aria-hidden="true">🎨</span>
+          <span>도배</span>
+        </button>
+        <button class="tab" type="button" data-material="floor">
+          <span aria-hidden="true">📦</span>
+          <span>마루</span>
+        </button>
+        <button class="tab" type="button" data-material="paint">
+          <span aria-hidden="true">🪣</span>
+          <span>페인트</span>
+        </button>
+        <button class="tab" type="button" data-material="lighting">
+          <span aria-hidden="true">💡</span>
+          <span>조명</span>
+        </button>
+        <button class="tab" type="button" data-material="aircon">
+          <span aria-hidden="true">❄️</span>
+          <span>에어컨</span>
+        </button>
+        <button class="tab" type="button" data-material="furniture">
+          <span aria-hidden="true">🧰</span>
+          <span>가구</span>
+        </button>
+      </section>
+
+      <section class="workspace" aria-live="polite">
+        <form class="panel input-panel" id="calculator-form">
+          <div class="panel-label input-label">입력 정보</div>
+          <div id="dynamic-fields"></div>
+        </form>
+
+        <section class="panel result-panel" aria-label="계산 결과">
+          <div class="result-head">
+            <div class="panel-label result-label">계산 결과</div>
+            <div class="result-actions">
+              <button class="icon-button" id="copy-button" type="button" aria-label="결과 복사">📋</button>
+              <button class="icon-button" type="button" aria-label="인쇄" onclick="window.print()">🖨️</button>
+            </div>
+          </div>
+
+          <div class="hero-result">
+            <p id="primary-label">발주 권장 매수</p>
+            <strong>
+              <span id="primary-value">0</span>
+              <span id="primary-unit">매</span>
+            </strong>
+            <small id="primary-detail">순수 필요량 + 로스율</small>
+          </div>
+
+          <div class="metric-grid" id="metric-grid"></div>
+
+          <aside class="site-note">
+            <span aria-hidden="true">💡</span>
+            <div class="note-content">
+              <p id="field-note"></p>
+              <ul class="basis-list" id="basis-list"></ul>
+            </div>
+          </aside>
+        </section>
+      </section>
+
+      <section
+        class="openchat-modal"
+        id="openchat-modal"
+        aria-label="오픈채팅방 안내"
+        aria-hidden="true"
+      >
+        <div class="openchat-dialog" role="dialog" aria-modal="true" aria-labelledby="openchat-title">
+          <button class="openchat-close" id="openchat-close" type="button" aria-label="오픈채팅방 안내 닫기">
+            ×
+          </button>
+          <div class="openchat-visual" aria-hidden="true">
+            <div class="openchat-bubbles">
+              <span></span>
+              <span></span>
+            </div>
+            <div class="material-samples">
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+          </div>
+          <div class="openchat-copy">
+            <h2 id="openchat-title">오픈채팅방</h2>
+            <p>
+              인테리어 업체 사장님들이 함께하는 카카오톡 오픈채팅방에 참여하세요.
+              업체 이슈, 노하우, 신규 툴 업데이트 소식 전해드립니다.
+            </p>
+          </div>
+          <a class="openchat-cta is-disabled" id="openchat-popup-link" aria-disabled="true">
+            채팅방 참여하기
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="chat-widget" id="chat-widget" aria-label="카카오 오픈채팅">
+        <div class="chat-panel" id="chat-panel">
+          <a class="chat-action chat-action-primary is-disabled" id="community-link" aria-disabled="true">
+            <span class="kakao-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" role="img">
+                <path
+                  d="M16 5C8.82 5 3 9.49 3 15.02c0 3.57 2.43 6.7 6.08 8.47l-1.03 3.72c-.12.45.39.81.76.54l4.48-3.02c.88.15 1.78.23 2.71.23 7.18 0 13-4.49 13-10.02S23.18 5 16 5Z"
+                />
+              </svg>
+            </span>
+            <span>
+              <strong>실무자 오픈채팅</strong>
+              <small>현장 노하우와 자재 정보를 공유합니다</small>
+            </span>
+          </a>
+          <a class="chat-action chat-action-secondary is-disabled" id="feedback-link" aria-disabled="true">
+            <span>업데이트 요청하기</span>
+            <small>필요한 계산식이나 개선점을 제안</small>
+          </a>
+        </div>
+
+        <button
+          class="chat-toggle"
+          id="chat-toggle"
+          type="button"
+          aria-label="카카오 메뉴 열기"
+          aria-expanded="false"
+          aria-controls="chat-panel"
+        >
+          <span class="kakao-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" role="img">
+              <path
+                d="M16 5C8.82 5 3 9.49 3 15.02c0 3.57 2.43 6.7 6.08 8.47l-1.03 3.72c-.12.45.39.81.76.54l4.48-3.02c.88.15 1.78.23 2.71.23 7.18 0 13-4.49 13-10.02S23.18 5 16 5Z"
+              />
+            </svg>
+          </span>
+        </button>
+      </section>
+    </main>
+
+    <template id="metric-template">
+      <article class="metric-card">
+        <span class="metric-name"></span>
+        <strong class="metric-value"></strong>
+      </article>
+    </template>
+
+    <script src="./script.js?v=15"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js?v=16").then((registration) => {
+            registration.update();
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

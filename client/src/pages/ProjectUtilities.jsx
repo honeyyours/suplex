@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 import ExtractModal from '../components/ExtractModal';
 import LaborSettlementModal from '../components/LaborSettlementModal';
+import MaterialCalcModal from '../components/MaterialCalcModal';
 
 export default function ProjectUtilities() {
   const { id } = useParams();
   const { project } = useOutletContext();
   const [showExtract, setShowExtract] = useState(false);
   const [showSettlement, setShowSettlement] = useState(false);
+  const [showMaterialCalc, setShowMaterialCalc] = useState(false);
 
   const tools = [
     {
@@ -24,6 +26,13 @@ export default function ProjectUtilities() {
       title: '인건비 정산',
       desc: '공종 → 작업자 선택 → [일수 × 일당 + 식비 + 교통비] 자동 합산 → [이름·계좌·금액] 카톡 텍스트 복사. 일당·식비·교통비는 변경 시 자동 저장되어 다음 정산 시 자동 채워집니다.',
       action: () => setShowSettlement(true),
+      ready: true,
+    },
+    {
+      icon: '📐',
+      title: '자재 산출',
+      desc: '자재 4종(타일·도배·마루·페인트) 평수 → 발주 권장량 즉시 계산. 한국 4대 제조사·시공자 검증값 적용. 카톡 복사 + 메모 자동 기록.',
+      action: () => setShowMaterialCalc(true),
       ready: true,
     },
     {
@@ -89,6 +98,14 @@ export default function ProjectUtilities() {
           project={project}
           projectId={id}
           onClose={() => setShowSettlement(false)}
+        />
+      )}
+
+      {showMaterialCalc && (
+        <MaterialCalcModal
+          project={project}
+          projectId={id}
+          onClose={() => setShowMaterialCalc(false)}
         />
       )}
     </div>
