@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import HomeTodayActions from '../components/HomeTodayActions';
 import HomeWeeklyBrief from '../components/HomeWeeklyBrief';
 import HomeWeekSchedule from '../components/HomeWeekSchedule';
-import HomeWeekWidget from '../components/HomeWeekWidget';
 import HomeProjectCards from '../components/HomeProjectCards';
 
 export default function Dashboard() {
@@ -22,19 +21,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 모바일 최상단 위젯 — 캘린더태스크 위젯 패턴. 데스크톱은 아래 HomeWeekSchedule이 같은 역할 */}
-      <HomeWeekWidget />
+      <HomeWeekSchedule />
 
       <HomeTodayActions />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <HomeProjectCards status="IN_PROGRESS" />
         <HomeProjectCards status="PLANNED" />
-      </div>
-
-      {/* 데스크톱 전용 큰 캘린더 — 모바일은 위 HomeWeekWidget이 대체 */}
-      <div className="hidden sm:block">
-        <HomeWeekSchedule />
       </div>
 
       <HomeWeeklyBrief />
