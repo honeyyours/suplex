@@ -107,15 +107,12 @@ export default function HomeWeekWidget() {
                   </span>
                 )}
               </div>
-              <div className="flex flex-col gap-px min-h-[140px]">
-                {slots.length === 0 ? (
-                  <div className="flex-1" />
-                ) : (
-                  slots.map((e, idx) =>
-                    e
-                      ? <WidgetEntryBar key={e.id} entry={e} />
-                      : <WidgetEmptySlot key={`empty-${idx}`} />
-                  )
+              {/* min-h 없음 — 그 주의 max lane 만큼만 차지. grid가 row별로 자동 정렬. */}
+              <div className="flex flex-col gap-px pb-1">
+                {slots.map((e, idx) =>
+                  e
+                    ? <WidgetEntryBar key={e.id} entry={e} />
+                    : <WidgetEmptySlot key={`empty-${idx}`} />
                 )}
               </div>
             </div>
