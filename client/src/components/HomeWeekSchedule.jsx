@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, addDays, projectClass, projectBorderClass } from '../utils/date';
+import { getHoliday } from '../utils/holidays';
 
 // 오늘이 포함된 월요일 0시 반환
 function getMonday(date) {
@@ -92,6 +93,8 @@ export default function HomeWeekSchedule() {
           const isToday = key === todayKey;
           const isSat = i === 5;
           const isSun = i === 6;
+          const holiday = getHoliday(d);
+          const isRed = isSun || !!holiday;
 
           return (
             <div
@@ -102,13 +105,16 @@ export default function HomeWeekSchedule() {
             >
               {/* 모바일: 요일→날짜 위→아래 스택. 데스크톱: 가로 분리 유지 */}
               <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm font-semibold border-b flex flex-col items-center sm:flex-row sm:items-center sm:justify-between leading-tight ${
-                isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
+                isRed ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-700'
               }`}>
                 <span className="text-[9px] sm:text-sm text-gray-400 sm:text-inherit font-normal sm:font-semibold">{DAY_LABELS[i]}</span>
                 <span className={`text-[12px] sm:text-sm font-bold sm:font-semibold ${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''}`}>
                   {d.getDate()}
                 </span>
               </div>
+              {holiday && (
+                <div className="px-1 py-0.5 text-[9px] sm:text-[10px] text-red-500/80 border-b text-center truncate" title={holiday}>{holiday}</div>
+              )}
               <div className="px-0.5 py-0.5 sm:p-1 flex flex-col gap-px sm:gap-1 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+5)]:hidden">
                 {dayEntries.length === 0 ? (
                   <div className="flex-1" />

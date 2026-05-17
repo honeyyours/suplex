@@ -5,6 +5,7 @@ import { schedulesApi } from '../api/schedules';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
+import { getHoliday } from '../utils/holidays';
 import PhaseInlineContent from './PhaseInlineContent';
 
 export default function AggregateCalendar({ status, projectIds, emptyText, headerRight } = {}) {
@@ -96,6 +97,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             const isToday = key === todayKey;
             const dayOfWeek = date.getDay();
             const isFirstOfMonth = date.getDate() === 1;
+            const holiday = getHoliday(date);
+            const isRed = dayOfWeek === 0 || !!holiday;
 
             return (
               <div
@@ -104,12 +107,15 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 dark:bg-slate-900/30'
                 }`}
               >
-                <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
-                  dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
+                <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 flex items-baseline gap-1 ${
+                  isRed ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                 }`}>
                   <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''} ${isFirstOfMonth && !isToday ? 'font-semibold text-navy-700' : ''}`}>
                     {isFirstOfMonth ? `${date.getMonth() + 1}/1` : date.getDate()}
                   </span>
+                  {holiday && (
+                    <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
+                  )}
                 </div>
                 <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>a:nth-child(n+4)]:hidden sm:[&>a:nth-child(n+4)]:flex">
                   {dayEntries.map((e) => {

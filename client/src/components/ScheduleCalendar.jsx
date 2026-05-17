@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, rangeGrid } from '../utils/date';
+import { getHoliday } from '../utils/holidays';
 import ScheduleEntry from './ScheduleEntry';
 import InlineScheduleInput from './InlineScheduleInput';
 import MobileScheduleSheet from './MobileScheduleSheet';
@@ -223,6 +224,8 @@ export default function ScheduleCalendar({ projectId, project }) {
                 const isToday = key === todayKey;
                 const dayOfWeek = date.getDay();
                 const isFirstOfMonth = date.getDate() === 1;
+                const holiday = getHoliday(date);
+                const isRed = inRange && (dayOfWeek === 0 || !!holiday);
 
                 const isActive = activeCellKey === key;
                 return (
@@ -235,10 +238,15 @@ export default function ScheduleCalendar({ projectId, project }) {
                   >
                     <div className={`flex items-center justify-between px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
                       !inRange ? 'text-gray-300' :
-                      dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
+                      isRed ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                     }`}>
-                      <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''} ${isFirstOfMonth && inRange && !isToday ? 'font-semibold text-navy-700' : ''}`}>
-                        {isFirstOfMonth && inRange ? `${date.getMonth() + 1}/1` : date.getDate()}
+                      <span className="flex items-baseline gap-1 truncate">
+                        <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''} ${isFirstOfMonth && inRange && !isToday ? 'font-semibold text-navy-700' : ''}`}>
+                          {isFirstOfMonth && inRange ? `${date.getMonth() + 1}/1` : date.getDate()}
+                        </span>
+                        {inRange && holiday && (
+                          <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
+                        )}
                       </span>
                   {inRange && (
                     <button

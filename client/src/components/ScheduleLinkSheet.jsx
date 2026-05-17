@@ -8,6 +8,7 @@ import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel,
   categoryClass, categoryBorderClass,
 } from '../utils/date';
+import { getHoliday } from '../utils/holidays';
 import { useEscape } from '../hooks/useEscape';
 
 export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
@@ -104,6 +105,8 @@ export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
                 const isCurrentMonth = date.getMonth() === current.getMonth();
                 const isToday = key === todayKey;
                 const dow = date.getDay();
+                const holiday = getHoliday(date);
+                const isRed = isCurrentMonth && (dow === 0 || !!holiday);
                 return (
                   <div
                     key={key}
@@ -111,13 +114,16 @@ export default function ScheduleLinkSheet({ projectId, onSelect, onClose }) {
                       isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-gray-50/50 dark:bg-slate-900/30'
                     }`}
                   >
-                    <div className={`px-1 py-0.5 text-[10px] sm:text-xs flex-shrink-0 ${
+                    <div className={`px-1 py-0.5 text-[10px] sm:text-xs flex-shrink-0 flex items-baseline gap-1 ${
                       !isCurrentMonth ? 'text-gray-300 dark:text-gray-600' :
-                      dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
+                      isRed ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
                     }`}>
                       <span className={isToday ? 'bg-navy-700 text-white rounded-full px-1' : ''}>
                         {date.getDate()}
                       </span>
+                      {isCurrentMonth && holiday && (
+                        <span className="text-[8px] sm:text-[9px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
+                      )}
                     </div>
                     <div className="px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden">
                       {dayEntries.slice(0, 3).map((e) => {

@@ -12,6 +12,7 @@ import { STANDARD_PHASES } from '../utils/phases';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
+import { getHoliday } from '../utils/holidays';
 import InlineScheduleInput from '../components/InlineScheduleInput';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
@@ -340,6 +341,8 @@ export default function TeamCalendar() {
               const dayOfWeek = date.getDay();
               const isFirstOfMonth = date.getDate() === 1;
               const isActive = activeCellKey === key;
+              const holiday = getHoliday(date);
+              const isRed = dayOfWeek === 0 || !!holiday;
               function handleCellClick(ev) {
                 if (ev.target.closest('a, button, input, select, textarea, [data-entry]')) return;
                 setActiveCellKey(key);
@@ -352,12 +355,15 @@ export default function TeamCalendar() {
                     isCurrentMonth ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50 dark:bg-slate-900/30'
                   } ${isActive ? 'ring-2 ring-navy-500 ring-inset' : 'hover:bg-navy-50/40 dark:hover:bg-slate-700/40'}`}
                 >
-                  <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 ${
-                    dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
+                  <div className={`px-1 py-0.5 sm:px-2 sm:py-1.5 text-[10px] sm:text-sm flex-shrink-0 flex items-baseline gap-1 ${
+                    isRed ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'
                   }`}>
                     <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1 sm:px-1.5' : ''} ${isFirstOfMonth && !isToday ? 'font-semibold text-navy-700 dark:text-navy-300' : ''}`}>
                       {isFirstOfMonth ? `${date.getMonth() + 1}/1` : date.getDate()}
                     </span>
+                    {holiday && (
+                      <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
+                    )}
                   </div>
                   <div className="px-0.5 sm:px-1 pb-0.5 sm:pb-1 flex flex-col gap-0.5 flex-1 overflow-hidden [&>*:nth-child(n+4)]:hidden sm:[&>*:nth-child(n+4)]:flex">
                     {dayEntries.map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
