@@ -7,8 +7,9 @@ import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
 import { useEscape } from '../hooks/useEscape';
 
 const DAY_LABELS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-// 협력업체 태그 등록 UI 일시 하이드 (2026-05-15) — 다시 노출하려면 true로
-const SHOW_VENDOR_REGISTRATION = false;
+// 협력업체 태그 등록 UI — 시공팀 양면 플랫폼 가동을 위해 다시 노출 (2026-05-17)
+// vendor 매핑된 시공팀에게 일정 자동 동기화 (CrewScheduleList)에 사용
+const SHOW_VENDOR_REGISTRATION = true;
 
 // 인라인 SVG 아이콘 — heroicons 스타일 (24x24, currentColor, 1.75 stroke)
 function IconChevronLeft({ className = '' }) {

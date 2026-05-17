@@ -264,6 +264,7 @@ export default function ScheduleCalendar({ projectId, project }) {
                       onUpdate={updateEntry}
                       onDelete={deleteEntry}
                       onToggleConfirm={toggleConfirm}
+                      showVendorButton
                     />
                   ))}
                   {dayEntries.length > 3 && (
