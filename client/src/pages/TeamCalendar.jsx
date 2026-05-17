@@ -483,12 +483,9 @@ function EntryCard({ entry: e, onRemove }) {
     <span className="flex items-center gap-1 truncate flex-1">
       {e.isPrivate && <span className="text-[10px] opacity-70" title="나만보기">🔒</span>}
       <span className="truncate">{e.content}</span>
-      {e.assignee && (
-        <span className="text-[10px] opacity-80 whitespace-nowrap">· {e.assignee.nickname || e.assignee.name}</span>
-      )}
     </span>
   );
-  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.content}${e.assignee ? ` · ${e.assignee.nickname || e.assignee.name}` : ''}${e.isPrivate ? ' · 나만보기' : ''}`;
+  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.content}${e.isPrivate ? ' · 나만보기' : ''}`;
   const cls = `relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate ${projColor} border-l-0 sm:border-l-[3px] ${projBorder} hover:brightness-95 group/entry`;
   if (e.project) {
     return (
