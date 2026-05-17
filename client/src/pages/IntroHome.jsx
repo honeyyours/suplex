@@ -54,7 +54,7 @@ export default function IntroHome() {
                 올라갑니다.
               </h1>
               <p className="intro-tight text-base sm:text-lg text-navy-700 leading-relaxed mt-8 max-w-2xl">
-                <b className="text-navy-900">효율로 더 많은 매출을 만드는</b> 인테리어 회사 운영 도구.<br/>
+                <b className="text-navy-900">인테리어 회사 협업 캘린더</b>.<br/>
                 같은 구성원으로 프로젝트 운영 효율을 극대화하고,<br/>
                 담당자가 바뀌어도 업무의 본질과 노하우는 회사의 자산으로 남습니다.
               </p>
