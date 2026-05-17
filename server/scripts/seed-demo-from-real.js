@@ -344,7 +344,7 @@ async function copyProjectFromReal(source, demoCompanyId, ownerUserId, vendorMap
       customerName: DEMO_CUSTOMER_NAME,
       customerPhone: DEMO_CUSTOMER_PHONE,
       siteAddress: DEMO_SITE_ADDRESS,
-      area: source.area,
+      area: source.area || 32, // source 미입력 fallback (시연 시 평수 표시)
       siteCode: DEMO_SITE_CODE,
       startDate: shift(source.startDate, offsetDays),
       expectedEndDate: shift(source.expectedEndDate, offsetDays),
@@ -390,7 +390,7 @@ async function copyProjectFromReal(source, demoCompanyId, ownerUserId, vendorMap
   }
   console.log(`  ↳ 마감재 ${source.materials.length}건`);
 
-  // 간편 견적 + 라인
+  // 간편 견적 + 라인 (SimpleQuote는 sentAt/acceptedAt 필드 없음 — status로만 추적)
   for (const q of source.simpleQuotes) {
     const newQ = await prisma.simpleQuote.create({
       data: {
@@ -398,8 +398,6 @@ async function copyProjectFromReal(source, demoCompanyId, ownerUserId, vendorMap
         title: q.title,
         status: q.status,
         quoteDate: shift(q.quoteDate, offsetDays),
-        sentAt: shift(q.sentAt, offsetDays),
-        acceptedAt: shift(q.acceptedAt, offsetDays),
         supplierName: demoCompany.name,
         supplierRegNo: demoCompany.bizNumber,
         supplierOwner: demoCompany.representative,
@@ -519,14 +517,13 @@ async function copyProjectFromReal(source, demoCompanyId, ownerUserId, vendorMap
   }
   console.log(`  ↳ 메모 ${source.projectMemos.length}건`);
 
-  // 정산 메모
+  // 정산 메모 (ProjectSettlementNote는 updatedById 필드 없음)
   for (const s of source.settlementNotes) {
     await prisma.projectSettlementNote.create({
       data: {
         projectId: project.id,
         phase: s.phase,
         body: s.body,
-        updatedById: ownerUserId,
       },
     });
   }

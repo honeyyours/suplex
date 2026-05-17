@@ -116,19 +116,15 @@ async function refreshDemoDates(prisma) {
     }
     counts.checklists = checklists.length;
 
-    // 5) 간편 견적
+    // 5) 간편 견적 (quoteDate만 — sentAt/acceptedAt은 스키마에 없음)
     const quotes = await prisma.simpleQuote.findMany({
       where: { projectId: project.id },
-      select: { id: true, quoteDate: true, sentAt: true, acceptedAt: true },
+      select: { id: true, quoteDate: true },
     });
     for (const q of quotes) {
       await prisma.simpleQuote.update({
         where: { id: q.id },
-        data: {
-          quoteDate: shift(q.quoteDate, offsetDays),
-          sentAt: shift(q.sentAt, offsetDays),
-          acceptedAt: shift(q.acceptedAt, offsetDays),
-        },
+        data: { quoteDate: shift(q.quoteDate, offsetDays) },
       });
     }
     counts.quotes = quotes.length;
