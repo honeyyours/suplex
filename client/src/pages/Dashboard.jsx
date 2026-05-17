@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import HomeTodayActions from '../components/HomeTodayActions';
 import HomeWeeklyBrief from '../components/HomeWeeklyBrief';
@@ -11,13 +12,23 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="pl-2">
-        <h1 className="text-2xl font-bold text-navy-800">
-          {greeting}{userName && `, ${userName}님`} 👋
-        </h1>
-        <div className="text-sm text-gray-500 mt-1">
-          {formatToday()}
+      <div className="flex items-start justify-between gap-3 pl-2 pr-2 sm:pr-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-navy-800">
+            {greeting}{userName && `, ${userName}님`} 👋
+          </h1>
+          <div className="text-sm text-gray-500 mt-1">
+            {formatToday()}
+          </div>
         </div>
+        <Link
+          to="/projects/new"
+          className="bg-navy-700 hover:bg-navy-800 active:bg-navy-900 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 sm:py-2.5 rounded-md shadow-sm whitespace-nowrap inline-flex items-center gap-1 shrink-0 self-start mt-1.5"
+          aria-label="새 프로젝트 추가"
+        >
+          <span className="text-base leading-none -mt-px">+</span>
+          <span>새 프로젝트</span>
+        </Link>
       </div>
 
       <HomeTodayActions />
