@@ -78,22 +78,25 @@ model Company {
   phaseDeadlineRules     PhaseDeadlineRule[]
   phaseAdvices           PhaseAdvice[]
   companyPhaseTips       CompanyPhaseTip[]
-  teamCalendarEntries    DailyScheduleEntry[] @relation("CompanyTeamCalendar")
+  teamCalendarEntries    DailyScheduleEntry[]    @relation("CompanyTeamCalendar")
   checklistFavorites     ChecklistFavorite[]
 
   @@map("companies")
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String      @id @default(cuid())
+  email        String      @unique
   passwordHash String
   name         String
-  nickname     String?   @unique // 라운지·커뮤니티 활동에 사용 (2026-05-14). 회원가입 시 입력. 본명 보호.
+  nickname     String?     @unique // 라운지·커뮤니티 활동에 사용 (2026-05-14). 회원가입 시 입력. 본명 보호.
   phone        String?
-  isSuperAdmin Boolean   @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
+  // 계정 타입 — 인테리어 회사 사용자(COMPANY, 디폴트) vs 시공팀 별도 계정(CREW, 2026-05-17 양면 플랫폼).
+  // COMPANY는 Membership으로 회사 컨텍스트를 가짐. CREW는 Membership 없이 자기 일정만 가짐.
+  accountType  AccountType @default(COMPANY)
+  isSuperAdmin Boolean     @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
   lastSeenAt   DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
-  tokenVersion Int       @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
+  tokenVersion Int         @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
 
   // 2FA (TOTP) — 슈퍼어드민만 사용. setup 시 totpSecret 채워지고 totpEnabled=false,
   // enable 검증 통과 시 totpEnabled=true. 백업 코드는 SHA-256 해시로 저장 (1회용).
@@ -110,24 +113,24 @@ model User {
   scheduleTasks   ScheduleTask[]    @relation("TaskAssignee")
   dailyReports    DailyReport[]
 
-  createdChecklists       ProjectChecklist[]    @relation("ChecklistCreatedBy")
-  completedChecklists     ProjectChecklist[]    @relation("ChecklistCompletedBy")
-  createdChecklistFavorites ChecklistFavorite[] @relation("ChecklistFavoriteCreatedBy")
-  createdScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
-  updatedScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
-  assignedScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleAssignee")
-  scheduleChanges         ScheduleChange[]
-  uploadedPhotos          ProjectPhoto[]
-  materialRequests        MaterialRequest[]
-  createdQuotes           Quote[]               @relation("QuoteCreatedBy")
-  createdExpenses         Expense[]             @relation("ExpenseCreatedBy")
-  createdAccountCodes     AccountCode[]         @relation("AccountCodeCreatedBy")
-  createdExpenseRules     ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
-  applianceCorrections    ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
-  updatedPhaseNotes       ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
-  updatedCompanyPhaseTips CompanyPhaseTip[]     @relation("CompanyPhaseTipUpdatedBy")
-  projectMemberships      ProjectMember[]
-  systemAnnouncements     SystemAnnouncement[]  @relation("AnnouncementCreatedBy")
+  createdChecklists         ProjectChecklist[]    @relation("ChecklistCreatedBy")
+  completedChecklists       ProjectChecklist[]    @relation("ChecklistCompletedBy")
+  createdChecklistFavorites ChecklistFavorite[]   @relation("ChecklistFavoriteCreatedBy")
+  createdScheduleEntries    DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
+  updatedScheduleEntries    DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
+  assignedScheduleEntries   DailyScheduleEntry[]  @relation("DailyScheduleAssignee")
+  scheduleChanges           ScheduleChange[]
+  uploadedPhotos            ProjectPhoto[]
+  materialRequests          MaterialRequest[]
+  createdQuotes             Quote[]               @relation("QuoteCreatedBy")
+  createdExpenses           Expense[]             @relation("ExpenseCreatedBy")
+  createdAccountCodes       AccountCode[]         @relation("AccountCodeCreatedBy")
+  createdExpenseRules       ExpenseCategoryRule[] @relation("ExpenseRuleCreatedBy")
+  applianceCorrections      ApplianceSpec[]       @relation("ApplianceSpecCorrectedBy")
+  updatedPhaseNotes         ProjectPhaseNote[]    @relation("ProjectPhaseNoteUpdatedBy")
+  updatedCompanyPhaseTips   CompanyPhaseTip[]     @relation("CompanyPhaseTipUpdatedBy")
+  projectMemberships        ProjectMember[]
+  systemAnnouncements       SystemAnnouncement[]  @relation("AnnouncementCreatedBy")
 
   // 라운지 (커뮤니티) — 회사 탈퇴 후에도 LoungeMembership 통해 살아남음
   loungeMembership LoungeMembership?
@@ -167,6 +170,14 @@ enum Role {
   OWNER // 대표 - 전체 권한
   DESIGNER // 디자인팀 - 마감재/견적
   FIELD // 현장팀 - 현장보고/공정
+}
+
+// 계정 타입 — User.accountType.
+// COMPANY: 인테리어 회사 사용자(Membership으로 회사 컨텍스트 보유). 디폴트.
+// CREW: 시공팀 별도 계정. Membership 없이 자기 일정만 보유 (Wedge 전략의 Moat 축, 2026-05-17).
+enum AccountType {
+  COMPANY
+  CREW
 }
 
 // 베타 진입 통제 — Company.approvalStatus
@@ -321,34 +332,34 @@ model ProjectMember {
 }
 
 model Project {
-  id                   String        @id @default(cuid())
-  companyId            String
-  createdById          String
-  name                 String // 프로젝트명 (예: 삼성동 OO아파트)
-  customerName         String // 고객명
-  customerPhone        String?
-  siteAddress          String // 현장 주소
-  contractAmount       Decimal?      @db.Decimal(14, 2) // 계약 금액 (부가세 포함 총액)
-  contractVatRate      Decimal?      @db.Decimal(5, 2) // 부가세율 (예: 10 = 10% 포함, null/0 = 별도. 견적 확정 시 자동)
-  startDate            DateTime? // 착공일
-  expectedEndDate      DateTime? // 준공 예정일
-  actualEndDate        DateTime? // 실제 준공일
-  status               ProjectStatus @default(PLANNED)
-  doorPassword         String? // 출입번호
-  siteNotes            String? // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
-  area                 Decimal?      @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
-  siteCode             String? // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
+  id                    String        @id @default(cuid())
+  companyId             String
+  createdById           String
+  name                  String // 프로젝트명 (예: 삼성동 OO아파트)
+  customerName          String // 고객명
+  customerPhone         String?
+  siteAddress           String // 현장 주소
+  contractAmount        Decimal?      @db.Decimal(14, 2) // 계약 금액 (부가세 포함 총액)
+  contractVatRate       Decimal?      @db.Decimal(5, 2) // 부가세율 (예: 10 = 10% 포함, null/0 = 별도. 견적 확정 시 자동)
+  startDate             DateTime? // 착공일
+  expectedEndDate       DateTime? // 준공 예정일
+  actualEndDate         DateTime? // 실제 준공일
+  status                ProjectStatus @default(PLANNED)
+  doorPassword          String? // 출입번호
+  siteNotes             String? // 현장정보 (주차, 엘리베이터 사용시간, 주의사항 등)
+  area                  Decimal?      @db.Decimal(8, 2) // 면적 (평) — 견적 평당 단가 계산용
+  siteCode              String? // 회계 시스템 매칭용 외부 코드 (예: "2602_온스트릿")
   // 견적상담·CRM 메타 (2026-04-29 추가)
-  acquisitionSource    String? // 견적 요청 경로 (네이버 검색·블로그·인스타·카페·당근·소개·광고 등)
-  consultationAttendee String? // 응대 고객 (부부 중 누구·할머니·대리인 등)
-  memo                 String? // 기타 메모
+  acquisitionSource     String? // 견적 요청 경로 (네이버 검색·블로그·인스타·카페·당근·소개·광고 등)
+  consultationAttendee  String? // 응대 고객 (부부 중 누구·할머니·대리인 등)
+  memo                  String? // 기타 메모
   // 사진 외부 보관(Partial Archive) 이력 — 마지막 실행 시각. UI 배지용.
-  photosArchivedAt     DateTime?
+  photosArchivedAt      DateTime?
   // 빈 마감재 그룹 — 견적 → 마감재 보내기 또는 사용자가 직접 만든, 아직 항목(Material row) 0개인 그룹.
   // 첫 항목 추가 시 자동 제거. 형식: [{ name: string, kind: 'FINISH' | 'APPLIANCE' }]
-  pendingMaterialGroups Json         @default("[]")
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  pendingMaterialGroups Json          @default("[]")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   company              Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdBy            User                    @relation("ProjectCreatedBy", fields: [createdById], references: [id])
@@ -436,18 +447,18 @@ enum ChecklistTeam {
 // 체크리스트 즐겨찾기 — 회사 단위 마스터. 새 프로젝트 만들 때 "이거 잊지 않으셨나요?" 추천.
 // 2026-05-17 신설. 봉기님 요청 — 회사가 반복적으로 챙기는 항목을 회사 자산으로 저장.
 model ChecklistFavorite {
-  id            String   @id @default(cuid())
+  id            String            @id @default(cuid())
   companyId     String
   title         String
-  phase         String?  // 공종 태그 (선택)
+  phase         String? // 공종 태그 (선택)
   category      ChecklistCategory @default(GENERAL)
   team          ChecklistTeam     @default(OTHER)
-  requiresPhoto Boolean  @default(false)
-  daysBefore    Int?     // 시작일로부터 며칠 전 (DUE 모드 기본값, 선택)
-  orderIndex    Int      @default(0)
+  requiresPhoto Boolean           @default(false)
+  daysBefore    Int? // 시작일로부터 며칠 전 (DUE 모드 기본값, 선택)
+  orderIndex    Int               @default(0)
   createdById   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdBy User?   @relation("ChecklistFavoriteCreatedBy", fields: [createdById], references: [id])
@@ -1623,12 +1634,12 @@ model LoungeReport {
 // 스레드 = 한 묶음 대화. 사용자가 "+ 새 대화"로 명시 분리.
 // ============================================
 model AiChatThread {
-  id        String    @id @default(cuid())
-  companyId String
-  userId    String
-  title     String? // 첫 질문 30자 자동 생성 (null이면 "(제목 없음)" 표시)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  companyId  String
+  userId     String
+  title      String? // 첫 질문 30자 자동 생성 (null이면 "(제목 없음)" 표시)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   archivedAt DateTime? // 사용자가 삭제 누르면 채워짐 (soft delete — 복구는 미지원, 단순 숨김용)
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)

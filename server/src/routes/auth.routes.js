@@ -159,7 +159,7 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
 
     res.status(201).json({
       token,
-      user: { id: result.user.id, email: result.user.email, name: result.user.name, nickname: result.user.nickname },
+      user: { id: result.user.id, email: result.user.email, name: result.user.name, nickname: result.user.nickname, accountType: result.user.accountType || 'COMPANY' },
       company: {
         id: result.company.id,
         name: result.company.name,
@@ -186,6 +186,76 @@ const signupGeneralSchema = z.object({
   name: z.string().min(1),
   nickname: nicknameField,
   phone: z.string().optional(),
+});
+
+// 시공팀(CREW) 가입 — 회사·멤버십 없이 별도 계정 타입으로 가입. (2026-05-17 양면 플랫폼)
+// 인테리어 회사와 분리된 paying X 사용자. 가입 후 다중 회사 일정 통합 캘린더만 사용.
+const signupCrewSchema = z.object({
+  email: emailField,
+  password: z.string().min(8),
+  name: z.string().min(1),
+  nickname: nicknameField,
+  phone: z.string().optional(),
+});
+
+router.post('/signup-crew', signupLimiter, async (req, res, next) => {
+  try {
+    const data = signupCrewSchema.parse(req.body);
+
+    const policyErr = checkPasswordPolicy(data.password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
+
+    const exists = await prisma.user.findUnique({ where: { email: data.email } });
+    if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
+
+    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        passwordHash,
+        name: data.name,
+        nickname: data.nickname,
+        phone: data.phone,
+        accountType: 'CREW',
+      },
+    });
+
+    // 회사 컨텍스트 없는 토큰 + accountType=CREW. authRequired에서 req.user.accountType로 노출됨.
+    const token = jwt.sign(
+      { sub: user.id, tv: 0 },
+      env.jwt.secret,
+      { expiresIn: env.jwt.expiresIn }
+    );
+
+    audit({ user: { id: user.id, role: null }, headers: req.headers, ip: req.ip }, 'auth.signup-crew', {
+      targetType: 'USER',
+      targetId: user.id,
+      metadata: { email: user.email },
+    });
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        nickname: user.nickname,
+        accountType: user.accountType,
+      },
+      company: null,
+      role: null,
+      permissions: {},
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
 });
 
 router.post('/signup-general', signupLimiter, async (req, res, next) => {
@@ -233,7 +303,7 @@ router.post('/signup-general', signupLimiter, async (req, res, next) => {
 
     res.status(201).json({
       token,
-      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname },
+      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname, accountType: user.accountType || 'COMPANY' },
       company: null,
       role: null,
       permissions: {},
@@ -267,7 +337,13 @@ async function buildLoginResponse(user, membership) {
   const permissions = membership ? await loadPermissionMap(membership.id) : {};
   return {
     token,
-    user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      nickname: user.nickname,
+      accountType: user.accountType || 'COMPANY', // CREW면 클라이언트가 시공팀 홈으로 분기
+    },
     company: membership
       ? {
           id: membership.company.id,
@@ -548,7 +624,7 @@ router.get('/me', authRequired, async (req, res, next) => {
     const currentCompany = currentMembership?.company;
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname, phone: user.phone, isSuperAdmin: user.isSuperAdmin },
+      user: { id: user.id, email: user.email, name: user.name, nickname: user.nickname, phone: user.phone, isSuperAdmin: user.isSuperAdmin, accountType: user.accountType || 'COMPANY' },
       memberships: user.memberships.map((m) => ({
         companyId: m.companyId,
         companyName: m.company.name,
@@ -589,7 +665,7 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, name: true, tokenVersion: true, isSuperAdmin: true },
+      select: { id: true, email: true, name: true, tokenVersion: true, isSuperAdmin: true, accountType: true },
     });
 
     const token = jwt.sign(
@@ -608,7 +684,7 @@ router.post('/switch-company', authRequired, async (req, res, next) => {
 
     res.json({
       token,
-      user,
+      user: { ...user, accountType: user.accountType || 'COMPANY' },
       company: {
         id: membership.company.id,
         name: membership.company.name,

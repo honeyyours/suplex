@@ -8,6 +8,7 @@ import { useAuth } from './contexts/AuthContext';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import CrewSignup from './pages/CrewSignup';
 import InviteAccept from './pages/InviteAccept';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -64,6 +65,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/crew/signup" element={<CrewSignup />} />
       <Route path="/invite/:token" element={<InviteAccept />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />

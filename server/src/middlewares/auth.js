@@ -46,7 +46,7 @@ async function authRequired(req, res, next) {
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, tokenVersion: true, isSuperAdmin: true },
+      select: { id: true, tokenVersion: true, isSuperAdmin: true, accountType: true },
     });
   } catch (e) {
     return res.status(500).json({ error: 'Auth check failed' });
@@ -62,6 +62,7 @@ async function authRequired(req, res, next) {
     id: dbUser.id,
     companyId: payload.companyId || null,
     role: payload.role || null,
+    accountType: dbUser.accountType || 'COMPANY', // CREW면 회사 메뉴 진입 차단·시공팀 라우트만 허용
     // 사칭 모드에선 어드민 권한 무시 (대상 회사 OWNER로 동작)
     isSuperAdmin: payload.impersonating ? false : dbUser.isSuperAdmin,
     impersonating: !!payload.impersonating,

@@ -113,6 +113,13 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  // 시공팀 가입 — 회사·멤버십 없이 별도 계정 타입(CREW). (2026-05-17 양면 플랫폼)
+  async function signupCrew(payload) {
+    const { data } = await api.post('/auth/signup-crew', payload);
+    setAuth(data);
+    return data;
+  }
+
   async function acceptInvite(payload) {
     const { data } = await api.post('/invitations/accept', payload);
     setAuth(data);
@@ -194,7 +201,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, signupGeneral, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, signupGeneral, signupCrew, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );
