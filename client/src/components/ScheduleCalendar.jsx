@@ -228,6 +228,8 @@ export default function ScheduleCalendar({ projectId, project }) {
                 const isRed = inRange && (dayOfWeek === 0 || !!holiday);
 
                 const isActive = activeCellKey === key;
+                const isProjectStart = inRange && key === projStartKey;
+                const showMonth = inRange && (isFirstOfMonth || isProjectStart);
                 return (
                   <div
                     key={key}
@@ -241,8 +243,8 @@ export default function ScheduleCalendar({ projectId, project }) {
                       isRed ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-600'
                     }`}>
                       <span className="flex items-baseline gap-1 truncate">
-                        <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''} ${isFirstOfMonth && inRange && !isToday ? 'font-semibold text-navy-700' : ''}`}>
-                          {isFirstOfMonth && inRange ? `${date.getMonth() + 1}/1` : date.getDate()}
+                        <span className={`${isToday ? 'bg-navy-700 text-white rounded-full px-1.5 sm:px-1.5' : ''} ${showMonth && !isToday ? 'font-semibold text-navy-700' : ''}`}>
+                          {showMonth ? `${date.getMonth() + 1}/${date.getDate()}` : date.getDate()}
                         </span>
                         {inRange && holiday && (
                           <span className="text-[9px] sm:text-[10px] text-red-500/80 truncate" title={holiday}>{holiday}</span>
