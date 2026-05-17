@@ -87,7 +87,12 @@ router.get('/', async (req, res, next) => {
       ],
       include: includeUsers,
     });
-    res.json({ items: await attachPhotos(items) });
+
+    // 카톡 복사 양식에서 현장명 사용을 위해 응답에 project 포함
+    res.json({
+      items: await attachPhotos(items),
+      project: { id: project.id, name: project.name },
+    });
   } catch (e) {
     next(e);
   }

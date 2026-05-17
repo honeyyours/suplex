@@ -10,10 +10,53 @@ import { STANDARD_PHASES } from '../utils/phases';
 import { useAuth } from '../contexts/AuthContext';
 import { appendKakaoFooter } from '../utils/kakaoFooter';
 
+// 작업자 카톡 양식 — 단일·복수 자동 분기. 회사·현장명 컨텍스트 포함.
+// 봉기님 제안(2026-05-17): "회사에서 알려드립니다. 현장 [공정] 확인·처리 부탁드립니다." 톤.
+function formatItemsForWorker(items, { company, project, plan }) {
+  const companyName = company?.name || '저희';
+  const projectName = project?.name || '';
+  const lines = [];
+
+  if (items.length === 1) {
+    const it = items[0];
+    const phaseStr = it.phase ? `[${it.phase}] ` : '';
+    lines.push(`${companyName}에서 알려드립니다.`);
+    if (projectName) lines.push(`${projectName} ${phaseStr}${it.title}`);
+    else lines.push(`${phaseStr}${it.title}`);
+    if (it.dueDate) {
+      const d = new Date(it.dueDate);
+      lines.push(`기한: ${d.getMonth() + 1}/${d.getDate()}`);
+    }
+    if (it.requiresPhoto) lines.push('※ 처리 후 사진 부탁드립니다');
+    lines.push('');
+    lines.push('확인·처리 부탁드립니다.');
+  } else {
+    lines.push(`${companyName}에서 알려드립니다.`);
+    if (projectName) lines.push(`${projectName} 아래 항목 확인·처리 부탁드립니다.`);
+    else lines.push('아래 항목 확인·처리 부탁드립니다.');
+    lines.push('');
+    items.forEach((it, idx) => {
+      const phaseStr = it.phase ? `[${it.phase}] ` : '';
+      const extras = [];
+      if (it.dueDate) {
+        const d = new Date(it.dueDate);
+        extras.push(`기한 ${d.getMonth() + 1}/${d.getDate()}`);
+      }
+      if (it.requiresPhoto) extras.push('사진 필수');
+      const tail = extras.length > 0 ? ` (${extras.join(', ')})` : '';
+      lines.push(`${idx + 1}. ${phaseStr}${it.title}${tail}`);
+    });
+    lines.push('');
+    lines.push('감사합니다.');
+  }
+  return appendKakaoFooter(lines.join('\n'), plan);
+}
+
 export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
   const id = projectId || params.id;
   const queryClient = useQueryClient();
+  const auth = useAuth();
   const [newTitle, setNewTitle] = useState('');
   const [newRequiresPhoto, setNewRequiresPhoto] = useState(false);
   const [newKind, setNewKind] = useState('GENERAL'); // 'GENERAL' | 'DUE'
@@ -24,6 +67,44 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [showLinkSheet, setShowLinkSheet] = useState(false);
   const [err, setErr] = useState('');
   const [editingItem, setEditingItem] = useState(null); // prompt() 대체 — 편집 대상
+  // 묶음 카톡 복사 — 작업자에게 여러 항목 한 번에 전달
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkCopied, setBulkCopied] = useState(false);
+
+  function toggleSelect(itemId) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }
+
+  function exitBulkMode() {
+    setBulkMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function copyBulk() {
+    const selected = items.filter((it) => selectedIds.has(it.id));
+    if (selected.length === 0) return;
+    const text = formatItemsForWorker(selected, {
+      company: auth?.company,
+      project: data?.project,
+      plan: auth?.company?.plan,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setBulkCopied(true);
+      setTimeout(() => {
+        setBulkCopied(false);
+        exitBulkMode();
+      }, 1200);
+    } catch (e) {
+      alert('복사 실패: ' + (e?.message || ''));
+    }
+  }
 
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['checklists', 'project', id],
@@ -229,6 +310,24 @@ export default function ProjectChecklist({ projectId } = {}) {
         {displayErr && <div className="mt-2 text-sm text-rose-600">{displayErr}</div>}
       </div>
 
+      {/* 작업자 묶음 카톡 복사 — 항목 다중 선택 → 한 번에 카톡 텍스트 생성 */}
+      {!bulkMode && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setBulkMode(true)}
+            className="text-xs px-3 py-1.5 border border-navy-200 text-navy-700 bg-white rounded hover:bg-navy-50 transition"
+          >
+            📋 작업자에게 묶음 복사
+          </button>
+        </div>
+      )}
+      {bulkMode && (
+        <div className="mb-3 px-3 py-2 bg-navy-50 border border-navy-200 rounded text-xs text-navy-700 flex items-center gap-2">
+          <span>항목 선택 후 하단 [복사] 버튼을 눌러주세요</span>
+        </div>
+      )}
+
       {loading && <div className="text-sm text-gray-400">불러오는 중...</div>}
 
       <div className="space-y-4">
@@ -237,7 +336,19 @@ export default function ProjectChecklist({ projectId } = {}) {
             <Empty text="해야할 항목이 없습니다" />
           ) : (
             upcoming.map((i) => (
-              <Item key={i.id} item={i} projectId={id} onToggle={toggle} onDelete={remove} onEdit={edit} onChange={reload} />
+              <Item
+                key={i.id}
+                item={i}
+                projectId={id}
+                onToggle={toggle}
+                onDelete={remove}
+                onEdit={edit}
+                onChange={reload}
+                bulkMode={bulkMode}
+                bulkSelected={selectedIds.has(i.id)}
+                onBulkToggle={() => toggleSelect(i.id)}
+                copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+              />
             ))
           )}
         </Column>
@@ -247,7 +358,19 @@ export default function ProjectChecklist({ projectId } = {}) {
             <Empty text="예정된 항목이 없습니다" />
           ) : (
             later.map((i) => (
-              <Item key={i.id} item={i} projectId={id} onToggle={toggle} onDelete={remove} onEdit={edit} onChange={reload} />
+              <Item
+                key={i.id}
+                item={i}
+                projectId={id}
+                onToggle={toggle}
+                onDelete={remove}
+                onEdit={edit}
+                onChange={reload}
+                bulkMode={bulkMode}
+                bulkSelected={selectedIds.has(i.id)}
+                onBulkToggle={() => toggleSelect(i.id)}
+                copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+              />
             ))
           )}
         </Column>
@@ -257,7 +380,19 @@ export default function ProjectChecklist({ projectId } = {}) {
             <Empty text="완료된 항목이 없습니다" />
           ) : (
             done.map((i) => (
-              <Item key={i.id} item={i} projectId={id} onToggle={toggle} onDelete={remove} onEdit={edit} onChange={reload} />
+              <Item
+                key={i.id}
+                item={i}
+                projectId={id}
+                onToggle={toggle}
+                onDelete={remove}
+                onEdit={edit}
+                onChange={reload}
+                bulkMode={bulkMode}
+                bulkSelected={selectedIds.has(i.id)}
+                onBulkToggle={() => toggleSelect(i.id)}
+                copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+              />
             ))
           )}
         </Column>
@@ -283,6 +418,36 @@ export default function ProjectChecklist({ projectId } = {}) {
           }}
           onClose={() => setShowLinkSheet(false)}
         />
+      )}
+
+      {/* 묶음 카톡 복사 모드 — 하단 sticky bar */}
+      {bulkMode && (
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 shadow-lg rounded-full bg-navy-800 text-white px-4 py-3 flex items-center gap-3 text-sm">
+          <span className="font-medium">
+            {selectedIds.size === 0 ? '선택된 항목 없음' : `${selectedIds.size}개 선택`}
+          </span>
+          <button
+            type="button"
+            onClick={copyBulk}
+            disabled={selectedIds.size === 0}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+              selectedIds.size === 0
+                ? 'bg-navy-700 text-navy-300 cursor-not-allowed'
+                : bulkCopied
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-white text-navy-800 hover:bg-navy-50'
+            }`}
+          >
+            {bulkCopied ? '✓ 복사됨' : '📋 카톡 복사'}
+          </button>
+          <button
+            type="button"
+            onClick={exitBulkMode}
+            className="text-navy-200 hover:text-white text-xs px-2"
+          >
+            취소
+          </button>
+        </div>
       )}
     </div>
   );
@@ -320,7 +485,14 @@ function Empty({ text }) {
   return <div className="text-center text-sm text-gray-400 py-8">{text}</div>;
 }
 
-export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, showProjectChip = false }) {
+export function Item({
+  item, projectId, onToggle, onDelete, onEdit, onChange,
+  showProjectChip = false,
+  bulkMode = false,
+  bulkSelected = false,
+  onBulkToggle,
+  copyContext,
+}) {
   const photos = item.photos || [];
   const showPhotos = item.requiresPhoto || photos.length > 0;
   const [expanded, setExpanded] = useState(item.requiresPhoto && photos.length === 0);
@@ -329,16 +501,14 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
   const effProjectId = projectId || item.project?.id;
 
   async function copyForWorker() {
-    const lines = [];
-    const prefix = item.phase ? `[${item.phase}] ` : '';
-    lines.push(`${prefix}${item.title}`);
-    if (item.dueDate) {
-      const d = new Date(item.dueDate);
-      lines.push(`기한: ${d.getMonth() + 1}/${d.getDate()}`);
-    }
-    if (item.requiresPhoto) lines.push('※ 작업 후 사진 부탁드립니다');
+    const ctx = copyContext || {
+      company: auth?.company,
+      project: item.project,
+      plan: auth?.company?.plan,
+    };
+    const text = formatItemsForWorker([item], ctx);
     try {
-      await navigator.clipboard.writeText(appendKakaoFooter(lines.join('\n'), auth?.company?.plan));
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
@@ -346,14 +516,28 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
     }
   }
   return (
-    <div className={`bg-white border rounded-md p-3 group ${item.isDone ? 'opacity-75' : ''}`}>
+    <div
+      className={`bg-white border rounded-md p-3 group transition ${item.isDone ? 'opacity-75' : ''} ${bulkMode && bulkSelected ? 'ring-2 ring-navy-500 bg-navy-50' : ''} ${bulkMode ? 'cursor-pointer' : ''}`}
+      onClick={bulkMode ? () => onBulkToggle?.() : undefined}
+    >
       <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          checked={item.isDone}
-          onChange={() => onToggle(item.id)}
-          className="mt-0.5 w-4 h-4 accent-navy-700 flex-shrink-0"
-        />
+        {bulkMode ? (
+          <input
+            type="checkbox"
+            checked={bulkSelected}
+            onChange={() => onBulkToggle?.()}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-0.5 w-4 h-4 accent-emerald-600 flex-shrink-0"
+            title="작업자 카톡 복사용 선택"
+          />
+        ) : (
+          <input
+            type="checkbox"
+            checked={item.isDone}
+            onChange={() => onToggle(item.id)}
+            className="mt-0.5 w-4 h-4 accent-navy-700 flex-shrink-0"
+          />
+        )}
         <div className="flex-1 min-w-0">
           <div className={`text-sm ${item.isDone ? 'line-through text-gray-500' : 'text-navy-800'}`}>
             {item.title}
