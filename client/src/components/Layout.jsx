@@ -132,6 +132,17 @@ export default function Layout() {
             </nav>
           </div>
           <div className="text-sm text-navy-100 flex items-center gap-3">
+            {/* + 새 프로젝트 (데스크톱 헤더, 홈에서만 노출). 모바일은 우하단 FAB가 대체 */}
+            {auth && !isAdmin && auth.company && auth.company.approvalStatus === 'APPROVED' &&
+             location.pathname === '/' && (
+              <Link
+                to="/projects/new"
+                className="hidden sm:inline-flex items-center gap-1 bg-white/95 hover:bg-white text-navy-800 text-xs font-semibold px-3 py-1.5 rounded-md shadow-sm transition"
+              >
+                <span className="text-base leading-none">+</span>
+                <span>새 프로젝트</span>
+              </Link>
+            )}
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
               title={`현재: ${theme === 'system' ? '시스템' : theme === 'dark' ? '다크' : '라이트'} (클릭 토글)`}
@@ -182,14 +193,13 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* + 새 프로젝트 FAB — 회사 승인 + 일반사용자/오너 한정. 새 프로젝트 페이지에선 숨김 */}
+      {/* + 새 프로젝트 모바일 FAB — 홈에서만 노출. 데스크톱은 헤더 버튼이 대체 */}
       {auth && !isAdmin && auth.company && auth.company.approvalStatus === 'APPROVED' &&
-       !location.pathname.startsWith('/projects/new') &&
-       !location.pathname.startsWith('/lounge') && (
+       location.pathname === '/' && (
         <Link
           to="/projects/new"
           aria-label="새 프로젝트"
-          className="fixed right-4 sm:right-6 z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+76px)] sm:bottom-6 bg-navy-700 hover:bg-navy-800 active:bg-navy-900 text-white shadow-lg rounded-full pl-4 pr-5 py-3 flex items-center gap-1.5 text-sm font-medium transition"
+          className="sm:hidden fixed right-4 z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+76px)] bg-navy-700 hover:bg-navy-800 active:bg-navy-900 text-white shadow-lg rounded-full pl-4 pr-5 py-3 flex items-center gap-1.5 text-sm font-medium transition"
         >
           <span className="text-lg leading-none">+</span>
           <span>새 프로젝트</span>
