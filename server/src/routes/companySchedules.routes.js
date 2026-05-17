@@ -5,7 +5,7 @@
 // DailyScheduleEntry 재사용 — projectId nullable, companyId 채워서 회사 스코프.
 const express = require('express');
 const { z } = require('zod');
-const prisma = require('../lib/prisma');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
 
