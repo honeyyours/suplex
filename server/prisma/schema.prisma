@@ -78,6 +78,7 @@ model Company {
   phaseDeadlineRules     PhaseDeadlineRule[]
   phaseAdvices           PhaseAdvice[]
   companyPhaseTips       CompanyPhaseTip[]
+  teamCalendarEntries    DailyScheduleEntry[] @relation("CompanyTeamCalendar")
 
   @@map("companies")
 }
@@ -485,7 +486,10 @@ model PhaseKeywordRule {
 
 model DailyScheduleEntry {
   id          String    @id @default(cuid())
-  projectId   String
+  // 프로젝트 일정이면 projectId 채워짐. 팀 캘린더(회사 일정·견적미팅 등)는 null 허용.
+  projectId   String?
+  // 팀 캘린더 일정의 회사 컨텍스트 (projectId 없을 때 채워짐). 프로젝트 일정이면 project.companyId로 추론.
+  companyId   String?
   date        DateTime  @db.Date // 날짜 (시간 X)
   category    String? // 공종 태그 (목공/전기/타일/도배 등)
   content     String // 내용
@@ -493,7 +497,7 @@ model DailyScheduleEntry {
   confirmedAt DateTime?
   orderIndex  Int       @default(0)
   vendorId    String? // 협력업체 (선택)
-  // 팀 캘린더(회사 전체 일정) 플래그 — true면 프로젝트 일정 + 회사일정 양쪽에 노출.
+  // 팀 캘린더(회사 일정) 플래그 — true면 프로젝트 일정 + 회사일정 양쪽에 노출.
   // 2026-05-17 추가. 회사 자체 운영 일정·견적미팅·내부 미팅 등 프로젝트 컨텍스트에 있되 회사 단위로도 보이게 함.
   companyWide Boolean   @default(false)
   createdById String?
@@ -501,12 +505,14 @@ model DailyScheduleEntry {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  vendor    Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  createdBy User?   @relation("DailyScheduleCreatedBy", fields: [createdById], references: [id])
-  updatedBy User?   @relation("DailyScheduleUpdatedBy", fields: [updatedById], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company   Company? @relation("CompanyTeamCalendar", fields: [companyId], references: [id], onDelete: Cascade)
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  createdBy User?    @relation("DailyScheduleCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?    @relation("DailyScheduleUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([projectId, date])
+  @@index([companyId, date])
   @@index([category])
   @@index([vendorId])
   @@map("daily_schedule_entries")

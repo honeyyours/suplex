@@ -11,6 +11,7 @@ import PlanBadge from './PlanBadge';
 const NAV = [
   { to: '/', label: '홈', mobileLabel: '홈', exact: true, icon: 'home' },
   { to: '/schedule', label: '전체 일정', mobileLabel: '일정', icon: 'calendar' },
+  { to: '/team-calendar', label: '팀 캘린더', mobileLabel: '팀일정', icon: 'calendar' },
   { to: '/projects', label: '프로젝트', mobileLabel: '프로젝트', icon: 'folder' },
   { to: '/orders', label: '발주', mobileLabel: '발주', icon: 'box' },
   { to: '/expenses', label: '지출관리', mobileLabel: '지출', feature: F.EXPENSES_VIEW, icon: 'wallet' },

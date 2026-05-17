@@ -14,6 +14,7 @@ import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
+import TeamCalendar from './pages/TeamCalendar';
 import TeamManagement from './pages/TeamManagement';
 import Settings from './pages/Settings';
 
@@ -88,6 +89,7 @@ export default function App() {
 
         {/* 그 외 메뉴는 미승인이면 BetaGate가 베타 준비중 화면으로 차단 */}
         <Route path="/schedule" element={<BetaGate><Schedule /></BetaGate>} />
+        <Route path="/team-calendar" element={<BetaGate><TeamCalendar /></BetaGate>} />
         <Route path="/expenses" element={<BetaGate><FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate></BetaGate>} />
         <Route path="/orders" element={<BetaGate><Orders /></BetaGate>} />
         <Route path="/ai-assistant" element={<BetaGate><FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate></BetaGate>} />
