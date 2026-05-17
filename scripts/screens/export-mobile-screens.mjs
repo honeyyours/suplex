@@ -15,7 +15,7 @@ const ARG_VIEWPORT = (process.argv.find((a) => a.startsWith('--viewport=')) || '
 
 const EMAIL = process.env.EXPORT_EMAIL;
 const PASSWORD = process.env.EXPORT_PASSWORD;
-const BASE_URL = (process.env.EXPORT_BASE_URL || 'https://splex-mu.vercel.app').replace(/\/$/, '');
+const BASE_URL = (process.env.EXPORT_BASE_URL || 'https://suplex.kr').replace(/\/$/, '');
 
 if (!EMAIL || !PASSWORD) {
   console.error('❌ .env에 EXPORT_EMAIL · EXPORT_PASSWORD 를 채워주세요.');

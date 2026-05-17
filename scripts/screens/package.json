@@ -6,7 +6,9 @@
   "description": "Suplex 모바일 화면 자동 캡처 (HTML + PNG) — 디자인 시안 작업 보조",
   "scripts": {
     "export": "node export-mobile-screens.mjs",
-    "export:web": "node export-mobile-screens.mjs --viewport=web"
+    "export:web": "node export-mobile-screens.mjs --viewport=web",
+    "export:manual": "node export-manual-screens.mjs",
+    "export:manual:mobile": "node export-manual-screens.mjs --viewport=mobile"
   },
   "dependencies": {
     "puppeteer": "^23.0.0",

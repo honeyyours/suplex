@@ -1,0 +1,206 @@
+{
+  "_comment": "페이지별 영역 라벨링 anchor 정의. 매뉴얼 docs/manual/*.md의 영역 표와 1:1 매칭.",
+  "_anchor_types": {
+    "text": "텍스트가 포함된 가장 작은 element를 찾음 (권장)",
+    "selector": "CSS selector로 직접 지정 (텍스트 없는 영역용)",
+    "selectorWithText": "selector로 후보들 찾은 후 text 포함하는 것만 (모달 등 중복 컨테이너용)"
+  },
+
+  "01_home": [
+    { "label": "①", "text": "👋" },
+    { "label": "②", "text": "3일 안에" },
+    { "label": "③", "text": "진행 중인" },
+    { "label": "④", "text": "예정" },
+    { "label": "⑤", "text": "이번 주 일정" },
+    { "label": "⑥", "text": "브리프" }
+  ],
+
+  "02_schedule": [
+    { "label": "①", "text": "전체 일정" },
+    { "label": "②", "text": "현장 일정" },
+    { "label": "③", "selector": "[class*='AggregateCalendar'], .grid-cols-7" },
+    { "label": "④", "text": "체크리스트" },
+    { "label": "⑤", "text": "일정 복사" }
+  ],
+
+  "03_projects": [
+    { "label": "①", "text": "프로젝트" },
+    { "label": "②", "text": "연도" },
+    { "label": "③", "text": "진행중" },
+    { "label": "④", "selector": "input[placeholder*='검색'], input[type='search']" },
+    { "label": "⑤", "selector": "a[href^='/projects/']" },
+    { "label": "⑥", "text": "샘플" }
+  ],
+
+  "04_projects_new": [
+    { "label": "①", "text": "새 프로젝트" },
+    { "label": "②", "selector": "form, input[name='name'], label" },
+    { "label": "③", "selector": "button[type='submit']" }
+  ],
+
+  "05_orders": [
+    { "label": "①", "text": "발주" },
+    { "label": "②", "text": "대기" },
+    { "label": "③", "selector": "select" },
+    { "label": "④", "selector": "table, .border-b" },
+    { "label": "⑤", "selector": "input[type='checkbox']" },
+    { "label": "⑥", "text": "변경" }
+  ],
+
+  "06_expenses": [
+    { "label": "①", "text": "지출" },
+    { "label": "②", "text": "기간" },
+    { "label": "③", "text": "이번달" },
+    { "label": "④", "selector": "table tbody tr" },
+    { "label": "⑤", "text": "추가" },
+    { "label": "⑥", "text": "가져오기" }
+  ],
+
+  "07_ai_assistant": [
+    { "label": "①", "text": "AI 비서" },
+    { "label": "②", "selector": ".overflow-y-auto" },
+    { "label": "③", "selector": "[class*='tool'], .text-xs" },
+    { "label": "④", "text": "이번 달" },
+    { "label": "⑤", "selector": "textarea, input[type='text']" }
+  ],
+
+  "08_team": [
+    { "label": "①", "text": "팀 관리" },
+    { "label": "②", "text": "팀원" },
+    { "label": "③", "text": "협력업체" },
+    { "label": "④", "text": "추가" },
+    { "label": "⑤", "text": "OWNER" }
+  ],
+
+  "09_lounge": [
+    { "label": "①", "text": "라운지" },
+    { "label": "②", "text": "자유" },
+    { "label": "③", "selector": "input[placeholder*='검색']" },
+    { "label": "④", "text": "공지" },
+    { "label": "⑤", "selector": "a[href^='/lounge/']" },
+    { "label": "⑥", "text": "새 글" }
+  ],
+
+  "10_lounge_post": [
+    { "label": "①", "selector": "h1, h2" },
+    { "label": "②", "selector": "article, .prose, [class*='body']" },
+    { "label": "③", "selector": "img, a[download]" },
+    { "label": "④", "text": "댓글" },
+    { "label": "⑤", "text": "수정" }
+  ],
+
+  "11_lounge_new": [
+    { "label": "①", "selector": "select" },
+    { "label": "②", "selector": "input[name='title'], input[placeholder*='제목']" },
+    { "label": "③", "selector": ".tiptap, .ProseMirror, [contenteditable]" },
+    { "label": "④", "selector": "input[type='file']" },
+    { "label": "⑤", "selector": "button[type='submit']" }
+  ],
+
+  "12_project_schedule": [
+    { "label": "①", "selector": "[class*='ProjectInfoCard'], .bg-white.rounded-xl" },
+    { "label": "②", "selector": "nav a, [class*='border-b-2']" },
+    { "label": "③", "selector": ".grid-cols-7, [class*='Calendar']" },
+    { "label": "④", "text": "공정" },
+    { "label": "⑤", "text": "빠른" },
+    { "label": "⑥", "selector": ".bottom-0.fixed" }
+  ],
+
+  "13_project_process": [
+    { "label": "①", "text": "공정" },
+    { "label": "②", "selector": "table tbody tr" },
+    { "label": "③", "text": "진행" },
+    { "label": "④", "selector": "[class*='drawer'], [class*='Drawer']" }
+  ],
+
+  "14_project_quotes": [
+    { "label": "①", "selector": "[class*='pill'], .rounded-full" },
+    { "label": "②", "text": "디자인비" },
+    { "label": "③", "selector": "table" },
+    { "label": "④", "text": "도배" },
+    { "label": "⑤", "text": "가이드" },
+    { "label": "⑥", "text": "인쇄" }
+  ],
+
+  "15_project_quotes_detail": [
+    { "label": "①", "selector": "[class*='pill'], .rounded-full" },
+    { "label": "②", "text": "갑지" },
+    { "label": "③", "text": "자재비" },
+    { "label": "④", "text": "원가내역서" },
+    { "label": "⑤", "text": "평당" },
+    { "label": "⑥", "text": "인쇄" }
+  ],
+
+  "16_project_quote_consultations": [
+    { "label": "①", "selector": "input[type='checkbox']" },
+    { "label": "②", "text": "기본" },
+    { "label": "③", "selector": "textarea" },
+    { "label": "④", "text": "저장" },
+    { "label": "⑤", "text": "수정" }
+  ],
+
+  "17_project_materials": [
+    { "label": "①", "selector": "aside, [class*='sidebar']" },
+    { "label": "②", "selector": "h2, h3" },
+    { "label": "③", "selector": "table, .grid" },
+    { "label": "④", "text": "불러오기" },
+    { "label": "⑤", "text": "가전" },
+    { "label": "⑥", "text": "견적" }
+  ],
+
+  "18_project_orders": [
+    { "label": "①", "selector": "[class*='ProjectInfoCard']" },
+    { "label": "②", "text": "대기" },
+    { "label": "③", "selector": "table" },
+    { "label": "④", "selector": "input[type='checkbox']" },
+    { "label": "⑤", "text": "변경" }
+  ],
+
+  "19_project_checklist": [
+    { "label": "①", "text": "Todo" },
+    { "label": "②", "text": "추가" },
+    { "label": "③", "text": "일정" },
+    { "label": "④", "text": "어드바이스" },
+    { "label": "⑤", "text": "묶음" },
+    { "label": "⑥", "selector": "input[type='file']" },
+    { "label": "⑦", "selector": "[class*='phase'], .rounded.text-xs" }
+  ],
+
+  "20_project_reports": [
+    { "label": "①", "text": "오늘 작업" },
+    { "label": "②", "selector": "article, [class*='card']" },
+    { "label": "③", "text": "새 보고" },
+    { "label": "④", "text": "타임라인" },
+    { "label": "⑤", "selector": "img" }
+  ],
+
+  "21_project_memo": [
+    { "label": "①", "text": "새 메모" },
+    { "label": "②", "selector": "[class*='tag'], .rounded-full.text-xs" },
+    { "label": "③", "selector": "article, [class*='card']" },
+    { "label": "④", "text": "거래처" },
+    { "label": "⑤", "selector": "img" }
+  ],
+
+  "22_project_expenses": [
+    { "label": "①", "text": "발주" },
+    { "label": "②", "text": "지출" },
+    { "label": "③", "text": "매출" },
+    { "label": "④", "text": "빠른" },
+    { "label": "⑤", "text": "전체 지출" }
+  ],
+
+  "23_project_settlement": [
+    { "label": "①", "selector": "table tbody tr" },
+    { "label": "②", "text": "견적" },
+    { "label": "③", "text": "지출" },
+    { "label": "④", "text": "%" },
+    { "label": "⑤", "selector": "input, textarea" }
+  ],
+
+  "24_project_tools": [
+    { "label": "①", "selector": ".grid" },
+    { "label": "②", "text": "준비 중" },
+    { "label": "③", "text": "정산" }
+  ]
+}

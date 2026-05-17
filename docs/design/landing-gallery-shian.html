@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수플렉스 — 랜딩 화면 갤러리 시안 (모바일)</title>
+  <style>
+    :root {
+      --navy-900: #0d1b2a;
+      --navy-800: #1b263b;
+      --navy-700: #2c3e50;
+      --navy-600: #415a77;
+      --navy-200: #c8d5e2;
+      --navy-100: #e7eef5;
+      --navy-50: #f3f6fa;
+      --white: #ffffff;
+      --gray-500: #6b7280;
+      --gray-400: #9ca3af;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      color: var(--navy-900);
+      background: var(--white);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* === 시안 메타 헤더 === */
+    .shian-meta {
+      background: #fef3c7;
+      border-bottom: 1px solid #fbbf24;
+      padding: 12px 20px;
+      font-size: 12px;
+      color: #78350f;
+    }
+    .shian-meta strong { color: #451a03; }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* === 갤러리 섹션 === */
+    .gallery-section {
+      padding: 96px 0;
+      background: linear-gradient(180deg, var(--navy-50) 0%, var(--white) 100%);
+      border-top: 1px solid var(--navy-100);
+      border-bottom: 1px solid var(--navy-100);
+    }
+
+    .gallery-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy-600);
+      margin-bottom: 16px;
+    }
+
+    .gallery-heading {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--navy-900);
+      line-height: 1.2;
+      margin: 0 0 16px 0;
+    }
+    .gallery-heading .accent { color: var(--navy-600); }
+
+    .gallery-sub {
+      font-size: 16px;
+      color: var(--navy-700);
+      max-width: 640px;
+      margin: 0 0 56px 0;
+    }
+
+    /* === 그리드 — 모바일 mockup 균등 === */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 56px 32px;
+      justify-items: center;
+    }
+    @media (min-width: 640px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* === 카드 — 모바일 mockup (베젤·둥근 모서리) === */
+    .gallery-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 280px;
+      width: 100%;
+    }
+    .gallery-card .device {
+      width: 100%;
+      max-width: 260px;
+      padding: 10px;
+      background: linear-gradient(180deg, #1f2937, #0f172a);
+      border-radius: 36px;
+      box-shadow:
+        0 12px 32px rgba(13, 27, 42, 0.18),
+        0 2px 4px rgba(13, 27, 42, 0.08),
+        inset 0 0 0 1.5px rgba(255, 255, 255, 0.06);
+      position: relative;
+      aspect-ratio: 9/19.5;
+      overflow: hidden;
+    }
+    .gallery-card .device::before {
+      /* 노치 */
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 18px;
+      background: #0a0e15;
+      border-radius: 12px;
+      z-index: 2;
+    }
+    .gallery-card .device img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      border-radius: 26px;
+      background: var(--navy-50);
+    }
+    .gallery-card .caption {
+      margin-top: 24px;
+      text-align: center;
+      padding: 0 8px;
+    }
+    .gallery-card .caption-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--navy-600);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .gallery-card .caption-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy-900);
+      margin: 0 0 6px 0;
+      line-height: 1.4;
+    }
+    .gallery-card .caption-sub {
+      font-size: 13px;
+      color: var(--navy-600);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* === CTA 푸터 === */
+    .gallery-cta {
+      margin-top: 96px;
+      text-align: center;
+      padding: 48px 24px;
+      background: var(--white);
+      border: 1px solid var(--navy-100);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(13, 27, 42, 0.04);
+    }
+    .gallery-cta h3 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--navy-900);
+      margin: 0 0 8px 0;
+    }
+    .gallery-cta p {
+      font-size: 14px;
+      color: var(--navy-700);
+      margin: 0 0 24px 0;
+    }
+    .gallery-cta .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: var(--navy-800);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .gallery-cta .btn:hover { background: var(--navy-900); }
+
+    /* === 시안 푸터 === */
+    .shian-footer {
+      padding: 40px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--gray-500);
+      border-top: 1px solid var(--navy-100);
+    }
+    .shian-footer .palette {
+      display: inline-flex;
+      gap: 6px;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .shian-footer .swatch {
+      width: 16px; height: 16px;
+      border-radius: 3px;
+      border: 1px solid var(--navy-100);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shian-meta">
+    📌 <strong>시안 (모바일 mockup)</strong> · 랜딩 페이지 갤러리 섹션 · 2026-05-17
+    · PNG 출처: <code>docs/manual/assets/screens/mobile/</code>
+    · 봉기님이 <code>npm run export:manual:mobile</code> 한 번 실행 후 새로고침
+  </div>
+
+  <section class="gallery-section">
+    <div class="container">
+      <div class="gallery-eyebrow">Product · Mobile</div>
+      <h2 class="gallery-heading">
+        현장에서 바로 쓰는 <span class="accent">수플렉스</span>
+      </h2>
+      <p class="gallery-sub">
+        주머니에서 꺼내 셀 한 번 클릭으로 일정 입력. 카톡 한 번에 작업자에게 전달.
+        담당자가 바뀌어도 회사의 일은 끊기지 않습니다.
+      </p>
+
+      <div class="gallery-grid">
+
+        <!-- 1. 전체 일정 — Wedge 핵심 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/02_schedule.png" alt="전체 일정 페이지">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">전체 일정 · Wedge</div>
+            <h3 class="caption-title">회사 모든 현장 일정, 한 캘린더로</h3>
+            <p class="caption-sub">현장·견적 일정 통합. 거래처 충돌·자원 배분이 한 화면에서 끝납니다.</p>
+          </div>
+        </div>
+
+        <!-- 2. 홈 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/01_home.png" alt="홈 대시보드">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">홈</div>
+            <h3 class="caption-title">출근 5분, 오늘 할 일을 한눈에</h3>
+            <p class="caption-sub">3일 안에 할 일·진행 중 프로젝트·이번 주 일정이 결정론적으로 정리됩니다.</p>
+          </div>
+        </div>
+
+        <!-- 3. 프로젝트 공정 일정 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/12_project_schedule.png" alt="프로젝트 공정 일정">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">공정 일정</div>
+            <h3 class="caption-title">셀 클릭으로 입력, 키워드 자동 인식</h3>
+            <p class="caption-sub">"거실 타일" 한 줄 → 타일 공정 자동 부여. 작업자에게 카톡 한 번에 전달.</p>
+          </div>
+        </div>
+
+        <!-- 4. 체크리스트 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/19_project_checklist.png" alt="프로젝트 체크리스트">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">체크리스트 · D-day</div>
+            <h3 class="caption-title">공정별 체크리스트, 카톡으로 전달</h3>
+            <p class="caption-sub">D-14·D-7 자동 알림 + 회사 표준 어드바이스로 마감 누락이 줄어듭니다.</p>
+          </div>
+        </div>
+
+        <!-- 5. 간편 견적 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/14_project_quotes.png" alt="간편 견적">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">간편 견적 · 회사 자산</div>
+            <h3 class="caption-title">공정별 견적, 차수로 누적</h3>
+            <p class="caption-sub">디자인비·부가세·단조 자동. 변경은 새 차수로, 1차는 그대로 남습니다.</p>
+          </div>
+        </div>
+
+        <!-- 6. 마감재 -->
+        <div class="gallery-card">
+          <div class="device">
+            <img src="../manual/assets/screens/mobile/17_project_materials.png" alt="마감재 관리">
+          </div>
+          <div class="caption">
+            <div class="caption-eyebrow">마감재 · 회사 자산</div>
+            <h3 class="caption-title">공간 단위 인라인, 6가지 상태</h3>
+            <p class="caption-sub">미정·검토·확정·변경·재사용·미적용. 발주 후 변경이면 자동 ⚠️ 표시.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="gallery-cta">
+        <h3>지금 회사가 이렇게 운영됐다면 어땠을까요?</h3>
+        <p>클로즈드 베타 · 2개월 무료 · 카드 등록 없음</p>
+        <a href="/signup" class="btn">베타 신청하기 →</a>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="shian-footer">
+    <div>토큰 팔레트</div>
+    <div class="palette">
+      <span class="swatch" style="background:#0d1b2a" title="navy-900"></span>
+      <span class="swatch" style="background:#1b263b" title="navy-800"></span>
+      <span class="swatch" style="background:#415a77" title="navy-600"></span>
+      <span class="swatch" style="background:#c8d5e2" title="navy-200"></span>
+      <span class="swatch" style="background:#f3f6fa" title="navy-50"></span>
+      <span class="swatch" style="background:#ffffff;border:1px solid #c8d5e2" title="white"></span>
+    </div>
+    <div style="margin-top: 16px;">
+      <strong>출처</strong> · 캡처 일자 2026-05-17 · <code>scripts/screens/export-manual-screens.mjs --viewport=mobile</code>
+      · 라벨 OFF 권장 (<code>$env:EXPORT_LABEL='0'</code>)
+    </div>
+    <div style="margin-top: 8px;">
+      <strong>인터랙션 노트</strong> · iPhone 14 Pro 393×852 기준 · 라이트모드 ·
+      그리드(모바일 1열·태블릿 2열·데스크톱 3열) · iPhone-like 베젤 + 노치 mockup
+    </div>
+  </footer>
+
+</body>
+</html>

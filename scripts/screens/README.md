@@ -15,7 +15,7 @@ cp .env.example .env
 ```
 EXPORT_EMAIL=1988kbk@gmail.com
 EXPORT_PASSWORD=<prod 비번>
-EXPORT_BASE_URL=https://splex-mu.vercel.app
+EXPORT_BASE_URL=https://suplex.kr
 ```
 
 > `.env`는 `.gitignore`에 포함되어 있어 커밋되지 않습니다.
@@ -23,12 +23,17 @@ EXPORT_BASE_URL=https://splex-mu.vercel.app
 ## 실행
 
 ```bash
-# 모바일 (기본, iPhone 14 Pro viewport 393×852)
+# 모바일 (기본, iPhone 14 Pro viewport 393×852) — 디자인 시안용 9페이지
 npm run export
 
-# 데스크톱 (1440×900)
+# 데스크톱 (1440×900) — 디자인 시안용 9페이지
 npm run export:web
+
+# 매뉴얼 v0.7 캡처용 — 데스크톱 1440×900, 24페이지 (전역 11 + 프로젝트 13탭), PII 블러
+npm run export:manual
 ```
+
+> `export:manual` 은 `.env`에 매뉴얼 캡처용 계정(예: `1988kbk@naver.com`)을 지정해두고 실행. 출력은 `~/Desktop/suplex_manual_screens_YYYY-MM-DD/`. PII 자동 블러를 끄려면 `EXPORT_BLUR_PII=0 npm run export:manual`.
 
 ## 출력
 
