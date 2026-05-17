@@ -59,7 +59,7 @@ export default function Login() {
         {!totpStep ? (
           <>
             <h1 className="text-2xl font-bold text-navy-800 dark:text-navy-200 mb-1">Suplex 로그인</h1>
-            <p className="text-sm text-gray-500 mb-6">인테리어 프로젝트 운영 시스템</p>
+            <p className="text-sm text-gray-500 mb-6">인테리어 회사 협업 캘린더</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">이메일</label>
