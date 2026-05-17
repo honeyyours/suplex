@@ -6,6 +6,9 @@ import { photosApi } from '../api/reports';
 import { relativeTime } from '../utils/date';
 import InputModal from '../components/InputModal';
 import ScheduleLinkSheet from '../components/ScheduleLinkSheet';
+import { STANDARD_PHASES } from '../utils/phases';
+import { useAuth } from '../contexts/AuthContext';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 export default function ProjectChecklist({ projectId } = {}) {
   const params = useParams();
@@ -17,6 +20,7 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [newDueDate, setNewDueDate] = useState('');
   const [newLinkedSchedule, setNewLinkedSchedule] = useState(null); // {id, date, content, category} — DUE 안에서 일정 가져오기 사용
   const [newTeam, setNewTeam] = useState('AUTO'); // 'AUTO' | 'FIELD' | 'DESIGN' | 'ORDER' | 'OTHER'
+  const [newPhase, setNewPhase] = useState(''); // 공정 태그 — 비어있으면 자동 추론
   const [showLinkSheet, setShowLinkSheet] = useState(false);
   const [err, setErr] = useState('');
   const [editingItem, setEditingItem] = useState(null); // prompt() 대체 — 편집 대상
@@ -60,6 +64,7 @@ export default function ProjectChecklist({ projectId } = {}) {
         dueDate: dueDateIso,
         linkedScheduleId,
         ...(newTeam !== 'AUTO' ? { team: newTeam } : {}),
+        ...(newPhase ? { phase: newPhase } : {}),
       });
       setNewTitle('');
       setNewRequiresPhoto(false);
@@ -67,6 +72,7 @@ export default function ProjectChecklist({ projectId } = {}) {
       setNewDueDate('');
       setNewLinkedSchedule(null);
       setNewTeam('AUTO');
+      setNewPhase('');
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -188,6 +194,21 @@ export default function ProjectChecklist({ projectId } = {}) {
             />
             사진 첨부 필수
           </label>
+          {/* 공정 태그 — 작업자에게 카톡 복사 시 [전기]처럼 표시. 일정·발주 통합 키. */}
+          <label className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span>공정:</span>
+            <select
+              value={newPhase}
+              onChange={(e) => setNewPhase(e.target.value)}
+              className="border rounded-md px-2 py-1 text-xs bg-white"
+              title="작업자에게 전달할 공정 태그 (선택)"
+            >
+              <option value="">미지정</option>
+              {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
+                <option key={p.key} value={p.label}>{p.label}</option>
+              ))}
+            </select>
+          </label>
           {/* 분류 — 홈 '3일 안에 할 일' 카드 노출 분기. 자동은 제목·공종 키워드로 추론. */}
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
             <span>분류:</span>
@@ -303,7 +324,27 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
   const photos = item.photos || [];
   const showPhotos = item.requiresPhoto || photos.length > 0;
   const [expanded, setExpanded] = useState(item.requiresPhoto && photos.length === 0);
+  const [copied, setCopied] = useState(false);
+  const auth = useAuth();
   const effProjectId = projectId || item.project?.id;
+
+  async function copyForWorker() {
+    const lines = [];
+    const prefix = item.phase ? `[${item.phase}] ` : '';
+    lines.push(`${prefix}${item.title}`);
+    if (item.dueDate) {
+      const d = new Date(item.dueDate);
+      lines.push(`기한: ${d.getMonth() + 1}/${d.getDate()}`);
+    }
+    if (item.requiresPhoto) lines.push('※ 작업 후 사진 부탁드립니다');
+    try {
+      await navigator.clipboard.writeText(appendKakaoFooter(lines.join('\n'), auth?.company?.plan));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      alert('복사 실패: ' + (e?.message || ''));
+    }
+  }
   return (
     <div className={`bg-white border rounded-md p-3 group ${item.isDone ? 'opacity-75' : ''}`}>
       <div className="flex items-start gap-2">
@@ -350,22 +391,27 @@ export function Item({ item, projectId, onToggle, onDelete, onEdit, onChange, sh
             </span>
           </div>
         </div>
-        {(onEdit || onDelete) && (
-          <div className="sm:opacity-0 sm:group-hover:opacity-100 transition flex gap-1">
-            {onEdit && !item.isDone && (
-              <button
-                onClick={() => onEdit(item)}
-                className="text-xs text-gray-500 hover:text-navy-700 px-1"
-              >✎</button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => onDelete(item.id, effProjectId)}
-                className="text-xs text-gray-500 hover:text-rose-600 px-1"
-              >✕</button>
-            )}
-          </div>
-        )}
+        <div className="sm:opacity-0 sm:group-hover:opacity-100 transition flex gap-1 flex-shrink-0">
+          <button
+            onClick={copyForWorker}
+            title="작업자에게 카톡 복사"
+            className={`text-xs px-1 transition ${copied ? 'text-emerald-600' : 'text-gray-500 hover:text-navy-700'}`}
+          >
+            {copied ? '✓' : '📋'}
+          </button>
+          {onEdit && !item.isDone && (
+            <button
+              onClick={() => onEdit(item)}
+              className="text-xs text-gray-500 hover:text-navy-700 px-1"
+            >✎</button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(item.id, effProjectId)}
+              className="text-xs text-gray-500 hover:text-rose-600 px-1"
+            >✕</button>
+          )}
+        </div>
       </div>
       {showPhotos && expanded && effProjectId && (
         <ChecklistPhotos projectId={effProjectId} item={item} onChange={onChange} />
