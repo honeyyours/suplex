@@ -46,7 +46,7 @@ export default function IntroHome() {
           <div className="grid lg:grid-cols-[1fr_360px] gap-12 items-center">
             <div>
               <div className="intro-eyebrow mb-6">
-                {auth?.user?.nickname || auth?.user?.name}님, 환영합니다
+                {auth?.user?.name}님, 환영합니다
               </div>
               <h1 className="intro-display text-4xl sm:text-6xl font-extrabold text-navy-900 leading-[1.1]">
                 한 사람의 능력이 아니라,<br/>

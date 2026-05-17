@@ -19,8 +19,8 @@ import MobileCompanyScheduleSheet from '../components/MobileCompanyScheduleSheet
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
 function memberDisplay(m) {
-  // 닉네임 우선, 없으면 이름
-  return m.nickname || m.name;
+  // 회사 영역에선 본명만 표시 — 닉네임은 라운지 전용
+  return m.name;
 }
 
 // 회사별 색상 팔레트 — 시공팀 모드에서 거래 회사 일정 분리 표시용

@@ -149,7 +149,7 @@ export default function MobileCompanyScheduleSheet({
                 >
                   <option value="">— 전체/미배정 —</option>
                   {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>{m.nickname || m.name}</option>
+                    <option key={m.userId} value={m.userId}>{m.name}</option>
                   ))}
                 </select>
               </label>
@@ -230,7 +230,7 @@ function EntryItem({ entry: e, isEditing, onEdit, onCancelEdit, onSave, onDelete
             >
               <option value="">— 미배정 —</option>
               {members.map((m) => (
-                <option key={m.userId} value={m.userId}>{m.nickname || m.name}</option>
+                <option key={m.userId} value={m.userId}>{m.name}</option>
               ))}
             </select>
           </label>
@@ -308,7 +308,7 @@ function EntryItem({ entry: e, isEditing, onEdit, onCancelEdit, onSave, onDelete
             )}
             {e.vendor && <span className="text-violet-700 truncate">🏢 {e.vendor.name}</span>}
             {e.assignee && (
-              <span className="truncate">👤 {e.assignee.nickname || e.assignee.name}</span>
+              <span className="truncate">👤 {e.assignee.name}</span>
             )}
           </div>
         </div>
