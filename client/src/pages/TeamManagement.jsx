@@ -5,6 +5,7 @@ import { teamApi, ROLE_META, ROLE_KEYS } from '../api/team';
 import { invitationsApi } from '../api/invitations';
 import { vendorsApi } from '../api/vendors';
 import CrewLinkBadge from '../components/CrewLinkBadge';
+import CrewInvitationsPanel from '../components/CrewInvitationsPanel';
 import {
   TOGGLEABLE_FEATURES,
   TOGGLE_FEATURE_META,
@@ -933,7 +934,10 @@ function VendorsSection({ isOwner, role }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border">
+    <div>
+      <CrewInvitationsPanel isOwner={isOwner} />
+
+      <div className="bg-white rounded-xl border">
       <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap">
         <div>
           <div className="font-semibold text-navy-800">협력업체 목록</div>
@@ -1057,6 +1061,7 @@ function VendorsSection({ isOwner, role }) {
           onSaved={() => { setEditing(null); invalidateVendors(); load(); }}
         />
       )}
+      </div>
     </div>
   );
 }

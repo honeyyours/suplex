@@ -67,6 +67,7 @@ model Company {
 
   memberships            Membership[]
   invitations            Invitation[]
+  crewInvitations        CrewInvitation[]
   vendors                Vendor[]
   projects               Project[]
   materialTemplates      MaterialTemplate[]
@@ -94,6 +95,14 @@ model User {
   // 계정 타입 — 인테리어 회사 사용자(COMPANY, 디폴트) vs 시공팀 별도 계정(CREW, 2026-05-17 양면 플랫폼).
   // COMPANY는 Membership으로 회사 컨텍스트를 가짐. CREW는 Membership 없이 자기 일정만 가짐.
   accountType  AccountType @default(COMPANY)
+
+  // CREW 전용 프로필 (COMPANY 사용자는 모두 null). 시공팀 초대 수락 시 이 값으로 Vendor row 자동 생성.
+  // 가입 단계에서 공종은 필수, 계좌·일당·식비·교통비는 선택(공란 OK — 나중에 본인이 채우거나 회사가 채움).
+  crewCategory          String? // 주 공종 (예: "타일", "전기")
+  crewBankAccount       String? // 계좌 한 줄 자유 입력
+  crewDefaultUnitPrice  Decimal? @db.Decimal(12, 2)
+  crewDefaultMeal       Decimal? @db.Decimal(12, 2)
+  crewDefaultTransport  Decimal? @db.Decimal(12, 2)
   isSuperAdmin Boolean     @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
   lastSeenAt   DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
   tokenVersion Int         @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
@@ -267,6 +276,26 @@ model Invitation {
 
   @@index([email])
   @@map("invitations")
+}
+
+// 시공팀 초대 (2026-05-17 봉기님 정정). 회사 단위 토큰 — 시공팀이 가입+수락하면 Vendor row 자동 생성.
+// 회사 직원 초대(Invitation)와 분리 — 시공팀은 회사 멤버 X, 별도 계정 타입(CREW).
+model CrewInvitation {
+  id               String    @id @default(cuid())
+  companyId        String
+  token            String    @unique
+  note             String? // OWNER가 누구한테 보냈는지 메모 (예: "타일 김반장")
+  invitedById      String? // 발급한 OWNER user id (audit용)
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  acceptedByUserId String? // 수락한 CREW user id
+  acceptedVendorId String? // 수락 시 자동 생성된 Vendor id (해제 시 vendor도 함께 정리)
+  createdAt        DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("crew_invitations")
 }
 
 // ============================================

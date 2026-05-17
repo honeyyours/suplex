@@ -190,12 +190,19 @@ const signupGeneralSchema = z.object({
 
 // 시공팀(CREW) 가입 — 회사·멤버십 없이 별도 계정 타입으로 가입. (2026-05-17 양면 플랫폼)
 // 인테리어 회사와 분리된 paying X 사용자. 가입 후 다중 회사 일정 통합 캘린더만 사용.
+// 가입 단계에서 받은 프로필이 초대 수락 시 Vendor row의 입력값으로 사용됨 (공종 필수).
 const signupCrewSchema = z.object({
   email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
   nickname: nicknameField,
   phone: z.string().optional(),
+  // 시공팀 프로필 — 공종만 필수, 나머지 4개는 공란 OK (나중에 본인 또는 회사가 채움)
+  crewCategory: z.string().min(1).max(40),
+  crewBankAccount: z.string().max(120).optional().nullable(),
+  crewDefaultUnitPrice: z.number().nonnegative().optional().nullable(),
+  crewDefaultMeal: z.number().nonnegative().optional().nullable(),
+  crewDefaultTransport: z.number().nonnegative().optional().nullable(),
 });
 
 router.post('/signup-crew', signupLimiter, async (req, res, next) => {
@@ -221,6 +228,11 @@ router.post('/signup-crew', signupLimiter, async (req, res, next) => {
         nickname: data.nickname,
         phone: data.phone,
         accountType: 'CREW',
+        crewCategory: data.crewCategory.trim(),
+        crewBankAccount: data.crewBankAccount?.trim() || null,
+        crewDefaultUnitPrice: data.crewDefaultUnitPrice ?? null,
+        crewDefaultMeal: data.crewDefaultMeal ?? null,
+        crewDefaultTransport: data.crewDefaultTransport ?? null,
       },
     });
 

@@ -23,6 +23,11 @@ export default function CrewSignup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     email: '', password: '', name: '', nickname: '', phone: '',
+    crewCategory: '',
+    crewBankAccount: '',
+    crewDefaultUnitPrice: '',
+    crewDefaultMeal: '',
+    crewDefaultTransport: '',
   });
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
@@ -62,8 +67,16 @@ export default function CrewSignup() {
     if (nicknameStatus === 'taken') return '이미 사용 중인 닉네임입니다';
     const passwordErr = checkPasswordPolicy(form.password);
     if (passwordErr) return passwordErr;
+    if (!form.crewCategory.trim()) return '주 공종을 입력해주세요';
     if (!agreedTerms || !agreedPrivacy) return '이용약관과 개인정보처리방침에 모두 동의해주세요';
     return null;
+  }
+
+  function toNumberOrNull(s) {
+    const v = String(s).trim();
+    if (!v) return null;
+    const n = Number(v.replace(/,/g, ''));
+    return Number.isFinite(n) && n >= 0 ? n : null;
   }
 
   async function submit(e) {
@@ -79,8 +92,16 @@ export default function CrewSignup() {
         name: form.name.trim(),
         nickname: form.nickname.trim(),
         phone: form.phone.trim() || undefined,
+        crewCategory: form.crewCategory.trim(),
+        crewBankAccount: form.crewBankAccount.trim() || null,
+        crewDefaultUnitPrice: toNumberOrNull(form.crewDefaultUnitPrice),
+        crewDefaultMeal: toNumberOrNull(form.crewDefaultMeal),
+        crewDefaultTransport: toNumberOrNull(form.crewDefaultTransport),
       });
-      navigate('/');
+      // URL ?next= 가 있으면 그쪽으로 (초대 토큰 수락 흐름). 없으면 /crew.
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next');
+      navigate(next || '/crew');
     } catch (e) {
       setErr(e.response?.data?.error || '회원가입 실패');
     } finally {
@@ -127,6 +148,49 @@ export default function CrewSignup() {
             statusMessage={availabilityMessage('nickname', nicknameStatus)}
           />
           <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
+
+          <div className="pt-3 border-t">
+            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">시공팀 정보</div>
+            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+              아래 4개(계좌·일당·식비·교통비)는 <b>비워두셔도 됩니다</b> — 나중에 본인 또는 거래 회사가 채울 수 있어요.
+            </p>
+            <div className="space-y-4">
+              <Field
+                label="주 공종 *"
+                value={form.crewCategory}
+                onChange={update('crewCategory')}
+                required
+                placeholder="예: 타일, 전기, 도배"
+              />
+              <Field
+                label="계좌 (선택)"
+                value={form.crewBankAccount}
+                onChange={update('crewBankAccount')}
+                placeholder="국민 123-45-678901 김반장"
+              />
+              <Field
+                label="기본 일당 (선택)"
+                value={form.crewDefaultUnitPrice}
+                onChange={update('crewDefaultUnitPrice')}
+                placeholder="250000"
+                inputMode="numeric"
+              />
+              <Field
+                label="식비 / 일 (선택)"
+                value={form.crewDefaultMeal}
+                onChange={update('crewDefaultMeal')}
+                placeholder="10000"
+                inputMode="numeric"
+              />
+              <Field
+                label="교통비 / 일 (선택)"
+                value={form.crewDefaultTransport}
+                onChange={update('crewDefaultTransport')}
+                placeholder="10000"
+                inputMode="numeric"
+              />
+            </div>
+          </div>
 
           <div className="space-y-2 pt-2 border-t">
             <label className="flex items-start gap-2 text-sm cursor-pointer">

@@ -12,37 +12,35 @@ const router = express.Router();
 
 // ---- 인증 불필요 ----
 
-// GET /api/crew/invitations/:token — 초대 토큰 검증. 시공팀이 링크 클릭했을 때 회사명 노출.
-// 미가입 시공팀도 호출 가능(가입 후 자동 수락 흐름).
+// GET /api/crew/invitations/:token — 초대 토큰 검증 (회사 단위, 2026-05-17 정정).
+// 시공팀이 링크 클릭했을 때 회사명 노출. 미가입자도 호출 가능(가입 결정 화면).
 router.get('/invitations/:token', async (req, res, next) => {
   try {
     const { token } = req.params;
-    const vendor = await prisma.vendor.findUnique({
-      where: { crewInviteToken: token },
+    const invitation = await prisma.crewInvitation.findUnique({
+      where: { token },
       select: {
         id: true,
-        name: true,
-        category: true,
-        crewInviteExpiresAt: true,
-        linkedCrewUserId: true,
+        note: true,
+        expiresAt: true,
+        acceptedAt: true,
         company: { select: { id: true, name: true } },
       },
     });
-    if (!vendor) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
-    if (vendor.linkedCrewUserId) {
+    if (!invitation) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
+    if (invitation.acceptedAt) {
       return res.status(409).json({ error: '이미 수락된 초대입니다' });
     }
-    if (vendor.crewInviteExpiresAt && vendor.crewInviteExpiresAt < new Date()) {
+    if (invitation.expiresAt < new Date()) {
       return res.status(410).json({ error: '만료된 초대 링크입니다. 회사에 재발급을 요청하세요' });
     }
     res.json({
-      vendor: {
-        id: vendor.id,
-        name: vendor.name,
-        category: vendor.category,
-        expiresAt: vendor.crewInviteExpiresAt,
+      invitation: {
+        id: invitation.id,
+        note: invitation.note,
+        expiresAt: invitation.expiresAt,
       },
-      company: vendor.company,
+      company: invitation.company,
     });
   } catch (e) { next(e); }
 });
@@ -59,71 +57,147 @@ function requireCrew(req, res, next) {
   next();
 }
 
-// POST /api/crew/invitations/accept — 시공팀이 토큰 수락. 인증된 CREW 계정이 호출.
+// POST /api/crew/invitations/accept — 시공팀이 토큰 수락 → Vendor row 자동 생성.
+// 시공팀 프로필(crewCategory·crewBankAccount·crewDefaultUnitPrice·crewDefaultMeal·crewDefaultTransport)을
+// Vendor 필드로 복사. 공종은 필수.
 const acceptSchema = z.object({ token: z.string().min(1) });
 
 router.post('/invitations/accept', requireCrew, async (req, res, next) => {
   try {
     const data = acceptSchema.parse(req.body);
-    const vendor = await prisma.vendor.findUnique({
-      where: { crewInviteToken: data.token },
+
+    const invitation = await prisma.crewInvitation.findUnique({
+      where: { token: data.token },
+    });
+    if (!invitation) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
+    if (invitation.acceptedAt) return res.status(409).json({ error: '이미 수락된 초대입니다' });
+    if (invitation.expiresAt < new Date()) return res.status(410).json({ error: '만료된 초대 링크입니다' });
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
       select: {
-        id: true,
-        companyId: true,
-        linkedCrewUserId: true,
-        crewInviteExpiresAt: true,
+        id: true, name: true, phone: true,
+        crewCategory: true, crewBankAccount: true,
+        crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
       },
     });
-    if (!vendor) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
-    if (vendor.linkedCrewUserId) {
-      return res.status(409).json({ error: '이미 수락된 초대입니다' });
-    }
-    if (vendor.crewInviteExpiresAt && vendor.crewInviteExpiresAt < new Date()) {
-      return res.status(410).json({ error: '만료된 초대 링크입니다' });
+    if (!user?.crewCategory) {
+      return res.status(400).json({ error: '시공팀 프로필에 공종이 등록되어 있지 않습니다. 정보를 먼저 채워주세요' });
     }
 
-    const updated = await prisma.vendor.update({
-      where: { id: vendor.id },
-      data: {
-        linkedCrewUserId: req.user.id,
-        crewInviteToken: null,
-        crewInviteSentAt: null,
-        crewInviteExpiresAt: null,
-      },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        company: { select: { id: true, name: true } },
-      },
+    // 이미 같은 회사에 동일 시공팀 매핑이 있는지 확인 (중복 방지)
+    const alreadyLinked = await prisma.vendor.findFirst({
+      where: { companyId: invitation.companyId, linkedCrewUserId: user.id },
+      select: { id: true },
+    });
+    if (alreadyLinked) {
+      return res.status(409).json({ error: '이미 이 회사에 등록된 시공팀입니다' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const vendor = await tx.vendor.create({
+        data: {
+          companyId: invitation.companyId,
+          name: user.name,
+          category: user.crewCategory,
+          contact: user.name,
+          phone: user.phone,
+          unitPrice: user.crewDefaultUnitPrice,
+          bankAccount: user.crewBankAccount,
+          defaultMeal: user.crewDefaultMeal,
+          defaultTransport: user.crewDefaultTransport,
+          linkedCrewUserId: user.id,
+        },
+        select: {
+          id: true, name: true, category: true,
+          company: { select: { id: true, name: true } },
+        },
+      });
+
+      await tx.crewInvitation.update({
+        where: { id: invitation.id },
+        data: {
+          acceptedAt: new Date(),
+          acceptedByUserId: user.id,
+          acceptedVendorId: vendor.id,
+        },
+      });
+
+      return vendor;
     });
 
     audit(req, 'crew.invite-accept', {
-      companyId: vendor.companyId,
+      companyId: invitation.companyId,
       targetType: 'VENDOR',
-      targetId: vendor.id,
+      targetId: result.id,
+      metadata: { invitationId: invitation.id },
     });
 
-    res.json({ vendor: updated });
+    res.json({ vendor: result });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
   }
 });
 
-// GET /api/crew/me — 시공팀 본인 + 거래 회사 매핑 목록 (CrewHome용)
+// PATCH /api/crew/me — 시공팀 본인 프로필 수정 (공종·계좌·일당·식비·교통비)
+const profileSchema = z.object({
+  crewCategory: z.string().min(1).max(40).optional().nullable(),
+  crewBankAccount: z.string().max(120).optional().nullable(),
+  crewDefaultUnitPrice: z.number().nonnegative().optional().nullable(),
+  crewDefaultMeal: z.number().nonnegative().optional().nullable(),
+  crewDefaultTransport: z.number().nonnegative().optional().nullable(),
+});
+
+router.patch('/me', requireCrew, async (req, res, next) => {
+  try {
+    const data = profileSchema.parse(req.body || {});
+    const updateData = {};
+    if (data.crewCategory !== undefined) updateData.crewCategory = data.crewCategory?.trim() || null;
+    if (data.crewBankAccount !== undefined) updateData.crewBankAccount = data.crewBankAccount?.trim() || null;
+    if (data.crewDefaultUnitPrice !== undefined) updateData.crewDefaultUnitPrice = data.crewDefaultUnitPrice ?? null;
+    if (data.crewDefaultMeal !== undefined) updateData.crewDefaultMeal = data.crewDefaultMeal ?? null;
+    if (data.crewDefaultTransport !== undefined) updateData.crewDefaultTransport = data.crewDefaultTransport ?? null;
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: {
+        id: true, name: true, email: true, nickname: true, phone: true,
+        crewCategory: true, crewBankAccount: true,
+        crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
+      },
+    });
+    res.json({ user });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// GET /api/crew/me — 시공팀 본인 프로필 + 거래 회사 매핑 목록 (CrewHome용)
 router.get('/me', requireCrew, async (req, res, next) => {
   try {
-    const vendors = await prisma.vendor.findMany({
-      where: { linkedCrewUserId: req.user.id },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        company: { select: { id: true, name: true } },
-      },
-      orderBy: [{ company: { name: 'asc' } }, { category: 'asc' }],
-    });
+    const [user, vendors] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          id: true, name: true, email: true, nickname: true, phone: true,
+          crewCategory: true, crewBankAccount: true,
+          crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
+        },
+      }),
+      prisma.vendor.findMany({
+        where: { linkedCrewUserId: req.user.id },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          company: { select: { id: true, name: true } },
+        },
+        orderBy: [{ company: { name: 'asc' } }, { category: 'asc' }],
+      }),
+    ]);
 
     // 회사별 그루핑 — 한 회사가 목공팀 3개 Vendor(반장·기공·조공) 가질 때 한 카드로 묶음
     const byCompany = new Map();
@@ -140,6 +214,7 @@ router.get('/me', requireCrew, async (req, res, next) => {
     }
 
     res.json({
+      user,
       companies: Array.from(byCompany.values()),
       totalVendors: vendors.length,
     });

@@ -16,7 +16,7 @@ export default function CrewInviteAccept() {
   const { auth, logout } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [invite, setInvite] = useState(null); // { vendor, company }
+  const [invite, setInvite] = useState(null); // { invitation, company }
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -71,7 +71,7 @@ export default function CrewInviteAccept() {
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900 mb-5">
         <div className="font-semibold mb-1">{invite.company.name}</div>
         <div className="text-xs text-amber-700">
-          거래처 등록: {invite.vendor.name}{invite.vendor.category ? ` · ${invite.vendor.category}` : ''}
+          수락하면 가입 정보로 협력업체 카드가 자동 등록됩니다.
         </div>
       </div>
 

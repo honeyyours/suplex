@@ -1,5 +1,4 @@
 const express = require('express');
-const crypto = require('crypto');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
@@ -7,12 +6,6 @@ const { audit } = require('../services/audit');
 
 const router = express.Router();
 router.use(authRequired);
-
-// 시공팀 초대 토큰 유효 기간 (7일)
-const CREW_INVITE_TTL_DAYS = 7;
-function generateInviteToken() {
-  return crypto.randomBytes(24).toString('base64url');
-}
 
 // GET /api/vendors  — 검색/공종 필터
 router.get('/', async (req, res, next) => {
@@ -140,42 +133,10 @@ router.delete('/:id', requireRole('OWNER'), async (req, res, next) => {
 });
 
 // ============================================
-// 시공팀 연동 (2026-05-17 Step 3)
+// 시공팀 연동 (2026-05-17 Step 4 정정)
+// 새 시공팀 초대는 회사 단위(/api/team/crew-invitations)로 이전됨.
+// 여기엔 "기존 시공팀 연결"(목공 3:1 케이스)과 "연결 해제"만 남김.
 // ============================================
-
-// POST /api/vendors/:id/crew-invite — 새 시공팀 초대 토큰 발급
-// 응답: { vendor, inviteUrl } — OWNER가 클립보드 복사해서 카톡으로 전달
-router.post('/:id/crew-invite', requireRole('OWNER'), async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const existing = await prisma.vendor.findFirst({
-      where: { id, companyId: req.user.companyId },
-    });
-    if (!existing) return res.status(404).json({ error: '협력업체를 찾을 수 없습니다' });
-    if (existing.linkedCrewUserId) {
-      return res.status(409).json({ error: '이미 시공팀이 연결되어 있습니다. 해제 후 다시 초대하세요' });
-    }
-
-    const token = generateInviteToken();
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + CREW_INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
-
-    const vendor = await prisma.vendor.update({
-      where: { id },
-      data: {
-        crewInviteToken: token,
-        crewInviteSentAt: now,
-        crewInviteExpiresAt: expiresAt,
-      },
-      include: { linkedCrew: { select: { id: true, name: true, nickname: true, email: true } } },
-    });
-
-    audit(req, 'vendor.crew-invite-issue', { targetType: 'VENDOR', targetId: id });
-
-    // 클라이언트에 inviteUrl도 함께 — 클립보드 복사용 (절대 URL은 클라이언트가 origin 붙임)
-    res.json({ vendor, inviteUrl: `/crew/invite/${token}` });
-  } catch (e) { next(e); }
-});
 
 // POST /api/vendors/:id/link-crew — 이미 가입된 시공팀 검색·연결 (목공팀 케이스: 추가 Vendor를 같은 반장에 묶기)
 // body: { email?, nickname? } — 하나 입력

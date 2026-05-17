@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
 const { authRequired, requireRole } = require('../middlewares/auth');
@@ -7,6 +8,11 @@ const { audit } = require('../services/audit');
 const { TOGGLEABLE_FEATURES } = require('../services/features');
 const { grantIfCompanyApproved } = require('../services/lounge');
 const { addUserToAllCompanyProjects } = require('../services/projectMembership');
+
+const CREW_INVITE_TTL_DAYS = 7;
+function generateCrewInviteToken() {
+  return crypto.randomBytes(24).toString('base64url');
+}
 
 const router = express.Router();
 router.use(authRequired);
@@ -368,6 +374,70 @@ router.delete('/members/:userId', requireRole('OWNER'), async (req, res, next) =
       metadata: { email: removedUser?.email, name: removedUser?.name, role: membership.role },
     });
 
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ============================================
+// 시공팀 초대 (회사 단위, 2026-05-17)
+// ============================================
+
+// GET /api/team/crew-invitations — 진행 중 + 최근 완료 초대 목록
+router.get('/crew-invitations', async (req, res, next) => {
+  try {
+    const list = await prisma.crewInvitation.findMany({
+      where: { companyId: req.user.companyId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json({ invitations: list });
+  } catch (e) { next(e); }
+});
+
+const crewInviteCreateSchema = z.object({
+  note: z.string().max(80).optional().nullable(),
+});
+
+// POST /api/team/crew-invitations — 시공팀 초대 토큰 발급 (OWNER)
+router.post('/crew-invitations', requireRole('OWNER'), async (req, res, next) => {
+  try {
+    const data = crewInviteCreateSchema.parse(req.body || {});
+    const token = generateCrewInviteToken();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + CREW_INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+    const invitation = await prisma.crewInvitation.create({
+      data: {
+        companyId: req.user.companyId,
+        token,
+        note: data.note?.trim() || null,
+        invitedById: req.user.id,
+        expiresAt,
+      },
+    });
+
+    audit(req, 'crew-invitation.create', { targetType: 'CREW_INVITATION', targetId: invitation.id, metadata: { note: invitation.note } });
+
+    res.status(201).json({ invitation, inviteUrl: `/crew/invite/${token}` });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// DELETE /api/team/crew-invitations/:id — 미수락 초대 폐기 (OWNER)
+router.delete('/crew-invitations/:id', requireRole('OWNER'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.crewInvitation.findFirst({
+      where: { id, companyId: req.user.companyId },
+    });
+    if (!existing) return res.status(404).json({ error: '초대를 찾을 수 없습니다' });
+    if (existing.acceptedAt) {
+      return res.status(409).json({ error: '이미 수락된 초대입니다. 협력업체 카드에서 연결 해제하세요' });
+    }
+    await prisma.crewInvitation.delete({ where: { id } });
+    audit(req, 'crew-invitation.delete', { targetType: 'CREW_INVITATION', targetId: id });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
