@@ -8,18 +8,16 @@ import { schedulesApi } from '../api/schedules';
 import { toDateKey, addDays, projectClass } from '../utils/date';
 import { getHoliday } from '../utils/holidays';
 
-function getMonday(date) {
+function getSunday(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  return addDays(d, diff);
+  return addDays(d, -d.getDay());
 }
 
-const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function HomeWeekWidget() {
-  const weekStart = useMemo(() => getMonday(new Date()), []);
+  const weekStart = useMemo(() => getSunday(new Date()), []);
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart]
@@ -58,8 +56,8 @@ export default function HomeWeekWidget() {
           const key = toDateKey(d);
           const dayEntries = byDate[key] || [];
           const isToday = key === todayKey;
-          const isSat = i === 5;
-          const isSun = i === 6;
+          const isSun = i === 0;
+          const isSat = i === 6;
           const holiday = getHoliday(d);
           const isRed = isSun || !!holiday;
           const dayColor = isRed
