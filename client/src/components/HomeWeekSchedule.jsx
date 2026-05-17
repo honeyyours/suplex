@@ -6,19 +6,17 @@ import { toDateKey, addDays, projectClass, projectBorderClass } from '../utils/d
 import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
 
-// 오늘이 포함된 월요일 0시 반환
-function getMonday(date) {
+// 오늘이 포함된 일요일 0시 반환 — 다른 캘린더(일~토)와 동일한 주 기준
+function getSunday(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=일, 1=월, ..., 6=토
-  const diff = day === 0 ? -6 : 1 - day; // 일요일이면 6일 전 월요일
-  return addDays(d, diff);
+  return addDays(d, -d.getDay());
 }
 
-const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function HomeWeekSchedule() {
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [weekStart, setWeekStart] = useState(() => getSunday(new Date()));
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -66,8 +64,8 @@ export default function HomeWeekSchedule() {
   }, [entries]);
 
   const todayKey = toDateKey(new Date());
-  const thisMonday = toDateKey(getMonday(new Date()));
-  const isThisWeek = toDateKey(weekStart) === thisMonday;
+  const thisSunday = toDateKey(getSunday(new Date()));
+  const isThisWeek = toDateKey(weekStart) === thisSunday;
 
   return (
     <section className="bg-white border-y sm:border sm:rounded-xl p-2 sm:p-5 -mx-2 sm:mx-0">
@@ -96,7 +94,7 @@ export default function HomeWeekSchedule() {
           >›</button>
           {!isThisWeek && (
             <button
-              onClick={() => setWeekStart(getMonday(new Date()))}
+              onClick={() => setWeekStart(getSunday(new Date()))}
               className="text-xs px-2 py-1 text-navy-700 hover:bg-navy-50 rounded"
             >오늘</button>
           )}
@@ -112,8 +110,8 @@ export default function HomeWeekSchedule() {
           const key = toDateKey(d);
           const dayEntries = byDate[key] || [];
           const isToday = key === todayKey;
-          const isSat = i === 5;
-          const isSun = i === 6;
+          const isSun = i === 0;
+          const isSat = i === 6;
           const holiday = getHoliday(d);
           const isRed = isSun || !!holiday;
 
