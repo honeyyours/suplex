@@ -136,7 +136,18 @@ async function login(page) {
 
 async function findFirstProjectId(page) {
   await page.goto(`${BASE_URL}/projects`, { waitUntil: 'networkidle2', timeout: 60_000 });
-  await new Promise((r) => setTimeout(r, 1500));
+  // React Query 로딩 완료까지 명시 대기 — 프로젝트 카드 anchor가 나타날 때까지
+  try {
+    await page.waitForFunction(
+      () => {
+        const anchors = Array.from(document.querySelectorAll('a[href^="/projects/"]'));
+        return anchors.some((a) => /^\/projects\/[a-z0-9]{20,}/i.test(a.getAttribute('href') || ''));
+      },
+      { timeout: 15_000 }
+    );
+  } catch {
+    // anchor 못 찾으면 fallback — 빈 상태일 수도
+  }
   return page.evaluate(() => {
     const anchors = Array.from(document.querySelectorAll('a[href^="/projects/"]'));
     for (const a of anchors) {
