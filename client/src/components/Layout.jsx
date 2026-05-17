@@ -182,6 +182,20 @@ export default function Layout() {
         <Outlet />
       </main>
 
+      {/* + 새 프로젝트 FAB — 회사 승인 + 일반사용자/오너 한정. 새 프로젝트 페이지에선 숨김 */}
+      {auth && !isAdmin && auth.company && auth.company.approvalStatus === 'APPROVED' &&
+       !location.pathname.startsWith('/projects/new') &&
+       !location.pathname.startsWith('/lounge') && (
+        <Link
+          to="/projects/new"
+          aria-label="새 프로젝트"
+          className="fixed right-4 sm:right-6 z-30 bottom-[calc(env(safe-area-inset-bottom,0px)+76px)] sm:bottom-6 bg-navy-700 hover:bg-navy-800 active:bg-navy-900 text-white shadow-lg rounded-full pl-4 pr-5 py-3 flex items-center gap-1.5 text-sm font-medium transition"
+        >
+          <span className="text-lg leading-none">+</span>
+          <span>새 프로젝트</span>
+        </Link>
+      )}
+
       <MobileBottomNav navItems={navItems} />
 
       <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 mb-[calc(env(safe-area-inset-bottom,0px)+64px)] sm:mb-0">
