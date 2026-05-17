@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { projectMemosApi } from '../api/projectMemos';
 import ImageLightbox from '../components/ImageLightbox';
+import { useAuth } from '../contexts/AuthContext';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 const SAVE_DELAY = 800;
 
@@ -499,6 +501,7 @@ function L({ label, children }) {
 // 메모 카드 (현장보고 카드 패턴) — 흰 배경 + 태그 chip + 인라인 편집(자동 저장)
 // ===========================================
 function MemoCard({ memo, onUpdate, onRemove, onAddPhotos, onRemovePhoto }) {
+  const auth = useAuth();
   const [title, setTitle] = useState(memo.title || '');
   const [content, setContent] = useState(memo.content || '');
   const [tag, setTag] = useState(memo.tag || '일반');
@@ -566,7 +569,7 @@ function MemoCard({ memo, onUpdate, onRemove, onAddPhotos, onRemovePhoto }) {
   async function copyAll() {
     const out = title ? `${title}\n${content}` : content;
     try {
-      await navigator.clipboard.writeText(out);
+      await navigator.clipboard.writeText(appendKakaoFooter(out, auth?.company?.plan));
       setCopied(true);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopied(false), 1500);

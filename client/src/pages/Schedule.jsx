@@ -10,6 +10,7 @@ import AggregateChecklist from '../components/AggregateChecklist';
 import ScheduleCalendar from '../components/ScheduleCalendar';
 import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectChecklist from './ProjectChecklist';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 const SUBTABS = [
   { key: 'site',    label: '현장 일정',  status: 'IN_PROGRESS' },
@@ -610,7 +611,7 @@ function formatProjectScheduleForCopy(project, entries, { company, user } = {}) 
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
 
-  return lines.join('\n').trim();
+  return appendKakaoFooter(lines.join('\n').trim(), company?.plan);
 }
 
 // 회사 전체 일정 → 두 블록으로 분리 (① 일정 묶음 → 구분선 → ② 현장 정보 묶음)
@@ -656,5 +657,5 @@ function formatAllSchedulesForCopy(entries, { company, user } = {}) {
   });
   lines.push('');
   lines.push('일정 변동 시 미리 공유드리겠습니다. 감사합니다.');
-  return lines.join('\n').trim();
+  return appendKakaoFooter(lines.join('\n').trim(), company?.plan);
 }

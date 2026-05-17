@@ -7,10 +7,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { vendorsApi } from '../api/vendors';
 import { projectMemosApi } from '../api/projectMemos';
 import { useEscape } from '../hooks/useEscape';
+import { useAuth } from '../contexts/AuthContext';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 import MoneyInput from './MoneyInput';
 
 export default function LaborSettlementModal({ project, projectId, onClose }) {
   useEscape(true, onClose);
+  const auth = useAuth();
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState('');
   const [vendors, setVendors] = useState([]);
@@ -121,7 +124,7 @@ export default function LaborSettlementModal({ project, projectId, onClose }) {
     }
     setBusy(true);
     try {
-      const text = buildText();
+      const text = appendKakaoFooter(buildText(), auth?.company?.plan);
 
       // 1) 카톡 텍스트 클립보드 복사
       await navigator.clipboard.writeText(text);

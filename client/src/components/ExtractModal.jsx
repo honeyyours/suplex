@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, formatDateDisplay, categoryClass } from '../utils/date';
 import { useEscape } from '../hooks/useEscape';
+import { useAuth } from '../contexts/AuthContext';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 export default function ExtractModal({ projectId, project, onClose }) {
   useEscape(true, onClose);
+  const auth = useAuth();
   const [keyword, setKeyword] = useState('');
   const [fromToday, setFromToday] = useState(true);
   const [results, setResults] = useState(null);
@@ -62,7 +65,7 @@ export default function ExtractModal({ projectId, project, onClose }) {
     }
 
     try {
-      await navigator.clipboard.writeText(parts.join('\n'));
+      await navigator.clipboard.writeText(appendKakaoFooter(parts.join('\n'), auth?.company?.plan));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {

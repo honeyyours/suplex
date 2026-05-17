@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { relativeTime, toDateKey } from '../../utils/date';
 import { useCompanyPhases } from '../../hooks/useCompanyPhases';
 import { usePhaseLabels } from '../../contexts/PhaseLabelsContext';
+import { appendKakaoFooter } from '../../utils/kakaoFooter';
 import PhotoUploader from '../PhotoUploader';
 import ImageLightbox from '../ImageLightbox';
 
@@ -164,7 +165,7 @@ function buildKakaoMessage({ report, project, company, user }) {
   lines.push('사진 첨부드립니다.');
   const sig = [company?.name, user?.name].filter(Boolean).join(' / ');
   if (sig) lines.push(`- ${sig}`);
-  return lines.join('\n');
+  return appendKakaoFooter(lines.join('\n'), company?.plan);
 }
 
 // ============================================

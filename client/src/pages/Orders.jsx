@@ -5,6 +5,7 @@ import { ordersGlobalApi, purchaseOrdersApi, PO_STATUS_META } from '../api/purch
 import { projectsApi } from '../api/projects';
 import { companyApi } from '../api/company';
 import { useAuth } from '../contexts/AuthContext';
+import { appendKakaoFooter } from '../utils/kakaoFooter';
 
 const STATUS_KEYS = ['PENDING', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 
@@ -404,7 +405,7 @@ function formatOrdersForCopy(orders, { company, user } = {}) {
   lines.push('확인 후 가능 여부 회신 부탁드립니다.');
   lines.push('감사합니다.');
 
-  return lines.join('\n').trim();
+  return appendKakaoFooter(lines.join('\n').trim(), company?.plan);
 }
 
 function formatItemLine(o) {
