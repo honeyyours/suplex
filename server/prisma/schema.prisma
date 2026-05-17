@@ -113,6 +113,7 @@ model User {
   completedChecklists     ProjectChecklist[]    @relation("ChecklistCompletedBy")
   createdScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
   updatedScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
+  assignedScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleAssignee")
   scheduleChanges         ScheduleChange[]
   uploadedPhotos          ProjectPhoto[]
   materialRequests        MaterialRequest[]
@@ -500,6 +501,9 @@ model DailyScheduleEntry {
   // 팀 캘린더(회사 일정) 플래그 — true면 프로젝트 일정 + 회사일정 양쪽에 노출.
   // 2026-05-17 추가. 회사 자체 운영 일정·견적미팅·내부 미팅 등 프로젝트 컨텍스트에 있되 회사 단위로도 보이게 함.
   companyWide Boolean   @default(false)
+  // 담당자(자기 일정) — 회사 멤버 중 한 명. null이면 미배정 / 회사 전체 공유.
+  // 팀 캘린더에서 디자이너·현장팀 개인별 캘린더 필터에 사용. 2026-05-17 추가.
+  assigneeId  String?
   createdById String?
   updatedById String?
   createdAt   DateTime  @default(now())
@@ -508,11 +512,13 @@ model DailyScheduleEntry {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   company   Company? @relation("CompanyTeamCalendar", fields: [companyId], references: [id], onDelete: Cascade)
   vendor    Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  assignee  User?    @relation("DailyScheduleAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   createdBy User?    @relation("DailyScheduleCreatedBy", fields: [createdById], references: [id])
   updatedBy User?    @relation("DailyScheduleUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([projectId, date])
   @@index([companyId, date])
+  @@index([assigneeId, date])
   @@index([category])
   @@index([vendorId])
   @@map("daily_schedule_entries")

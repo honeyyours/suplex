@@ -15,8 +15,8 @@ const router = express.Router();
 // ============================================
 router.get('/', async (req, res, next) => {
   try {
-    const { from, to } = req.query;
-    const where = {
+    const { from, to, assigneeId } = req.query;
+    const baseFilter = {
       OR: [
         // 회사 단독 일정 (프로젝트 없음)
         { projectId: null, companyId: req.user.companyId },
@@ -24,6 +24,11 @@ router.get('/', async (req, res, next) => {
         { companyWide: true, project: { companyId: req.user.companyId } },
       ],
     };
+    const where = assigneeId === 'unassigned'
+      ? { AND: [baseFilter, { assigneeId: null }] }
+      : assigneeId
+      ? { AND: [baseFilter, { assigneeId }] }
+      : baseFilter;
     if (from && to) {
       where.date = { gte: new Date(from), lte: new Date(to) };
     }
@@ -34,6 +39,7 @@ router.get('/', async (req, res, next) => {
       include: {
         project: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true, nickname: true } },
       },
     });
     res.json({ entries });
@@ -52,7 +58,17 @@ const createSchema = z.object({
   category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
+  assigneeId: z.string().optional().nullable(),
 });
+
+async function assertMemberOfCompany(userId, companyId) {
+  if (!userId) return false;
+  const m = await prisma.membership.findFirst({
+    where: { userId, companyId },
+    select: { id: true },
+  });
+  return !!m;
+}
 
 async function resolveVendorId(companyId, vendorId) {
   if (!vendorId) return null;
@@ -81,6 +97,13 @@ router.post('/', async (req, res, next) => {
       if (!ok) return res.status(404).json({ error: '연결할 프로젝트를 찾을 수 없습니다' });
     }
 
+    let assigneeId = null;
+    if (data.assigneeId) {
+      const ok = await assertMemberOfCompany(data.assigneeId, req.user.companyId);
+      if (!ok) return res.status(404).json({ error: '담당자를 찾을 수 없습니다' });
+      assigneeId = data.assigneeId;
+    }
+
     const vendorId = await resolveVendorId(req.user.companyId, data.vendorId);
 
     const created = await prisma.dailyScheduleEntry.create({
@@ -91,6 +114,7 @@ router.post('/', async (req, res, next) => {
         content: data.content.trim(),
         category: data.category?.trim() || null,
         vendorId,
+        assigneeId,
         // 프로젝트 연결된 경우 companyWide=true로 양쪽 노출. 회사 단독은 굳이 플래그 필요 없음.
         companyWide: !!data.projectId,
         createdById: req.user.id,
@@ -99,6 +123,7 @@ router.post('/', async (req, res, next) => {
       include: {
         project: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true, nickname: true } },
       },
     });
 
@@ -120,6 +145,7 @@ const updateSchema = z.object({
   category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
+  assigneeId: z.string().optional().nullable(),
 });
 
 async function findOwned(id, companyId) {
@@ -161,6 +187,15 @@ router.patch('/:id', async (req, res, next) => {
         patch.companyWide = false;
       }
     }
+    if (data.assigneeId !== undefined) {
+      if (data.assigneeId) {
+        const ok = await assertMemberOfCompany(data.assigneeId, req.user.companyId);
+        if (!ok) return res.status(404).json({ error: '담당자를 찾을 수 없습니다' });
+        patch.assigneeId = data.assigneeId;
+      } else {
+        patch.assigneeId = null;
+      }
+    }
 
     const updated = await prisma.dailyScheduleEntry.update({
       where: { id: req.params.id },
@@ -168,6 +203,7 @@ router.patch('/:id', async (req, res, next) => {
       include: {
         project: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true, nickname: true } },
       },
     });
     res.json({ entry: updated });
