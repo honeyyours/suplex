@@ -97,6 +97,7 @@ export default function CrewSignup() {
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 leading-relaxed space-y-2">
           <div className="font-semibold text-sm">시공팀 계정 안내</div>
           <div>거래하는 인테리어 회사들이 잡아준 일정을 한 화면에서 확인합니다.</div>
+          <div>팀 계정으로 가입하셔서 팀원과 공유하셔도 됩니다.</div>
           <div>광고·구독 결제 없습니다. 풀 무료로 사용하세요.</div>
         </div>
 

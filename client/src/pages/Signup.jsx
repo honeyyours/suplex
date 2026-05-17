@@ -218,7 +218,7 @@ export default function Signup() {
                     시공팀으로 가입
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    목수·타일·도배·전기 등 시공 작업자 — 거래 회사 일정 통합 (무료)
+                    거래 회사가 잡은 일정을 한 화면에서 확인 (팀 공유 가능 · 무료)
                   </div>
                 </div>
               </div>
