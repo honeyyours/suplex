@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { usePlanGuide } from '../contexts/PlanGuideContext';
 import { F, canAccess } from '../utils/features';
 import { announcementsApi } from '../api/announcements';
 import PlanBadge from './PlanBadge';
@@ -53,7 +52,6 @@ function NavIcon({ name, className = 'w-5 h-5' }) {
 export default function Layout() {
   const { auth, memberships, isAuthChecked, switchCompany, exitImpersonate, logout } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
-  const { visible: planGuideVisible, setVisible: setPlanGuideVisible } = usePlanGuide();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = !!auth?.isSuperAdmin;
@@ -149,15 +147,6 @@ export default function Layout() {
               className="text-navy-100 hover:text-white text-base px-1.5 py-1 rounded hover:bg-navy-700/60 transition leading-none"
             >
               {isDark ? '☀️' : '🌙'}
-            </button>
-            <button
-              onClick={() => setPlanGuideVisible(!planGuideVisible)}
-              title={`업그레이드 안내 ${planGuideVisible ? '켜짐' : '꺼짐'} — 잠긴 기능에 등급 안내를 표시합니다`}
-              className={`text-base px-1.5 py-1 rounded hover:bg-navy-700/60 transition leading-none ${
-                planGuideVisible ? 'text-navy-100 hover:text-white' : 'text-navy-300/50 hover:text-navy-100'
-              }`}
-            >
-              {planGuideVisible ? '💎' : '🔓'}
             </button>
             <span className="hidden sm:inline-flex items-center gap-2">
               {isAdmin ? (
