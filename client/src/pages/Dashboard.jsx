@@ -27,12 +27,13 @@ export default function Dashboard() {
         <HomeWeekSchedule />
       </div>
 
-      <HomeTodayActions />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <HomeProjectCards status="IN_PROGRESS" />
         <HomeProjectCards status="PLANNED" />
       </div>
+
+      {/* 3일 안에 할 일 — 가장 밑 */}
+      <HomeTodayActions />
     </div>
   );
 }
