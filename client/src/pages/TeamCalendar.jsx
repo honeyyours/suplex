@@ -14,6 +14,7 @@ import {
 import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
 import InlineScheduleInput from '../components/InlineScheduleInput';
+import MobileCompanyScheduleSheet from '../components/MobileCompanyScheduleSheet';
 
 const ROLE_LABEL = { OWNER: '대표', DESIGNER: '디자이너', FIELD: '현장팀' };
 
@@ -118,8 +119,10 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  // 셀 인라인 입력 — 캘린더 셀 클릭 시 활성화. 빠른 추가용 (담당자=현재 필터, isPrivate=false).
+  // 셀 인라인 입력(데스크톱) — 캘린더 셀 클릭 시 활성화. 빠른 추가용 (담당자=현재 필터, isPrivate=false).
   const [activeCellKey, setActiveCellKey] = useState(null);
+  // 모바일에서 셀 탭 시 뜨는 바텀시트 — 자세히 보기·수정·추가
+  const [mobileSheetKey, setMobileSheetKey] = useState(null);
 
   // 모바일에서 입력 폼은 기본 접힘 (셀 인라인으로 빠른 추가 가능, 자세한 옵션은 토글).
   const [mobileFormOpen, setMobileFormOpen] = useState(false);
@@ -403,7 +406,11 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
               const isRed = dayOfWeek === 0 || !!holiday;
               function handleCellClick(ev) {
                 if (ev.target.closest('a, button, input, select, textarea, [data-entry]')) return;
-                setActiveCellKey(key);
+                if (window.innerWidth < 640) {
+                  setMobileSheetKey(key);
+                } else {
+                  setActiveCellKey(key);
+                }
               }
               return (
                 <div
@@ -424,21 +431,13 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
                     )}
                   </div>
 
-                  {/* 모바일 — 빽빽 */}
+                  {/* 모바일 — 빽빽 (셀 탭 시 바텀시트 열림) */}
                   <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden">
                     {dayEntries.slice(0, 3).map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
-                    {!isActive && dayEntries.length > 3 && (
+                    {dayEntries.length > 3 && (
                       <span className="text-[11px] text-gray-400 text-center leading-none mt-0.5">
                         +{dayEntries.length - 3}
                       </span>
-                    )}
-                    {isActive && (
-                      <div data-entry>
-                        <InlineScheduleInput
-                          onSave={(content) => quickAddInCell(key, content)}
-                          onNavigate={(dir) => navigateCell(key, dir)}
-                        />
-                      </div>
                     )}
                   </div>
 
@@ -482,6 +481,30 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
           </div>
         )}
       </div>
+
+      {mobileSheetKey && (
+        <MobileCompanyScheduleSheet
+          dateKey={mobileSheetKey}
+          entries={byDate[mobileSheetKey] || []}
+          members={members}
+          projects={activeProjects}
+          vendors={vendors}
+          assigneeFilter={assigneeFilter}
+          onClose={() => setMobileSheetKey(null)}
+          onAdd={async (payload) => {
+            await companySchedulesApi.create({ date: mobileSheetKey, ...payload });
+            reload();
+          }}
+          onUpdate={async (id, payload) => {
+            await companySchedulesApi.update(id, payload);
+            reload();
+          }}
+          onDelete={async (id) => {
+            await companySchedulesApi.remove(id);
+            reload();
+          }}
+        />
+      )}
     </div>
   );
 }
