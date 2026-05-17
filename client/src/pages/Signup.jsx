@@ -207,6 +207,23 @@ export default function Signup() {
               </div>
             </button>
 
+            <Link
+              to="/crew/signup"
+              className="block w-full text-left px-5 py-4 border-2 border-amber-200 dark:border-amber-900 hover:border-amber-400 dark:hover:border-amber-600 rounded-lg transition group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🔧</div>
+                <div className="flex-1">
+                  <div className="font-bold text-amber-900 dark:text-amber-200 group-hover:text-amber-950">
+                    시공팀으로 가입
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                    목수·타일·도배·전기 등 시공 작업자 — 거래 회사 일정 통합 (무료)
+                  </div>
+                </div>
+              </div>
+            </Link>
+
             <p className="text-sm text-gray-600 mt-6 text-center">
               이미 계정이 있나요?{' '}
               <Link to="/login" className="text-navy-700 font-medium hover:underline">로그인</Link>
@@ -250,7 +267,7 @@ export default function Signup() {
               </div>
               <div>
                 <div className="font-semibold mb-1">데이터 임의 열람 불가</div>
-                <div>운영팀은 회사의 핵심 자산인 데이터(견적, 거래처, 고객 정보 등)를 일상적으로 절대 열람하지 않습니다.</div>
+                <div>운영팀은 회사의 핵심 자산인 데이터(견적, 거래처, 고객 정보 등)를 절대 열람하지 않습니다.</div>
               </div>
               <div>
                 <div className="font-semibold mb-1">투명한 접근 통제 및 즉시 알림</div>

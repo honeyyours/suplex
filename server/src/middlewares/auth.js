@@ -105,6 +105,10 @@ function requireSuperAdmin(req, res, next) {
 async function requireApprovedCompany(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
   if (req.user.isSuperAdmin) return next(); // 어드민은 우회
+  // 시공팀(CREW) 계정은 회사 API 접근 X — 명시적 차단으로 클라이언트가 원인 분리 가능.
+  if (req.user.accountType === 'CREW') {
+    return res.status(403).json({ error: '시공팀 계정은 회사 메뉴를 사용할 수 없습니다', code: 'CREW_ACCOUNT' });
+  }
   if (!req.user.companyId) {
     // 회사 미선택 — /auth/me 등 일부 엔드포인트만 회사 없이 동작 가능. 그 외는 차단.
     return res.status(403).json({ error: 'No company context', code: 'NO_COMPANY' });

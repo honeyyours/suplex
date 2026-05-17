@@ -9,6 +9,7 @@ import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import CrewSignup from './pages/CrewSignup';
+import CrewHome from './pages/CrewHome';
 import InviteAccept from './pages/InviteAccept';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -44,11 +45,13 @@ import LoungePostEditor from './pages/LoungePostEditor';
 import IntroHome from './pages/IntroHome';
 
 // 홈 라우트 분기:
+// - 시공팀(CREW) 계정: /crew로 리다이렉트 (회사 NAV 일절 X)
 // - 일반회원(회사 없음) + 회사 미승인: IntroHome (수플렉스 소개·CTA + 라운지 페인 포인트)
 // - 회사 승인·슈퍼어드민: Dashboard
 function HomeRoute() {
   const { auth, isAuthChecked } = useAuth();
   if (isAuthChecked && auth && !auth.isSuperAdmin) {
+    if (auth.user?.accountType === 'CREW') return <Navigate to="/crew" replace />;
     if (!auth.company) return <IntroHome />;
     if (
       auth.company.approvalStatus &&
@@ -67,6 +70,16 @@ export default function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/crew/signup" element={<CrewSignup />} />
       <Route path="/invite/:token" element={<InviteAccept />} />
+
+      {/* 시공팀(CREW) 전용 — Layout(회사 NAV) 밖. 자체 헤더로 가벼움 유지 */}
+      <Route
+        path="/crew"
+        element={
+          <ProtectedRoute>
+            <CrewHome />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
 
