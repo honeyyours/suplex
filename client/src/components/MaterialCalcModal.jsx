@@ -31,6 +31,20 @@ const TILE_BOX_BY_SPEC = {
 };
 const TILE_LOSS_BY_PART = { wall: 7, floor: 10, bathkitchen: 15 };
 
+// 부자재 시공 표준 (한국 시공 자료 검증 — docs/검증_자재산식_2026-05-17.md)
+// 떠붙임 = 옛 공법, 압착 = 표준, 개량압착 = 600각 이상·포세린 (브랜드별)
+const TILE_METHOD_COVERAGE = {
+  ddeo:    { label: '떠붙임 레미탈 25kg', coverage: 1.0,  unit: '포' },   // 1포 = 1㎡ (두께 15mm)
+  presser: { label: '회압착시멘트 20kg',  coverage: 4.75, unit: '포' },   // 4.5~5㎡/포
+};
+const TILE_PREMIUM_BRANDS = {
+  ardex_x18: { label: '아덱스 X18 15kg',         coverage: 5  },  // 4~6㎡/포
+  mapei_s1:  { label: '마페이 케라플렉스 S1 20kg', coverage: 15 },  // 1.2~1.5kg/㎡ → 안전 1포=15㎡
+};
+const TILE_NEWBUILD_MULTIPLIER = 1.5;     // 신축·덧방 보정
+const TILE_LEVELING_BAG_PER_M3 = 50;       // 사춤 레미탈 25kg × 50포 = 1㎥
+const TILE_GROUT_BAGS_PER_PYEONG = 2;      // 줄눈 2kg × 1평당 2봉
+
 function calcTile(input) {
   const pyeong = input.areaMode === 'dimension'
     ? (num(input.width) * num(input.length)) / PYEONG_TO_M2
@@ -45,6 +59,49 @@ function calcTile(input) {
   const orderPieces = ceil(netPieces * (1 + loss / 100));
   const perBox = Math.max(1, num(input.perBox, 1));
   const boxes = ceil(orderPieces / perBox);
+
+  // ── 부자재 산출 ──
+  const subItems = [];
+  const method = input.method || 'presser';
+  const newBuild = !!input.newBuild;
+
+  if (method === 'ddeo') {
+    const bags = ceil(area_m2 / TILE_METHOD_COVERAGE.ddeo.coverage);
+    subItems.push({ key: 'mortar', label: TILE_METHOD_COVERAGE.ddeo.label, value: bags, unit: TILE_METHOD_COVERAGE.ddeo.unit });
+  } else if (method === 'presser') {
+    const baseCoverage = TILE_METHOD_COVERAGE.presser.coverage / (newBuild ? TILE_NEWBUILD_MULTIPLIER : 1);
+    const bags = ceil(area_m2 / baseCoverage);
+    subItems.push({
+      key: 'mortar',
+      label: `${TILE_METHOD_COVERAGE.presser.label}${newBuild ? ' (신축·덧방 ×1.5)' : ''}`,
+      value: bags,
+      unit: TILE_METHOD_COVERAGE.presser.unit,
+    });
+  } else if (method === 'premium') {
+    const brand = TILE_PREMIUM_BRANDS[input.premiumBrand || 'ardex_x18'] || TILE_PREMIUM_BRANDS.ardex_x18;
+    const bags = ceil(area_m2 / brand.coverage);
+    subItems.push({ key: 'adhesive', label: brand.label, value: bags, unit: '포' });
+  }
+
+  // 사춤 레미탈 (바닥일 때만)
+  if (input.part === 'floor' || input.part === 'bathkitchen') {
+    const depthMm = Math.max(0, num(input.levelingDepth, 30));
+    if (depthMm > 0) {
+      const volume_m3 = area_m2 * (depthMm / 1000);
+      const bags = ceil(volume_m3 * TILE_LEVELING_BAG_PER_M3);
+      subItems.push({
+        key: 'leveling',
+        label: `사춤 레미탈 25kg (두께 ${depthMm}mm)`,
+        value: bags,
+        unit: '포',
+      });
+    }
+  }
+
+  // 줄눈 시멘트 (모든 케이스 공통)
+  const groutBags = ceil(pyeong * TILE_GROUT_BAGS_PER_PYEONG);
+  subItems.push({ key: 'grout', label: '줄눈 시멘트 2kg', value: groutBags, unit: '봉' });
+
   return {
     primary: { label: '발주 권장 매수', value: fmtInt(orderPieces), unit: '매' },
     sub: `순수 ${fmtInt(netPieces)}매 + 로스 ${loss}%`,
@@ -54,11 +111,14 @@ function calcTile(input) {
       ['박스 수', `${fmtInt(boxes)}박스`],
       ['타일 1매', `${fmt(tile_m2, 3)}㎡`],
     ],
+    subItems,
     copyLines: [
       `발주 권장: ${fmtInt(orderPieces)}매 (${fmtInt(boxes)}박스)`,
       `시공 면적: ${fmt(area_m2, 2)}㎡ (${fmt(pyeong, 2)}평)`,
       `규격: ${input.spec === 'custom' ? `${w}×${h}mm (직접 입력)` : `${input.spec}mm`}`,
       `순수 ${fmtInt(netPieces)}매 + 로스 ${loss}%`,
+      '─ 부자재 ─',
+      ...subItems.map((s) => `${s.label}: ${fmtInt(s.value)}${s.unit}`),
     ],
   };
 }
@@ -222,6 +282,11 @@ const DEFAULT_INPUT = {
     spec: '600x600', customW: '600', customH: '600',
     perBox: 4,
     loss: 10,
+    // 부자재 산출 (수동 토글)
+    method: 'presser',          // 'ddeo' | 'presser' | 'premium'
+    premiumBrand: 'ardex_x18',  // 'ardex_x18' | 'mapei_s1'
+    newBuild: false,            // 신축·덧방 보정 (압착 ×1.5)
+    levelingDepth: '30',        // 사춤 두께 mm (바닥일 때만)
   },
   wallpaper: {
     mode: 'simple',
@@ -398,6 +463,25 @@ export default function MaterialCalcModal({ project, projectId, onClose }) {
                 ))}
               </div>
 
+              {/* 부자재 산출 (타일 등) */}
+              {result.subItems?.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                    부자재 자동 산출
+                  </div>
+                  <div className="divide-y">
+                    {result.subItems.map((s) => (
+                      <div key={s.key} className="flex items-center justify-between px-3 py-2">
+                        <div className="text-sm text-gray-700">{s.label}</div>
+                        <div className="text-sm font-bold text-navy-800 tabular-nums">
+                          {fmtInt(s.value)}<span className="text-xs text-gray-500 ml-0.5">{s.unit}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
                 <span className="font-bold">💡 현장 메모</span> · {meta.note}
               </div>
@@ -563,6 +647,57 @@ function TileInputs({ input, patch, changeTileSpec, changeTilePart }) {
           onPick={(v) => patch({ loss: v })}
         />
       </Field>
+
+      {/* ── 부자재 시공 방법 (수동 토글) ── */}
+      <div className="pt-3 mt-2 border-t">
+        <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-2">부자재 시공 방법</div>
+
+        <Field
+          label="시공 방법"
+          hint="떠붙임=옛 공법, 압착=한국 표준, 개량압착=600각 이상·포세린 권장"
+        >
+          <Seg
+            value={input.method}
+            onChange={(v) => patch({ method: v })}
+            options={[
+              { value: 'ddeo',    label: '떠붙임' },
+              { value: 'presser', label: '압착' },
+              { value: 'premium', label: '개량압착' },
+            ]}
+          />
+        </Field>
+
+        {input.method === 'presser' && (
+          <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+            <input
+              type="checkbox"
+              checked={!!input.newBuild}
+              onChange={(e) => patch({ newBuild: e.target.checked })}
+              className="h-4 w-4"
+            />
+            <span>신축·덧방 보정 <span className="text-gray-400">(압착시멘트 ×1.5)</span></span>
+          </label>
+        )}
+
+        {input.method === 'premium' && (
+          <Field label="접착제 브랜드">
+            <Seg
+              value={input.premiumBrand}
+              onChange={(v) => patch({ premiumBrand: v })}
+              options={[
+                { value: 'ardex_x18', label: '아덱스 X18 (15kg)' },
+                { value: 'mapei_s1',  label: '마페이 S1 (20kg)' },
+              ]}
+            />
+          </Field>
+        )}
+
+        {(input.part === 'floor' || input.part === 'bathkitchen') && (
+          <Field label="사춤 두께 (mm)" hint="바닥 레벨링용 레미탈. 0 입력 시 산출 제외">
+            <NumInput value={input.levelingDepth} onChange={(v) => patch({ levelingDepth: v })} step="5" className="w-full" />
+          </Field>
+        )}
+      </div>
     </>
   );
 }
