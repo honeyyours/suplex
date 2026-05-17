@@ -1,0 +1,21 @@
+{
+  "name": "수플렉스 — 인테리어 회사 협업 캘린더",
+  "short_name": "수플렉스",
+  "description": "인테리어 회사 협업 캘린더. 일정·견적·마감재·발주·체크리스트를 한 자리에.",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a5f",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
