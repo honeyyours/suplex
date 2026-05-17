@@ -197,8 +197,8 @@ const signupCrewSchema = z.object({
   name: z.string().min(1),
   nickname: nicknameField,
   phone: z.string().optional(),
-  // 시공팀 프로필 — 공종만 필수, 나머지 4개는 공란 OK (나중에 본인 또는 회사가 채움)
-  crewCategory: z.string().min(1).max(40),
+  // 시공팀 프로필 — 공종(다중, 최소 1개)만 필수, 나머지 4개는 공란 OK (나중에 본인 또는 회사가 채움)
+  crewCategories: z.array(z.string().min(1).max(40)).min(1).max(25),
   crewBankAccount: z.string().max(120).optional().nullable(),
   crewDefaultUnitPrice: z.number().nonnegative().optional().nullable(),
   crewDefaultMeal: z.number().nonnegative().optional().nullable(),
@@ -228,7 +228,7 @@ router.post('/signup-crew', signupLimiter, async (req, res, next) => {
         nickname: data.nickname,
         phone: data.phone,
         accountType: 'CREW',
-        crewCategory: data.crewCategory.trim(),
+        crewCategories: data.crewCategories.map((c) => c.trim()).filter(Boolean),
         crewBankAccount: data.crewBankAccount?.trim() || null,
         crewDefaultUnitPrice: data.crewDefaultUnitPrice ?? null,
         crewDefaultMeal: data.crewDefaultMeal ?? null,

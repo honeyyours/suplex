@@ -77,11 +77,12 @@ router.post('/invitations/accept', requireCrew, async (req, res, next) => {
       where: { id: req.user.id },
       select: {
         id: true, name: true, phone: true,
-        crewCategory: true, crewBankAccount: true,
+        crewCategories: true, crewBankAccount: true,
         crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
       },
     });
-    if (!user?.crewCategory) {
+    const categories = (user?.crewCategories || []).filter(Boolean);
+    if (categories.length === 0) {
       return res.status(400).json({ error: '시공팀 프로필에 공종이 등록되어 있지 않습니다. 정보를 먼저 채워주세요' });
     }
 
@@ -94,55 +95,62 @@ router.post('/invitations/accept', requireCrew, async (req, res, next) => {
       return res.status(409).json({ error: '이미 이 회사에 등록된 시공팀입니다' });
     }
 
+    // 공종마다 Vendor row 1개씩 생성 — A=설비+실리콘 같은 다중 공종 자연 처리.
+    // 인건비 정산이 공종 칩으로 분리되므로 row 분리가 자연스러움.
     const result = await prisma.$transaction(async (tx) => {
-      const vendor = await tx.vendor.create({
-        data: {
-          companyId: invitation.companyId,
-          name: user.name,
-          category: user.crewCategory,
-          contact: user.name,
-          phone: user.phone,
-          unitPrice: user.crewDefaultUnitPrice,
-          bankAccount: user.crewBankAccount,
-          defaultMeal: user.crewDefaultMeal,
-          defaultTransport: user.crewDefaultTransport,
-          linkedCrewUserId: user.id,
-        },
-        select: {
-          id: true, name: true, category: true,
-          company: { select: { id: true, name: true } },
-        },
-      });
+      const createdVendors = [];
+      for (const category of categories) {
+        const v = await tx.vendor.create({
+          data: {
+            companyId: invitation.companyId,
+            name: user.name,
+            category,
+            contact: user.name,
+            phone: user.phone,
+            unitPrice: user.crewDefaultUnitPrice,
+            bankAccount: user.crewBankAccount,
+            defaultMeal: user.crewDefaultMeal,
+            defaultTransport: user.crewDefaultTransport,
+            linkedCrewUserId: user.id,
+          },
+          select: {
+            id: true, name: true, category: true,
+            company: { select: { id: true, name: true } },
+          },
+        });
+        createdVendors.push(v);
+      }
 
       await tx.crewInvitation.update({
         where: { id: invitation.id },
         data: {
           acceptedAt: new Date(),
           acceptedByUserId: user.id,
-          acceptedVendorId: vendor.id,
+          // 다중 Vendor가 생성될 수 있어 첫 번째 id를 대표로 기록(나머지는 linkedCrewUserId로 역추적 가능)
+          acceptedVendorId: createdVendors[0]?.id || null,
         },
       });
 
-      return vendor;
+      return createdVendors;
     });
 
     audit(req, 'crew.invite-accept', {
       companyId: invitation.companyId,
       targetType: 'VENDOR',
-      targetId: result.id,
-      metadata: { invitationId: invitation.id },
+      targetId: result[0]?.id,
+      metadata: { invitationId: invitation.id, vendorIds: result.map((v) => v.id) },
     });
 
-    res.json({ vendor: result });
+    res.json({ vendors: result });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
   }
 });
 
-// PATCH /api/crew/me — 시공팀 본인 프로필 수정 (공종·계좌·일당·식비·교통비)
+// PATCH /api/crew/me — 시공팀 본인 프로필 수정 (공종 다중·계좌·일당·식비·교통비)
 const profileSchema = z.object({
-  crewCategory: z.string().min(1).max(40).optional().nullable(),
+  crewCategories: z.array(z.string().min(1).max(40)).min(1).max(25).optional(),
   crewBankAccount: z.string().max(120).optional().nullable(),
   crewDefaultUnitPrice: z.number().nonnegative().optional().nullable(),
   crewDefaultMeal: z.number().nonnegative().optional().nullable(),
@@ -153,7 +161,9 @@ router.patch('/me', requireCrew, async (req, res, next) => {
   try {
     const data = profileSchema.parse(req.body || {});
     const updateData = {};
-    if (data.crewCategory !== undefined) updateData.crewCategory = data.crewCategory?.trim() || null;
+    if (data.crewCategories !== undefined) {
+      updateData.crewCategories = data.crewCategories.map((c) => c.trim()).filter(Boolean);
+    }
     if (data.crewBankAccount !== undefined) updateData.crewBankAccount = data.crewBankAccount?.trim() || null;
     if (data.crewDefaultUnitPrice !== undefined) updateData.crewDefaultUnitPrice = data.crewDefaultUnitPrice ?? null;
     if (data.crewDefaultMeal !== undefined) updateData.crewDefaultMeal = data.crewDefaultMeal ?? null;
@@ -164,7 +174,7 @@ router.patch('/me', requireCrew, async (req, res, next) => {
       data: updateData,
       select: {
         id: true, name: true, email: true, nickname: true, phone: true,
-        crewCategory: true, crewBankAccount: true,
+        crewCategories: true, crewBankAccount: true,
         crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
       },
     });
@@ -183,7 +193,7 @@ router.get('/me', requireCrew, async (req, res, next) => {
         where: { id: req.user.id },
         select: {
           id: true, name: true, email: true, nickname: true, phone: true,
-          crewCategory: true, crewBankAccount: true,
+          crewCategories: true, crewBankAccount: true,
           crewDefaultUnitPrice: true, crewDefaultMeal: true, crewDefaultTransport: true,
         },
       }),

@@ -96,9 +96,11 @@ model User {
   // COMPANY는 Membership으로 회사 컨텍스트를 가짐. CREW는 Membership 없이 자기 일정만 가짐.
   accountType  AccountType @default(COMPANY)
 
-  // CREW 전용 프로필 (COMPANY 사용자는 모두 null). 시공팀 초대 수락 시 이 값으로 Vendor row 자동 생성.
-  // 가입 단계에서 공종은 필수, 계좌·일당·식비·교통비는 선택(공란 OK — 나중에 본인이 채우거나 회사가 채움).
-  crewCategory          String? // 주 공종 (예: "타일", "전기")
+  // CREW 전용 프로필 (COMPANY 사용자는 모두 null/빈배열). 시공팀 초대 수락 시 이 값으로 Vendor row 자동 생성.
+  // 가입 단계에서 공종(다중 선택, 최소 1개)은 필수, 계좌·일당·식비·교통비는 선택(공란 OK).
+  // 수락 시 crewCategories 배열 순회하며 공종마다 Vendor row 1개씩 자동 생성 — A=설비+실리콘 케이스도 자연스럽게 처리.
+  crewCategory          String? // deprecated 2026-05-17 — crewCategories로 이전, 베타엔 컬럼 보존(코드 미사용)
+  crewCategories        String[] @default([]) // STANDARD_PHASES.label 다중 선택 (예: ["타일", "도배"])
   crewBankAccount       String? // 계좌 한 줄 자유 입력
   crewDefaultUnitPrice  Decimal? @db.Decimal(12, 2)
   crewDefaultMeal       Decimal? @db.Decimal(12, 2)

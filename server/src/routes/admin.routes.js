@@ -152,7 +152,7 @@ router.get('/users', async (req, res, next) => {
         isSuperAdmin: u.isSuperAdmin,
         accountType: u.accountType || 'COMPANY',
         // CREW 전용 프로필 — UI에서 시공팀 행에만 노출
-        crewCategory: u.crewCategory || null,
+        crewCategories: u.crewCategories || [],
         crewBankAccount: u.crewBankAccount || null,
         createdAt: u.createdAt,
         lastSeenAt: u.lastSeenAt,

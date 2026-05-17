@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { checkPasswordPolicy } from '../utils/passwordPolicy';
 import api from '../api/client';
+import { STANDARD_PHASES } from '../utils/phases';
 
 // 시공팀(CREW) 별도 가입 — 회사 없이 시공팀 계정만 생성. (2026-05-17 양면 플랫폼 1차)
 // Wedge·Lock·Moat 전략의 Moat(해자) 축. paying side 아님 — 풀 무료.
@@ -23,12 +24,18 @@ export default function CrewSignup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     email: '', password: '', name: '', nickname: '', phone: '',
-    crewCategory: '',
     crewBankAccount: '',
     crewDefaultUnitPrice: '',
     crewDefaultMeal: '',
     crewDefaultTransport: '',
   });
+  const [crewCategories, setCrewCategories] = useState([]); // STANDARD_PHASES.label 다중
+
+  function toggleCategory(label) {
+    setCrewCategories((prev) =>
+      prev.includes(label) ? prev.filter((c) => c !== label) : [...prev, label]
+    );
+  }
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [err, setErr] = useState('');
@@ -67,7 +74,7 @@ export default function CrewSignup() {
     if (nicknameStatus === 'taken') return '이미 사용 중인 닉네임입니다';
     const passwordErr = checkPasswordPolicy(form.password);
     if (passwordErr) return passwordErr;
-    if (!form.crewCategory.trim()) return '주 공종을 입력해주세요';
+    if (crewCategories.length === 0) return '담당 공종을 1개 이상 선택해주세요';
     if (!agreedTerms || !agreedPrivacy) return '이용약관과 개인정보처리방침에 모두 동의해주세요';
     return null;
   }
@@ -92,7 +99,7 @@ export default function CrewSignup() {
         name: form.name.trim(),
         nickname: form.nickname.trim(),
         phone: form.phone.trim() || undefined,
-        crewCategory: form.crewCategory.trim(),
+        crewCategories,
         crewBankAccount: form.crewBankAccount.trim() || null,
         crewDefaultUnitPrice: toNumberOrNull(form.crewDefaultUnitPrice),
         crewDefaultMeal: toNumberOrNull(form.crewDefaultMeal),
@@ -152,16 +159,41 @@ export default function CrewSignup() {
           <div className="pt-3 border-t">
             <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">시공팀 정보</div>
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              아래 4개(계좌·일당·식비·교통비)는 <b>비워두셔도 됩니다</b> — 나중에 본인 또는 거래 회사가 채울 수 있어요.
+              계좌·일당·식비·교통비는 <b>비워두셔도 됩니다</b> — 나중에 본인 또는 거래 회사가 채울 수 있어요.
             </p>
+
+            {/* 공종 다중 체크 — 25개 표준 phase */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                담당 공종 * <span className="text-xs text-gray-400 font-normal">(여러 개 선택 가능)</span>
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                {STANDARD_PHASES.map((p) => {
+                  const active = crewCategories.includes(p.label);
+                  return (
+                    <button
+                      type="button"
+                      key={p.key}
+                      onClick={() => toggleCategory(p.label)}
+                      className={`text-xs px-2 py-1.5 rounded border transition ${
+                        active
+                          ? 'bg-navy-700 text-white border-navy-700'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {crewCategories.length > 0 && (
+                <p className="text-xs text-emerald-600 mt-2">
+                  {crewCategories.length}개 선택됨: {crewCategories.join(', ')}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-4">
-              <Field
-                label="주 공종 *"
-                value={form.crewCategory}
-                onChange={update('crewCategory')}
-                required
-                placeholder="예: 타일, 전기, 도배"
-              />
               <Field
                 label="계좌 (선택)"
                 value={form.crewBankAccount}

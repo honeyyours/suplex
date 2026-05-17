@@ -608,9 +608,13 @@ function UsersTab({ currentUserId }) {
                   <td className="px-4 py-3 text-gray-600">{u.email}</td>
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {u.accountType === 'CREW' ? (
-                      u.crewCategory
-                        ? <span className="inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">{u.crewCategory}</span>
-                        : <span className="italic text-gray-400">— 공종 미입력</span>
+                      u.crewCategories?.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {u.crewCategories.map((c) => (
+                            <span key={c} className="inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">{c}</span>
+                          ))}
+                        </div>
+                      ) : <span className="italic text-gray-400">— 공종 미입력</span>
                     ) : u.memberships.length === 0 ? (
                       <span className="italic text-gray-400">— 회사 없음</span>
                     ) : (
