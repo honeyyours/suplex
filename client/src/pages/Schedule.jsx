@@ -11,6 +11,7 @@ import ScheduleCalendar from '../components/ScheduleCalendar';
 import ProjectInfoCard from '../components/ProjectInfoCard';
 import ProjectChecklist from './ProjectChecklist';
 import { appendKakaoFooter } from '../utils/kakaoFooter';
+import TeamCalendar from './TeamCalendar';
 
 const SUBTABS = [
   { key: 'site',    label: '현장 일정',  status: 'IN_PROGRESS' },
@@ -22,6 +23,11 @@ export default function Schedule() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'site';
   const { auth } = useAuth();
+  const isCrew = auth?.user?.accountType === 'CREW';
+  // 시공팀: 프로젝트 없으니 팀캘린더 패턴(회사 자체 일정 + 자유 입력)을 일정 화면으로 사용. (2026-05-17)
+  if (isCrew) {
+    return <TeamCalendar />;
+  }
   const { data: companyData } = useQuery({
     queryKey: ['company'],
     queryFn: () => companyApi.get(),

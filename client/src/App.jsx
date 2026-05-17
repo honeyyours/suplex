@@ -45,12 +45,13 @@ import LoungePostEditor from './pages/LoungePostEditor';
 import IntroHome from './pages/IntroHome';
 
 // 홈 라우트 분기:
-// - 시공팀(CREW)도 본인 회사 OWNER로 Dashboard 사용 (2026-05-17 정정)
-// - 일반회원(회사 없음) + 회사 미승인: IntroHome (수플렉스 소개·CTA + 라운지 페인 포인트)
+// - 시공팀(CREW): 일정 화면을 첫 화면으로 (2026-05-17 봉기님 결정 — NAV 일정·라운지만)
+// - 일반회원(회사 없음) + 회사 미승인: IntroHome
 // - 회사 승인·슈퍼어드민: Dashboard
 function HomeRoute() {
   const { auth, isAuthChecked } = useAuth();
   if (isAuthChecked && auth && !auth.isSuperAdmin) {
+    if (auth.user?.accountType === 'CREW') return <Navigate to="/schedule" replace />;
     if (!auth.company) return <IntroHome />;
     if (
       auth.company.approvalStatus &&
@@ -62,10 +63,10 @@ function HomeRoute() {
   return <Dashboard />;
 }
 
-// 프로젝트 생성 차단 — CREW면 /projects로 리다이렉트 (UX), 백엔드도 가드
-function CrewProjectGate({ children }) {
+// 시공팀이 회사 전용 메뉴에 직접 URL 접근 시 /schedule로 리다이렉트 (NAV 축소 정합).
+function CrewGate({ children }) {
   const { auth } = useAuth();
-  if (auth?.user?.accountType === 'CREW') return <Navigate to="/projects" replace />;
+  if (auth?.user?.accountType === 'CREW') return <Navigate to="/schedule" replace />;
   return children;
 }
 
@@ -99,19 +100,20 @@ export default function App() {
         {/* 홈 — 미승인은 /lounge로 자동, 승인은 Dashboard */}
         <Route path="/" element={<HomeRoute />} />
 
-        {/* 그 외 메뉴는 미승인이면 BetaGate가 베타 준비중 화면으로 차단 */}
+        {/* 그 외 메뉴는 미승인이면 BetaGate가 베타 준비중 화면으로 차단.
+            시공팀(CREW)은 NAV가 일정·라운지만이라 그 외 메뉴 직접 URL 접근 시 CrewGate가 /schedule로 리다이렉트. */}
         <Route path="/schedule" element={<BetaGate><Schedule /></BetaGate>} />
-        <Route path="/team-calendar" element={<BetaGate><TeamCalendar /></BetaGate>} />
-        <Route path="/expenses" element={<BetaGate><FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate></BetaGate>} />
-        <Route path="/orders" element={<BetaGate><Orders /></BetaGate>} />
-        <Route path="/ai-assistant" element={<BetaGate><FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate></BetaGate>} />
-        <Route path="/team" element={<BetaGate><TeamManagement /></BetaGate>} />
+        <Route path="/team-calendar" element={<CrewGate><BetaGate><TeamCalendar /></BetaGate></CrewGate>} />
+        <Route path="/expenses" element={<CrewGate><BetaGate><FeatureGate feature={F.EXPENSES_VIEW}><Expenses /></FeatureGate></BetaGate></CrewGate>} />
+        <Route path="/orders" element={<CrewGate><BetaGate><Orders /></BetaGate></CrewGate>} />
+        <Route path="/ai-assistant" element={<CrewGate><BetaGate><FeatureGate feature={F.AI_ASSISTANT}><AIAssistant /></FeatureGate></BetaGate></CrewGate>} />
+        <Route path="/team" element={<CrewGate><BetaGate><TeamManagement /></BetaGate></CrewGate>} />
         <Route path="/settings" element={<BetaGate><Settings /></BetaGate>} />
 
-        <Route path="/projects" element={<BetaGate><Projects /></BetaGate>} />
-        <Route path="/projects/new" element={<BetaGate><CrewProjectGate><NewProject /></CrewProjectGate></BetaGate>} />
+        <Route path="/projects" element={<CrewGate><BetaGate><Projects /></BetaGate></CrewGate>} />
+        <Route path="/projects/new" element={<CrewGate><BetaGate><NewProject /></BetaGate></CrewGate>} />
 
-        <Route path="/projects/:id" element={<BetaGate><ProjectDetail /></BetaGate>}>
+        <Route path="/projects/:id" element={<CrewGate><BetaGate><ProjectDetail /></BetaGate></CrewGate>}>
           <Route index element={<Navigate to="schedule" replace />} />
           <Route path="quotes" element={<ProjectSimpleQuotes />} />
           <Route path="quotes-detail" element={<ProjectQuotes />} />

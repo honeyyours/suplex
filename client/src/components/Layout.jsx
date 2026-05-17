@@ -76,10 +76,13 @@ export default function Layout() {
 
   // 일반회원(회사 없음)은 홈·라운지만 노출 — 회사 기능 메뉴는 숨김 (2026-05-14)
   const isGeneralMember = !isAdmin && !auth?.company;
+  // 시공팀(CREW)은 일정·라운지만 노출 (2026-05-17 봉기님 결정)
   const navItems = isAdmin
     ? NAV.filter((n) => n.to === '/lounge')
     : isGeneralMember
     ? NAV.filter((n) => n.to === '/' || n.to === '/lounge')
+    : isCrew
+    ? NAV.filter((n) => n.to === '/schedule' || n.to === '/lounge')
     : NAV.filter((n) => !n.feature || canAccess(auth, n.feature));
   const hasMultipleCompanies = !isAdmin && (memberships?.length || 0) >= 2;
 
