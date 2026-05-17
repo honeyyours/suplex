@@ -48,6 +48,23 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
     return map;
   }, [entries]);
 
+  // 하단 현장 인덱스 — 이번 달에 실제로 일정이 있는 프로젝트만 모아 색→이름 매핑
+  const legendItems = useMemo(() => {
+    const map = new Map();
+    for (const e of entries) {
+      if (!e.project?.id) continue;
+      if (!map.has(e.project.id)) {
+        map.set(e.project.id, {
+          id: e.project.id,
+          name: e.project.name || '(이름 없음)',
+          projColor: projectClass(e.project.id),
+          projBorder: projectBorderClass(e.project.id),
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [entries]);
+
   const todayKey = toDateKey(new Date());
 
   return (
@@ -159,6 +176,26 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
           })}
         </div>
       </div>
+
+      {legendItems.length > 1 && (
+        <div className="mt-2 sm:mt-3 px-2 sm:px-0 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 mr-0.5">현장</span>
+          {legendItems.map(({ id, name, projColor, projBorder }) => (
+            <Link
+              key={id}
+              to={`/projects/${id}/schedule`}
+              className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 hover:text-navy-800 dark:hover:text-navy-200"
+              title={name}
+            >
+              <span
+                className={`inline-block w-3 h-3 rounded-sm ${projColor} border-l-[3px] ${projBorder}`}
+                aria-hidden="true"
+              />
+              <span className="truncate max-w-[140px]">{name}</span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
