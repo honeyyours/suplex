@@ -5,14 +5,15 @@ import { projectsApi } from '../api/projects';
 import { formatDateDot, weeksBetween } from '../utils/date';
 
 const STATUS_META = {
-  PLANNED:     { label: '예정',   color: 'bg-amber-100 text-amber-700' },
-  IN_PROGRESS: { label: '진행중', color: 'bg-sky-100 text-sky-700' },
-  ON_HOLD:     { label: '보류',   color: 'bg-gray-200 text-gray-700' },
-  COMPLETED:   { label: '완료',   color: 'bg-emerald-100 text-emerald-700' },
-  CANCELLED:   { label: '취소',   color: 'bg-rose-100 text-rose-700' },
+  PLANNED:     { label: '예정',     color: 'bg-amber-100 text-amber-700' },
+  IN_PROGRESS: { label: '진행중',   color: 'bg-sky-100 text-sky-700' },
+  ON_HOLD:     { label: '보류',     color: 'bg-gray-200 text-gray-700' },
+  COMPLETED:   { label: '완료',     color: 'bg-emerald-100 text-emerald-700' },
+  CANCELLED:   { label: '취소',     color: 'bg-rose-100 text-rose-700' },
+  LOST:        { label: '수주실패', color: 'bg-slate-200 text-slate-600' },
 };
 
-const STATUS_ORDER = ['IN_PROGRESS', 'PLANNED', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const STATUS_ORDER = ['IN_PROGRESS', 'PLANNED', 'ON_HOLD', 'COMPLETED', 'CANCELLED', 'LOST'];
 
 function projectYear(p) {
   const d = p.startDate || p.createdAt;

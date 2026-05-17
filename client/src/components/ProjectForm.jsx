@@ -122,11 +122,12 @@ export default function ProjectForm({ initial, onSubmit, onCancel, submitLabel =
             disabled={!initial}
             className="input disabled:bg-gray-100"
           >
-            <option value="PLANNED">예정</option>
+            <option value="PLANNED">예정 (견적·답사)</option>
             <option value="IN_PROGRESS">진행중</option>
             <option value="ON_HOLD">보류</option>
             <option value="COMPLETED">완료</option>
-            <option value="CANCELLED">취소</option>
+            <option value="CANCELLED">취소 (진행 중 중단)</option>
+            <option value="LOST">수주실패 (계약 미체결)</option>
           </select>
         </Field>
         <Field label="고객명" required>

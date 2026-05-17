@@ -694,7 +694,7 @@ const updateSchema = z.object({
   // 수정 시에도 빈 값 허용 X (요구사항: 시작/마감은 항상 존재)
   startDate: z.string().min(1).optional(),
   expectedEndDate: z.string().min(1).optional(),
-  status: z.enum(['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.enum(['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED', 'LOST']).optional(),
   doorPassword: z.string().optional().nullable(),
   siteNotes: z.string().optional().nullable(),
   area: z.number().optional().nullable(),

@@ -286,11 +286,12 @@ model Vendor {
 // ============================================
 
 enum ProjectStatus {
-  PLANNED // 예정
+  PLANNED // 예정 (견적·답사 단계)
   IN_PROGRESS // 진행중
   ON_HOLD // 보류
   COMPLETED // 완료
-  CANCELLED // 취소
+  CANCELLED // 취소 (진행 중 중단)
+  LOST // 수주 실패 (답사·미팅했으나 계약 미체결, 2026-05-17 추가) — 영업 깔때기 분석용
 }
 
 // 프로젝트별 권한 (베타: 사람 단위 소속). 정식 출시 후 Team 모델로 진화 예정.
@@ -492,6 +493,9 @@ model DailyScheduleEntry {
   confirmedAt DateTime?
   orderIndex  Int       @default(0)
   vendorId    String? // 협력업체 (선택)
+  // 팀 캘린더(회사 전체 일정) 플래그 — true면 프로젝트 일정 + 회사일정 양쪽에 노출.
+  // 2026-05-17 추가. 회사 자체 운영 일정·견적미팅·내부 미팅 등 프로젝트 컨텍스트에 있되 회사 단위로도 보이게 함.
+  companyWide Boolean   @default(false)
   createdById String?
   updatedById String?
   createdAt   DateTime  @default(now())

@@ -125,6 +125,7 @@ const createSchema = z.object({
   category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   orderIndex: z.number().int().optional(),
+  companyWide: z.boolean().optional(),
 });
 
 async function resolveVendorId(companyId, vendorId) {
@@ -170,6 +171,7 @@ projectRouter.post('/', async (req, res, next) => {
           category: resolvedCategory,
           vendorId,
           orderIndex: nextOrder,
+          companyWide: data.companyWide ?? false,
           createdById: req.user.id,
           updatedById: req.user.id,
         },
@@ -216,6 +218,7 @@ const updateSchema = z.object({
   category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   orderIndex: z.number().int().optional(),
+  companyWide: z.boolean().optional(),
 });
 
 projectRouter.patch('/:id', async (req, res, next) => {

@@ -8,6 +8,7 @@ const STATUS_LABEL = {
   ON_HOLD: { label: '보류', color: 'bg-gray-200 text-gray-700' },
   COMPLETED: { label: '완료', color: 'bg-emerald-100 text-emerald-700' },
   CANCELLED: { label: '취소', color: 'bg-rose-100 text-rose-700' },
+  LOST: { label: '수주실패', color: 'bg-slate-200 text-slate-600' },
 };
 
 export default function ProjectInfoCard({ project, showHeader = true, actions = null, compact = false, activeQuote = null }) {
