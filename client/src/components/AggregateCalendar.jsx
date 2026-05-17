@@ -125,12 +125,19 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
                           ${projColor}
                           border-l-0 sm:border-l-[3px] ${projBorder}
                           hover:brightness-95
+                          ${e.confirmed ? '' : 'opacity-[0.55]'}
                         `}
                         title={`${e.project?.name || ''} · ${e.category ? `[${e.category}] ` : ''}${e.content}`}
                       >
                         <PhaseInlineContent entry={e} textOnly textClassName="flex-1" />
                         {e.confirmed && (
-                          <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold pointer-events-none drop-shadow-[0_0_2px_rgba(255,255,255,0.9)]">✓</span>
+                          <span
+                            aria-label="확정됨"
+                            className="absolute top-1/2 -translate-y-1/2 right-[1px] w-[15px] h-[15px] sm:w-[18px] sm:h-[18px] rounded-full bg-emerald-500 text-white inline-flex items-center justify-center pointer-events-none z-[2]"
+                            style={{ boxShadow: '0 0 0 1.5px #fff, 0 1px 3px rgba(0,0,0,0.2)' }}
+                          >
+                            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-[9px] h-[9px] sm:w-[11px] sm:h-[11px]"><path d="M3 6.5L5 8.5L9 4"/></svg>
+                          </span>
                         )}
                       </Link>
                     );
