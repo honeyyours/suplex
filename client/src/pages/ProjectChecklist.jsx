@@ -9,6 +9,8 @@ import ScheduleLinkSheet from '../components/ScheduleLinkSheet';
 import { STANDARD_PHASES } from '../utils/phases';
 import { useAuth } from '../contexts/AuthContext';
 import { appendKakaoFooter } from '../utils/kakaoFooter';
+import { checklistFavoritesApi } from '../api/checklistFavorites';
+import ChecklistFavoritesModal from '../components/ChecklistFavoritesModal';
 
 // 작업자 카톡 양식 — 단일·복수 자동 분기. 회사·현장명 컨텍스트 포함.
 // 봉기님 제안(2026-05-17): "회사에서 알려드립니다. 현장 [공정] 확인·처리 부탁드립니다." 톤.
@@ -72,6 +74,23 @@ export default function ProjectChecklist({ projectId } = {}) {
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkCopied, setBulkCopied] = useState(false);
+  // 즐겨찾기 모달
+  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
+
+  async function favoriteItem(item) {
+    try {
+      await checklistFavoritesApi.create({
+        title: item.title,
+        phase: item.phase || null,
+        category: item.category,
+        team: item.team,
+        requiresPhoto: item.requiresPhoto,
+      });
+      alert('회사 즐겨찾기에 추가됐습니다');
+    } catch (e) {
+      alert(e.response?.data?.error || '즐겨찾기 등록 실패');
+    }
+  }
 
   function toggleSelect(itemId) {
     setSelectedIds((prev) => {
@@ -313,18 +332,27 @@ export default function ProjectChecklist({ projectId } = {}) {
 
       {/* 작업자 묶음 카톡 복사 — 항목 다중 선택 → 한 번에 카톡 텍스트 생성 */}
       {!bulkMode ? (
-        <div className="mb-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2 text-emerald-900 min-w-0">
-            <span className="text-base">📋</span>
-            <span className="font-medium">여러 항목 묶어서 작업자에게 카톡 전달</span>
-            <span className="text-xs text-emerald-700 hidden sm:inline">— 선택 모드 시작 후 항목을 골라 한 번에 복사</span>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[260px] bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2 text-emerald-900 min-w-0">
+              <span className="text-base">📋</span>
+              <span className="font-medium">묶어서 작업자에게 카톡</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBulkMode(true)}
+              className="flex-shrink-0 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition"
+            >
+              선택 시작
+            </button>
           </div>
           <button
             type="button"
-            onClick={() => setBulkMode(true)}
-            className="flex-shrink-0 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition"
+            onClick={() => setShowFavoritesModal(true)}
+            className="px-3 py-2.5 border border-amber-200 bg-amber-50 text-amber-800 rounded-lg text-sm hover:bg-amber-100 transition whitespace-nowrap"
+            title="회사 즐겨찾기에서 일괄 추가"
           >
-            선택 시작
+            ⭐ 즐겨찾기에서 추가
           </button>
         </div>
       ) : (
@@ -355,6 +383,7 @@ export default function ProjectChecklist({ projectId } = {}) {
                 bulkSelected={selectedIds.has(i.id)}
                 onBulkToggle={() => toggleSelect(i.id)}
                 copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+                onFavorite={() => favoriteItem(i)}
               />
             ))
           )}
@@ -377,6 +406,7 @@ export default function ProjectChecklist({ projectId } = {}) {
                 bulkSelected={selectedIds.has(i.id)}
                 onBulkToggle={() => toggleSelect(i.id)}
                 copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+                onFavorite={() => favoriteItem(i)}
               />
             ))
           )}
@@ -399,6 +429,7 @@ export default function ProjectChecklist({ projectId } = {}) {
                 bulkSelected={selectedIds.has(i.id)}
                 onBulkToggle={() => toggleSelect(i.id)}
                 copyContext={{ company: auth?.company, project: data?.project, plan: auth?.company?.plan }}
+                onFavorite={() => favoriteItem(i)}
               />
             ))
           )}
@@ -424,6 +455,18 @@ export default function ProjectChecklist({ projectId } = {}) {
             setErr('');
           }}
           onClose={() => setShowLinkSheet(false)}
+        />
+      )}
+
+      {showFavoritesModal && (
+        <ChecklistFavoritesModal
+          projectId={id}
+          projectName={data?.project?.name}
+          onClose={() => setShowFavoritesModal(false)}
+          onApplied={(count) => {
+            alert(`${count}개 항목이 추가됐습니다`);
+            reload();
+          }}
         />
       )}
 
@@ -499,6 +542,7 @@ export function Item({
   bulkSelected = false,
   onBulkToggle,
   copyContext,
+  onFavorite,
 }) {
   const photos = item.photos || [];
   const showPhotos = item.requiresPhoto || photos.length > 0;
@@ -590,6 +634,13 @@ export function Item({
           >
             {copied ? '✓' : '📋'}
           </button>
+          {onFavorite && (
+            <button
+              onClick={onFavorite}
+              title="회사 즐겨찾기에 추가 — 다음 프로젝트에서 추천"
+              className="text-xs px-1 transition text-gray-500 hover:text-amber-500"
+            >⭐</button>
+          )}
           {onEdit && !item.isDone && (
             <button
               onClick={() => onEdit(item)}

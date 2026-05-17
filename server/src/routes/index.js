@@ -38,6 +38,7 @@ const announcementsRoutes = require('./announcements.routes');
 const loungeRoutes = require('./lounge.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const companySchedulesRoutes = require('./companySchedules.routes');
+const checklistFavoritesRoutes = require('./checklistFavorites.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -85,6 +86,7 @@ router.use('/projects/:projectId/purchase-orders', pmGuard, purchaseOrders.proje
 router.use('/company', companyRoutes);
 router.use('/schedules', schedules.globalRouter);
 router.use('/company-schedules', companySchedulesRoutes);
+router.use('/checklist-favorites', checklistFavoritesRoutes);
 router.use('/schedule-changes', scheduleChanges.globalRouter);
 router.use('/checklists', checklists.globalRouter);
 router.use('/material-templates', materialTemplateRoutes);

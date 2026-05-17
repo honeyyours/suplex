@@ -79,6 +79,7 @@ model Company {
   phaseAdvices           PhaseAdvice[]
   companyPhaseTips       CompanyPhaseTip[]
   teamCalendarEntries    DailyScheduleEntry[] @relation("CompanyTeamCalendar")
+  checklistFavorites     ChecklistFavorite[]
 
   @@map("companies")
 }
@@ -111,6 +112,7 @@ model User {
 
   createdChecklists       ProjectChecklist[]    @relation("ChecklistCreatedBy")
   completedChecklists     ProjectChecklist[]    @relation("ChecklistCompletedBy")
+  createdChecklistFavorites ChecklistFavorite[] @relation("ChecklistFavoriteCreatedBy")
   createdScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleCreatedBy")
   updatedScheduleEntries  DailyScheduleEntry[]  @relation("DailyScheduleUpdatedBy")
   assignedScheduleEntries DailyScheduleEntry[]  @relation("DailyScheduleAssignee")
@@ -429,6 +431,29 @@ enum ChecklistTeam {
   DESIGN
   ORDER
   OTHER
+}
+
+// 체크리스트 즐겨찾기 — 회사 단위 마스터. 새 프로젝트 만들 때 "이거 잊지 않으셨나요?" 추천.
+// 2026-05-17 신설. 봉기님 요청 — 회사가 반복적으로 챙기는 항목을 회사 자산으로 저장.
+model ChecklistFavorite {
+  id            String   @id @default(cuid())
+  companyId     String
+  title         String
+  phase         String?  // 공종 태그 (선택)
+  category      ChecklistCategory @default(GENERAL)
+  team          ChecklistTeam     @default(OTHER)
+  requiresPhoto Boolean  @default(false)
+  daysBefore    Int?     // 시작일로부터 며칠 전 (DUE 모드 기본값, 선택)
+  orderIndex    Int      @default(0)
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("ChecklistFavoriteCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, orderIndex])
+  @@map("checklist_favorites")
 }
 
 // 프로젝트별 체크리스트 (사용자 관리 + PhaseAdvice 자동 생성 공용)
