@@ -116,6 +116,7 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
   // 입력 폼 상태
   const [form, setForm] = useState({
     date: toDateKey(new Date()),
+    dateEnd: '', // 비어있으면 단일 일정. 채우면 기간 일정 (시작~종료 매일 row 생성)
     content: '',
     projectId: '',
     vendorId: '',
@@ -173,15 +174,18 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
     setErr('');
     setBusy(true);
     try {
+      // 종료일이 시작일보다 이르거나 같으면 단일 일정(dateEnd 미전송).
+      const dateEnd = form.dateEnd && form.dateEnd > form.date ? form.dateEnd : null;
       await companySchedulesApi.create({
         date: form.date,
+        dateEnd,
         content: form.content.trim(),
         projectId: form.projectId || null,
         vendorId: form.vendorId || null,
         assigneeId: form.assigneeId || null,
         isPrivate: form.isPrivate,
       });
-      setForm({ ...form, content: '', projectId: '', vendorId: '', isPrivate: false });
+      setForm({ ...form, content: '', projectId: '', vendorId: '', isPrivate: false, dateEnd: '' });
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -284,20 +288,30 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
         onSubmit={submit}
         className={`${mobileFormOpen ? 'block' : 'hidden'} sm:block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 space-y-2`}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-[140px_140px_1fr_auto] gap-2">
           <input
             type="date"
             value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
             className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900"
             required
+            title="시작일"
+          />
+          <input
+            type="date"
+            value={form.dateEnd}
+            onChange={(e) => setForm({ ...form, dateEnd: e.target.value })}
+            min={form.date}
+            className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900"
+            title="종료일 (비워두면 단일 일정, 채우면 시작일부터 매일 자동 생성)"
+            placeholder="종료일 (선택)"
           />
           <input
             type="text"
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             placeholder="예: 김부장님 디자인 미팅, 가산점 답사, 직원 회식"
-            className="border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900"
+            className="col-span-2 sm:col-span-1 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-900"
           />
           <button
             type="submit"

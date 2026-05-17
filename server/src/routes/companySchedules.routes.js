@@ -61,13 +61,32 @@ router.get('/', async (req, res, next) => {
 // 공정(category)은 팀캘린더에서 의미 약결합·노출 제거 (봉기님 결정 옵션 c, 2026-05-17).
 // 프로젝트 공정 일정은 ProjectSchedule에서만 사용. DailyScheduleEntry.category 컬럼은 그쪽에서 유지.
 const createSchema = z.object({
-  date: z.string(),
+  date: z.string(), // 단일 일정 OR 기간 일정의 시작일
+  dateEnd: z.string().optional().nullable(), // 기간 일정의 종료일 (포함, 시작일 ≤ 종료일). 미지정 시 단일 일정.
   content: z.string().min(1),
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
   isPrivate: z.boolean().optional(),
 });
+
+function enumerateDays(startStr, endStr) {
+  const start = new Date(startStr);
+  const end = endStr ? new Date(endStr) : start;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+  if (end < start) return [];
+  const days = [];
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  // 안전상한 60일 — 시공팀 2~3일 묶음 가정. 잘못된 큰 범위는 거부
+  let guard = 0;
+  while (cur <= last && guard < 60) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+    guard++;
+  }
+  return days;
+}
 
 async function assertMemberOfCompany(userId, companyId) {
   if (!userId) return false;
@@ -113,29 +132,40 @@ router.post('/', async (req, res, next) => {
     }
 
     const vendorId = await resolveVendorId(req.user.companyId, data.vendorId);
+    const days = enumerateDays(data.date, data.dateEnd || null);
+    if (days.length === 0) {
+      return res.status(400).json({ error: '날짜가 올바르지 않습니다 (시작 ≤ 종료, 60일 이내)' });
+    }
 
-    const created = await prisma.dailyScheduleEntry.create({
-      data: {
-        projectId: data.projectId || null,
-        companyId: req.user.companyId,
-        date: new Date(data.date),
-        content: data.content.trim(),
-        vendorId,
-        assigneeId,
-        isPrivate: !!data.isPrivate,
-        // 프로젝트 연결된 경우 companyWide=true로 양쪽 노출. 회사 단독은 굳이 플래그 필요 없음.
-        companyWide: !!data.projectId,
-        createdById: req.user.id,
-        updatedById: req.user.id,
-      },
-      include: {
-        project: { select: { id: true, name: true } },
-        vendor: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true, nickname: true } },
-      },
+    const baseData = {
+      projectId: data.projectId || null,
+      companyId: req.user.companyId,
+      content: data.content.trim(),
+      vendorId,
+      assigneeId,
+      isPrivate: !!data.isPrivate,
+      companyWide: !!data.projectId,
+      createdById: req.user.id,
+      updatedById: req.user.id,
+    };
+
+    // 단일: 기존 동작 그대로 create 후 include 반환. 기간 N일: createMany + 첫 row 반환.
+    if (days.length === 1) {
+      const created = await prisma.dailyScheduleEntry.create({
+        data: { ...baseData, date: days[0] },
+        include: {
+          project: { select: { id: true, name: true } },
+          vendor: { select: { id: true, name: true } },
+          assignee: { select: { id: true, name: true, nickname: true } },
+        },
+      });
+      return res.status(201).json({ entry: created, createdCount: 1 });
+    }
+
+    await prisma.dailyScheduleEntry.createMany({
+      data: days.map((d) => ({ ...baseData, date: d })),
     });
-
-    res.status(201).json({ entry: created });
+    res.status(201).json({ createdCount: days.length });
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
