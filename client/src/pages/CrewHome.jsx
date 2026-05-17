@@ -81,9 +81,6 @@ export default function CrewHome() {
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-gray-500 mt-3 leading-relaxed">
-              위 회사들이 잡은 일정은 곧 한 화면에서 통합 확인하실 수 있습니다 (준비 중).
-            </p>
           </section>
         ) : (
           <section className="bg-amber-50 border border-amber-200 rounded-lg p-5">
@@ -94,8 +91,8 @@ export default function CrewHome() {
                 잡힌 일정이 이 화면에 모입니다.
               </p>
               <p className="text-xs text-amber-800">
-                회사가 여러 곳이어도 한 화면에서 통합 확인하실 수 있습니다.
-                더블 부킹 알림도 함께 작동합니다 (준비 중).
+                회사가 여러 곳이어도 한 화면에서 통합 확인할 수 있고,
+                더블 부킹 경고도 함께 표시됩니다.
               </p>
             </div>
           </section>
@@ -112,12 +109,11 @@ export default function CrewHome() {
         </section>
 
         <section className="bg-gray-50 dark:bg-slate-900/60 border border-dashed border-gray-300 dark:border-slate-700 rounded-lg p-5">
-          <div className="font-semibold text-gray-700 dark:text-gray-300 mb-2">다음 단계 (준비 중)</div>
+          <div className="font-semibold text-gray-700 dark:text-gray-300 mb-2">준비 중인 기능</div>
           <ul className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed list-disc pl-5 space-y-1">
-            <li>거래 회사가 잡은 일정 통합 캘린더</li>
-            <li>더블 부킹 즉시 알림</li>
+            <li>일정 1-탭 확정 / 변경 요청</li>
             <li>인건비 정산 영수증 보관</li>
-            <li>일정 1-탭 확정/미확정 응답</li>
+            <li>일정 변경 시 알림톡 자동 발송</li>
           </ul>
         </section>
 
