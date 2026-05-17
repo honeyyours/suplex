@@ -431,9 +431,9 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
                     )}
                   </div>
 
-                  {/* 모바일 — 빽빽 (셀 탭 시 바텀시트 열림) */}
-                  <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden">
-                    {dayEntries.slice(0, 3).map((e) => <EntryCard key={e.id} entry={e} onRemove={() => remove(e.id)} />)}
+                  {/* 모바일 — 시각 표시만, 모든 클릭은 셀로 전파 (시트 열림) */}
+                  <div className="sm:hidden px-0.5 pb-0.5 flex flex-col gap-0.5 flex-1 overflow-hidden pointer-events-none">
+                    {dayEntries.slice(0, 3).map((e) => <MobileEntryBar key={e.id} entry={e} />)}
                     {dayEntries.length > 3 && (
                       <span className="text-[11px] text-gray-400 text-center leading-none mt-0.5">
                         +{dayEntries.length - 3}
@@ -528,6 +528,19 @@ function FilterChip({ label, active, onClick, muted = false }) {
     <button type="button" onClick={onClick} className={`${base} ${tone}`}>
       {label}
     </button>
+  );
+}
+
+// 모바일용 — 시각 정보만. 클릭/터치 이벤트는 셀(시트)로 흐르도록 pointer-events-none 셀 컨테이너에서 처리.
+function MobileEntryBar({ entry: e }) {
+  const projColor = e.project ? projectClass(e.project.id) : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200';
+  return (
+    <div
+      className={`text-[10px] rounded-sm pl-0.5 pr-0.5 py-0 truncate flex items-center gap-1 ${projColor}`}
+    >
+      {e.isPrivate && <span className="opacity-70" aria-hidden="true">🔒</span>}
+      <span className="truncate">{e.content}</span>
+    </div>
   );
 }
 
