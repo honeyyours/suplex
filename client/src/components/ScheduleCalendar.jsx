@@ -205,7 +205,7 @@ export default function ScheduleCalendar({ projectId, project }) {
         />
       )}
 
-      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
+      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white select-none sm:select-auto">
         <div className="grid grid-cols-7 text-xs sm:text-xs font-semibold bg-gray-50 border-b sticky top-0">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div

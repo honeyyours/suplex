@@ -103,7 +103,7 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
         </div>
       </div>
 
-      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white">
+      <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white select-none sm:select-auto">
         <div className="grid grid-cols-7 text-[11px] sm:text-xs font-semibold bg-gray-50 border-b">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div

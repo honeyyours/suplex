@@ -380,7 +380,7 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
           <div className="flex-1" />
         </div>
 
-        <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+        <div className="border-y sm:border sm:rounded-lg overflow-hidden bg-white dark:bg-slate-800 select-none sm:select-auto">
           <div className="grid grid-cols-7 text-[11px] sm:text-xs font-semibold bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
             {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
               <div

@@ -68,7 +68,7 @@ export default function HomeWeekSchedule() {
   const isThisWeek = toDateKey(weekStart) === thisSunday;
 
   return (
-    <section className="bg-white border-y sm:border sm:rounded-xl p-2 sm:p-5 -mx-2 sm:mx-0">
+    <section className="bg-white border-y sm:border sm:rounded-xl p-2 sm:p-5 -mx-2 sm:mx-0 select-none sm:select-auto">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold text-navy-800">이번주 일정</h2>

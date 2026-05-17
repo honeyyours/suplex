@@ -61,7 +61,7 @@ export default function HomeWeekWidget() {
   }, [entries]);
 
   return (
-    <section className="sm:hidden block bg-white border border-gray-200 rounded-xl px-2 py-3 -mx-2">
+    <section className="sm:hidden block bg-white border border-gray-200 rounded-xl px-2 py-3 -mx-2 select-none">
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-sm font-bold text-navy-800">이번주 일정</span>
         <Link
