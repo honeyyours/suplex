@@ -27,4 +27,6 @@ export const crewApi = {
   // CREW 인증 — 본인 프로필 + 거래 회사 매핑
   me: () => api.get('/crew/me').then((r) => r.data),
   updateMe: (payload) => api.patch('/crew/me', payload).then((r) => r.data),
+  // CREW 인증 — 본인 매핑 Vendor들의 일정 통합 (회사 색상 분리·더블 부킹 표시용)
+  schedules: (from, to) => api.get('/crew/schedules', { params: { from, to } }).then((r) => r.data),
 };

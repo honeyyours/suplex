@@ -231,4 +231,62 @@ router.get('/me', requireCrew, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// GET /api/crew/schedules?from=YYYY-MM-DD&to=YYYY-MM-DD
+// 본인 매핑 Vendor들의 DailyScheduleEntry만. 회사·프로젝트·공종 컨텍스트 포함, 그 외(견적·정산 등) 절대 노출 X.
+// 회사 데이터 격리 정책 — [[crewaccount]] 메모리 정합.
+router.get('/schedules', requireCrew, async (req, res, next) => {
+  try {
+    const from = req.query.from ? new Date(req.query.from) : new Date();
+    const to = req.query.to ? new Date(req.query.to) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+      return res.status(400).json({ error: 'from / to 날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)' });
+    }
+
+    const entries = await prisma.dailyScheduleEntry.findMany({
+      where: {
+        date: { gte: from, lte: to },
+        vendor: { linkedCrewUserId: req.user.id },
+      },
+      select: {
+        id: true,
+        date: true,
+        category: true,
+        content: true,
+        confirmed: true,
+        orderIndex: true,
+        project: { select: { id: true, name: true, address: true } },
+        vendor: { select: { id: true, name: true, category: true } },
+        company: { select: { id: true, name: true } },
+      },
+      orderBy: [{ date: 'asc' }, { orderIndex: 'asc' }],
+    });
+
+    // 일정의 회사 컨텍스트 — projectId 있으면 project.company, 아니면 직접 companyId
+    // (개인정보 격리: 시공팀에 보이는 건 회사명·프로젝트 이름·주소·공종·일정 본문까지)
+    const projectCompanies = await prisma.project.findMany({
+      where: {
+        id: { in: entries.map((e) => e.project?.id).filter(Boolean) },
+      },
+      select: { id: true, company: { select: { id: true, name: true } } },
+    });
+    const projectToCompany = new Map(projectCompanies.map((p) => [p.id, p.company]));
+
+    const enriched = entries.map((e) => {
+      const company = e.project ? projectToCompany.get(e.project.id) : e.company;
+      return {
+        id: e.id,
+        date: e.date,
+        category: e.category,
+        content: e.content,
+        confirmed: e.confirmed,
+        project: e.project,
+        vendor: e.vendor,
+        company,
+      };
+    });
+
+    res.json({ schedules: enriched });
+  } catch (e) { next(e); }
+});
+
 module.exports = router;

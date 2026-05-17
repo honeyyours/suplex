@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { crewApi } from '../api/vendors';
+import CrewScheduleList from '../components/CrewScheduleList';
 
 // 시공팀(CREW) 전용 홈 — 가입 직후·로그인 후 도착하는 1차 화면. (2026-05-17)
 // Step 2: placeholder + 본인 정보. Step 3: 거래 회사 매핑 목록 표시.
@@ -50,6 +51,8 @@ export default function CrewHome() {
             <div className="text-sm text-gray-500 mt-0.5">@{user.nickname}</div>
           )}
         </section>
+
+        <CrewScheduleList />
 
         {/* 거래 회사 목록 — 회사별로 묶음 (목공팀이면 한 회사에 Vendor 3개 가능) */}
         {me.loading ? (
