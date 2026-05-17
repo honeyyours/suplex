@@ -58,10 +58,11 @@ router.get('/', async (req, res, next) => {
 // POST /api/company-schedules
 //   회사 일정 추가. projectId 선택 — 있으면 companyWide=true, 없으면 companyId만.
 // ============================================
+// 공정(category)은 팀캘린더에서 의미 약결합·노출 제거 (봉기님 결정 옵션 c, 2026-05-17).
+// 프로젝트 공정 일정은 ProjectSchedule에서만 사용. DailyScheduleEntry.category 컬럼은 그쪽에서 유지.
 const createSchema = z.object({
   date: z.string(),
   content: z.string().min(1),
-  category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
@@ -119,7 +120,6 @@ router.post('/', async (req, res, next) => {
         companyId: req.user.companyId,
         date: new Date(data.date),
         content: data.content.trim(),
-        category: data.category?.trim() || null,
         vendorId,
         assigneeId,
         isPrivate: !!data.isPrivate,
@@ -150,7 +150,6 @@ router.post('/', async (req, res, next) => {
 const updateSchema = z.object({
   date: z.string().optional(),
   content: z.string().min(1).optional(),
-  category: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
@@ -186,7 +185,6 @@ router.patch('/:id', async (req, res, next) => {
     };
     if (data.date !== undefined) patch.date = new Date(data.date);
     if (data.content !== undefined) patch.content = data.content.trim();
-    if (data.category !== undefined) patch.category = data.category?.trim() || null;
     if (data.vendorId !== undefined) {
       patch.vendorId = await resolveVendorId(req.user.companyId, data.vendorId);
     }

@@ -8,7 +8,6 @@ import api from '../api/client';
 import { companySchedulesApi } from '../api/companySchedules';
 import { projectsApi } from '../api/projects';
 import { vendorsApi } from '../api/vendors';
-import { STANDARD_PHASES } from '../utils/phases';
 import {
   toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
 } from '../utils/date';
@@ -80,7 +79,6 @@ export default function TeamCalendar() {
     date: toDateKey(new Date()),
     content: '',
     projectId: '',
-    category: '',
     vendorId: '',
     assigneeId: '',
     isPrivate: false,
@@ -135,12 +133,11 @@ export default function TeamCalendar() {
         date: form.date,
         content: form.content.trim(),
         projectId: form.projectId || null,
-        category: form.category || null,
         vendorId: form.vendorId || null,
         assigneeId: form.assigneeId || null,
         isPrivate: form.isPrivate,
       });
-      setForm({ ...form, content: '', projectId: '', category: '', vendorId: '', isPrivate: false });
+      setForm({ ...form, content: '', projectId: '', vendorId: '', isPrivate: false });
       reload();
     } catch (e) {
       setErr(e.response?.data?.error || '추가 실패');
@@ -281,19 +278,6 @@ export default function TeamCalendar() {
               <option value="">— 없음 —</option>
               {activeProjects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-1.5">
-            <span>공정:</span>
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="border border-gray-300 dark:border-slate-600 rounded px-2 py-1 text-xs bg-white dark:bg-slate-900"
-            >
-              <option value="">미지정</option>
-              {STANDARD_PHASES.filter((p) => p.key !== 'OTHER').map((p) => (
-                <option key={p.key} value={p.label}>{p.label}</option>
               ))}
             </select>
           </label>
@@ -483,14 +467,13 @@ function EntryCard({ entry: e, onRemove }) {
   const inner = (
     <span className="flex items-center gap-1 truncate flex-1">
       {e.isPrivate && <span className="text-[10px] opacity-70" title="나만보기">🔒</span>}
-      {e.category && <span className="text-[10px] opacity-70">[{e.category}]</span>}
       <span className="truncate">{e.content}</span>
       {e.assignee && (
         <span className="text-[10px] opacity-80 whitespace-nowrap">· {e.assignee.nickname || e.assignee.name}</span>
       )}
     </span>
   );
-  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.category ? `[${e.category}] ` : ''}${e.content}${e.assignee ? ` · ${e.assignee.nickname || e.assignee.name}` : ''}${e.isPrivate ? ' · 나만보기' : ''}`;
+  const titleText = `${e.project ? e.project.name + ' · ' : ''}${e.content}${e.assignee ? ` · ${e.assignee.nickname || e.assignee.name}` : ''}${e.isPrivate ? ' · 나만보기' : ''}`;
   const cls = `relative text-[10px] sm:text-sm rounded-sm sm:rounded leading-tight pl-0.5 pr-0.5 py-0 sm:px-1.5 sm:py-0.5 truncate ${projColor} border-l-0 sm:border-l-[3px] ${projBorder} hover:brightness-95 group/entry`;
   if (e.project) {
     return (
