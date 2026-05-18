@@ -157,7 +157,9 @@ export default function ProjectSimpleQuotes() {
               <div
                 key={q.id}
                 className={`group rounded border text-sm ${
-                  active ? 'border-navy-700 bg-navy-50 text-navy-800' : 'border-gray-200 hover:bg-gray-50'
+                  active
+                    ? 'border-navy-700 bg-navy-50 dark:bg-navy-900/30 text-navy-800 dark:text-navy-200'
+                    : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <button
@@ -167,18 +169,18 @@ export default function ProjectSimpleQuotes() {
                   <div className="font-medium truncate">{q.title}</div>
                   <div className="flex items-center justify-between mt-1 text-xs">
                     <span className={`px-1.5 py-0.5 rounded ${meta.color}`}>{meta.label}</span>
-                    <span className="text-gray-400 tabular-nums">
+                    <span className="text-gray-400 dark:text-gray-500 tabular-nums">
                       {formatWon(q.total)}
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">
+                  <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                     {formatDateDot(q.quoteDate)} · {q._count?.lines || 0}개 항목
                   </div>
                 </button>
                 <div className="px-2 pb-1.5 flex justify-end">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDuplicate(q.id); }}
-                    className="text-xs sm:text-[10px] px-1.5 py-0.5 text-gray-500 hover:text-navy-700 hover:bg-navy-50 rounded sm:opacity-0 sm:group-hover:opacity-100 transition"
+                    className="text-xs sm:text-[10px] px-1.5 py-0.5 text-gray-500 dark:text-gray-400 hover:text-navy-700 dark:hover:text-navy-300 hover:bg-navy-50 dark:hover:bg-navy-900/30 rounded sm:opacity-0 sm:group-hover:opacity-100 transition"
                     title="이 견적을 복제해 다음 차수 만들기"
                   >
                     📑 복제
@@ -188,8 +190,8 @@ export default function ProjectSimpleQuotes() {
             );
           })}
         </div>
-        <div className="pt-2 border-t text-[11px] text-gray-400">
-          <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 hover:underline">
+        <div className="pt-2 border-t border-gray-200 dark:border-slate-700 text-[11px] text-gray-400 dark:text-gray-500">
+          <Link to={`/projects/${projectId}/quotes-detail`} className="hover:text-navy-700 dark:hover:text-navy-300 hover:underline">
             상세 견적 (구버전) →
           </Link>
         </div>
@@ -686,12 +688,12 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           <input
             value={quote.title || ''}
             onChange={(e) => scheduleHeaderSave({ title: e.target.value })}
-            className="text-lg font-bold text-navy-800 bg-transparent border-b border-transparent focus:border-navy-400 outline-none px-1 max-w-[120px]"
+            className="text-lg font-bold text-navy-800 dark:text-navy-200 bg-transparent border-b border-transparent focus:border-navy-400 outline-none px-1 max-w-[120px]"
           />
           <select
             value={quote.status}
             onChange={(e) => scheduleHeaderSave({ status: e.target.value })}
-            className="text-xs px-2 py-1 border rounded bg-white"
+            className="text-xs px-2 py-1 border border-gray-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100"
           >
             {Object.entries(SIMPLE_QUOTE_STATUS_META).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
@@ -770,20 +772,20 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
       </div>
 
       {/* 헤더 폼 */}
-      <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
         <Field label="견적일자">
           <input
             type="date"
             value={quote.quoteDate ? String(quote.quoteDate).slice(0, 10) : ''}
             onChange={(e) => scheduleHeaderSave({ quoteDate: e.target.value })}
-            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+            className="w-full px-2 py-1.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded outline-none focus:border-navy-400"
           />
         </Field>
         <Field label="수신자">
           <input
             value={quote.clientName || ''}
             onChange={(e) => scheduleHeaderSave({ clientName: e.target.value })}
-            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+            className="w-full px-2 py-1.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded outline-none focus:border-navy-400"
             placeholder="○○○ 귀하"
           />
         </Field>
@@ -791,13 +793,13 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           <input
             value={quote.projectName || ''}
             onChange={(e) => scheduleHeaderSave({ projectName: e.target.value })}
-            className="w-full px-2 py-1.5 border rounded outline-none focus:border-navy-400"
+            className="w-full px-2 py-1.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded outline-none focus:border-navy-400"
           />
         </Field>
       </div>
 
       {/* 라인 테이블 */}
-      <div className="bg-white border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table
             className="w-full text-sm"
@@ -823,16 +825,16 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           >
             <colgroup>
               <col style={{ width: '20px' }} />{/* 드래그 핸들 (hover 시만 노출) */}
-              <col style={{ width: '110px' }} />{/* 품명 */}
-              <col style={{ width: '50px' }} />{/* 규격 */}
-              <col style={{ width: '44px' }} />{/* 수량 */}
-              <col style={{ width: '36px' }} />{/* 단위 */}
-              <col style={{ width: '78px' }} />{/* 단가 */}
-              <col style={{ width: '78px' }} />{/* 금액 */}
-              <col />{/* 비고 — 나머지 (약 60%) */}
-              <col style={{ width: '24px' }} />{/* X */}
+              <col style={{ width: '140px' }} />{/* 품명 */}
+              <col style={{ width: '80px' }} />{/* 규격 */}
+              <col style={{ width: '64px' }} />{/* 수량 */}
+              <col style={{ width: '64px' }} />{/* 단위 */}
+              <col style={{ width: '120px' }} />{/* 단가 */}
+              <col style={{ width: '130px' }} />{/* 금액 */}
+              <col />{/* 비고 — 나머지 */}
+              <col style={{ width: '28px' }} />{/* X */}
             </colgroup>
-            <thead className="bg-gray-50 text-xs text-gray-500">
+            <thead className="bg-gray-100 dark:bg-slate-800 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-slate-700 [&_th]:border-r [&_th]:border-gray-200 [&_th]:dark:border-slate-700 [&_th:first-child]:border-r-0 [&_th:last-child]:border-r-0">
               <tr>
                 <th></th>
                 <th className="text-left px-2 py-2">품명 (공정)</th>
@@ -845,7 +847,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                 <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 [&_td]:border-r [&_td]:border-gray-100 [&_td]:dark:border-slate-800 [&_td:first-child]:border-r-0 [&_td:last-child]:border-r-0">
               {linesWithMeta.map((l, idx) => {
                 const isGroupHeader = l.isGroup && !l.isGroupEnd;
                 return (
@@ -911,22 +913,22 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
             </tbody>
           </table>
         </div>
-        <div className="border-t p-2 flex gap-2 flex-wrap">
+        <div className="border-t border-gray-200 dark:border-slate-700 p-2 flex gap-2 flex-wrap">
           <button
             onClick={() => addLine()}
-            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-600 hover:bg-gray-50 hover:border-navy-400"
+            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 dark:border-slate-600 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-navy-400"
           >
             + 항목 추가
           </button>
           <button
             onClick={addGroup}
-            className="text-sm px-3 py-1.5 border border-dashed border-navy-300 rounded text-navy-700 hover:bg-navy-50"
+            className="text-sm px-3 py-1.5 border border-dashed border-navy-300 dark:border-navy-600 rounded text-navy-700 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-navy-900/30"
           >
             ＋ 그룹 추가 (예: 화장실)
           </button>
           <button
             onClick={addGroupEnd}
-            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 rounded text-gray-500 hover:bg-gray-50"
+            className="text-sm px-3 py-1.5 border border-dashed border-gray-300 dark:border-slate-600 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800"
             title="현재 그룹을 종료합니다 (다음 항목부터는 그룹 밖)"
           >
             ↩ 그룹 빠져나오기
@@ -935,7 +937,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
       </div>
 
       {/* 합계 영역 */}
-      <div className="bg-white border rounded-xl p-4">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4">
         <div className="space-y-2 max-w-md ml-auto text-sm">
           <SumRow label="합계" value={liveSubtotal} />
           <SumRow
@@ -947,7 +949,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                   step="0.01"
                   value={quote.designFeeRate}
                   onChange={(e) => scheduleHeaderSave({ designFeeRate: Number(e.target.value) || 0 })}
-                  className="w-14 px-1 py-0.5 border rounded text-right text-xs"
+                  className="w-14 px-1 py-0.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded text-right text-xs"
                 />
                 <span className="text-xs text-gray-400">%</span>
               </span>
@@ -965,7 +967,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                     scheduleHeaderSave({ roundAdjustment: raw === 0 ? 0 : -raw });
                   }}
                   placeholder="0"
-                  className="w-24 px-1 py-0.5 border rounded text-xs"
+                  className="w-24 px-1 py-0.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded text-xs"
                   title="입력한 금액만큼 공급가액에서 차감됩니다 (부가세는 차감 후 금액 기준)"
                 />
               </span>
@@ -1010,26 +1012,26 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                     }}
                     className="w-3.5 h-3.5"
                   />
-                  <span className="text-gray-600">10% 포함</span>
+                  <span className="text-gray-600 dark:text-gray-300">10% 포함</span>
                 </label>
               </span>
             }
             value={liveVat}
           />
-          <div className="border-t pt-2">
-            <SumRow label={<span className="font-bold text-navy-800">총합계</span>} value={liveTotal} highlight />
+          <div className="border-t border-gray-200 dark:border-slate-700 pt-2">
+            <SumRow label={<span className="font-bold text-navy-800 dark:text-navy-200">총합계</span>} value={liveTotal} highlight />
           </div>
         </div>
       </div>
 
       {/* 푸터 비고 편집 */}
-      <div className="bg-white border rounded-xl p-4">
-        <div className="text-xs text-gray-500 mb-1">하단 안내문 (PDF 출력 시 표시)</div>
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4">
+        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">하단 안내문 (PDF 출력 시 표시)</div>
         <textarea
           value={quote.footerNotes || ''}
           onChange={(e) => scheduleHeaderSave({ footerNotes: e.target.value })}
           rows={3}
-          className="w-full text-sm px-2 py-1.5 border rounded outline-none focus:border-navy-400 resize-none"
+          className="w-full text-sm px-2 py-1.5 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded outline-none focus:border-navy-400 resize-none"
         />
       </div>
 
@@ -1149,24 +1151,24 @@ function LineRow({
   const kd = (col) => (e) => onCellKeyDown(e, rowIdx, col);
   const cellAttrs = (col) => ({ 'data-quote-cell': `${rowIdx}-${col}`, onKeyDown: kd(col) });
 
-  const inputCls = 'w-full px-1 py-1 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200';
+  const inputCls = 'w-full px-1 py-1 bg-transparent text-gray-800 dark:text-gray-100 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-300 dark:hover:border-slate-600';
 
   // ===== 그룹 종료 마커 (가는 구분선 + 합계) =====
   if (line.isGroup && line.isGroupEnd) {
     const groupTotal = Number(line._groupTotal || 0);
     return (
       <tr
-        className={`group bg-gray-50 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
+        className={`group bg-gray-50 dark:bg-slate-800/60 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
         data-row-idx={rowIdx}
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
         <td className="px-0"></td>
         <td colSpan={7} className="px-2 py-1">
-          <div className="flex items-center gap-2 text-[11px] text-gray-500">
-            <span className="flex-1 border-t border-dashed border-gray-300"></span>
-            <span>↩ 그룹 합계 <b className="text-navy-700 tabular-nums">{formatWon(groupTotal)}</b>원</span>
-            <span className="flex-1 border-t border-dashed border-gray-300"></span>
+          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="flex-1 border-t border-dashed border-gray-300 dark:border-slate-600"></span>
+            <span>↩ 그룹 합계 <b className="text-navy-700 dark:text-navy-300 tabular-nums">{formatWon(groupTotal)}</b>원</span>
+            <span className="flex-1 border-t border-dashed border-gray-300 dark:border-slate-600"></span>
           </div>
         </td>
         <td className="px-1">
@@ -1187,7 +1189,7 @@ function LineRow({
   if (line.isGroup) {
     return (
       <tr
-        className={`group bg-navy-50/40 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
+        className={`group bg-navy-50/40 dark:bg-navy-900/30 ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
         data-row-idx={rowIdx}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -1197,12 +1199,12 @@ function LineRow({
         </td>
         <td colSpan={7} className="px-2 py-1.5">
           <div className="flex items-center gap-1">
-            <span className="text-navy-600 font-bold text-base flex-shrink-0">▸</span>
+            <span className="text-navy-600 dark:text-navy-300 font-bold text-base flex-shrink-0">▸</span>
             <input
               {...cellAttrs('itemName')}
               value={line.itemName}
               onChange={(e) => onChange({ itemName: e.target.value })}
-              className="flex-1 px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-200 font-bold text-navy-800"
+              className="flex-1 px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-300 dark:hover:border-slate-600 font-bold text-navy-800 dark:text-navy-200"
               placeholder="그룹 이름 (예: 도배·타일·목공 — 표준 25개로 자동 흡수)"
             />
             <PhasePreviewBadge text={line.itemName} />
@@ -1238,7 +1240,7 @@ function LineRow({
   // ===== 일반 라인 행 =====
   return (
     <tr
-      className={`group hover:bg-gray-50 ${inGroup ? 'bg-navy-50/10' : ''} ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
+      className={`group hover:bg-gray-50 dark:hover:bg-slate-800/60 ${inGroup ? 'bg-navy-50/10 dark:bg-navy-900/15' : ''} ${isDragging ? 'opacity-30' : ''} ${dropCls}`}
       data-row-idx={rowIdx}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -1247,7 +1249,7 @@ function LineRow({
         <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} title="라인 이동" />
       </td>
       <td className="px-2 py-1.5">
-        <div className={`flex items-center gap-1.5 ${inGroup ? 'pl-3 border-l-2 border-navy-300' : ''}`}>
+        <div className={`flex items-center gap-1.5 ${inGroup ? 'pl-3 border-l-2 border-navy-300 dark:border-navy-600' : ''}`}>
           <input
             {...cellAttrs('itemName')}
             value={line.itemName}
@@ -1293,7 +1295,7 @@ function LineRow({
           placeholder="0"
         />
       </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-navy-800 font-medium">
+      <td className="px-2 py-1.5 text-right tabular-nums text-navy-800 dark:text-navy-200 font-medium">
         {formatWon(amount)}
       </td>
       <td className="px-2 py-1.5 align-top">
@@ -1326,7 +1328,7 @@ function LineRow({
 function Field({ label, children }) {
   return (
     <label className="block">
-      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
       {children}
     </label>
   );
@@ -1335,8 +1337,8 @@ function Field({ label, children }) {
 function SumRow({ label, value, highlight, neutral }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="text-gray-700">{label}</div>
-      <div className={`tabular-nums ${highlight ? 'text-lg font-bold text-navy-800' : neutral ? 'text-gray-500' : 'text-gray-800'}`}>
+      <div className="text-gray-700 dark:text-gray-300">{label}</div>
+      <div className={`tabular-nums ${highlight ? 'text-lg font-bold text-navy-800 dark:text-navy-200' : neutral ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-100'}`}>
         {value < 0 ? '-' : ''}{formatWon(Math.abs(value))} 원
       </div>
     </div>
