@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suplex — 일정 화면 리디자인 브리프</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          navy: {
+            50:'#f0f4fa', 100:'#d9e2f0', 200:'#b3c5e1', 300:'#8da8d2',
+            400:'#5a7fb8', 500:'#3a5f9e', 600:'#2a4a80', 700:'#1e3a66',
+            800:'#15294a', 900:'#0c1a33',
+          },
+        },
+        fontFamily: { sans: ['Pretendard', 'system-ui', 'sans-serif'] },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Pretendard', system-ui, sans-serif; }
+
+  /* 디바이스 프레임 */
+  .device-desktop {
+    width: 1180px;
+    background: #fff;
+    border-radius: 12px;
+    border: 8px solid #1f2937;
+    box-shadow: 0 20px 40px -16px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+  }
+  .device-desktop::before {
+    content: '';
+    display: block;
+    height: 22px;
+    background: #1f2937;
+  }
+  .device-desktop::after {
+    content: '○  ○  ○';
+    position: absolute;
+    top: 0; left: 14px;
+    height: 22px; line-height: 22px;
+    color: #ef4444;
+    letter-spacing: 4px;
+    font-size: 12px;
+    z-index: 5;
+  }
+  .device-mobile {
+    width: 390px; height: 720px;
+    background: #f9fafb;
+    border-radius: 36px;
+    border: 10px solid #1f2937;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative;
+  }
+  .device-mobile::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 24px;
+    background: #1f2937;
+    border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+
+  /* 캡션 */
+  .annot {
+    font-size: 12px; color: #475569;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    padding: 8px 10px; border-radius: 4px;
+  }
+  .annot.warn {
+    background: #fee2e2;
+    border-left-color: #ef4444;
+    color: #7f1d1d;
+  }
+
+  .swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); }
+  h2.section { font-size: 20px; font-weight: 800; color: #1e3a66; margin: 40px 0 14px; letter-spacing: -0.01em; }
+  h3.subsection { font-size: 14px; font-weight: 700; color: #334155; margin: 18px 0 8px; }
+  .legend-row { display: grid; grid-template-columns: 28px 130px 1fr; gap: 10px; align-items: center; font-size: 13px; }
+  .legend-row code { font-size: 11px; color: #6b7280; }
+
+  /* 캘린더 셀 — 출처 코드 1:1 추출용 (Tailwind 클래스로 충분히 표현 가능하지만 일부는 inline) */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cell {
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    min-height: 100px;
+    padding: 6px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .cell.out { background: rgba(248,250,252,0.6); }
+  .cell.today-num { background: #1e3a66; color: #fff; border-radius: 9999px; padding: 0 6px; }
+
+  .entry-bar {
+    font-size: 12px; line-height: 1.2;
+    padding: 1px 6px; margin-bottom: 2px;
+    border-radius: 2px;
+    border-left: 3px solid;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    position: relative;
+  }
+  .entry-bar.unconfirmed { opacity: 0.55; }
+  .entry-bar .confirm-dot {
+    position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; border-radius: 9999px;
+    background: #10b981; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    box-shadow: 0 0 0 1.5px #fff, 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .empty-slot { height: 18px; }
+
+  /* 프로젝트 색상 (현재 코드 utils/date.js에서 hash로 결정) */
+  .pj-blue   { background: #dbeafe; }
+  .pj-blue-bd{ border-left-color: #3b82f6; }
+  .pj-green  { background: #dcfce7; }
+  .pj-green-bd{ border-left-color: #22c55e; }
+  .pj-amber  { background: #fef3c7; }
+  .pj-amber-bd{ border-left-color: #f59e0b; }
+  .pj-pink   { background: #fce7f3; }
+  .pj-pink-bd{ border-left-color: #ec4899; }
+  .pj-violet { background: #ede9fe; }
+  .pj-violet-bd{ border-left-color: #8b5cf6; }
+  .pj-cyan   { background: #cffafe; }
+  .pj-cyan-bd{ border-left-color: #06b6d4; }
+
+  /* 공정 칩 색상 */
+  .ph-chip { font-size: 9px; padding: 0 4px; border-radius: 2px; line-height: 1.4; font-weight: 500; }
+
+  .nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .pain-pill {
+    display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 9999px;
+    background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 600;
+  }
+  .ok-pill {
+    display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 9999px;
+    background: #ecfdf5; color: #15803d; border: 1px solid #bbf7d0; font-weight: 600;
+  }
+</style>
+</head>
+<body class="bg-slate-100 p-6 sm:p-10 text-slate-800">
+
+<div class="max-w-[1340px] mx-auto">
+
+  <header class="mb-8">
+    <div class="text-xs tracking-[2px] text-slate-500 font-bold mb-1">SUPLEX · DESIGN BRIEF</div>
+    <h1 class="text-3xl font-extrabold text-navy-800">일정 화면 리디자인</h1>
+    <p class="text-sm text-slate-600 mt-2 leading-relaxed">
+      Suplex의 핵심 wedge 기능. 인테리어 회사의 <strong>현장·견적·팀 일정</strong>이 모두 같은 캘린더 패턴으로 표시됩니다.
+      현재 코드(<code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">client/src/components/AggregateCalendar.jsx</code>·
+      <code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">ScheduleCalendar.jsx</code>·
+      <code class="bg-slate-200 px-1.5 py-0.5 rounded text-xs">TeamCalendar.jsx</code>)에서 클래스·구조를 그대로 추출했습니다.
+    </p>
+    <div class="mt-4 flex gap-2 flex-wrap">
+      <span class="pain-pill">개선 의뢰: 캘린더 그리드 가독성</span>
+      <span class="pain-pill">개선 의뢰: 일정 항목 시각 위계</span>
+      <span class="pain-pill">개선 의뢰: 헤더·툴바 정돈</span>
+      <span class="pain-pill">개선 의뢰: 프로젝트 색상 대비</span>
+      <span class="ok-pill">유지: 토큰 시스템(navy·공정 10색)</span>
+      <span class="ok-pill">유지: 격리 정책(현장 정보·금액 X)</span>
+    </div>
+  </header>
+
+  <!-- ============ 상태 1: 전체 일정 (AggregateCalendar) ============ -->
+  <h2 class="section">① 전체 일정 — 회사의 모든 현장을 한 캘린더에 합산</h2>
+  <p class="text-sm text-slate-600 -mt-2 mb-4">메뉴: <code class="bg-slate-200 px-1 rounded text-xs">/schedule?tab=all</code>. 현장·견적·전체 3탭 중 가장 자주 보는 화면. 일정 1줄 = 행 단위 (같은 주 같은 프로젝트는 같은 행 정렬).</p>
+
+  <div class="flex gap-6 items-start mb-4">
+    <div class="device-desktop">
+      <!-- 헤더 (Layout) -->
+      <div class="bg-navy-800 text-white px-6 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-5">
+          <div class="font-extrabold text-base tracking-tight">SUPLEX</div>
+          <div class="flex gap-3 text-navy-100">
+            <span class="text-white border-b-2 border-amber-300 pb-0.5">전체 일정</span>
+            <span>팀 캘린더</span><span>발주</span><span>지출</span><span>AI비서</span><span>라운지</span><span>팀</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-200/30 border border-sky-200/40">PRO</span>
+          <span>현대인테리어 · 김봉기</span>
+        </div>
+      </div>
+
+      <!-- 본문 -->
+      <div class="p-6 bg-white">
+        <h2 class="text-2xl font-bold text-navy-800 mb-4">전체 일정</h2>
+
+        <!-- 탭 + 캘린더 카드 -->
+        <div class="bg-white border rounded-xl overflow-hidden">
+          <!-- 탭 -->
+          <div class="flex border-b px-2">
+            <button class="px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500">현장 일정</button>
+            <button class="px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500">견적 일정</button>
+            <button class="px-4 py-3 text-sm font-medium border-b-2 border-navy-700 text-navy-800">전체</button>
+          </div>
+
+          <div class="p-5">
+            <!-- 월 네비게이션 -->
+            <div class="flex items-center mb-3 gap-2">
+              <div class="flex-1"></div>
+              <div class="flex items-center gap-2">
+                <button class="text-navy-700 text-lg leading-none px-1">‹</button>
+                <div class="font-semibold text-lg text-navy-800 whitespace-nowrap">2026. 5</div>
+                <button class="text-navy-700 text-lg leading-none px-1">›</button>
+              </div>
+              <div class="flex-1 flex justify-end gap-2">
+                <button class="text-xs px-2 py-1 border rounded">일정 복사</button>
+                <button class="text-xs px-2 py-1 border rounded">📄 PDF 인쇄</button>
+              </div>
+            </div>
+
+            <!-- 캘린더 -->
+            <div class="border rounded-lg overflow-hidden bg-white">
+              <div class="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+                <div class="px-2 py-2 text-center text-red-500">일</div>
+                <div class="px-2 py-2 text-center text-gray-600">월</div>
+                <div class="px-2 py-2 text-center text-gray-600">화</div>
+                <div class="px-2 py-2 text-center text-gray-600">수</div>
+                <div class="px-2 py-2 text-center text-gray-600">목</div>
+                <div class="px-2 py-2 text-center text-gray-600">금</div>
+                <div class="px-2 py-2 text-center text-blue-500">토</div>
+              </div>
+              <div class="cal-grid">
+                <!-- 첫 주 (4/27~5/3) -->
+                <div class="cell out"><div class="text-xs text-gray-400 mb-1">27</div></div>
+                <div class="cell out"><div class="text-xs text-gray-400 mb-1">28</div></div>
+                <div class="cell out"><div class="text-xs text-gray-400 mb-1">29</div></div>
+                <div class="cell out"><div class="text-xs text-gray-400 mb-1">30</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1 font-semibold text-navy-700">5/1</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-rose-100 text-rose-800">철거</span><span>김씨 작업</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">2</div></div>
+                <div class="cell"><div class="text-xs text-blue-500 mb-1">3</div>
+                  <div class="entry-bar pj-amber pj-amber-bd"><span class="ph-chip bg-amber-100 text-amber-800">목공</span><span>틀 설치</span></div>
+                </div>
+
+                <!-- 둘째 주 -->
+                <div class="cell"><div class="text-xs text-red-500 mb-1">4</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">5 <span class="text-[10px] text-red-500">어린이날</span></div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">6</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-sky-100 text-sky-800">전기</span><span>분전반</span><span class="confirm-dot">✓</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">7</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-sky-100 text-sky-800">전기</span><span>콘센트</span><span class="confirm-dot">✓</span></div>
+                  <div class="entry-bar pj-green pj-green-bd"><span class="ph-chip bg-pink-100 text-pink-800">타일</span><span>욕실 줄눈</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">8</div>
+                  <div class="entry-bar pj-blue pj-blue-bd unconfirmed"><span class="ph-chip bg-violet-100 text-violet-800">도배</span><span>초벌</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">9</div>
+                  <div class="entry-bar pj-blue pj-blue-bd unconfirmed"><span class="ph-chip bg-violet-100 text-violet-800">도배</span><span>정벌</span></div>
+                  <div class="entry-bar pj-pink pj-pink-bd"><span>현장 미팅</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-blue-500 mb-1">10</div></div>
+
+                <!-- 셋째 주 -->
+                <div class="cell"><div class="text-xs text-red-500 mb-1">11</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">12</div>
+                  <div class="entry-bar pj-green pj-green-bd"><span class="ph-chip bg-yellow-100 text-yellow-800">마루</span><span>거실 시공</span><span class="confirm-dot">✓</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">13</div>
+                  <div class="entry-bar pj-green pj-green-bd"><span class="ph-chip bg-yellow-100 text-yellow-800">마루</span><span>방 시공</span><span class="confirm-dot">✓</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">14</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-orange-100 text-orange-800">도장</span><span>천장</span></div>
+                  <div class="entry-bar pj-violet pj-violet-bd"><span>거래처 견적 미팅</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">15</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-orange-100 text-orange-800">도장</span><span>벽면</span></div>
+                  <div class="entry-bar pj-amber pj-amber-bd unconfirmed"><span class="ph-chip bg-teal-100 text-teal-800">설비</span><span>주방 수전</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">16</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-fuchsia-100 text-fuchsia-800">필름</span><span>몰딩</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-blue-500 mb-1">17</div></div>
+
+                <!-- 넷째 주 (오늘 = 18) -->
+                <div class="cell"><div class="text-xs text-red-500 mb-1">18</div>
+                  <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-sky-100 text-sky-800">전기</span><span>마감 검사</span></div>
+                </div>
+                <div class="cell"><div class="text-xs flex items-baseline gap-1 mb-1"><span style="background:#1e3a66;color:#fff;border-radius:9999px;padding:0 6px;font-size:11px">19</span></div>
+                  <div class="entry-bar pj-green pj-green-bd"><span class="ph-chip bg-emerald-100 text-emerald-800">준공</span><span>입주민 미팅</span><span class="confirm-dot">✓</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">20</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">21</div>
+                  <div class="entry-bar pj-amber pj-amber-bd"><span>견적 발송</span></div>
+                </div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">22</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">23</div></div>
+                <div class="cell"><div class="text-xs text-blue-500 mb-1">24</div></div>
+
+                <!-- 다섯째 주 (5/25~5/31) -->
+                <div class="cell"><div class="text-xs text-red-500 mb-1">25</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">26 <span class="text-[10px] text-red-500">부처님오신날</span></div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">27</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">28</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">29</div></div>
+                <div class="cell"><div class="text-xs text-gray-600 mb-1">30</div></div>
+                <div class="cell"><div class="text-xs text-blue-500 mb-1">31</div></div>
+              </div>
+            </div>
+
+            <!-- 현장 인덱스 -->
+            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span class="text-sm text-gray-500 mr-0.5">현장</span>
+              <span class="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                <span class="inline-block w-3.5 h-3.5 rounded-sm pj-blue" style="border-left:3px solid #3b82f6"></span>
+                <span>○○동 신축</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                <span class="inline-block w-3.5 h-3.5 rounded-sm pj-green" style="border-left:3px solid #22c55e"></span>
+                <span>잠실 ○○호</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                <span class="inline-block w-3.5 h-3.5 rounded-sm pj-amber" style="border-left:3px solid #f59e0b"></span>
+                <span>강남 ○○빌</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                <span class="inline-block w-3.5 h-3.5 rounded-sm pj-pink" style="border-left:3px solid #ec4899"></span>
+                <span>분당 단독</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                <span class="inline-block w-3.5 h-3.5 rounded-sm pj-violet" style="border-left:3px solid #8b5cf6"></span>
+                <span>○○카페</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 캡션 -->
+    <div class="w-[280px] pt-12 space-y-3 flex-shrink-0">
+      <div class="annot warn"><strong>구리다 평가 ①</strong> — 셀이 너무 빽빽하고 정보가 균질해서 “오늘 뭐 중요한가”가 안 보임. 위계 부족.</div>
+      <div class="annot"><strong>① 탭 + 헤더</strong> — 현장·견적·전체 3탭. 위에 페이지 제목 별도. 페이지 제목과 탭이 두 줄로 분리되어 공간 낭비. 통합 검토.</div>
+      <div class="annot"><strong>② 월 네비게이션</strong> — 좌측 비어있음(flex-1 spacer) · 가운데 ‹ 라벨 › · 우측 액션. 좌측 공간이 비어있어 어색.</div>
+      <div class="annot"><strong>③ 캘린더 그리드</strong> — 7×6, 셀 min-h 100px. 일정 1줄당 약 18px. <code class="bg-white px-1 rounded">border-r/border-b</code>로 그리드. 다른 달 셀은 <code class="bg-white px-1 rounded">bg-gray-50/50</code>.</div>
+      <div class="annot"><strong>④ 일정 막대</strong> — <code class="bg-white px-1 rounded">border-l-[3px]</code>로 프로젝트 색상 + 공정 chip + 잔여 텍스트. 우측에 ✓ 원형 뱃지(확정). 미확정은 <code class="bg-white px-1 rounded">opacity-55%</code> 전체.</div>
+      <div class="annot warn"><strong>구리다 평가 ②</strong> — chip + 텍스트가 한 줄에 너무 많은 정보. 색상도 비슷한 톤끼리 옆에 있으면 구분 약함.</div>
+      <div class="annot"><strong>⑤ 현장 인덱스</strong> — 캘린더 하단. 색상 + 프로젝트명. 인덱스인지 필터인지 모호.</div>
+      <div class="annot warn"><strong>구리다 평가 ③</strong> — 인덱스가 캘린더 밖에 떨어져 있어 색-프로젝트 매핑을 사용자가 두 번 시선 옮겨 확인해야.</div>
+    </div>
+  </div>
+
+  <!-- ============ 상태 2: 프로젝트 일정 (ScheduleCalendar) ============ -->
+  <h2 class="section">② 프로젝트 일정 — 시작일~종료일만 잘라 보여주는 변형</h2>
+  <p class="text-sm text-slate-600 -mt-2 mb-4">메뉴: <code class="bg-slate-200 px-1 rounded text-xs">/projects/:id/schedule</code>. 그리드는 동일하나 프로젝트 기간 밖 셀은 <code class="bg-slate-200 px-1 rounded text-xs">bg-gray-100/70</code>로 비활성. 셀 클릭=인라인 입력.</p>
+
+  <div class="flex gap-6 items-start mb-4">
+    <div class="device-desktop">
+      <div class="bg-navy-800 text-white px-6 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-5">
+          <div class="font-extrabold text-base tracking-tight">SUPLEX</div>
+          <div class="flex gap-3 text-navy-100"><span>전체 일정</span><span>팀 캘린더</span><span>발주</span><span>지출</span><span>AI비서</span><span>라운지</span><span>팀</span></div>
+        </div>
+        <div>현대인테리어 · 김봉기</div>
+      </div>
+
+      <div class="p-6 bg-white">
+        <!-- 프로젝트 헤더 -->
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h1 class="text-xl font-bold text-navy-800">○○동 신축 인테리어</h1>
+            <div class="text-xs text-gray-500 mt-1">2026.5.1 ~ 2026.6.30 · 진행중 · 송○○ 대표</div>
+          </div>
+          <div class="flex gap-1">
+            <button class="text-xs px-2 py-1 border rounded">변동 로그</button>
+            <button class="text-xs px-2 py-1 border rounded">일정 복사</button>
+            <button class="text-xs px-2 py-1 border rounded">⋮</button>
+          </div>
+        </div>
+
+        <!-- 탭 -->
+        <div class="flex border-b text-sm gap-1 mb-4">
+          <span class="px-3 py-2 border-b-2 border-navy-700 text-navy-800 font-medium">공정 일정</span>
+          <span class="px-3 py-2 text-gray-500">간편 견적</span>
+          <span class="px-3 py-2 text-gray-500">마감재</span>
+          <span class="px-3 py-2 text-gray-500">체크리스트</span>
+          <span class="px-3 py-2 text-gray-500">발주</span>
+          <span class="px-3 py-2 text-gray-500">메모</span>
+          <span class="px-3 py-2 text-gray-500">현장보고</span>
+          <span class="px-3 py-2 text-gray-500">···</span>
+        </div>
+
+        <!-- 헤더 라인 (도움말+PDF) -->
+        <div class="flex items-center justify-end mb-3 gap-2">
+          <span class="text-[11px] text-gray-400">💡 셀 클릭=입력 · Enter/Tab/방향키=이동 · 항목 클릭=수정</span>
+          <button class="text-xs px-2 py-1 border rounded">📄 PDF 인쇄</button>
+        </div>
+
+        <!-- 캘린더 -->
+        <div class="border rounded-lg overflow-hidden bg-white">
+          <div class="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+            <div class="px-2 py-2 text-center text-red-500">일</div>
+            <div class="px-2 py-2 text-center text-gray-600">월</div>
+            <div class="px-2 py-2 text-center text-gray-600">화</div>
+            <div class="px-2 py-2 text-center text-gray-600">수</div>
+            <div class="px-2 py-2 text-center text-gray-600">목</div>
+            <div class="px-2 py-2 text-center text-gray-600">금</div>
+            <div class="px-2 py-2 text-center text-blue-500">토</div>
+          </div>
+          <div class="cal-grid">
+            <!-- 5월 1주 (4/27~5/3) — 1일부터 in-range -->
+            <div class="cell" style="background:#f3f4f6"><div class="text-xs text-gray-300 mb-1">27</div></div>
+            <div class="cell" style="background:#f3f4f6"><div class="text-xs text-gray-300 mb-1">28</div></div>
+            <div class="cell" style="background:#f3f4f6"><div class="text-xs text-gray-300 mb-1">29</div></div>
+            <div class="cell" style="background:#f3f4f6"><div class="text-xs text-gray-300 mb-1">30</div></div>
+            <div class="cell"><div class="text-xs font-semibold text-navy-700 mb-1">5/1</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-rose-100 text-rose-800">철거</span><span>전체</span></div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span>인입 점검</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">2</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-rose-100 text-rose-800">철거</span><span>마감</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">3</div></div>
+
+            <!-- 5월 2주 -->
+            <div class="cell"><div class="text-xs text-red-500 mb-1">4</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">5 <span class="text-[10px] text-red-500">어린이날</span></div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">6</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-amber-100 text-amber-800">목공</span><span>가벽 설치</span><span class="confirm-dot">✓</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">7</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-amber-100 text-amber-800">목공</span><span>가벽 마감</span><span class="confirm-dot">✓</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">8</div>
+              <div class="entry-bar pj-blue pj-blue-bd unconfirmed"><span class="ph-chip bg-sky-100 text-sky-800">전기</span><span>분전반 이설</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">9</div>
+              <div class="entry-bar pj-blue pj-blue-bd unconfirmed"><span class="ph-chip bg-sky-100 text-sky-800">전기</span><span>콘센트 추가</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">10</div></div>
+
+            <!-- 5월 3주 -->
+            <div class="cell"><div class="text-xs text-red-500 mb-1">11</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">12</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-teal-100 text-teal-800">설비</span><span>수전 위치</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">13</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-pink-100 text-pink-800">타일</span><span>욕실 줄눈</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">14</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-pink-100 text-pink-800">타일</span><span>주방</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">15</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-pink-100 text-pink-800">타일</span><span>줄눈 마감</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">16</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-violet-100 text-violet-800">도배</span><span>초벌</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">17</div></div>
+
+            <!-- 5월 4주 (오늘 = 18) -->
+            <div class="cell" style="border-left:3px solid #1e3a66"><div class="text-xs text-red-500 mb-1"><span style="background:#1e3a66;color:#fff;border-radius:9999px;padding:0 6px;font-size:11px">18</span> <span class="text-[10px] text-gray-400">오늘</span></div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-violet-100 text-violet-800">도배</span><span>정벌</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">19</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-orange-100 text-orange-800">도장</span><span>몰딩</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">20</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-orange-100 text-orange-800">도장</span><span>전체</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">21</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-fuchsia-100 text-fuchsia-800">필름</span><span>몰딩</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">22</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-yellow-100 text-yellow-800">마루</span><span>거실</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">23</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">24</div></div>
+
+            <!-- 5월 5주 -->
+            <div class="cell"><div class="text-xs text-red-500 mb-1">25</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">26 <span class="text-[10px] text-red-500">부처님</span></div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">27</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-emerald-100 text-emerald-800">준공</span><span>청소</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">28</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-emerald-100 text-emerald-800">준공</span><span>입주민 미팅</span><span class="confirm-dot">✓</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">29</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">30</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">31</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-[280px] pt-12 space-y-3 flex-shrink-0">
+      <div class="annot"><strong>① 프로젝트 헤더</strong> — 이름·기간·상태·담당자. ProjectInfoCard 축약. 격리정책상 <em>현장 주소·전화·금액</em>은 PDF에 X.</div>
+      <div class="annot"><strong>② 13탭</strong> — 가로 스크롤. 데스크탑에서 한 줄로 다 안 보이는 경우 많음.</div>
+      <div class="annot warn"><strong>구리다 평가 ④</strong> — 탭 양이 많아 시선 분산. “이번 작업이 어디 들어가는지” 분류가 약함.</div>
+      <div class="annot"><strong>③ 도움말 한 줄</strong> — 셀 클릭·키보드 이동·우클릭 메뉴. 캘린더 사용법 안내. 작고 회색.</div>
+      <div class="annot"><strong>④ 캘린더 (프로젝트 기간만 활성)</strong> — 시작일~종료일 밖은 <code class="bg-white px-1 rounded">bg-gray-100/70</code> + 날짜 흐림. AggregateCalendar와 같은 그리드 토큰 사용.</div>
+      <div class="annot"><strong>⑤ 일정 행</strong> — 같은 프로젝트라 모든 막대 색상 동일(파랑). 공정 chip만으로 분류. 모든 행이 한 색이라 단조로움.</div>
+      <div class="annot warn"><strong>구리다 평가 ⑤</strong> — “단일 프로젝트라 단일 색”인데 모노톤이라 정보 위계가 약함. 공정 chip만이 유일한 단서.</div>
+    </div>
+  </div>
+
+  <!-- ============ 상태 3: 팀 캘린더 (TeamCalendar) ============ -->
+  <h2 class="section">③ 팀 캘린더 — 멤버별·프로젝트별 합쳐 보기</h2>
+  <p class="text-sm text-slate-600 -mt-2 mb-4">메뉴: <code class="bg-slate-200 px-1 rounded text-xs">/team-calendar</code>. 본인 회사 일정 + 거래 회사 vendor 매핑 일정. 멤버 필터 칩이 핵심.</p>
+
+  <div class="flex gap-6 items-start mb-4">
+    <div class="device-desktop">
+      <div class="bg-navy-800 text-white px-6 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-5">
+          <div class="font-extrabold text-base tracking-tight">SUPLEX</div>
+          <div class="flex gap-3 text-navy-100"><span>전체 일정</span><span class="text-white border-b-2 border-amber-300 pb-0.5">팀 캘린더</span><span>발주</span><span>지출</span><span>AI비서</span><span>라운지</span><span>팀</span></div>
+        </div>
+        <div>현대인테리어 · 김봉기</div>
+      </div>
+
+      <div class="p-6 bg-white">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <h1 class="text-2xl font-bold text-navy-800">팀 캘린더</h1>
+            <p class="text-sm text-gray-500 mt-1">회사 자체 일정 · 견적미팅 · 사무실미팅 · 디자이너·현장팀 개인 일정. 연관 프로젝트 연결 시 프로젝트 일정에도 함께 노출됩니다.</p>
+          </div>
+          <button class="text-xs px-2.5 py-1.5 border rounded">📄 PDF 인쇄</button>
+        </div>
+
+        <!-- 멤버 필터 -->
+        <div class="flex gap-1.5 mb-3 flex-wrap">
+          <span class="px-3 py-1 rounded-full bg-navy-700 text-white text-xs font-medium">전체</span>
+          <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">미배정</span>
+          <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">김봉기 · 대표</span>
+          <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">서희 · 디자이너</span>
+          <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">박○○ · 현장팀</span>
+        </div>
+
+        <!-- 입력 폼 -->
+        <div class="border rounded-lg p-3 mb-3 bg-gray-50">
+          <div class="grid grid-cols-12 gap-2 text-sm">
+            <input class="col-span-2 border rounded px-2 py-1.5 text-xs" value="2026-05-18">
+            <input class="col-span-1 border rounded px-2 py-1.5 text-xs" placeholder="~ 종료">
+            <input class="col-span-4 border rounded px-2 py-1.5 text-xs" placeholder="일정 내용">
+            <select class="col-span-2 border rounded px-2 py-1.5 text-xs"><option>프로젝트</option></select>
+            <select class="col-span-2 border rounded px-2 py-1.5 text-xs"><option>담당자</option></select>
+            <button class="col-span-1 bg-navy-700 text-white rounded text-xs font-medium">+</button>
+          </div>
+        </div>
+
+        <!-- 월 헤더 -->
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <button class="text-navy-700 text-lg leading-none px-1">‹</button>
+          <div class="font-semibold text-lg text-navy-800">2026. 5</div>
+          <button class="text-navy-700 text-lg leading-none px-1">›</button>
+        </div>
+
+        <div class="border rounded-lg overflow-hidden bg-white">
+          <div class="grid grid-cols-7 text-xs font-semibold bg-gray-50 border-b">
+            <div class="px-2 py-2 text-center text-red-500">일</div>
+            <div class="px-2 py-2 text-center text-gray-600">월</div>
+            <div class="px-2 py-2 text-center text-gray-600">화</div>
+            <div class="px-2 py-2 text-center text-gray-600">수</div>
+            <div class="px-2 py-2 text-center text-gray-600">목</div>
+            <div class="px-2 py-2 text-center text-gray-600">금</div>
+            <div class="px-2 py-2 text-center text-blue-500">토</div>
+          </div>
+          <div class="cal-grid">
+            <div class="cell out"><div class="text-xs text-gray-400 mb-1">27</div></div>
+            <div class="cell out"><div class="text-xs text-gray-400 mb-1">28</div></div>
+            <div class="cell out"><div class="text-xs text-gray-400 mb-1">29</div></div>
+            <div class="cell out"><div class="text-xs text-gray-400 mb-1">30</div></div>
+            <div class="cell"><div class="text-xs font-semibold text-navy-700 mb-1">5/1</div>
+              <div class="entry-bar pj-violet pj-violet-bd"><span>견적 미팅 — 강남</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">2</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">3</div></div>
+
+            <div class="cell"><div class="text-xs text-red-500 mb-1">4</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">5</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">6</div>
+              <div class="entry-bar pj-cyan pj-cyan-bd"><span class="ph-chip bg-amber-100 text-amber-800">서희</span><span>현장 점검 · ○○동</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">7</div>
+              <div class="entry-bar pj-cyan pj-cyan-bd"><span class="ph-chip bg-amber-100 text-amber-800">서희</span><span>3D 도면 회의</span><span class="confirm-dot">✓</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">8</div>
+              <div class="entry-bar pj-violet pj-violet-bd"><span>사무실 회의 (전체)</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">9</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">10</div></div>
+
+            <div class="cell"><div class="text-xs text-red-500 mb-1">11</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">12</div>
+              <div class="entry-bar pj-blue pj-blue-bd"><span class="ph-chip bg-rose-100 text-rose-800">박</span><span>현장 ○○ 점검</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">13</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">14</div>
+              <div class="entry-bar pj-violet pj-violet-bd"><span>거래처 견적 미팅</span></div>
+            </div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">15</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">16</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">17</div></div>
+
+            <div class="cell"><div class="text-xs text-red-500 mb-1">18</div>
+              <div class="entry-bar pj-pink pj-pink-bd" style="opacity:0.85"><span class="ph-chip" style="background:#cffafe;color:#0e7490">유진건설</span><span>현장 미팅</span></div>
+            </div>
+            <div class="cell"><div class="text-xs flex items-baseline gap-1 mb-1"><span style="background:#1e3a66;color:#fff;border-radius:9999px;padding:0 6px;font-size:11px">19</span></div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">20</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">21</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">22</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">23</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">24</div></div>
+
+            <div class="cell"><div class="text-xs text-red-500 mb-1">25</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">26</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">27</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">28</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">29</div></div>
+            <div class="cell"><div class="text-xs text-gray-600 mb-1">30</div></div>
+            <div class="cell"><div class="text-xs text-blue-500 mb-1">31</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-[280px] pt-12 space-y-3 flex-shrink-0">
+      <div class="annot"><strong>① 멤버 필터 칩</strong> — 가로 스크롤(모바일). 선택 시 navy-700 채움. 디자이너·현장팀 본인 일정 필터링.</div>
+      <div class="annot"><strong>② 입력 폼</strong> — 12-col 그리드. 날짜·종료(옵션)·내용·프로젝트·담당자·+. 컴팩트하지만 정렬 약함.</div>
+      <div class="annot warn"><strong>구리다 평가 ⑥</strong> — 입력 폼이 캘린더 위에 박혀 있어서 “저게 일정 입력인가 필터인가” 직관성 부족. 폼 자체도 비례 안 맞음.</div>
+      <div class="annot"><strong>③ 외부(거래) 일정</strong> — 회사별 hash 색상(rose/cyan 등). 칩 = 거래 회사명. 텍스트 살짝 흐림(<code class="bg-white px-1 rounded">opacity-85</code>)으로 내부 일정과 구분.</div>
+      <div class="annot"><strong>④ 멤버 표시</strong> — 일정에 담당자가 있으면 chip으로 이름. 색상은 멤버별 고정 hash.</div>
+      <div class="annot warn"><strong>구리다 평가 ⑦</strong> — 같은 셀에 멤버 chip / 거래사 chip / 공정 chip이 다 들어와서 시각적 노이즈.</div>
+    </div>
+  </div>
+
+  <!-- ============ 모바일 변형 ============ -->
+  <h2 class="section">④ 모바일 — 빽빽 모드 + 바텀시트</h2>
+  <p class="text-sm text-slate-600 -mt-2 mb-4">모바일은 셀이 작아 한 행에 최대 3개. 더 있으면 “+N”. 셀을 탭하면 바텀시트(별도 브리프 <code class="bg-slate-200 px-1 rounded text-xs">mobile-schedule-sheet.html</code>) 열림.</p>
+
+  <div class="flex gap-6 items-start">
+    <div class="device-mobile">
+      <div class="absolute inset-0 pt-7 px-3 pb-3 overflow-hidden">
+        <!-- 상단 헤더 (Layout 모바일) -->
+        <div class="bg-navy-800 text-white -mx-3 -mt-7 px-3 py-2 flex items-center justify-between">
+          <span class="font-extrabold tracking-tight">SUPLEX</span>
+          <span class="text-xs">현대 · 봉기</span>
+        </div>
+
+        <div class="-mx-3 px-3 pt-3">
+          <h2 class="text-lg font-bold text-navy-800 mb-2">전체 일정</h2>
+
+          <!-- 탭 -->
+          <div class="flex border-b text-xs mb-2">
+            <span class="px-2 py-1.5 text-gray-500">현장</span>
+            <span class="px-2 py-1.5 text-gray-500">견적</span>
+            <span class="px-2 py-1.5 border-b-2 border-navy-700 text-navy-800 font-medium">전체</span>
+          </div>
+
+          <!-- 월 -->
+          <div class="flex items-center justify-center gap-1 mb-2 text-sm">
+            <button class="text-navy-700">‹</button>
+            <span class="font-semibold text-navy-800">2026. 5</span>
+            <button class="text-navy-700">›</button>
+          </div>
+
+          <!-- 캘린더 (간략) -->
+          <div class="border-y bg-white">
+            <div class="grid grid-cols-7 text-[10px] font-semibold bg-gray-50 border-b">
+              <div class="py-1 text-center text-red-500">일</div>
+              <div class="py-1 text-center text-gray-600">월</div>
+              <div class="py-1 text-center text-gray-600">화</div>
+              <div class="py-1 text-center text-gray-600">수</div>
+              <div class="py-1 text-center text-gray-600">목</div>
+              <div class="py-1 text-center text-gray-600">금</div>
+              <div class="py-1 text-center text-blue-500">토</div>
+            </div>
+            <div class="grid grid-cols-7 text-[9px]" style="height: 360px">
+              <div class="border-r border-b p-0.5 bg-slate-50"><div class="text-gray-400">27</div></div>
+              <div class="border-r border-b p-0.5 bg-slate-50"><div class="text-gray-400">28</div></div>
+              <div class="border-r border-b p-0.5 bg-slate-50"><div class="text-gray-400">29</div></div>
+              <div class="border-r border-b p-0.5 bg-slate-50"><div class="text-gray-400">30</div></div>
+              <div class="border-r border-b p-0.5"><div class="font-semibold text-navy-700">5/1</div><div class="entry-bar pj-blue pj-blue-bd" style="font-size:8px;padding:0 2px"><span>철거</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">2</div></div>
+              <div class="border-b p-0.5"><div class="text-blue-500">3</div></div>
+
+              <div class="border-r border-b p-0.5"><div class="text-red-500">4</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">5</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">6</div><div class="entry-bar pj-blue pj-blue-bd" style="font-size:8px;padding:0 2px"><span>전기</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">7</div><div class="entry-bar pj-blue pj-blue-bd" style="font-size:8px;padding:0 2px"><span>콘센트</span></div><div class="entry-bar pj-green pj-green-bd" style="font-size:8px;padding:0 2px"><span>줄눈</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">8</div><div class="entry-bar pj-blue pj-blue-bd unconfirmed" style="font-size:8px;padding:0 2px"><span>도배</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">9</div><div class="entry-bar pj-blue pj-blue-bd unconfirmed" style="font-size:8px;padding:0 2px"><span>도배</span></div><div class="entry-bar pj-pink pj-pink-bd" style="font-size:8px;padding:0 2px"><span>미팅</span></div><div class="text-[8px] text-gray-400 text-center leading-none">+1</div></div>
+              <div class="border-b p-0.5"><div class="text-blue-500">10</div></div>
+
+              <div class="border-r border-b p-0.5"><div class="text-red-500">11</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">12</div><div class="entry-bar pj-green pj-green-bd" style="font-size:8px;padding:0 2px"><span>마루</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">13</div><div class="entry-bar pj-green pj-green-bd" style="font-size:8px;padding:0 2px"><span>마루</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">14</div><div class="entry-bar pj-blue pj-blue-bd" style="font-size:8px;padding:0 2px"><span>도장</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">15</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">16</div></div>
+              <div class="border-b p-0.5"><div class="text-blue-500">17</div></div>
+
+              <div class="border-r border-b p-0.5"><div class="text-red-500">18</div><div class="entry-bar pj-blue pj-blue-bd" style="font-size:8px;padding:0 2px"><span>전기</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600 flex items-baseline gap-0.5"><span style="background:#1e3a66;color:#fff;border-radius:9999px;padding:0 4px;font-size:9px">19</span></div><div class="entry-bar pj-green pj-green-bd" style="font-size:8px;padding:0 2px"><span>준공</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">20</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">21</div><div class="entry-bar pj-amber pj-amber-bd" style="font-size:8px;padding:0 2px"><span>견적</span></div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">22</div></div>
+              <div class="border-r border-b p-0.5"><div class="text-gray-600">23</div></div>
+              <div class="border-b p-0.5"><div class="text-blue-500">24</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 하단 nav -->
+        <div class="absolute bottom-0 inset-x-0 bg-white border-t flex justify-around py-1.5 text-[10px]">
+          <span class="flex flex-col items-center text-navy-700"><span>📅</span>일정</span>
+          <span class="flex flex-col items-center text-gray-400"><span>📋</span>프로젝트</span>
+          <span class="flex flex-col items-center text-gray-400"><span>📦</span>발주</span>
+          <span class="flex flex-col items-center text-gray-400"><span>💬</span>라운지</span>
+          <span class="flex flex-col items-center text-gray-400"><span>⋯</span>더보기</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-[280px] pt-12 space-y-3 flex-shrink-0">
+      <div class="annot"><strong>① 헤더 — 매우 압축</strong> — 네비게이션 헤더 + 페이지 제목 + 탭이 모두 모바일에선 작은 글씨로 쪼개짐.</div>
+      <div class="annot"><strong>② 셀 — 최대 3개</strong> — <code class="bg-white px-1 rounded">[&>div:nth-child(n+4)]:hidden</code>로 4번째 이상 숨김. 대신 “+N”으로 표시.</div>
+      <div class="annot"><strong>③ 항목 압축</strong> — chip이 없고 잔여 텍스트만 줄여 표시. 일부 케이스만 chip 보임(자동 매칭). 폰트 8px까지 줄어듦.</div>
+      <div class="annot warn"><strong>구리다 평가 ⑧</strong> — 모바일에서 한 셀 글씨가 너무 작아 (8px) 손가락보다 작음. 가독성 임계 아래. 이 부분이 가장 큰 개선 포인트.</div>
+      <div class="annot"><strong>④ 진입</strong> — 셀 탭 → 바텀시트(별도 브리프).</div>
+    </div>
+  </div>
+
+  <!-- ============ 토큰 ============ -->
+  <h2 class="section">디자인 토큰 (유지 권장)</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-lg p-6 border border-slate-200">
+
+    <div>
+      <h3 class="subsection">브랜드 — Navy 팔레트</h3>
+      <div class="space-y-1.5">
+        <div class="legend-row"><div class="swatch" style="background:#f0f4fa"></div><span>navy-50</span><code>#f0f4fa</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#1e3a66"></div><span>navy-700</span><code>#1e3a66 · 본문/CTA</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#15294a"></div><span>navy-800</span><code>#15294a · 헤더 텍스트</code></div>
+
+        <h3 class="subsection">텍스트 & 보더</h3>
+        <div class="legend-row"><div class="swatch" style="background:#0f172a"></div><span>slate-900</span><code>#0f172a · 본문</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#475569"></div><span>slate-600</span><code>#475569 · 보조</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#e5e7eb"></div><span>gray-200</span><code>#e5e7eb · 그리드 라인</code></div>
+
+        <h3 class="subsection">캘린더 — 요일 색</h3>
+        <div class="legend-row"><div class="swatch" style="background:#ef4444"></div><span>red-500</span><code>일요일·공휴일 텍스트</code></div>
+        <div class="legend-row"><div class="swatch" style="background:#3b82f6"></div><span>blue-500</span><code>토요일 텍스트</code></div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="subsection">프로젝트 색상 (id hash로 결정)</h3>
+      <div class="space-y-1.5 text-xs">
+        <div class="legend-row"><div class="swatch pj-blue" style="border-left:3px solid #3b82f6"></div><span>blue-100</span><code>#dbeafe / 보더 #3b82f6</code></div>
+        <div class="legend-row"><div class="swatch pj-green" style="border-left:3px solid #22c55e"></div><span>green-100</span><code>#dcfce7 / #22c55e</code></div>
+        <div class="legend-row"><div class="swatch pj-amber" style="border-left:3px solid #f59e0b"></div><span>amber-100</span><code>#fef3c7 / #f59e0b</code></div>
+        <div class="legend-row"><div class="swatch pj-pink" style="border-left:3px solid #ec4899"></div><span>pink-100</span><code>#fce7f3 / #ec4899</code></div>
+        <div class="legend-row"><div class="swatch pj-violet" style="border-left:3px solid #8b5cf6"></div><span>violet-100</span><code>#ede9fe / #8b5cf6</code></div>
+        <div class="legend-row"><div class="swatch pj-cyan" style="border-left:3px solid #06b6d4"></div><span>cyan-100</span><code>#cffafe / #06b6d4</code></div>
+      </div>
+
+      <h3 class="subsection mt-4">공정 chip (10대 표준)</h3>
+      <div class="space-y-1.5 text-xs">
+        <div class="legend-row"><div class="swatch bg-rose-100"></div><span>철거</span><code>rose-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-amber-100"></div><span>목공</span><code>amber-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-sky-100"></div><span>전기</span><code>sky-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-teal-100"></div><span>설비</span><code>teal-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-pink-100"></div><span>타일</span><code>pink-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-violet-100"></div><span>도배</span><code>violet-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-orange-100"></div><span>도장</span><code>orange-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-fuchsia-100"></div><span>필름</span><code>fuchsia-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-yellow-100"></div><span>마루</span><code>yellow-100 / 800</code></div>
+        <div class="legend-row"><div class="swatch bg-emerald-100"></div><span>준공</span><code>emerald-100 / 800</code></div>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-3">신규 공정은 이름 해시로 보조 팔레트(stone·lime·cyan·indigo·purple·blue) 자동 배정.</p>
+    </div>
+  </div>
+
+  <!-- ============ 인터랙션 ============ -->
+  <h2 class="section">인터랙션 & 행동</h2>
+  <div class="bg-white rounded-lg p-6 border border-slate-200 space-y-2 text-sm">
+    <div><strong>· 셀 클릭(데스크탑)</strong> — 인라인 입력 활성. Enter=저장 후 같은 셀 머묾, Tab=다음 날, Shift+Tab=이전 날, ↓=다음 주 같은 요일, ↑=이전 주.</div>
+    <div><strong>· 셀 탭(모바일)</strong> — <code class="bg-slate-100 px-1 rounded">MobileScheduleSheet</code> 바텀시트가 <code class="bg-slate-100 px-1 rounded">slide-up 180ms</code>로 올라옴.</div>
+    <div><strong>· 항목 클릭</strong> — 같은 항목 인라인 편집(데스크탑).</div>
+    <div><strong>· 우클릭</strong> — 일정 컨텍스트 메뉴(삭제·확정 토글·복사·협력업체).</div>
+    <div><strong>· 확정 토글</strong> — 모바일 시트나 우클릭 메뉴. 확정 시 막대 opacity 100%, 우측 ✓ 원형 뱃지.</div>
+    <div><strong>· 같은 주 같은 프로젝트</strong> — <code class="bg-slate-100 px-1 rounded">utils/calendarLane.js</code>의 lane 알고리즘으로 같은 행에 정렬(시각적 연속성).</div>
+    <div><strong>· PDF 인쇄</strong> — 우상단 📄 버튼 → 새 창에 인쇄용 HTML(별도 디자인 작업 대상).</div>
+    <div><strong>· 모바일 빽빽 모드</strong> — 4번째 이상 항목은 <code class="bg-slate-100 px-1 rounded">[&>div:nth-child(n+4)]:hidden</code>으로 숨김 + "+N" 표시.</div>
+  </div>
+
+  <!-- ============ 디자이너에게 ============ -->
+  <h2 class="section">디자이너 의뢰 사항</h2>
+  <div class="bg-amber-50 border-l-4 border-amber-500 rounded-r p-5 space-y-3 text-sm leading-relaxed text-amber-950">
+    <div><strong>1) 위계 부족 해소</strong> — 한 화면에 모든 일정이 균질하게 보입니다. “오늘·내일·이번 주·확정 미정 회의”의 가중치 차이를 시각적으로 표현해주세요. 단순 색상 외 폰트 굵기·여백·그림자 활용 가능.</div>
+    <div><strong>2) 헤더·툴바 정돈</strong> — 전체일정/팀캘린더에서 페이지 제목 + 탭 + 월 네비게이션 + 액션 버튼이 분산되어 있습니다. 통합/그룹핑 해주세요.</div>
+    <div><strong>3) 일정 막대 가독성</strong> — chip + 잔여 텍스트 + 확정 ✓가 한 줄에 다 들어가 좁아 보입니다. 우선순위 정리·여백·타이포 weight 조정.</div>
+    <div><strong>4) 인덱스/필터 일체화</strong> — 현장 인덱스(아래 색상-이름)와 멤버 필터(위 칩)가 분리되어 있는데, “보고 있는 색이 누구의 어떤 현장인가”를 한 곳에서 알 수 있게 해주세요.</div>
+    <div><strong>5) 모바일 가독성</strong> — 8px 폰트는 임계 아래. 셀 안 표시 정책 자체를 재설계(예: 도트만 + 시트 진입 강조).</div>
+    <div><strong>6) 토큰 시스템 유지</strong> — Tailwind navy 팔레트, 공정 10색, 프로젝트 hash 색은 회사 자산이라 유지해주세요. 사용 방식만 다듬어주세요.</div>
+    <div><strong>7) 다크 모드</strong> — 현재 부분만 적용. 캘린더 전체 다크 토큰까지 함께 잡아주시면 좋습니다 (slate 9xx 베이스).</div>
+    <div><strong>8) 격리 정책</strong> — 캘린더에는 현장 주소·전화·금액 일체 노출 X. PDF 인쇄도 같은 정책. 표시 정보는 “공정·내용·확정 여부·담당자(팀캘린더)”만.</div>
+  </div>
+
+  <!-- ============ 메타 ============ -->
+  <div class="mt-10 pt-6 border-t border-slate-300 text-xs text-slate-500">
+    <div>출처 코드:
+      <code class="bg-slate-200 px-1 py-0.5 rounded">client/src/components/AggregateCalendar.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">ScheduleCalendar.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">TeamCalendar.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">PhaseInlineContent.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">ScheduleEntry.jsx</code>
+    </div>
+    <div class="mt-1">진입 페이지:
+      <code class="bg-slate-200 px-1 py-0.5 rounded">client/src/pages/Schedule.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">ProjectSchedule.jsx</code> ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">TeamCalendar.jsx</code> (시공팀 포함)
+    </div>
+    <div class="mt-1">폰트: Pretendard · 같은 토큰으로 회신 부탁드립니다. 다크 모드 별도 페이지 필요 시 요청 부탁드립니다.</div>
+    <div class="mt-1">관련 브리프:
+      <code class="bg-slate-200 px-1 py-0.5 rounded">docs/design/mobile-schedule-sheet.html</code> (바텀시트) ·
+      <code class="bg-slate-200 px-1 py-0.5 rounded">docs/design/schedule-confirmed-visibility.html</code> (확정 표시)
+    </div>
+    <div class="mt-1">생성일: 2026-05-18</div>
+  </div>
+
+</div>
+
+</body>
+</html>
