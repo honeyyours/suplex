@@ -38,6 +38,9 @@ self.addEventListener('push', (event) => {
     tag: data.tag, // 같은 tag면 이전 알림 대체 — 중복 알림 방지
     data: { url: data.url || '/' },
     requireInteraction: false,
+    // 진동 패턴 명시 — Android 일부 환경에서 OS 디폴트가 진동 X 일 때 폴백.
+    // 사용자 OS 알림 채널 설정이 우선이라 보장은 아님.
+    vibrate: [200, 100, 200],
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
