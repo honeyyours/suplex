@@ -89,6 +89,11 @@ export default function Login() {
               >
                 {busy ? '로그인 중...' : '로그인'}
               </button>
+              <p className="text-sm text-center">
+                <Link to="/forgot-password" className="text-gray-500 hover:text-navy-700 hover:underline">
+                  비밀번호를 잊으셨나요?
+                </Link>
+              </p>
             </form>
             <p className="text-sm text-gray-600 mt-6 text-center">
               계정이 없나요?{' '}

@@ -10,8 +10,10 @@ const { buildSeedRows: buildPhaseKeywordSeedRows } = require('../services/phaseK
 const { ensureSystemDefaultsForCompany } = require('../services/standardPhaseAdvices');
 const { seedAllBundlesFromPresetIfAvailable } = require('../services/phasePreset');
 const { checkPasswordPolicy } = require('../services/passwordPolicy');
-const { loginLimiter, signupLimiter, passwordChangeLimiter, availabilityLimiter } = require('../middlewares/rateLimit');
+const { loginLimiter, signupLimiter, passwordChangeLimiter, availabilityLimiter, passwordResetLimiter } = require('../middlewares/rateLimit');
 const { ensureLoungeMembership } = require('../services/lounge');
+const { sendPasswordResetEmail } = require('../services/mail');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -844,6 +846,138 @@ router.post('/change-password', passwordChangeLimiter, authRequired, async (req,
   } catch (e) {
     if (e.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    }
+    next(e);
+  }
+});
+
+// ============================================
+// 비밀번호 찾기 (재설정) — 메일 링크 방식
+// ============================================
+// 1) POST /auth/forgot-password { email } → 토큰 발급 + 메일 발송. 응답은 항상 200(이메일 enumeration 차단)
+// 2) GET  /auth/reset-password/check?token=... → 토큰 유효성 사전 검증 (UI 분기용)
+// 3) POST /auth/reset-password { token, newPassword } → 비번 교체 + tokenVersion++ (전 세션 무효화)
+// 보안: 토큰은 평문을 메일로만 전달, DB엔 SHA-256 해시. 1시간·1회용. 새 발급 시 기존 미사용 토큰 무효화.
+
+function hashToken(plain) {
+  return crypto.createHash('sha256').update(plain).digest('hex');
+}
+
+const forgotSchema = z.object({ email: emailField });
+
+router.post('/forgot-password', passwordResetLimiter, async (req, res, next) => {
+  try {
+    const data = forgotSchema.parse(req.body);
+    const user = await prisma.user.findUnique({
+      where: { email: data.email },
+      select: { id: true, email: true, name: true },
+    });
+
+    // 사용자 존재 여부와 무관하게 동일 응답 — 이메일 enumeration 방지
+    if (user) {
+      // 기존 미사용 토큰 일괄 무효화 (한 번에 하나만 유효)
+      await prisma.passwordResetToken.updateMany({
+        where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
+        data: { usedAt: new Date() },
+      });
+
+      const plain = crypto.randomBytes(32).toString('hex'); // 64자 hex, brute-force 비현실
+      const tokenHash = hashToken(plain);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1시간
+
+      await prisma.passwordResetToken.create({
+        data: { userId: user.id, tokenHash, expiresAt },
+      });
+
+      const resetUrl = `${env.appBaseUrl.replace(/\/$/, '')}/reset-password?token=${plain}`;
+      // fire-and-forget — 메일 발송 실패가 응답을 지연시키지 않게
+      sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl }).catch((e) => {
+        console.error('[auth.forgot-password] 메일 발송 실패:', e?.message || e);
+      });
+
+      audit(
+        { user: { id: user.id }, headers: req.headers, ip: req.ip },
+        'auth.password-reset-request',
+        { targetType: 'USER', targetId: user.id, metadata: { email: user.email } }
+      );
+    }
+
+    // 항상 동일 200 응답
+    res.json({ ok: true, message: '가입된 이메일이라면 비밀번호 재설정 안내 메일이 발송됩니다. 메일함을 확인해주세요.' });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: '이메일 형식이 올바르지 않습니다' });
+    }
+    next(e);
+  }
+});
+
+// 토큰 유효성 사전 검증 — 클라이언트가 비번 입력 화면을 보여주기 전에 "만료된 링크" 분기에 사용
+router.get('/reset-password/check', passwordResetLimiter, async (req, res, next) => {
+  try {
+    const plain = (req.query.token || '').toString().trim();
+    if (!plain) return res.json({ valid: false, reason: 'missing' });
+
+    const row = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashToken(plain) },
+      select: { id: true, expiresAt: true, usedAt: true },
+    });
+    if (!row) return res.json({ valid: false, reason: 'not_found' });
+    if (row.usedAt) return res.json({ valid: false, reason: 'used' });
+    if (row.expiresAt < new Date()) return res.json({ valid: false, reason: 'expired' });
+    res.json({ valid: true });
+  } catch (e) { next(e); }
+});
+
+const resetSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+router.post('/reset-password', passwordResetLimiter, async (req, res, next) => {
+  try {
+    const data = resetSchema.parse(req.body);
+
+    const policyErr = checkPasswordPolicy(data.newPassword);
+    if (policyErr) return res.status(400).json({ error: policyErr });
+
+    const row = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashToken(data.token) },
+      include: { user: { select: { id: true, email: true } } },
+    });
+    if (!row) return res.status(400).json({ error: '유효하지 않은 링크입니다. 다시 비밀번호 찾기를 진행해주세요' });
+    if (row.usedAt) return res.status(400).json({ error: '이미 사용된 링크입니다. 다시 비밀번호 찾기를 진행해주세요' });
+    if (row.expiresAt < new Date()) return res.status(400).json({ error: '만료된 링크입니다. 다시 비밀번호 찾기를 진행해주세요' });
+
+    const passwordHash = await bcrypt.hash(data.newPassword, 10);
+
+    // 트랜잭션: 비번 교체 + tokenVersion++ (전 세션 무효화) + 토큰 사용 표기
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: row.userId },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
+      }),
+      prisma.passwordResetToken.update({
+        where: { id: row.id },
+        data: { usedAt: new Date() },
+      }),
+      // 안전상 동일 사용자의 다른 미사용 토큰도 모두 무효화
+      prisma.passwordResetToken.updateMany({
+        where: { userId: row.userId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    audit(
+      { user: { id: row.userId }, headers: req.headers, ip: req.ip },
+      'auth.password-reset',
+      { targetType: 'USER', targetId: row.userId, metadata: { email: row.user.email } }
+    );
+
+    res.json({ ok: true, message: '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.' });
+  } catch (e) {
+    if (e.name === 'ZodError') {
+      return res.status(400).json({ error: '토큰 또는 비밀번호 형식이 올바르지 않습니다' });
     }
     next(e);
   }

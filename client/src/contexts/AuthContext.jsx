@@ -195,13 +195,25 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  // 비밀번호 찾기 — 이메일 입력 → 서버가 토큰 + 메일 발송. 항상 200 (enumeration 차단)
+  async function forgotPassword(email) {
+    const { data } = await api.post('/auth/forgot-password', { email });
+    return data;
+  }
+
+  // 비밀번호 재설정 — 메일 링크 토큰 + 새 비밀번호
+  async function resetPassword(token, newPassword) {
+    const { data } = await api.post('/auth/reset-password', { token, newPassword });
+    return data;
+  }
+
   // 회사 단위 설정(hideExpenses 등)을 즉시 반영
   function patchCompany(patch) {
     setAuth((prev) => prev ? { ...prev, company: { ...prev.company, ...patch } } : prev);
   }
 
   return (
-    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, signupGeneral, signupCrew, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, patchCompany }}>
+    <AuthContext.Provider value={{ auth, memberships, isAuthChecked, login, verifyTotp, signup, signupGeneral, signupCrew, acceptInvite, switchCompany, joinByInvite, startImpersonate, exitImpersonate, logout, updateMe, changePassword, forgotPassword, resetPassword, patchCompany }}>
       {children}
     </AuthContext.Provider>
   );

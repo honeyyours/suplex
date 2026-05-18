@@ -991,6 +991,8 @@ const ACTION_META = {
   'auth.signup':              { label: '회원가입', icon: '✨', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   'auth.login':               { label: '로그인',   icon: '🔓', color: 'bg-gray-50 text-gray-600 border-gray-200' },
   'auth.password-change':     { label: '비번 변경', icon: '🔒', color: 'bg-sky-50 text-sky-700 border-sky-200' },
+  'auth.password-reset-request': { label: '비번찾기 요청', icon: '📧', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  'auth.password-reset':      { label: '비번 재설정', icon: '🔑', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   // member (OWNER)
   'member.create':            { label: '멤버 추가',     icon: '➕', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   'member.update':            { label: '멤버 수정',     icon: '✏️', color: 'bg-sky-50 text-sky-700 border-sky-200' },

@@ -99,15 +99,15 @@ model User {
   // CREW 전용 프로필 (COMPANY 사용자는 모두 null/빈배열). 시공팀 초대 수락 시 이 값으로 Vendor row 자동 생성.
   // 가입 단계에서 공종(다중 선택, 최소 1개)은 필수, 계좌·일당·식비·교통비는 선택(공란 OK).
   // 수락 시 crewCategories 배열 순회하며 공종마다 Vendor row 1개씩 자동 생성 — A=설비+실리콘 케이스도 자연스럽게 처리.
-  crewCategory          String? // deprecated 2026-05-17 — crewCategories로 이전, 베타엔 컬럼 보존(코드 미사용)
-  crewCategories        String[] @default([]) // STANDARD_PHASES.label 다중 선택 (예: ["타일", "도배"])
-  crewBankAccount       String? // 계좌 한 줄 자유 입력
-  crewDefaultUnitPrice  Decimal? @db.Decimal(12, 2)
-  crewDefaultMeal       Decimal? @db.Decimal(12, 2)
-  crewDefaultTransport  Decimal? @db.Decimal(12, 2)
-  isSuperAdmin Boolean     @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
-  lastSeenAt   DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
-  tokenVersion Int         @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
+  crewCategory         String? // deprecated 2026-05-17 — crewCategories로 이전, 베타엔 컬럼 보존(코드 미사용)
+  crewCategories       String[]  @default([]) // STANDARD_PHASES.label 다중 선택 (예: ["타일", "도배"])
+  crewBankAccount      String? // 계좌 한 줄 자유 입력
+  crewDefaultUnitPrice Decimal?  @db.Decimal(12, 2)
+  crewDefaultMeal      Decimal?  @db.Decimal(12, 2)
+  crewDefaultTransport Decimal?  @db.Decimal(12, 2)
+  isSuperAdmin         Boolean   @default(false) // 슈퍼 어드민(SaaS 운영자). 회사 무관, /admin 콘솔 접근
+  lastSeenAt           DateTime? // 마지막 인증 요청 시각. 1분 throttle로 갱신 (어드민 모니터링용)
+  tokenVersion         Int       @default(0) // JWT 무효화 카운터. 멤버 제거·비번 변경 시 ++로 모든 세션 강제 로그아웃
 
   // 2FA (TOTP) — 슈퍼어드민만 사용. setup 시 totpSecret 채워지고 totpEnabled=false,
   // enable 검증 통과 시 totpEnabled=true. 백업 코드는 SHA-256 해시로 저장 (1회용).
@@ -156,7 +156,27 @@ model User {
   // 시공팀 계정이 거래하는 인테리어 회사들의 Vendor 매핑 (1 반장 → 여러 Vendor 가능: 목공 3:1)
   linkedVendors Vendor[] @relation("VendorLinkedCrew")
 
+  // 비밀번호 재설정 토큰 (1회용·1시간 만료). 발급 시 기존 미사용 토큰은 무효화.
+  passwordResetTokens PasswordResetToken[]
+
   @@map("users")
+}
+
+// 비밀번호 재설정 토큰 — 평문은 메일 링크로만 전달, DB엔 SHA-256 해시만 저장.
+// 검증은 (tokenHash + expiresAt > now + usedAt == null). 사용 시 usedAt 채워 재사용 차단.
+// 새 토큰 발급 시 동일 user의 미사용 토큰은 일괄 usedAt 채워 무효화 (한 번에 하나만 유효).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // SHA-256 hex (평문 토큰은 DB에 없음)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // 시스템 공지 — 슈퍼어드민이 작성, 모든 회사 사용자 헤더에 배너로 노출.
@@ -327,10 +347,10 @@ model Vendor {
   // 시공팀(CrewAccount) 연동 (2026-05-17). 1 반장 = 1 CrewAccount.
   // 목공팀은 3:1 — 반장·기공·조공 Vendor 3개가 같은 반장 가리킴(자동 통합 캘린더).
   // 매핑 정책: 자세히 메모리 [[crewaccount]].
-  linkedCrewUserId      String?
-  crewInviteToken       String?   @unique // 발급 직후 1회용 (수락 시 null)
-  crewInviteSentAt      DateTime?
-  crewInviteExpiresAt   DateTime? // 디폴트 7일
+  linkedCrewUserId    String?
+  crewInviteToken     String?   @unique // 발급 직후 1회용 (수락 시 null)
+  crewInviteSentAt    DateTime?
+  crewInviteExpiresAt DateTime? // 디폴트 7일
 
   company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   linkedCrew           User?                @relation("VendorLinkedCrew", fields: [linkedCrewUserId], references: [id], onDelete: SetNull)

@@ -41,6 +41,15 @@ module.exports = {
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
   },
+  mail: {
+    // Resend (https://resend.com) — 비번 재설정·초대 메일 발송.
+    // 미설정 시 메일 전송 코드가 no-op 처리하며 콘솔 경고만 출력 (개발 환경 친화).
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    // 발신 주소 — 도메인 인증(SPF/DKIM/DMARC) 완료된 주소만 사용 가능.
+    from: process.env.MAIL_FROM || 'Suplex <noreply@suplex.kr>',
+  },
+  // 메일 본문 링크 생성용 — 클라이언트가 호스팅된 도메인. CLIENT_ORIGIN과 별도 (CORS는 다중 origin 허용 가능)
+  appBaseUrl: process.env.APP_BASE_URL || (isProd ? 'https://suplex.kr' : 'http://localhost:5173'),
   clientOrigin: parseOrigins(process.env.CLIENT_ORIGIN) || (isProd
     ? (() => { throw new Error('[env] CLIENT_ORIGIN 누락 — production 필수 (예: https://suplex.kr)'); })()
     : 'http://localhost:5173'),

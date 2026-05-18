@@ -11,6 +11,8 @@ import Signup from './pages/Signup';
 import CrewSignup from './pages/CrewSignup';
 import CrewInviteAccept from './pages/CrewInviteAccept';
 import InviteAccept from './pages/InviteAccept';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
@@ -78,6 +80,8 @@ export default function App() {
       <Route path="/crew/signup" element={<CrewSignup />} />
       <Route path="/crew/invite/:token" element={<CrewInviteAccept />} />
       <Route path="/invite/:token" element={<InviteAccept />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
 

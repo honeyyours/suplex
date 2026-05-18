@@ -31,10 +31,15 @@ const passwordChangeLimiter = makeLimiter({ windowMs: 5 * 60 * 1000, max: 5, kin
 // 이메일 enumeration 자동화에는 충분한 제동.
 const availabilityLimiter = makeLimiter({ windowMs: 60 * 1000, max: 30, kind: 'availability' });
 
+// 비밀번호 재설정 — IP당 10분당 5회. 메일 폭주·토큰 brute-force 1차 방어.
+// forgot(메일 발송)과 reset(토큰 검증) 둘 다 같은 빈도면 충분.
+const passwordResetLimiter = makeLimiter({ windowMs: 10 * 60 * 1000, max: 5, kind: 'password-reset' });
+
 module.exports = {
   loginLimiter,
   signupLimiter,
   inviteTokenLimiter,
   passwordChangeLimiter,
   availabilityLimiter,
+  passwordResetLimiter,
 };
