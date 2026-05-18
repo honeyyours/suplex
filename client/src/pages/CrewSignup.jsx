@@ -23,7 +23,7 @@ export default function CrewSignup() {
   const { signupCrew } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    email: '', password: '', name: '', nickname: '', phone: '',
+    email: '', password: '', name: '', phone: '',
     crewBankAccount: '',
     crewDefaultUnitPrice: '',
     crewDefaultMeal: '',
@@ -41,12 +41,10 @@ export default function CrewSignup() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [emailStatus, setEmailStatus] = useState('idle');
-  const [nicknameStatus, setNicknameStatus] = useState('idle');
 
   const update = (k) => (e) => {
     setForm({ ...form, [k]: e.target.value });
     if (k === 'email') setEmailStatus('idle');
-    if (k === 'nickname') setNicknameStatus('idle');
   };
 
   async function onBlurEmail() {
@@ -55,23 +53,13 @@ export default function CrewSignup() {
     setEmailStatus('checking');
     setEmailStatus(await checkAvailability('email', v));
   }
-  async function onBlurNickname() {
-    const v = form.nickname.trim();
-    if (!v) return setNicknameStatus('idle');
-    setNicknameStatus('checking');
-    setNicknameStatus(await checkAvailability('nickname', v));
-  }
 
   function validate() {
-    if (!form.email.trim() || !form.password || !form.name.trim() || !form.nickname.trim()) {
-      return '이메일·비밀번호·이름·닉네임을 모두 입력해주세요';
-    }
-    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(form.nickname.trim())) {
-      return '닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다';
+    if (!form.email.trim() || !form.password || !form.name.trim()) {
+      return '이메일·비밀번호·이름을 모두 입력해주세요';
     }
     if (emailStatus === 'taken') return '이미 가입된 이메일입니다';
     if (emailStatus === 'invalid') return '이메일 형식이 올바르지 않습니다';
-    if (nicknameStatus === 'taken') return '이미 사용 중인 닉네임입니다';
     const passwordErr = checkPasswordPolicy(form.password);
     if (passwordErr) return passwordErr;
     if (crewCategories.length === 0) return '담당 공종을 1개 이상 선택해주세요';
@@ -97,7 +85,6 @@ export default function CrewSignup() {
         email: form.email.trim(),
         password: form.password,
         name: form.name.trim(),
-        nickname: form.nickname.trim(),
         phone: form.phone.trim() || undefined,
         crewCategories,
         crewBankAccount: form.crewBankAccount.trim() || null,
@@ -143,17 +130,6 @@ export default function CrewSignup() {
           />
           <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
           <Field label="이름 *" value={form.name} onChange={update('name')} required />
-          <Field
-            label="닉네임 *"
-            value={form.nickname}
-            onChange={update('nickname')}
-            onBlur={onBlurNickname}
-            required
-            placeholder="라운지에 표시될 이름 (2~20자)"
-            maxLength={20}
-            status={nicknameStatus}
-            statusMessage={availabilityMessage('nickname', nicknameStatus)}
-          />
           <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
 
           <div className="pt-3 border-t">

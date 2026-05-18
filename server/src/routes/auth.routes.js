@@ -43,7 +43,8 @@ const signupSchema = z.object({
   email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
-  nickname: nicknameField, // 라운지 표시명 (2026-05-14)
+  // 닉네임은 라운지 진입 시점에 받음 (2026-05-18) — 가입 단계에서 더 이상 요구하지 않음
+  nickname: nicknameField.optional(),
   phone: z.string().optional(),
   // 회사 정보 (단계 2) — 회사명만 필수, 나머지 견적 갑지·기본 정보로 미리 채움
   companyName: z.string().min(1),
@@ -97,9 +98,11 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
     const exists = await prisma.user.findUnique({ where: { email: data.email } });
     if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
 
-    // 닉네임 중복 체크
-    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
-    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    // 닉네임 중복 체크 — 가입 시 닉네임을 받지 않으므로 일반적으로 skip. 옛 클라이언트 호환 위해 값이 오면 체크.
+    if (data.nickname) {
+      const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+      if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
@@ -121,7 +124,7 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
           email: data.email,
           passwordHash,
           name: data.name,
-          nickname: data.nickname,
+          nickname: data.nickname || null,
           phone: data.phone,
         },
       });
@@ -184,7 +187,8 @@ const signupGeneralSchema = z.object({
   email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
-  nickname: nicknameField,
+  // 닉네임은 라운지 진입 시점에 받음 (2026-05-18)
+  nickname: nicknameField.optional(),
   phone: z.string().optional(),
 });
 
@@ -195,7 +199,8 @@ const signupCrewSchema = z.object({
   email: emailField,
   password: z.string().min(8),
   name: z.string().min(1),
-  nickname: nicknameField,
+  // 닉네임은 라운지 진입 시점에 받음 (2026-05-18)
+  nickname: nicknameField.optional(),
   phone: z.string().optional(),
   // 시공팀 프로필 — 공종(다중, 최소 1개)만 필수, 나머지 4개는 공란 OK (나중에 본인 또는 회사가 채움)
   crewCategories: z.array(z.string().min(1).max(40)).min(1).max(25),
@@ -215,8 +220,10 @@ router.post('/signup-crew', signupLimiter, async (req, res, next) => {
     const exists = await prisma.user.findUnique({ where: { email: data.email } });
     if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
 
-    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
-    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    if (data.nickname) {
+      const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+      if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
@@ -226,7 +233,7 @@ router.post('/signup-crew', signupLimiter, async (req, res, next) => {
           email: data.email,
           passwordHash,
           name: data.name,
-          nickname: data.nickname,
+          nickname: data.nickname || null,
           phone: data.phone,
           accountType: 'CREW',
           crewCategories: data.crewCategories.map((c) => c.trim()).filter(Boolean),
@@ -323,8 +330,10 @@ router.post('/signup-general', signupLimiter, async (req, res, next) => {
     const exists = await prisma.user.findUnique({ where: { email: data.email } });
     if (exists) return res.status(409).json({ error: '이미 가입된 이메일입니다' });
 
-    const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
-    if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    if (data.nickname) {
+      const nickExists = await prisma.user.findUnique({ where: { nickname: data.nickname } });
+      if (nickExists) return res.status(409).json({ error: '이미 사용 중인 닉네임입니다' });
+    }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
@@ -334,7 +343,7 @@ router.post('/signup-general', signupLimiter, async (req, res, next) => {
           email: data.email,
           passwordHash,
           name: data.name,
-          nickname: data.nickname,
+          nickname: data.nickname || null,
           phone: data.phone,
         },
       });
