@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { F, canAccess } from '../utils/features';
 import { announcementsApi } from '../api/announcements';
 import PlanBadge from './PlanBadge';
@@ -52,7 +51,6 @@ function NavIcon({ name, className = 'w-5 h-5' }) {
 
 export default function Layout() {
   const { auth, memberships, isAuthChecked, switchCompany, exitImpersonate, logout } = useAuth();
-  const { theme, setTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = !!auth?.isSuperAdmin;
@@ -148,13 +146,6 @@ export default function Layout() {
               </Link>
             )}
             {auth && !isAdmin && <NotificationBell />}
-            <button
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              title={`현재: ${theme === 'system' ? '시스템' : theme === 'dark' ? '다크' : '라이트'} (클릭 토글)`}
-              className="text-navy-100 hover:text-white text-base px-1.5 py-1 rounded hover:bg-navy-700/60 transition leading-none"
-            >
-              {isDark ? '☀️' : '🌙'}
-            </button>
             <span className="hidden sm:inline-flex items-center gap-2">
               {isAdmin ? (
                 <span className="text-violet-200">🛡️ 시스템 관리자</span>

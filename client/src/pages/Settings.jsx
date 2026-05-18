@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
 import PushNotificationToggle from '../components/PushNotificationToggle';
+import { useTheme } from '../contexts/ThemeContext';
 import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
@@ -139,6 +140,7 @@ export default function Settings() {
         <Row label="이메일" value={auth?.user?.email} />
         <Row label="권한" value={roleLabel(auth?.role)} />
         <ChangePasswordRow />
+        <ThemeRow />
         <PushNotificationToggle />
         <div className="pt-3">
           <button
@@ -1789,6 +1791,42 @@ function Row({ label, value, mono }) {
       <span className={`text-gray-800 ${mono ? 'font-mono text-xs' : ''}`}>
         {value || <span className="text-gray-400 italic">—</span>}
       </span>
+    </div>
+  );
+}
+
+// 화면 테마 선택 — 라이트/다크/시스템 3개 옵션 세그먼트 컨트롤.
+// localStorage 자동 저장 (ThemeContext에서 처리).
+function ThemeRow() {
+  const { theme, setTheme } = useTheme();
+  const options = [
+    { value: 'light', label: '라이트', icon: '☀️' },
+    { value: 'dark', label: '다크', icon: '🌙' },
+    { value: 'system', label: '시스템', icon: '🖥️' },
+  ];
+  return (
+    <div className="py-3 border-b">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">화면 테마</div>
+        <div className="inline-flex border border-gray-200 dark:border-slate-700 rounded-md overflow-hidden">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setTheme(o.value)}
+              className={`text-xs px-3 py-1.5 transition ${
+                theme === o.value
+                  ? 'bg-navy-700 text-white'
+                  : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <span className="mr-1">{o.icon}</span>{o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {theme === 'system' && (
+        <div className="text-xs text-gray-500 mt-1">기기 설정에 따라 자동 전환됩니다.</div>
+      )}
     </div>
   );
 }
