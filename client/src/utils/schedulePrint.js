@@ -184,7 +184,7 @@ function buildShell(pagesHtml, title) {
 <title>${esc(title)} — 일정 출력</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
-  @page { size: A4 landscape; margin: 10mm 10mm 8mm 10mm; }
+  @page { size: A4 landscape; margin: 14mm 14mm 10mm 14mm; }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -195,15 +195,15 @@ function buildShell(pagesHtml, title) {
     background: #fff;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    font-size: 11px;
-    line-height: 1.3;
+    font-size: 13px;
+    line-height: 1.35;
   }
 
   @media screen {
     body { background: #e9ecf1; padding: 24px; }
     .page {
-      width: 277mm;
-      min-height: 190mm;
+      width: 269mm;
+      min-height: 187mm;
       background: #fff;
       margin: 0 auto 16px;
       padding: 0;
@@ -244,20 +244,20 @@ function buildShell(pagesHtml, title) {
   }
   .brand {
     font-weight: 700;
-    font-size: 15pt;
+    font-size: 17pt;
     color: #15294a;
     letter-spacing: -0.01em;
     flex: 1;
   }
   .brand-mark {
     display: inline-block;
-    width: 5mm; height: 1mm;
+    width: 6mm; height: 1.2mm;
     background: #15294a;
     vertical-align: 3px;
     margin-right: 2mm;
   }
   .month-title {
-    font-size: 18pt;
+    font-size: 22pt;
     font-weight: 700;
     color: #15294a;
     letter-spacing: -0.02em;
@@ -266,18 +266,18 @@ function buildShell(pagesHtml, title) {
     margin: 0;
   }
   .month-title .year {
-    font-size: 11pt;
+    font-size: 13pt;
     font-weight: 500;
     color: #64748b;
     margin-right: 3mm;
     letter-spacing: 0;
   }
   .print-meta {
-    font-size: 7.5pt;
+    font-size: 9pt;
     color: #94a3b8;
     text-align: right;
     flex: 1;
-    line-height: 1.45;
+    line-height: 1.5;
   }
 
   .cal {
@@ -294,9 +294,9 @@ function buildShell(pagesHtml, title) {
   .cal thead th {
     background: #f1f5f9;
     font-weight: 600;
-    font-size: 9pt;
+    font-size: 11pt;
     color: #334155;
-    padding: 2mm 0;
+    padding: 2.5mm 0;
     text-align: center;
     letter-spacing: 0.5px;
     border-bottom-width: 0.7pt;
@@ -306,16 +306,16 @@ function buildShell(pagesHtml, title) {
   .cal thead th.sat { color: #2563eb; }
 
   .cal tbody td {
-    height: 23.5mm;
-    padding: 1.2mm;
+    height: 26mm;
+    padding: 1.6mm;
     position: relative;
   }
   .day-num {
-    font-size: 8.5pt;
+    font-size: 10.5pt;
     font-weight: 600;
     color: #1e3a66;
     line-height: 1;
-    margin-bottom: 1.2mm;
+    margin-bottom: 1.6mm;
     display: flex;
     align-items: center;
     gap: 1.5mm;
@@ -327,13 +327,13 @@ function buildShell(pagesHtml, title) {
     background: #15294a;
     color: #fff;
     border-radius: 9999px;
-    padding: 0.6mm 2.2mm;
-    font-size: 8pt;
+    padding: 0.6mm 2.4mm;
+    font-size: 10pt;
     line-height: 1;
     display: inline-block;
   }
   .holiday {
-    font-size: 6.5pt;
+    font-size: 8pt;
     color: #dc2626;
     font-weight: 400;
     margin-left: 0.5mm;
@@ -341,10 +341,10 @@ function buildShell(pagesHtml, title) {
   td.out { background: #fafbfc; }
 
   .entry {
-    font-size: 7.5pt;
-    line-height: 1.25;
-    padding: 0.4mm 1.2mm 0.4mm 0;
-    margin-bottom: 0.6mm;
+    font-size: 9.5pt;
+    line-height: 1.3;
+    padding: 0.7mm 1.5mm 0.7mm 0;
+    margin-bottom: 0.8mm;
     border-left: 1mm solid;
     border-radius: 0 0.5mm 0.5mm 0;
     display: flex;
@@ -361,21 +361,15 @@ function buildShell(pagesHtml, title) {
     min-width: 0;
     color: #0f172a;
     font-weight: 500;
-    padding-left: 1.2mm;
+    padding-left: 1.5mm;
   }
   .entry.unconfirmed .txt {
     color: #64748b;
     font-weight: 400;
   }
-  .entry .ph-chip {
-    flex-shrink: 0;
-    font-size: 6.5pt;
-    padding: 0.2mm 1.2mm;
-    border-radius: 0.5mm;
-    font-weight: 600;
-    line-height: 1.35;
-    margin-left: 1.2mm;
-  }
+  /* 공정 chip — 인쇄·화면 모두 비표시 (봉기님 요청 2026-05-18).
+     공정 정보가 있으면 텍스트 앞에 "{공정} · " 형태로 prepend (renderMonthPage에서). */
+  .entry .ph-chip { display: none; }
   .entry.confirmed .txt::after {
     content: " ✓";
     color: #047857;
@@ -405,17 +399,17 @@ function buildShell(pagesHtml, title) {
   .chip-generic { background: #e2e8f0; color: #334155; }
 
   .index-bar {
-    margin-top: 2.5mm;
-    padding-top: 2mm;
+    margin-top: 3mm;
+    padding-top: 2.4mm;
     border-top: 0.5pt solid #cbd5e1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1.5mm 4mm;
-    font-size: 8pt;
+    gap: 1.8mm 5mm;
+    font-size: 10pt;
   }
   .index-label {
-    font-size: 7pt;
+    font-size: 8.5pt;
     color: #64748b;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -424,18 +418,18 @@ function buildShell(pagesHtml, title) {
   .index-item {
     display: inline-flex;
     align-items: center;
-    gap: 1.5mm;
+    gap: 1.8mm;
     color: #334155;
     white-space: nowrap;
   }
   .index-swatch {
     display: inline-block;
-    width: 3mm; height: 3mm;
-    border-radius: 0.3mm;
+    width: 3.6mm; height: 3.6mm;
+    border-radius: 0.4mm;
     flex-shrink: 0;
   }
   .confirm-legend {
-    font-size: 7pt;
+    font-size: 8.5pt;
     color: #64748b;
     margin-left: auto;
     white-space: nowrap;
@@ -445,9 +439,9 @@ function buildShell(pagesHtml, title) {
   .print-footer {
     display: flex;
     justify-content: space-between;
-    margin-top: 1.5mm;
-    padding-top: 1.5mm;
-    font-size: 6.5pt;
+    margin-top: 2mm;
+    padding-top: 1.8mm;
+    font-size: 8pt;
     color: #94a3b8;
     border-top: 0.3pt solid #e2e8f0;
   }
@@ -513,12 +507,10 @@ function renderMonthPage(monthDate, byDate, { title, companyName, printedDate, t
       const entriesHtml = items.map((e) => {
         const c = projectColor(e.project?.id);
         const { chip, text } = splitEntry(e);
-        const chipCls = chip ? phaseChipClass(chip) : null;
-        const chipHtml = chip && chipCls
-          ? `<span class="ph-chip ${chipCls}">${esc(chip)}</span>`
-          : '';
+        // 공정 chip을 시각 라벨 대신 텍스트로 합쳐서 표시 (봉기님 요청 2026-05-18).
+        const display = chip ? `${chip} · ${text || ''}`.trim().replace(/·\s*$/, '').trim() : (text || e.content || '');
         const confirmedCls = e.confirmed ? ' confirmed' : ' unconfirmed';
-        return `<div class="entry ${c.cls}${confirmedCls}">${chipHtml}<span class="txt">${esc(text || e.content || '')}</span></div>`;
+        return `<div class="entry ${c.cls}${confirmedCls}"><span class="txt">${esc(display)}</span></div>`;
       }).join('');
 
       const tdCls = inMonth ? '' : 'out';
