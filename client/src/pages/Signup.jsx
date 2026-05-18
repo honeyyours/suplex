@@ -184,7 +184,7 @@ export default function Signup() {
                 <div className="text-3xl">👤</div>
                 <div className="flex-1">
                   <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-gray-900">
-                    회사직원으로 가입
+                    회사 직원으로 가입
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
                     회사 초대를 기다리거나, 라운지·루비 공유 커뮤니티 먼저 이용
@@ -204,7 +204,7 @@ export default function Signup() {
                     시공팀으로 가입
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    거래 회사가 잡은 일정을 한 화면에서 확인 (팀 공유 가능 · 무료)
+                    여러 거래 회사 일정을 한 캘린더에 모아 보고 팀과 공유 (무료)
                   </div>
                 </div>
               </div>
