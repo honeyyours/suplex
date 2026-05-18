@@ -184,7 +184,7 @@ function buildShell(pagesHtml, title) {
 <title>${esc(title)} — 일정 출력</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
-  @page { size: A4 landscape; margin: 14mm 14mm 10mm 14mm; }
+  @page { size: A4 landscape; margin: 24mm 24mm 10mm 24mm; }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -202,8 +202,8 @@ function buildShell(pagesHtml, title) {
   @media screen {
     body { background: #e9ecf1; padding: 24px; }
     .page {
-      width: 269mm;
-      min-height: 187mm;
+      width: 249mm;
+      min-height: 176mm;
       background: #fff;
       margin: 0 auto 16px;
       padding: 0;
