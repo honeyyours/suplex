@@ -58,7 +58,9 @@ router.use((req, res, next) => {
   // /admin, /backup은 별도 라우터에서 super admin 체크. 여기선 통과.
   // /lounge는 회사 미승인·퇴사자도 접근 가능 (라운지 자체 멤버십 가드 사용).
   // /crew는 CREW 계정 전용 라우트 — 회사 가드 우회 (crew.routes.js가 자체 requireCrew 적용).
-  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge') || req.path.startsWith('/crew')) return next();
+  // /invitations는 라우터 내부에서 엔드포인트별 가드 적용 — by-token·accept는 public, join은 authRequired.
+  //   일반회원(회사 없음)이 초대 받았을 때 here에서 막히면 by-token 자체가 안 풀려 "연계 안 됨".
+  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge') || req.path.startsWith('/crew') || req.path.startsWith('/invitations')) return next();
   // 그 외는 인증 + 승인 가드 적용
   authRequired(req, res, (err) => {
     if (err || res.headersSent) return;

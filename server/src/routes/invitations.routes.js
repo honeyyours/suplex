@@ -192,7 +192,7 @@ router.post('/accept', async (req, res, next) => {
 
     const inv = await prisma.invitation.findUnique({
       where: { token: data.token },
-      include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+      include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } } },
     });
     if (!inv) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
     if (inv.acceptedAt) return res.status(410).json({ error: '이미 사용된 초대 링크입니다' });
@@ -313,8 +313,14 @@ router.post('/accept', async (req, res, next) => {
 
     res.status(201).json({
       token,
-      user: { id: resultUser.id, email: resultUser.email, name: resultUser.name },
-      company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
+      user: { id: resultUser.id, email: resultUser.email, name: resultUser.name, nickname: resultUser.nickname },
+      company: {
+        id: inv.company.id,
+        name: inv.company.name,
+        hideExpenses: inv.company.hideExpenses,
+        approvalStatus: inv.company.approvalStatus,
+        plan: inv.company.plan,
+      },
       role: inv.role,
       permissions: {}, // 신규 가입·좀비 복구 — 명시 토글 없음, ROLE_DEFAULTS 따름
     });
@@ -336,7 +342,7 @@ router.post('/join', authRequired, async (req, res, next) => {
 
     const inv = await prisma.invitation.findUnique({
       where: { token: data.token },
-      include: { company: { select: { id: true, name: true, hideExpenses: true } } },
+      include: { company: { select: { id: true, name: true, hideExpenses: true, approvalStatus: true, plan: true } } },
     });
     if (!inv) return res.status(404).json({ error: '유효하지 않은 초대 링크입니다' });
     if (inv.acceptedAt) return res.status(410).json({ error: '이미 사용된 초대 링크입니다' });
@@ -397,7 +403,13 @@ router.post('/join', authRequired, async (req, res, next) => {
     res.status(201).json({
       token,
       user: { id: me.id, email: me.email, name: me.name },
-      company: { id: inv.company.id, name: inv.company.name, hideExpenses: inv.company.hideExpenses },
+      company: {
+        id: inv.company.id,
+        name: inv.company.name,
+        hideExpenses: inv.company.hideExpenses,
+        approvalStatus: inv.company.approvalStatus,
+        plan: inv.company.plan,
+      },
       role: inv.role,
       permissions: {}, // 새 회사 합류 — 명시 토글 없음
     });
