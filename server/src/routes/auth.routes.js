@@ -43,7 +43,7 @@ const nicknameField = z.string().trim().min(2).max(20)
 const signupSchema = z.object({
   // 개인 정보 (단계 1)
   email: emailField,
-  password: z.string().min(8),
+  password: z.string().min(1),
   name: z.string().min(1),
   // 닉네임은 라운지 진입 시점에 받음 (2026-05-18) — 가입 단계에서 더 이상 요구하지 않음
   nickname: nicknameField.optional(),
@@ -187,7 +187,7 @@ router.post('/signup', signupLimiter, async (req, res, next) => {
 // 라운지에서 글 보고 소개 페이지로 회사 대표 가입 유도.
 const signupGeneralSchema = z.object({
   email: emailField,
-  password: z.string().min(8),
+  password: z.string().min(1),
   name: z.string().min(1),
   // 닉네임은 라운지 진입 시점에 받음 (2026-05-18)
   nickname: nicknameField.optional(),
@@ -199,7 +199,7 @@ const signupGeneralSchema = z.object({
 // 가입 단계에서 받은 프로필이 거래 회사의 초대 수락 시 Vendor row 자동 생성 입력값으로 사용됨.
 const signupCrewSchema = z.object({
   email: emailField,
-  password: z.string().min(8),
+  password: z.string().min(1),
   name: z.string().min(1),
   // 닉네임은 라운지 진입 시점에 받음 (2026-05-18)
   nickname: nicknameField.optional(),
@@ -796,7 +796,7 @@ router.patch('/me', authRequired, async (req, res, next) => {
 // 본인 비밀번호 변경 (current 검증 후 new로 교체)
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(1),
 });
 
 router.post('/change-password', passwordChangeLimiter, authRequired, async (req, res, next) => {
@@ -931,7 +931,7 @@ router.get('/reset-password/check', passwordResetLimiter, async (req, res, next)
 
 const resetSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(1),
 });
 
 router.post('/reset-password', passwordResetLimiter, async (req, res, next) => {

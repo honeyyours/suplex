@@ -177,13 +177,12 @@ export default function InviteAccept() {
             </Field>
           </>
         )}
-        <Field label={isRecover ? '비밀번호 *' : '비밀번호 (8자 이상) *'}>
+        <Field label="비밀번호 *">
           <input
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
-            minLength={isRecover ? 1 : 8}
             autoFocus={isRecover}
             required
           />
@@ -201,7 +200,6 @@ export default function InviteAccept() {
                   ? 'border-emerald-400 focus:ring-emerald-400'
                   : 'focus:ring-navy-500'
               }`}
-              minLength={8}
               required
             />
             {form.passwordConfirm && form.password !== form.passwordConfirm && (

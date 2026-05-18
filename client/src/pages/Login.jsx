@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+const REMEMBERED_EMAIL_KEY = 'suplex_remembered_email';
+
 export default function Login() {
   const { login, verifyTotp } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) || '');
   const [password, setPassword] = useState('');
+  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem(REMEMBERED_EMAIL_KEY));
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -20,6 +23,12 @@ export default function Login() {
     setBusy(true);
     try {
       const result = await login(email, password);
+      // 이메일 기억 처리 — 비번은 저장 X (브라우저 native autocomplete가 제안)
+      if (rememberEmail) {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
       if (result.needsTotp) {
         setTotpStep({ pendingToken: result.pendingToken, email: result.email || email });
         setTotpCode('');
@@ -81,6 +90,15 @@ export default function Login() {
                   className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-navy-500 outline-none"
                 />
               </div>
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberEmail}
+                  onChange={(e) => setRememberEmail(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                이메일 기억하기
+              </label>
               {err && <p className="text-sm text-rose-600">{err}</p>}
               <button
                 type="submit"

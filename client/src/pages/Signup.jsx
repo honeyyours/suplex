@@ -232,14 +232,13 @@ export default function Signup() {
               status={emailStatus}
               statusMessage={availabilityMessage('email', emailStatus)}
             />
-            <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
+            <Field label="비밀번호 *" type="password" value={form.password} onChange={update('password')} required autoComplete="new-password" />
             <Field
               label="비밀번호 확인 *"
               type="password"
               value={form.passwordConfirm}
               onChange={update('passwordConfirm')}
               required
-              minLength={8}
               autoComplete="new-password"
               status={form.passwordConfirm && form.password !== form.passwordConfirm ? 'mismatch' : (form.passwordConfirm && form.password === form.passwordConfirm ? 'match' : 'idle')}
             />

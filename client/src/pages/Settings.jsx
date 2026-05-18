@@ -1806,8 +1806,8 @@ function ChangePasswordRow() {
 
   async function submit() {
     setErr('');
-    if (!form.current || form.next.length < 8) {
-      setErr('현재 비밀번호와 새 비밀번호(8자 이상)를 입력하세요');
+    if (!form.current || !form.next) {
+      setErr('현재 비밀번호와 새 비밀번호를 입력하세요');
       return;
     }
     if (form.next !== form.confirm) {
@@ -1854,11 +1854,10 @@ function ChangePasswordRow() {
         />
         <input
           type="password"
-          placeholder="새 비밀번호 (8자 이상)"
+          placeholder="새 비밀번호"
           value={form.next}
           onChange={(e) => setForm({ ...form, next: e.target.value })}
           autoComplete="new-password"
-          minLength={8}
           className="w-full text-sm px-3 py-1.5 border rounded focus:border-navy-700 outline-none"
         />
         <input

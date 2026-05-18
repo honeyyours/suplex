@@ -83,7 +83,7 @@ export default function ResetPassword() {
     <div className="min-h-full flex items-center justify-center bg-gray-50 dark:bg-slate-950 py-12 px-4">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow dark:ring-1 dark:ring-white/5 p-8">
         <h1 className="text-2xl font-bold text-navy-800 dark:text-navy-200 mb-1">비밀번호 재설정</h1>
-        <p className="text-sm text-gray-500 mb-6">새로 사용할 비밀번호를 입력해주세요 (8자 이상)</p>
+        <p className="text-sm text-gray-500 mb-6">새로 사용할 비밀번호를 입력해주세요</p>
 
         {checkStatus === 'checking' && (
           <p className="text-sm text-gray-500 text-center py-8">링크 확인 중...</p>
@@ -124,11 +124,10 @@ export default function ResetPassword() {
         {checkStatus === 'valid' && !done && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">새 비밀번호 (8자 이상)</label>
+              <label className="block text-sm font-medium mb-1">새 비밀번호</label>
               <input
                 type="password"
                 required
-                minLength={8}
                 autoFocus
                 autoComplete="new-password"
                 value={newPassword}
@@ -141,7 +140,6 @@ export default function ResetPassword() {
               <input
                 type="password"
                 required
-                minLength={8}
                 autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
