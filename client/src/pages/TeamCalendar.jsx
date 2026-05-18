@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { companySchedulesApi } from '../api/companySchedules';
+import { openSchedulePrint } from '../utils/schedulePrint';
+import { useAuth } from '../contexts/AuthContext';
 import { projectsApi } from '../api/projects';
 import { vendorsApi } from '../api/vendors';
 import {
@@ -43,6 +45,7 @@ function crewCompanyColor(companyId) {
 
 export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
   const [current, setCurrent] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -248,14 +251,30 @@ export default function TeamCalendar({ crewExtraEntries = [] } = {}) {
             회사 자체 일정 · 견적미팅 · 사무실미팅 · 디자이너·현장팀 개인 일정. 연관 프로젝트 연결 시 프로젝트 일정에도 함께 노출됩니다.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setMobileFormOpen((o) => !o)}
-          className="sm:hidden flex-shrink-0 text-xs px-2.5 py-1.5 border border-navy-200 dark:border-navy-700 text-navy-700 dark:text-navy-300 rounded-md whitespace-nowrap"
-          aria-expanded={mobileFormOpen}
-        >
-          {mobileFormOpen ? '닫기' : '+ 자세히 추가'}
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => openSchedulePrint({
+              entries,
+              start: startKey,
+              end: endKey,
+              title: `${formatMonthLabel(current)} 팀 캘린더`,
+              companyName: auth?.company?.name || '',
+            })}
+            className="text-xs px-2.5 py-1.5 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-md whitespace-nowrap hover:bg-gray-50 dark:hover:bg-slate-800"
+            title="A4 인쇄/PDF 저장 (새 창)"
+          >
+            📄 PDF 인쇄
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileFormOpen((o) => !o)}
+            className="sm:hidden text-xs px-2.5 py-1.5 border border-navy-200 dark:border-navy-700 text-navy-700 dark:text-navy-300 rounded-md whitespace-nowrap"
+            aria-expanded={mobileFormOpen}
+          >
+            {mobileFormOpen ? '닫기' : '+ 자세히 추가'}
+          </button>
+        </div>
       </div>
 
       {/* 멤버 필터 칩 — 모바일은 가로 스크롤로 한 줄 유지 */}

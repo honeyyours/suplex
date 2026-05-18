@@ -7,9 +7,12 @@ import {
 } from '../utils/date';
 import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
+import { openSchedulePrint } from '../utils/schedulePrint';
+import { useAuth } from '../contexts/AuthContext';
 import PhaseInlineContent from './PhaseInlineContent';
 
-export default function AggregateCalendar({ status, projectIds, emptyText, headerRight } = {}) {
+export default function AggregateCalendar({ status, projectIds, emptyText, headerRight, printTitle } = {}) {
+  const { auth } = useAuth();
   const [current, setCurrent] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -98,8 +101,21 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
           {loading && <span className="text-xs text-gray-400 ml-1">불러오는 중...</span>}
         </div>
         {/* 우측: 액션 */}
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end gap-2">
           {headerRight}
+          <button
+            onClick={() => openSchedulePrint({
+              entries,
+              start: startKey,
+              end: endKey,
+              title: printTitle || `${formatMonthLabel(current)} 일정`,
+              companyName: auth?.company?.name || '',
+            })}
+            className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+            title="A4 인쇄/PDF 저장 (새 창)"
+          >
+            📄 PDF 인쇄
+          </button>
         </div>
       </div>
 

@@ -4,12 +4,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import { toDateKey, rangeGrid } from '../utils/date';
 import { getHoliday } from '../utils/holidays';
+import { openSchedulePrint } from '../utils/schedulePrint';
+import { useAuth } from '../contexts/AuthContext';
 import ScheduleEntry from './ScheduleEntry';
 import InlineScheduleInput from './InlineScheduleInput';
 import MobileScheduleSheet from './MobileScheduleSheet';
 
 export default function ScheduleCalendar({ projectId, project }) {
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
   const [activeCellKey, setActiveCellKey] = useState(null);
   const [mobileSheetKey, setMobileSheetKey] = useState(null);
 
@@ -183,6 +186,19 @@ export default function ScheduleCalendar({ projectId, project }) {
           💡 셀 클릭=입력 · Enter/Tab/방향키=이동 · 항목 클릭=수정 · 우클릭=메뉴
         </span>
         {loading && <span className="text-xs text-gray-400">불러오는 중...</span>}
+        <button
+          onClick={() => openSchedulePrint({
+            entries,
+            start: startKey,
+            end: endKey,
+            title: project?.name ? `${project.name} 일정` : '프로젝트 일정',
+            companyName: auth?.company?.name || '',
+          })}
+          className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+          title="A4 인쇄/PDF 저장 (새 창)"
+        >
+          📄 PDF 인쇄
+        </button>
       </div>
 
       {err && <div className="mb-3 text-sm text-rose-600 px-2 sm:px-0">{err}</div>}
