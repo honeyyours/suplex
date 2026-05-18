@@ -12,6 +12,8 @@ export const adminApi = {
   deleteCompany: (id) => api.delete(`/admin/companies/${id}`).then((r) => r.data),
   resetPassword: (id) => api.post(`/admin/users/${id}/reset-password`).then((r) => r.data),
   patchUser: (id, payload) => api.patch(`/admin/users/${id}`, payload).then((r) => r.data),
+  assignCompany: (userId, companyId, role) =>
+    api.post(`/admin/users/${userId}/assign-company`, { companyId, role }).then((r) => r.data),
   stats: () => api.get('/admin/stats').then((r) => r.data),
   transferOwnership: (companyId, userId) =>
     api.post(`/admin/companies/${companyId}/transfer-ownership`, { userId }).then((r) => r.data),

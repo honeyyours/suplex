@@ -15,6 +15,7 @@ const { seedDemoProject } = require('../services/seedDemoProject');
 const {
   grantLoungeMembershipsForCompany,
   backfillLoungeMemberships,
+  ensureLoungeMembership,
 } = require('../services/lounge');
 
 const router = express.Router();
@@ -408,6 +409,70 @@ router.post('/companies/:id/transfer-ownership', async (req, res, next) => {
     res.json({
       ok: true,
       newOwner: { userId: data.userId, email: targetMembership.user.email, name: targetMembership.user.name },
+    });
+  } catch (e) {
+    if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
+    next(e);
+  }
+});
+
+// ============================================
+// POST /api/admin/users/:id/assign-company — 회사 없는 회원에게 회사 Membership 부여 (2026-05-18)
+// 일반회원 가입(회사 미보유) 후 어드민이 직접 소속 회사를 지정하는 경로.
+// 이미 같은 회사의 멤버면 409. 라운지 멤버십도 함께 보강.
+// ============================================
+const assignCompanySchema = z.object({
+  companyId: z.string().min(1),
+  role: z.enum(['OWNER', 'DESIGNER', 'FIELD']).default('DESIGNER'),
+});
+
+router.post('/users/:id/assign-company', async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const data = assignCompanySchema.parse(req.body);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, accountType: true },
+    });
+    if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
+
+    const company = await prisma.company.findUnique({
+      where: { id: data.companyId },
+      select: { id: true, name: true },
+    });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+
+    const dup = await prisma.membership.findUnique({
+      where: { userId_companyId: { userId, companyId: company.id } },
+    });
+    if (dup) return res.status(409).json({ error: '이미 해당 회사의 멤버입니다' });
+
+    const membership = await prisma.$transaction(async (tx) => {
+      const m = await tx.membership.create({
+        data: { userId, companyId: company.id, role: data.role },
+      });
+      // 라운지 멤버십 보강 — 회사 가입자 풀에 합류한 셈이므로 즉시 활성화
+      await ensureLoungeMembership(tx, userId, `어드민 회사 부여 (${company.name})`);
+      return m;
+    });
+
+    audit(req, 'admin.assign-company', {
+      companyId: company.id,
+      targetType: 'USER',
+      targetId: userId,
+      metadata: { email: user.email, companyName: company.name, role: data.role },
+    });
+
+    res.json({
+      ok: true,
+      membership: {
+        id: membership.id,
+        userId,
+        companyId: company.id,
+        companyName: company.name,
+        role: membership.role,
+      },
     });
   } catch (e) {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });

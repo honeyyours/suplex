@@ -479,6 +479,7 @@ function UsersTab({ currentUserId }) {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [accountTypeFilter, setAccountTypeFilter] = useState('ALL'); // ALL | COMPANY | CREW | ADMIN
+  const [assignTarget, setAssignTarget] = useState(null); // 회사 부여 모달 대상 user
 
   async function load() {
     setLoading(true);
@@ -640,6 +641,13 @@ function UsersTab({ currentUserId }) {
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
                   <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                    {/* 회사 부여 — 일반회원(회사 없는 COMPANY 계정)에게만 노출. CREW·기존 멤버는 X. */}
+                    {u.accountType === 'COMPANY' && !u.isSuperAdmin && u.memberships.length === 0 && (
+                      <button
+                        onClick={() => setAssignTarget(u)}
+                        className="text-xs px-2 py-1 border border-emerald-300 text-emerald-700 rounded hover:bg-emerald-50"
+                      >🏢 회사 부여</button>
+                    )}
                     <button
                       onClick={() => handleReset(u)}
                       className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
@@ -660,6 +668,125 @@ function UsersTab({ currentUserId }) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {assignTarget && (
+        <AssignCompanyModal
+          user={assignTarget}
+          onClose={() => setAssignTarget(null)}
+          onAssigned={() => { setAssignTarget(null); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// 회사 부여 모달 — 일반회원에게 어드민이 직접 소속 회사 지정 (2026-05-18)
+function AssignCompanyModal({ user, onClose, onAssigned }) {
+  const [companies, setCompanies] = useState([]);
+  const [companyQ, setCompanyQ] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const [role, setRole] = useState('DESIGNER');
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    adminApi.listCompanies()
+      .then((r) => setCompanies(r.companies || []))
+      .catch((e) => alert('회사 목록 로드 실패: ' + (e.response?.data?.error || e.message)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = companyQ.trim()
+    ? companies.filter((c) => c.name.toLowerCase().includes(companyQ.trim().toLowerCase()))
+    : companies;
+
+  async function submit() {
+    if (!companyId) return alert('회사를 선택해주세요');
+    const selected = companies.find((c) => c.id === companyId);
+    if (!confirm(`${user.name}(${user.email})를 "${selected?.name}"의 ${ROLE_LABEL[role]}로 추가할까요?`)) return;
+    setBusy(true);
+    try {
+      await adminApi.assignCompany(user.id, companyId, role);
+      alert('회사 부여 완료');
+      onAssigned();
+    } catch (e) {
+      alert('실패: ' + (e.response?.data?.error || e.message));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-3 border-b flex items-center justify-between">
+          <h3 className="font-semibold text-navy-800">🏢 회사 부여 — {user.name}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="text-xs text-gray-500 leading-relaxed">
+            일반회원 <b>{user.email}</b>에게 소속 회사를 직접 부여합니다. 베타 진입 통제(approvalStatus)와 무관하게 즉시 멤버십이 생성됩니다.
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">회사 *</label>
+            <input
+              type="text"
+              value={companyQ}
+              onChange={(e) => setCompanyQ(e.target.value)}
+              placeholder="회사명 검색"
+              className="w-full px-3 py-2 text-sm border rounded mb-2"
+            />
+            <div className="border rounded max-h-60 overflow-y-auto">
+              {loading ? (
+                <div className="px-3 py-4 text-center text-xs text-gray-400">로딩...</div>
+              ) : filtered.length === 0 ? (
+                <div className="px-3 py-4 text-center text-xs text-gray-400">검색 결과 없음</div>
+              ) : filtered.map((c) => (
+                <label
+                  key={c.id}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm border-b cursor-pointer hover:bg-gray-50 ${companyId === c.id ? 'bg-emerald-50' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="assign-company"
+                    checked={companyId === c.id}
+                    onChange={() => setCompanyId(c.id)}
+                  />
+                  <span className="flex-1">{c.name}</span>
+                  <span className="text-xs text-gray-400">
+                    {c.plan} · 멤버 {c.memberCount}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">역할 *</label>
+            <div className="flex gap-2">
+              {['OWNER', 'DESIGNER', 'FIELD'].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 px-3 py-2 text-sm border rounded ${role === r ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {ROLE_LABEL[r]}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">디폴트는 디자이너. OWNER는 1명이 일반적이므로 신중히 부여하세요.</p>
+          </div>
+        </div>
+        <div className="px-5 py-3 border-t flex justify-end gap-2 bg-gray-50">
+          <button onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-white">취소</button>
+          <button
+            onClick={submit}
+            disabled={busy || !companyId}
+            className="px-4 py-2 text-sm bg-navy-700 text-white rounded hover:bg-navy-800 disabled:opacity-50"
+          >
+            {busy ? '부여 중...' : '회사 부여'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -880,6 +1007,7 @@ const ACTION_META = {
   'admin.password-reset':     { label: '어드민:비번리셋',   icon: '🔑', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   'admin.user-update':        { label: '어드민:사용자수정', icon: '✏️', color: 'bg-sky-50 text-sky-700 border-sky-200' },
   'admin.transfer-ownership': { label: '어드민:OWNER변경',  icon: '👑', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+  'admin.assign-company':     { label: '어드민:회사부여',   icon: '🏢', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   'admin.impersonate-start':  { label: '어드민:사칭시작',   icon: '🎭', color: 'bg-amber-100 text-amber-800 border-amber-300' },
   'admin.cleanup-invitations':{ label: '어드민:초대정리',   icon: '🧹', color: 'bg-gray-50 text-gray-600 border-gray-200' },
 };
