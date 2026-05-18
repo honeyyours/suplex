@@ -40,6 +40,7 @@ const dashboardRoutes = require('./dashboard.routes');
 const companySchedulesRoutes = require('./companySchedules.routes');
 const checklistFavoritesRoutes = require('./checklistFavorites.routes');
 const crewRoutes = require('./crew.routes');
+const pushRoutes = require('./push.routes');
 const { requireProjectMember } = require('../middlewares/projectAccess');
 
 const router = express.Router();
@@ -60,7 +61,7 @@ router.use((req, res, next) => {
   // /crew는 CREW 계정 전용 라우트 — 회사 가드 우회 (crew.routes.js가 자체 requireCrew 적용).
   // /invitations는 라우터 내부에서 엔드포인트별 가드 적용 — by-token·accept는 public, join은 authRequired.
   //   일반회원(회사 없음)이 초대 받았을 때 here에서 막히면 by-token 자체가 안 풀려 "연계 안 됨".
-  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge') || req.path.startsWith('/crew') || req.path.startsWith('/invitations')) return next();
+  if (req.path.startsWith('/admin') || req.path.startsWith('/backup') || req.path.startsWith('/lounge') || req.path.startsWith('/crew') || req.path.startsWith('/invitations') || req.path.startsWith('/push')) return next();
   // 그 외는 인증 + 승인 가드 적용
   authRequired(req, res, (err) => {
     if (err || res.headersSent) return;
@@ -117,6 +118,7 @@ router.use('/announcements', announcementsRoutes);
 router.use('/lounge', loungeRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/crew', crewRoutes);
+router.use('/push', pushRoutes);
 
 // 백업
 router.use('/backup', backupRoutes);

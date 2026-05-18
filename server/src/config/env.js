@@ -48,6 +48,13 @@ module.exports = {
     // 발신 주소 — 도메인 인증(SPF/DKIM/DMARC) 완료된 주소만 사용 가능.
     from: process.env.MAIL_FROM || 'Suplex <noreply@suplex.kr>',
   },
+  vapid: {
+    // Web Push 인증용. scripts/generate-vapid.js 로 최초 1회 생성 후 Railway env 등록.
+    // 미설정 시 푸시 라우트가 503 응답 (no-op).
+    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || '',
+    subject: process.env.VAPID_SUBJECT || 'mailto:hello@suplex.kr',
+  },
   // 메일 본문 링크 생성용 — 클라이언트가 호스팅된 도메인. CLIENT_ORIGIN과 별도 (CORS는 다중 origin 허용 가능)
   appBaseUrl: process.env.APP_BASE_URL || (isProd ? 'https://suplex.kr' : 'http://localhost:5173'),
   clientOrigin: parseOrigins(process.env.CLIENT_ORIGIN) || (isProd

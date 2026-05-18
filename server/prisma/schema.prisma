@@ -159,7 +159,28 @@ model User {
   // 비밀번호 재설정 토큰 (1회용·1시간 만료). 발급 시 기존 미사용 토큰은 무효화.
   passwordResetTokens PasswordResetToken[]
 
+  // Web Push (PWA) 구독 — 사용자가 폰/PC 여러 기기에서 구독 가능 → 1:N
+  pushSubscriptions PushSubscription[]
+
   @@map("users")
+}
+
+// Web Push 구독 — PushManager.subscribe() 가 발급한 endpoint + p256dh + auth 저장.
+// endpoint는 사용자 기기·브라우저별 고유. 같은 endpoint 재구독 시 upsert.
+// 발송 실패(410 Gone, 404) 시 구독 자동 삭제 (services/push.js).
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique // 브라우저별 고유 URL — 같은 endpoint면 같은 기기
+  p256dh     String // 페이로드 암호화 공개키 (base64url)
+  auth       String // 페이로드 인증 시크릿 (base64url)
+  userAgent  String? // 디버깅용 — 어느 브라우저·OS에서 구독했는지
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now()) // 마지막 발송 성공 시각 (실패 누적 시 정리 기준)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 // 비밀번호 재설정 토큰 — 평문은 메일 링크로만 전달, DB엔 SHA-256 해시만 저장.

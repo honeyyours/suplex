@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import BackupMenu from '../components/BackupMenu';
+import PushNotificationToggle from '../components/PushNotificationToggle';
 import api from '../api/client';
 import { companyApi } from '../api/company';
 import { quoteTemplatesApi } from '../api/quoteTemplates';
@@ -138,6 +139,7 @@ export default function Settings() {
         <Row label="이메일" value={auth?.user?.email} />
         <Row label="권한" value={roleLabel(auth?.role)} />
         <ChangePasswordRow />
+        <PushNotificationToggle />
         <div className="pt-3">
           <button
             onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
