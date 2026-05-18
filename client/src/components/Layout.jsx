@@ -170,6 +170,15 @@ export default function Layout() {
               )}
               <span>· {auth?.user?.name}</span>
             </span>
+            {auth && (
+              <button
+                onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
+                title="로그아웃"
+                className="hidden sm:inline-block text-xs text-navy-100 hover:text-white px-2 py-1 rounded hover:bg-navy-700/60 transition"
+              >
+                로그아웃
+              </button>
+            )}
           </div>
         </div>
       </header>
