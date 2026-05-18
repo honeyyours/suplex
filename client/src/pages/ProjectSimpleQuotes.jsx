@@ -834,7 +834,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               <col />{/* 비고 — 나머지 */}
               <col style={{ width: '28px' }} />{/* X */}
             </colgroup>
-            <thead className="bg-gray-100 dark:bg-slate-800 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-slate-600 [&_th]:border-r [&_th]:border-gray-300 dark:[&_th]:border-slate-600 [&_th:first-child]:border-r-0 [&_th:last-child]:border-r-0">
+            <thead className="bg-gray-100 dark:bg-slate-800 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-400 dark:border-slate-500 [&_th]:border-r [&_th]:border-gray-400 dark:[&_th]:border-slate-500 [&_th:first-child]:border-r-0 [&_th:last-child]:border-r-0">
               <tr>
                 <th></th>
                 <th className="text-left px-2 py-2">품명 (공정)</th>
@@ -847,7 +847,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                 <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-700 [&_td]:border-r [&_td]:border-gray-200 dark:[&_td]:border-slate-700 [&_td:first-child]:border-r-0 [&_td:last-child]:border-r-0">
+            <tbody className="divide-y divide-gray-300 dark:divide-slate-600 [&_td]:border-r [&_td]:border-gray-300 dark:[&_td]:border-slate-600 [&_td:first-child]:border-r-0 [&_td:last-child]:border-r-0">
               {linesWithMeta.map((l, idx) => {
                 const isGroupHeader = l.isGroup && !l.isGroupEnd;
                 return (
@@ -1151,7 +1151,7 @@ function LineRow({
   const kd = (col) => (e) => onCellKeyDown(e, rowIdx, col);
   const cellAttrs = (col) => ({ 'data-quote-cell': `${rowIdx}-${col}`, onKeyDown: kd(col) });
 
-  const inputCls = 'w-full px-1 py-1 bg-transparent text-gray-800 dark:text-gray-100 border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-300 dark:hover:border-slate-600';
+  const inputCls = 'w-full px-1 py-1 bg-transparent text-gray-800 dark:text-gray-100 outline-none';
 
   // ===== 그룹 종료 마커 (가는 구분선 + 합계) =====
   if (line.isGroup && line.isGroupEnd) {
@@ -1204,7 +1204,7 @@ function LineRow({
               {...cellAttrs('itemName')}
               value={line.itemName}
               onChange={(e) => onChange({ itemName: e.target.value })}
-              className="flex-1 px-2 py-1 bg-transparent border-transparent border rounded outline-none focus:border-navy-400 hover:border-gray-300 dark:hover:border-slate-600 font-bold text-navy-800 dark:text-navy-200"
+              className="flex-1 px-2 py-1 bg-transparent outline-none font-bold text-navy-800 dark:text-navy-200"
               placeholder="그룹 이름 (예: 도배·타일·목공 — 표준 25개로 자동 흡수)"
             />
             <PhasePreviewBadge text={line.itemName} />
