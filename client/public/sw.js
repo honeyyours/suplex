@@ -34,7 +34,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: data.icon || '/suplex-logo.png',
-    badge: '/suplex-logo.png',
+    badge: '/notification-badge.png', // Android 단색 silhouette 변환 전용 — 투명 배경 + 흰 "S"
     tag: data.tag, // 같은 tag면 이전 알림 대체 — 중복 알림 방지
     data: { url: data.url || '/' },
     requireInteraction: false,
