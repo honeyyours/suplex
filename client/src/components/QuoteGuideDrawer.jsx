@@ -1,23 +1,10 @@
-// 견적 작성 시 우측 fixed 드로어 — 활성 라인의 그룹 헤더 공정 자동 추적해서
-// 회사 내부 가이드(🔒) + 견적상담 메모(📋)를 inline 편집 가능 카드로 표시.
+// 견적 가이드 — 활성 라인의 공정을 자동 추적해 회사 가이드 + 견적상담 메모를 띄움.
 //
-// 레이아웃 정책 (2026-04-30 봉기님 결정):
-//   - 견적 본문(메인)은 그대로 — 본문에 padding 주지 않음
-//   - 드로어가 본문 우측 위로 떠 있는 overlay 패턴 (z-40)
-//   - 본체(max-w-6xl=1152px) + 드로어(280px 디폴트) → 1500px+ 화면에선 본문 안 가림
-//     1280~1472px 사이에선 화면 우측 일부 가림 — 사용자가 폭 드래그로 조절 가능
-//   - 헤더의 "📖 가이드" 버튼으로 닫기/열기 토글 (작업 흐름 방해 X)
-//
-// 동작:
-//   - 폭 사용자가 좌측 가장자리 drag로 조절 (240~720px, localStorage에 저장).
-//   - 외부 클릭으로 닫히지 않음 (작업 중 텍스트 선택 등 방해 X).
-//   - 모바일 미표시 (xl 이상에서만).
-//   - PDF/프린트 비포함 (.no-print).
-//
-// 편집:
-//   - 회사 가이드(tips): SETTINGS_QUOTE_GUIDE 권한 보유자만 편집
-//   - 견적상담 메모(notes): 회사 멤버 누구나 편집
-//   - 800ms debounce 자동 저장
+// 레이아웃 (2026-05-18 봉기님 요청으로 floating panel로 변경):
+//   - 화면 어디든 드래그해서 위치 이동 가능, 본문은 줄어들지 않음
+//   - 헤더 드래그 → 패널 이동, 좌측·하단 가장자리·우하단 코너 → 리사이즈
+//   - 위치(x,y) + 크기(w,h)를 localStorage에 저장, 다시 열 때 복원
+//   - 모바일 미표시 (xl 이상에서만)
 import { useEffect, useRef, useState } from 'react';
 import { phaseNotesApi, GENERAL_PHASE as GENERAL_NOTE, ROLE_LABEL } from '../api/phaseNotes';
 import { companyPhaseTipsApi, GENERAL_PHASE as GENERAL_TIP } from '../api/companyPhaseTips';
@@ -25,10 +12,36 @@ import { settlementApi } from '../api/settlement';
 import { useAuth } from '../contexts/AuthContext';
 import { hasFeature, F } from '../utils/features';
 
-const WIDTH_KEY = 'quoteGuideDrawerWidth';
-const MIN_WIDTH = 240;          // 더 좁힐 수 있게 (본문 가림 최소화)
-const MAX_WIDTH = 720;
-const DEFAULT_WIDTH = 280;      // 320 → 280: 1280~1472px 화면에서 본문 가림 영역 축소
+const POS_KEY = 'quoteGuideDrawerPos';   // {x, y}
+const SIZE_KEY = 'quoteGuideDrawerSize'; // {w, h}
+const LEGACY_WIDTH_KEY = 'quoteGuideDrawerWidth'; // 이전 폭 키 — size 복원 시 fallback
+const MIN_W = 280;
+const MAX_W = 900;
+const MIN_H = 240;
+const DEFAULT_W = 320;
+
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v));
+}
+
+function loadPos() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(POS_KEY) || 'null');
+    if (raw && Number.isFinite(raw.x) && Number.isFinite(raw.y)) return raw;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function loadSize() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SIZE_KEY) || 'null');
+    if (raw && Number.isFinite(raw.w) && Number.isFinite(raw.h)) return raw;
+  } catch { /* ignore */ }
+  // legacy width fallback
+  const legacy = parseInt(localStorage.getItem(LEGACY_WIDTH_KEY) || '', 10);
+  if (Number.isFinite(legacy)) return { w: legacy, h: null };
+  return null;
+}
 
 export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose }) {
   const { auth } = useAuth();
@@ -40,35 +53,114 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
   const [settlementNotes, setSettlementNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 사용자 조절 가능한 폭 (localStorage에 저장)
-  const [width, setWidth] = useState(() => {
-    const saved = parseInt(localStorage.getItem(WIDTH_KEY) || '', 10);
-    if (Number.isFinite(saved)) return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, saved));
-    return DEFAULT_WIDTH;
+  // ===== Floating panel: 위치 + 크기 (localStorage 저장) =====
+  const [size, setSize] = useState(() => {
+    const saved = loadSize();
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1600;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
+    const w = clamp(saved?.w || DEFAULT_W, MIN_W, Math.min(MAX_W, vw - 32));
+    const h = Math.max(MIN_H, saved?.h || Math.round(vh * 0.8));
+    return { w, h };
   });
-  const widthRef = useRef(width);
-  widthRef.current = width;
+  const [pos, setPos] = useState(() => {
+    const saved = loadPos();
+    if (saved) return saved;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1600;
+    return { x: vw - DEFAULT_W - 16, y: 80 };
+  });
 
-  function startResize(e) {
+  const posRef = useRef(pos);
+  posRef.current = pos;
+  const sizeRef = useRef(size);
+  sizeRef.current = size;
+
+  // 창 리사이즈 → 패널이 화면 밖으로 나갔으면 클램프
+  useEffect(() => {
+    function onResize() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const w = Math.min(sizeRef.current.w, vw - 16);
+      const h = Math.min(sizeRef.current.h, vh - 16);
+      const x = clamp(posRef.current.x, 0, vw - w);
+      const y = clamp(posRef.current.y, 0, vh - 40);
+      if (w !== sizeRef.current.w || h !== sizeRef.current.h) setSize({ w, h });
+      if (x !== posRef.current.x || y !== posRef.current.y) setPos({ x, y });
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  function startDrag(e) {
+    // 헤더 내 버튼/input은 드래그 트리거 X
+    if (e.target.closest('button, input, textarea, [data-no-drag]')) return;
     e.preventDefault();
     const startX = e.clientX;
-    const startW = widthRef.current;
-    document.body.style.cursor = 'col-resize';
+    const startY = e.clientY;
+    const start = { ...posRef.current };
     document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'grabbing';
     function onMove(ev) {
-      // 드로어가 우측에 붙어있으니 startX보다 왼쪽으로 갈수록 폭 증가
-      const newW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (startX - ev.clientX)));
-      setWidth(newW);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const x = clamp(start.x + (ev.clientX - startX), 0, vw - sizeRef.current.w);
+      const y = clamp(start.y + (ev.clientY - startY), 0, vh - 40);
+      setPos({ x, y });
     }
     function onUp() {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
-      document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
+      document.body.style.cursor = '';
+      localStorage.setItem(POS_KEY, JSON.stringify(posRef.current));
     }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+  }
+
+  // edge: 'left' | 'right' | 'bottom' | 'corner' (우하단 = 폭+높이)
+  function startResize(edge) {
+    return (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startSize = { ...sizeRef.current };
+      const startPos = { ...posRef.current };
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor =
+        edge === 'left' || edge === 'right' ? 'col-resize' :
+        edge === 'bottom' ? 'row-resize' : 'se-resize';
+      function onMove(ev) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let { w, h } = startSize;
+        let { x, y } = startPos;
+        if (edge === 'right' || edge === 'corner') {
+          w = clamp(startSize.w + (ev.clientX - startX), MIN_W, Math.min(MAX_W, vw - startPos.x));
+        }
+        if (edge === 'left') {
+          const dx = ev.clientX - startX;
+          const newW = clamp(startSize.w - dx, MIN_W, Math.min(MAX_W, startPos.x + startSize.w));
+          x = startPos.x + (startSize.w - newW);
+          w = newW;
+        }
+        if (edge === 'bottom' || edge === 'corner') {
+          h = clamp(startSize.h + (ev.clientY - startY), MIN_H, vh - startPos.y - 8);
+        }
+        setSize({ w, h });
+        if (x !== startPos.x || y !== startPos.y) setPos({ x, y });
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        localStorage.setItem(SIZE_KEY, JSON.stringify(sizeRef.current));
+        localStorage.setItem(POS_KEY, JSON.stringify(posRef.current));
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
   }
 
   async function reload() {
@@ -108,28 +200,49 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
 
   return (
     <aside
-      style={{ width: `${width}px` }}
-      className="no-print hidden xl:flex fixed top-0 right-0 bottom-0 bg-white shadow-2xl z-40 flex-col border-l"
+      style={{ left: `${pos.x}px`, top: `${pos.y}px`, width: `${size.w}px`, height: `${size.h}px` }}
+      className="no-print hidden xl:flex fixed bg-white dark:bg-slate-900 shadow-2xl z-40 flex-col border border-gray-300 dark:border-slate-700 rounded-lg overflow-hidden"
     >
-      {/* Resize 핸들 — 좌측 가장자리 4px 영역 */}
+      {/* Resize 핸들들 */}
       <div
-        onMouseDown={startResize}
-        title="드래그하여 폭 조절"
-        className="absolute top-0 left-0 bottom-0 w-1 cursor-col-resize hover:bg-navy-300 active:bg-navy-500 transition-colors z-10"
+        onMouseDown={startResize('left')}
+        title="좌측 가장자리 — 폭 조절"
+        className="absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize hover:bg-navy-300 active:bg-navy-500 transition-colors z-10"
+      />
+      <div
+        onMouseDown={startResize('right')}
+        title="우측 가장자리 — 폭 조절"
+        className="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize hover:bg-navy-300 active:bg-navy-500 transition-colors z-10"
+      />
+      <div
+        onMouseDown={startResize('bottom')}
+        title="하단 가장자리 — 높이 조절"
+        className="absolute bottom-0 left-0 right-0 h-1.5 cursor-row-resize hover:bg-navy-300 active:bg-navy-500 transition-colors z-10"
+      />
+      <div
+        onMouseDown={startResize('corner')}
+        title="우하단 코너 — 크기 조절"
+        className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize hover:bg-navy-400 active:bg-navy-600 transition-colors z-20"
       />
 
-      {/* 헤더 */}
-      <div className="px-4 py-3 border-b bg-white flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wider">견적 가이드</div>
-          <div className="text-sm font-semibold text-navy-800 truncate">
-            {activePhase || <span className="text-gray-400 font-normal">전체 공통</span>}
+      {/* 헤더 — 드래그 핸들 */}
+      <div
+        onMouseDown={startDrag}
+        className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing select-none"
+      >
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="text-gray-400 dark:text-gray-500 text-xs" data-no-drag={false}>⋮⋮</span>
+          <div className="min-w-0">
+            <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">견적 가이드</div>
+            <div className="text-sm font-semibold text-navy-800 dark:text-navy-200 truncate">
+              {activePhase || <span className="text-gray-400 dark:text-gray-500 font-normal">전체 공통</span>}
+            </div>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="text-xs px-2 py-1 text-gray-400 hover:text-navy-700 hover:bg-gray-100 rounded flex-shrink-0"
-          title="가이드 닫기 (헤더의 📖 가이드 버튼으로 다시 열 수 있습니다)"
+          className="text-xs px-2 py-1 text-gray-400 dark:text-gray-500 hover:text-navy-700 dark:hover:text-navy-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded flex-shrink-0"
+          title="가이드 닫기"
         >✕</button>
       </div>
 
@@ -214,8 +327,8 @@ export default function QuoteGuideDrawer({ projectId, activePhase, open, onClose
       </div>
 
       {/* 푸터 */}
-      <div className="px-3 py-2 border-t bg-gray-50 text-[10px] text-gray-400 leading-relaxed">
-        ⚠️ 회사 가이드는 <b>화면 전용</b>입니다. 견적 PDF에는 표시되지 않습니다.
+      <div className="px-3 py-2 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-[10px] text-gray-400 dark:text-gray-500 leading-relaxed">
+        ⚠️ 회사 가이드는 <b>화면 전용</b>입니다. 견적 PDF에는 표시되지 않습니다. · 헤더 드래그로 이동 · 가장자리/코너 드래그로 크기 조절
       </div>
     </aside>
   );

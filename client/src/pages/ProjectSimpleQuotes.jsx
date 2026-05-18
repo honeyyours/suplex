@@ -681,7 +681,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
   const liveTotal = liveSubAfterDesign + liveVat;
 
   return (
-    <div className={`space-y-4 ${showGuide ? 'xl:pr-[300px]' : ''}`}>
+    <div className="space-y-4">
       {/* 헤더 액션 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -834,7 +834,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
               <col />{/* 비고 — 나머지 */}
               <col style={{ width: '28px' }} />{/* X */}
             </colgroup>
-            <thead className="bg-gray-100 dark:bg-slate-800 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-slate-700 [&_th]:border-r [&_th]:border-gray-200 [&_th]:dark:border-slate-700 [&_th:first-child]:border-r-0 [&_th:last-child]:border-r-0">
+            <thead className="bg-gray-100 dark:bg-slate-800 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-slate-600 [&_th]:border-r [&_th]:border-gray-300 dark:[&_th]:border-slate-600 [&_th:first-child]:border-r-0 [&_th:last-child]:border-r-0">
               <tr>
                 <th></th>
                 <th className="text-left px-2 py-2">품명 (공정)</th>
@@ -847,7 +847,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
                 <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 [&_td]:border-r [&_td]:border-gray-100 [&_td]:dark:border-slate-800 [&_td:first-child]:border-r-0 [&_td:last-child]:border-r-0">
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-700 [&_td]:border-r [&_td]:border-gray-200 dark:[&_td]:border-slate-700 [&_td:first-child]:border-r-0 [&_td:last-child]:border-r-0">
               {linesWithMeta.map((l, idx) => {
                 const isGroupHeader = l.isGroup && !l.isGroupEnd;
                 return (
@@ -1099,8 +1099,8 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
         />
       )}
 
-      {/* 우측 견적 가이드 드로어 — fixed right, xl 이상에서만 표시.
-          showGuide=true일 때만 위 div가 xl:pr-[300px]를 적용해 본문(특히 비고)과 겹침 회피. */}
+      {/* 견적 가이드 — floating 패널. 화면 어디든 드래그 가능, 본문은 줄이지 않음.
+          위치(x,y) + 크기(w,h)를 localStorage에 저장해 다음 열 때 복원. */}
       <QuoteGuideDrawer
         projectId={projectId}
         activePhase={activePhase}
