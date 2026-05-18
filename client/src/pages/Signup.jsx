@@ -198,10 +198,10 @@ export default function Signup() {
                 <div className="text-3xl">👤</div>
                 <div className="flex-1">
                   <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-gray-900">
-                    일반회원으로 가입
+                    회사직원으로 가입
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    라운지·루비 공유 커뮤니티만 이용. 추후 회사 대표로 전환 가능
+                    회사 초대를 기다리거나, 라운지·루비 공유 커뮤니티 먼저 이용
                   </div>
                 </div>
               </div>

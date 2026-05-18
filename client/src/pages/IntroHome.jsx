@@ -324,7 +324,7 @@ export default function IntroHome() {
             <p className="text-xs text-navy-500">
               {auth?.company
                 ? <>현재 <b>{auth.company.name}</b> 베타 승인 대기 중입니다. 빠른 승인은 대표 메일 또는 인스타그램으로 문의해주세요.</>
-                : <>현재 일반회원으로 로그인되어 있습니다. 회사 대표로 가입하시려면 대표 메일 또는 인스타그램으로 문의해주세요.</>
+                : <>현재 회사직원으로 로그인되어 있습니다. 회사 대표로 가입하시려면 대표 메일 또는 인스타그램으로 문의해주세요.</>
               }
             </p>
             <button
