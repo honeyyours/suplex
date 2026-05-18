@@ -170,13 +170,6 @@ export default function Layout() {
               )}
               <span>· {auth?.user?.name}</span>
             </span>
-            <button
-              onClick={() => { if (confirm('로그아웃 할까요?')) logout(); }}
-              title="로그아웃"
-              className="text-xs text-navy-100 hover:text-white px-2 py-1 rounded hover:bg-navy-700/60 transition"
-            >
-              로그아웃
-            </button>
           </div>
         </div>
       </header>
@@ -199,7 +192,10 @@ export default function Layout() {
         </Link>
       )}
 
-      <MobileBottomNav navItems={navItems} />
+      <MobileBottomNav
+        navItems={navItems}
+        onLogout={auth && !isAdmin ? () => { if (confirm('로그아웃 할까요?')) logout(); } : null}
+      />
 
       <footer className="no-print border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 mb-[calc(env(safe-area-inset-bottom,0px)+64px)] sm:mb-0">
         <div className="max-w-[1400px] mx-auto px-4 py-3 sm:py-4 flex flex-col items-center gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
@@ -272,7 +268,7 @@ function AnnouncementBanners() {
 }
 
 // 모바일 하단 네비게이션 바 — 4개 primary 탭 + 더보기 시트 (메뉴 5개 이하면 더보기 없이 등분)
-function MobileBottomNav({ navItems }) {
+function MobileBottomNav({ navItems, onLogout }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
   // 라우트 바뀌면 시트 자동 닫기
@@ -357,6 +353,15 @@ function MobileBottomNav({ navItems }) {
                 </NavLink>
               ))}
             </div>
+            {onLogout && (
+              <div className="border-t dark:border-slate-700 px-4 pt-3">
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="w-full text-sm py-2.5 border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 active:bg-rose-100"
+                >로그아웃</button>
+              </div>
+            )}
           </div>
           <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
         </>
