@@ -52,31 +52,85 @@ router.get('/companies', async (req, res, next) => {
     const weekAgo = new Date(Date.now() - WEEK_MS);
     const dormantThreshold = new Date(Date.now() - DORMANT_DAYS * 24 * 60 * 60 * 1000);
 
-    // 회사별 활동 집계 (병렬)
+    // 회사별 활동 집계 (병렬). 금액은 노출 X — count 위주.
     const enriched = await Promise.all(companies.map(async (c) => {
       const projectScope = { project: { companyId: c.id } };
       const [
+        // 7일 활동 (count)
         weekScheduleChanges,
         weekReports,
         weekChecklists,
         weekExpenses,
+        weekSchedules,
+        weekQuotes,
+        weekMaterials,
+        weekOrders,
+        weekMemos,
+        weekLoungePosts,
+        weekActiveMembers,
+        // 누적 자산 (count)
+        totalSchedules,
+        totalQuotes,
+        totalMaterials,
+        totalOrders,
+        totalReports,
+        // 최근 활동 시각 모듈별
         lastSc,
         lastReport,
         lastExpense,
+        lastSchedule,
+        lastQuote,
+        lastMaterial,
+        lastOrder,
+        lastMemo,
       ] = await Promise.all([
         prisma.scheduleChange.count({ where: { ...projectScope, createdAt: { gte: weekAgo } } }),
         prisma.dailyReport.count({ where: { ...projectScope, createdAt: { gte: weekAgo } } }),
         prisma.projectChecklist.count({ where: { ...projectScope, completedAt: { gte: weekAgo } } }),
         prisma.expense.count({ where: { companyId: c.id, createdAt: { gte: weekAgo } } }),
+        prisma.dailyScheduleEntry.count({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }], updatedAt: { gte: weekAgo } } }),
+        prisma.simpleQuote.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
+        prisma.material.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
+        prisma.purchaseOrder.count({ where: { companyId: c.id, createdAt: { gte: weekAgo } } }),
+        prisma.projectMemo.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
+        prisma.loungePost.count({ where: { author: { memberships: { some: { companyId: c.id } } }, createdAt: { gte: weekAgo } } }),
+        prisma.user.count({ where: { memberships: { some: { companyId: c.id } }, lastSeenAt: { gte: weekAgo } } }),
+        // 누적
+        prisma.dailyScheduleEntry.count({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }] } }),
+        prisma.simpleQuote.count({ where: projectScope }),
+        prisma.material.count({ where: projectScope }),
+        prisma.purchaseOrder.count({ where: { companyId: c.id } }),
+        prisma.dailyReport.count({ where: projectScope }),
+        // 최근 활동 시각
         prisma.scheduleChange.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
         prisma.dailyReport.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
         prisma.expense.findFirst({ where: { companyId: c.id }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+        prisma.dailyScheduleEntry.findFirst({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }] }, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
+        prisma.simpleQuote.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
+        prisma.material.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
+        prisma.purchaseOrder.findFirst({ where: { companyId: c.id }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+        prisma.projectMemo.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
       ]);
 
-      const dates = [c.createdAt, lastSc?.createdAt, lastReport?.createdAt, lastExpense?.createdAt].filter(Boolean);
+      const dates = [
+        c.createdAt,
+        lastSc?.createdAt,
+        lastReport?.createdAt,
+        lastExpense?.createdAt,
+        lastSchedule?.updatedAt,
+        lastQuote?.updatedAt,
+        lastMaterial?.updatedAt,
+        lastOrder?.createdAt,
+        lastMemo?.updatedAt,
+      ].filter(Boolean);
       const lastActivityAt = dates.length > 0 ? new Date(Math.max(...dates.map((d) => +new Date(d)))) : c.createdAt;
-      const weekActivityScore = weekScheduleChanges + weekReports + weekChecklists + weekExpenses;
+      const weekActivityScore =
+        weekScheduleChanges + weekReports + weekChecklists + weekExpenses +
+        weekSchedules + weekQuotes + weekMaterials + weekOrders + weekMemos + weekLoungePosts;
       const isDormant = lastActivityAt < dormantThreshold;
+      const activeMemberRatio = c._count.memberships > 0
+        ? Math.round((weekActiveMembers / c._count.memberships) * 100)
+        : 0;
 
       return {
         id: c.id,
@@ -93,6 +147,30 @@ router.get('/companies', async (req, res, next) => {
         lastActivityAt,
         weekActivityScore,
         isDormant,
+        // 7일 모듈별 분해
+        weekActivity: {
+          schedules: weekSchedules,
+          scheduleChanges: weekScheduleChanges,
+          quotes: weekQuotes,
+          materials: weekMaterials,
+          orders: weekOrders,
+          reports: weekReports,
+          checklists: weekChecklists,
+          expenses: weekExpenses,
+          memos: weekMemos,
+          loungePosts: weekLoungePosts,
+        },
+        // 누적 자산
+        totals: {
+          schedules: totalSchedules,
+          quotes: totalQuotes,
+          materials: totalMaterials,
+          orders: totalOrders,
+          reports: totalReports,
+        },
+        // 활성 멤버
+        weekActiveMembers,
+        activeMemberRatio,
       };
     }));
 
@@ -305,6 +383,95 @@ router.patch('/users/:id', async (req, res, next) => {
     if (e.name === 'ZodError') return res.status(400).json({ error: 'Validation failed', details: e.errors });
     next(e);
   }
+});
+
+// ============================================
+// GET /api/admin/companies/:id/activity — 회사 상세 활성도
+// 멤버별 마지막 접속·30일 활동 + 회사 전체 7일·누적 모듈 분해
+// 금액 정보는 노출 X. count·시각·역할만.
+// ============================================
+router.get('/companies/:id/activity', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const company = await prisma.company.findUnique({
+      where: { id },
+      select: { id: true, name: true, createdAt: true, plan: true, approvalStatus: true },
+    });
+    if (!company) return res.status(404).json({ error: '회사를 찾을 수 없습니다' });
+
+    const weekAgo = new Date(Date.now() - WEEK_MS);
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const projectScope = { project: { companyId: id } };
+
+    // 멤버 + 멤버별 30일 활동
+    const memberships = await prisma.membership.findMany({
+      where: { companyId: id },
+      include: {
+        user: {
+          select: {
+            id: true, email: true, name: true, nickname: true,
+            lastSeenAt: true, createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 멤버별 30일 활동 — 작성자 식별 가능한 모듈만 (project, dailySchedule, dailyReport, checklist)
+    // quote/material/order/memo는 스키마에 createdBy 없어서 멤버 단위 추적 불가 — 회사 합산으로 별도 노출
+    const enrichedMembers = await Promise.all(memberships.map(async (m) => {
+      const [projects30d, schedules30d, reports30d, checklists30d] = await Promise.all([
+        prisma.project.count({ where: { companyId: id, createdById: m.user.id, createdAt: { gte: monthAgo } } }).catch(() => 0),
+        prisma.dailyScheduleEntry.count({
+          where: {
+            AND: [
+              { OR: [{ projectId: { not: null }, project: { companyId: id } }, { companyId: id }] },
+              { OR: [{ createdById: m.user.id, createdAt: { gte: monthAgo } }, { updatedById: m.user.id, updatedAt: { gte: monthAgo } }] },
+            ],
+          },
+        }).catch(() => 0),
+        prisma.dailyReport.count({ where: { ...projectScope, authorId: m.user.id, createdAt: { gte: monthAgo } } }).catch(() => 0),
+        prisma.projectChecklist.count({ where: { ...projectScope, completedById: m.user.id, completedAt: { gte: monthAgo } } }).catch(() => 0),
+      ]);
+      const activeWeek = m.user.lastSeenAt && new Date(m.user.lastSeenAt) >= weekAgo;
+      return {
+        userId: m.user.id,
+        email: m.user.email,
+        name: m.user.name,
+        nickname: m.user.nickname,
+        role: m.role,
+        joinedAt: m.createdAt,
+        lastSeenAt: m.user.lastSeenAt,
+        activeWeek,
+        activity30d: {
+          projects: projects30d,
+          schedules: schedules30d,
+          reports: reports30d,
+          checklists: checklists30d,
+          total: projects30d + schedules30d + reports30d + checklists30d,
+        },
+      };
+    }));
+
+    // 회사 합산 (멤버 추적 불가 모듈 — 누가 했는지 모름)
+    const [companyQuotes30d, companyMaterials30d, companyOrders30d, companyMemos30d] = await Promise.all([
+      prisma.simpleQuote.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
+      prisma.material.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
+      prisma.purchaseOrder.count({ where: { companyId: id, createdAt: { gte: monthAgo } } }),
+      prisma.projectMemo.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
+    ]);
+
+    res.json({
+      company,
+      members: enrichedMembers,
+      companyActivity30d: {
+        quotes: companyQuotes30d,
+        materials: companyMaterials30d,
+        orders: companyOrders30d,
+        memos: companyMemos30d,
+      },
+    });
+  } catch (e) { next(e); }
 });
 
 // ============================================

@@ -99,6 +99,7 @@ function CompaniesTab() {
   const [dormantOnly, setDormantOnly] = useState(false);
   const [transferDlg, setTransferDlg] = useState(null);
   const [dataXferDlg, setDataXferDlg] = useState(null);
+  const [activityDlg, setActivityDlg] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -261,7 +262,7 @@ function CompaniesTab() {
             <tr>
               <th className="px-4 py-3 text-left">회사명</th>
               <th className="px-4 py-3 text-left">OWNER</th>
-              <th className="px-4 py-3 text-right">멤버 / 프로젝트</th>
+              <th className="px-4 py-3 text-right">멤버·자산</th>
               <th className="px-4 py-3 text-left">최근 활동</th>
               <th className="px-4 py-3 text-right">7일 활동</th>
               <th className="px-4 py-3 text-right">관리</th>
@@ -275,7 +276,11 @@ function CompaniesTab() {
             ) : companies.map((c) => (
               <tr key={c.id} className={`border-t hover:bg-gray-50 ${c.isDormant ? 'opacity-70' : ''}`}>
                 <td className="px-4 py-3 font-medium text-gray-800">
-                  {c.name}
+                  <button
+                    onClick={() => setActivityDlg(c)}
+                    className="text-gray-800 hover:text-navy-700 hover:underline text-left"
+                    title="회사 상세 활성도 보기"
+                  >{c.name}</button>
                   {c.isPhasePresetDefault && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded border border-amber-300">🌟 프리셋 표준</span>}
                   {c.isDormant && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-300">😴 휴면</span>}
                   {c.hideExpenses && <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded border border-amber-200">지출숨김</span>}
@@ -307,17 +312,36 @@ function CompaniesTab() {
                   {c.owners.length === 0 ? <span className="text-rose-500">⚠️ 없음</span> :
                     c.owners.map((o) => <div key={o.userId}>{o.name} · {o.email}</div>)}
                 </td>
-                <td className="px-4 py-3 text-right text-gray-700 tabular-nums text-xs">
-                  멤버 {c.memberCount}<br/>프로젝트 {c.projectCount}
+                <td className="px-4 py-3 text-right text-gray-700 tabular-nums text-xs leading-relaxed">
+                  <div>
+                    멤버 <b>{c.memberCount}</b>
+                    {c.weekActiveMembers != null && (
+                      <span className="text-emerald-600 ml-1">(활성 {c.weekActiveMembers})</span>
+                    )}
+                  </div>
+                  <div>프로젝트 <b>{c.projectCount}</b></div>
+                  {c.totals && (
+                    <div className="text-[10px] text-gray-400 mt-0.5">
+                      견적 {c.totals.quotes} · 마감재 {c.totals.materials}<br/>
+                      발주 {c.totals.orders} · 보고 {c.totals.reports}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-xs">
                   {relativeTime(c.lastActivityAt)}
                 </td>
-                <td className="px-4 py-3 text-right text-xs">
-                  <span className={`tabular-nums font-semibold ${
+                <td className="px-4 py-3 text-right text-xs leading-relaxed">
+                  <span className={`tabular-nums font-semibold text-base ${
                     c.weekActivityScore > 10 ? 'text-emerald-700' :
                     c.weekActivityScore > 0 ? 'text-gray-700' : 'text-gray-400'
                   }`}>{c.weekActivityScore}</span>
+                  {c.weekActivity && c.weekActivityScore > 0 && (
+                    <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                      일정 {c.weekActivity.schedules} · 견적 {c.weekActivity.quotes}<br/>
+                      마감재 {c.weekActivity.materials} · 발주 {c.weekActivity.orders}<br/>
+                      보고 {c.weekActivity.reports} · 체크 {c.weekActivity.checklists}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap space-x-1">
                   <button
@@ -379,6 +403,189 @@ function CompaniesTab() {
           onClose={() => setDataXferDlg(null)}
         />
       )}
+
+      {activityDlg && (
+        <CompanyActivityDialog
+          company={activityDlg}
+          onClose={() => setActivityDlg(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 회사 활성도 상세 모달 — 멤버별 마지막 접속·30일 활동 + 회사 합산 모듈
+// ============================================================
+function CompanyActivityDialog({ company, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    adminApi.getCompanyActivity(company.id)
+      .then((d) => { if (alive) setData(d); })
+      .catch((e) => alert('활성도 조회 실패: ' + (e.response?.data?.error || e.message)))
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [company.id]);
+
+  const members = data?.members || [];
+  const sortedMembers = [...members].sort((a, b) => {
+    // 활성 멤버 우선, 그 안에서 30일 활동 많은 순
+    if (a.activeWeek !== b.activeWeek) return b.activeWeek - a.activeWeek;
+    return (b.activity30d?.total || 0) - (a.activity30d?.total || 0);
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b flex items-center justify-between sticky top-0 bg-white">
+          <div>
+            <div className="text-xs text-gray-400 uppercase tracking-wider">회사 활성도</div>
+            <div className="text-lg font-bold text-navy-800 mt-0.5">{company.name}</div>
+            <div className="text-[11px] text-gray-500 mt-0.5">
+              가입 {new Date(company.createdAt).toLocaleDateString('ko-KR')}
+              {' · '}
+              plan {company.plan || 'PRO'}
+              {company.approvalStatus && ` · ${company.approvalStatus}`}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* 회사 합계 카드 4종 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              <div className="text-[11px] text-emerald-700 font-medium">활성 멤버 (7일)</div>
+              <div className="text-2xl font-bold text-emerald-800 tabular-nums mt-1">
+                {company.weekActiveMembers ?? '-'}
+                <span className="text-sm text-emerald-600 ml-1">/ {company.memberCount}</span>
+              </div>
+              <div className="text-[11px] text-emerald-600 mt-0.5">
+                {company.activeMemberRatio ?? 0}% 비율
+              </div>
+            </div>
+            <div className="bg-sky-50 border border-sky-200 rounded-lg p-3">
+              <div className="text-[11px] text-sky-700 font-medium">7일 활동 점수</div>
+              <div className="text-2xl font-bold text-sky-800 tabular-nums mt-1">{company.weekActivityScore || 0}</div>
+              <div className="text-[11px] text-sky-600 mt-0.5">최근 활동 {company.lastActivityAt ? relativeTime(company.lastActivityAt) : '-'}</div>
+            </div>
+            <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
+              <div className="text-[11px] text-violet-700 font-medium">누적 프로젝트</div>
+              <div className="text-2xl font-bold text-violet-800 tabular-nums mt-1">{company.projectCount}</div>
+              <div className="text-[11px] text-violet-600 mt-0.5">멤버 {company.memberCount}명</div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="text-[11px] text-amber-700 font-medium">누적 견적</div>
+              <div className="text-2xl font-bold text-amber-800 tabular-nums mt-1">{company.totals?.quotes ?? 0}</div>
+              <div className="text-[11px] text-amber-600 mt-0.5">마감재 {company.totals?.materials ?? 0} · 발주 {company.totals?.orders ?? 0}</div>
+            </div>
+          </div>
+
+          {/* 7일 모듈별 분해 */}
+          {company.weekActivity && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">7일 활동 분해</div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                {[
+                  ['일정', company.weekActivity.schedules],
+                  ['일정 변경', company.weekActivity.scheduleChanges],
+                  ['견적', company.weekActivity.quotes],
+                  ['마감재', company.weekActivity.materials],
+                  ['발주', company.weekActivity.orders],
+                  ['보고', company.weekActivity.reports],
+                  ['체크리스트', company.weekActivity.checklists],
+                  ['지출', company.weekActivity.expenses],
+                  ['메모', company.weekActivity.memos],
+                  ['라운지', company.weekActivity.loungePosts],
+                ].map(([label, n]) => (
+                  <div key={label} className="border rounded p-2 text-center">
+                    <div className="text-[10px] text-gray-500">{label}</div>
+                    <div className={`text-base font-semibold tabular-nums ${n > 0 ? 'text-gray-800' : 'text-gray-300'}`}>{n || 0}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 회사 합산 30일 (멤버 추적 불가 모듈) */}
+          {data?.companyActivity30d && (
+            <div className="bg-gray-50 border rounded-lg p-3">
+              <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                회사 합계 (30일) — 작성자 추적 안 됨
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-xs tabular-nums">
+                <div><span className="text-gray-500">견적</span> <b>{data.companyActivity30d.quotes}</b></div>
+                <div><span className="text-gray-500">마감재</span> <b>{data.companyActivity30d.materials}</b></div>
+                <div><span className="text-gray-500">발주</span> <b>{data.companyActivity30d.orders}</b></div>
+                <div><span className="text-gray-500">메모</span> <b>{data.companyActivity30d.memos}</b></div>
+              </div>
+            </div>
+          )}
+
+          {/* 멤버별 활동 */}
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">멤버별 활동 (30일)</div>
+            {loading ? (
+              <div className="text-sm text-gray-400 py-6 text-center">로딩...</div>
+            ) : sortedMembers.length === 0 ? (
+              <div className="text-sm text-gray-400 py-6 text-center">멤버가 없습니다</div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">이름</th>
+                      <th className="px-3 py-2 text-left">역할</th>
+                      <th className="px-3 py-2 text-left">마지막 접속</th>
+                      <th className="px-3 py-2 text-right">30일 활동</th>
+                      <th className="px-3 py-2 text-left">분해 (프·일·보·체)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {sortedMembers.map((m) => (
+                      <tr key={m.userId} className={m.activeWeek ? '' : 'opacity-60'}>
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-gray-800">{m.name}</div>
+                          <div className="text-[10px] text-gray-400">{m.email}</div>
+                        </td>
+                        <td className="px-3 py-2 text-gray-600">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            m.role === 'OWNER' ? 'bg-violet-100 text-violet-800' :
+                            m.role === 'DESIGNER' ? 'bg-sky-100 text-sky-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>{m.role}</span>
+                        </td>
+                        <td className="px-3 py-2 text-gray-600">
+                          {m.lastSeenAt ? relativeTime(m.lastSeenAt) : <span className="text-gray-300">없음</span>}
+                          {m.activeWeek && <span className="ml-1 text-[10px] text-emerald-600">●</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          <span className={m.activity30d.total > 0 ? 'font-semibold text-gray-800' : 'text-gray-300'}>
+                            {m.activity30d.total}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-[10px] text-gray-500 tabular-nums">
+                          {m.activity30d.projects}·{m.activity30d.schedules}·{m.activity30d.reports}·{m.activity30d.checklists}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="text-[10px] text-gray-400 mt-2">
+              ● = 7일 내 접속 · 분해 = 프(프로젝트 생성)·일(일정 작성/수정)·보(보고)·체(체크리스트 완료)
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

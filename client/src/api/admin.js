@@ -33,6 +33,8 @@ export const adminApi = {
   listPendingCompanies: () => api.get('/admin/companies/pending').then((r) => r.data),
   approveCompany: (id) => api.post(`/admin/companies/${id}/approve`).then((r) => r.data),
   rejectCompany: (id) => api.post(`/admin/companies/${id}/reject`).then((r) => r.data),
+  // 회사 상세 활성도 — 멤버별 마지막 접속·30일 활동 + 회사 합산
+  getCompanyActivity: (id) => api.get(`/admin/companies/${id}/activity`).then((r) => r.data),
   // 등급 관리
   changeCompanyPlan: (id, plan) => api.patch(`/admin/companies/${id}/plan`, { plan }).then((r) => r.data),
   getPlanFeatures: () => api.get('/admin/plan-features').then((r) => r.data),
