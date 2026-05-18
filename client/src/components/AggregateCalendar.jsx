@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { schedulesApi } from '../api/schedules';
 import {
-  toDateKey, calendarGrid, addMonths, formatMonthLabel, projectClass, projectBorderClass,
+  toDateKey, calendarGrid, addDays, addMonths, formatMonthLabel, formatShort, projectClass, projectBorderClass,
 } from '../utils/date';
 import { buildLaneInfo, assignSlots } from '../utils/calendarLane';
 import { getHoliday } from '../utils/holidays';
@@ -17,11 +17,30 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+  // "오늘부터 보기" — 체크 시 오늘이 속한 주의 일요일부터 6주(42일) 윈도우. 기본 ON.
+  const [fromToday, setFromToday] = useState(() => {
+    try {
+      const v = localStorage.getItem('aggregateCalendar.fromToday');
+      return v === null ? true : v !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('aggregateCalendar.fromToday', String(fromToday)); } catch {}
+  }, [fromToday]);
 
-  const grid = useMemo(
-    () => calendarGrid(current.getFullYear(), current.getMonth()),
-    [current]
-  );
+  const grid = useMemo(() => {
+    if (fromToday) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const start = addDays(today, -today.getDay());
+      const days = [];
+      for (let i = 0; i < 42; i++) days.push(addDays(start, i));
+      return days;
+    }
+    return calendarGrid(current.getFullYear(), current.getMonth());
+  }, [current, fromToday]);
   const rangeStart = grid[0];
   const rangeEnd = grid[grid.length - 1];
   const startKey = toDateKey(rangeStart);
@@ -81,23 +100,39 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
   return (
     <div>
       <div className="flex items-center mb-3 gap-2 px-2 sm:px-0">
-        {/* 좌측 spacer — 라벨이 시각 중앙에 오도록 */}
-        <div className="flex-1" />
+        {/* 좌측: 오늘부터 보기 토글 (기본 ON — 오늘 속한 주부터 6주 표시) */}
+        <div className="flex-1 flex items-center">
+          <label className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-600 cursor-pointer select-none whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={fromToday}
+              onChange={(e) => setFromToday(e.target.checked)}
+              className="w-3.5 h-3.5 accent-navy-700"
+            />
+            오늘부터 보기
+          </label>
+        </div>
         {/* 중앙: 화살표 + 라벨 + 화살표 (라벨 옆에 가깝게, 테두리 X) */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrent(addMonths(current, -1))}
-            className="text-navy-700 hover:text-navy-900 text-base sm:text-lg leading-none px-1 py-0.5"
-            aria-label="이전 달"
-          >‹</button>
+          {!fromToday && (
+            <button
+              onClick={() => setCurrent(addMonths(current, -1))}
+              className="text-navy-700 hover:text-navy-900 text-base sm:text-lg leading-none px-1 py-0.5"
+              aria-label="이전 달"
+            >‹</button>
+          )}
           <div className="font-semibold text-base sm:text-lg text-navy-800 whitespace-nowrap">
-            {formatMonthLabel(current)}
+            {fromToday
+              ? `${formatShort(grid[0])} ~ ${formatShort(grid[grid.length - 1])}`
+              : formatMonthLabel(current)}
           </div>
-          <button
-            onClick={() => setCurrent(addMonths(current, 1))}
-            className="text-navy-700 hover:text-navy-900 text-base sm:text-lg leading-none px-1 py-0.5"
-            aria-label="다음 달"
-          >›</button>
+          {!fromToday && (
+            <button
+              onClick={() => setCurrent(addMonths(current, 1))}
+              className="text-navy-700 hover:text-navy-900 text-base sm:text-lg leading-none px-1 py-0.5"
+              aria-label="다음 달"
+            >›</button>
+          )}
           {loading && <span className="text-xs text-gray-400 ml-1">불러오는 중...</span>}
         </div>
         {/* 우측: 액션 */}
@@ -136,7 +171,8 @@ export default function AggregateCalendar({ status, projectIds, emptyText, heade
             const dayEntries = byDate[key] || [];
             const weekIdx = Math.floor(idx / 7);
             const slots = assignSlots(weekLaneInfo[weekIdx], dayEntries);
-            const isCurrentMonth = date.getMonth() === current.getMonth();
+            // "오늘부터" 모드에선 6주 윈도우가 두 달에 걸치므로 음영 처리 생략(전부 white).
+            const isCurrentMonth = fromToday ? true : date.getMonth() === current.getMonth();
             const isToday = key === todayKey;
             const dayOfWeek = date.getDay();
             const isFirstOfMonth = date.getDate() === 1;
