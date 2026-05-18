@@ -91,17 +91,23 @@ async function checkResend() {
   if (!key) return { status: 'not_configured', note: 'RESEND_API_KEY 미설정 (메일 발송 미연동)' };
   const start = Date.now();
   try {
-    // Sending access 권한 키로도 통과하도록 — /emails/{nonexistent-id} GET 시도.
-    // 401 = 키 무효. 그 외(404 포함) = 키 인식됨 (= 발송 가능).
-    // /domains 호출은 Full access 권한이 필요해 Sending access 키에선 401 → 헬스 false-negative 발생.
-    const res = await fetchWithTimeout('https://api.resend.com/emails/healthcheck-ping', {
-      headers: { Authorization: `Bearer ${key}` },
+    // POST /emails 에 빈 페이로드 — Sending access 권한 키로도 통과.
+    // 401 = 키 무효. 그 외(422/400 = 검증 실패) = 키 유효(실제 발송 X, 페이로드만 거부됨).
+    // /domains GET 도, /emails/{id} GET 도 Sending access 키에선 막혀 헬스 false-negative 발생.
+    // POST /emails 만이 Sending access 권한 키의 권한 범위라 확인 가능.
+    const res = await fetchWithTimeout('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}', // 빈 페이로드 — to/from/subject 검증에 걸려 422 반환 (실제 발송 X)
     });
     const latencyMs = Date.now() - start;
     if (res.status === 401) {
       return { status: 'down', latencyMs, error: 'HTTP 401 (API Key 무효)' };
     }
-    // 200/404/422 모두 키는 유효
+    // 200/400/422 등 — 키가 인증됐다는 증거
     return { status: 'ok', latencyMs };
   } catch (e) {
     return { status: 'down', latencyMs: Date.now() - start, error: e.message };
