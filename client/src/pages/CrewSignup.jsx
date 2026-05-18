@@ -23,7 +23,7 @@ export default function CrewSignup() {
   const { signupCrew } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    email: '', password: '', name: '', phone: '',
+    email: '', password: '', passwordConfirm: '', name: '', phone: '',
     crewBankAccount: '',
     crewDefaultUnitPrice: '',
     crewDefaultMeal: '',
@@ -62,6 +62,7 @@ export default function CrewSignup() {
     if (emailStatus === 'invalid') return '이메일 형식이 올바르지 않습니다';
     const passwordErr = checkPasswordPolicy(form.password);
     if (passwordErr) return passwordErr;
+    if (form.password !== form.passwordConfirm) return '비밀번호 확인이 일치하지 않습니다';
     if (crewCategories.length === 0) return '담당 공종을 1개 이상 선택해주세요';
     if (!agreedTerms || !agreedPrivacy) return '이용약관과 개인정보처리방침에 모두 동의해주세요';
     return null;
@@ -129,6 +130,16 @@ export default function CrewSignup() {
             statusMessage={availabilityMessage('email', emailStatus)}
           />
           <Field label="비밀번호 (8자 이상) *" type="password" value={form.password} onChange={update('password')} required minLength={8} autoComplete="new-password" />
+          <Field
+            label="비밀번호 확인 *"
+            type="password"
+            value={form.passwordConfirm}
+            onChange={update('passwordConfirm')}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            status={form.passwordConfirm && form.password !== form.passwordConfirm ? 'mismatch' : (form.passwordConfirm && form.password === form.passwordConfirm ? 'match' : 'idle')}
+          />
           <Field label="이름 *" value={form.name} onChange={update('name')} required />
           <Field label="연락처 (선택)" value={form.phone} onChange={update('phone')} placeholder="010-1234-5678" />
 
@@ -249,13 +260,15 @@ export default function CrewSignup() {
 }
 
 function Field({ label, status, statusMessage, ...rest }) {
+  const isOk = status === 'available' || status === 'match';
+  const isBad = status === 'taken' || status === 'invalid' || status === 'mismatch';
   const tone =
-    status === 'available' ? 'text-emerald-600 dark:text-emerald-400' :
-    status === 'taken' || status === 'invalid' ? 'text-rose-600 dark:text-rose-400' :
+    isOk ? 'text-emerald-600 dark:text-emerald-400' :
+    isBad ? 'text-rose-600 dark:text-rose-400' :
     'text-gray-400';
   const borderTone =
-    status === 'available' ? 'border-emerald-400 focus:ring-emerald-400' :
-    status === 'taken' || status === 'invalid' ? 'border-rose-400 focus:ring-rose-400' :
+    isOk ? 'border-emerald-400 focus:ring-emerald-400' :
+    isBad ? 'border-rose-400 focus:ring-rose-400' :
     'border focus:ring-navy-500';
   return (
     <div>
@@ -270,7 +283,9 @@ function Field({ label, status, statusMessage, ...rest }) {
             {status === 'checking' ? '확인 중…' :
              status === 'available' ? '✓ 사용 가능' :
              status === 'taken' ? '✗ 사용 중' :
-             status === 'invalid' ? '✗ 형식 오류' : ''}
+             status === 'invalid' ? '✗ 형식 오류' :
+             status === 'match' ? '✓ 일치' :
+             status === 'mismatch' ? '✗ 불일치' : ''}
           </span>
         )}
       </div>
@@ -290,7 +305,7 @@ function availabilityMessage(field, status) {
   if (status === 'invalid') {
     return field === 'email'
       ? '올바른 이메일 형식이 아닙니다.'
-      : '닉네임은 2~20자의 한글·영문·숫자·_·- 만 가능합니다.';
+      : '닉네임은 2~20자의 한글·영문·숫자·공백·_·- 만 가능합니다.';
   }
   return '';
 }

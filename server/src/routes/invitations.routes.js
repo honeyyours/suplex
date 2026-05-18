@@ -180,7 +180,7 @@ const acceptSchema = z.object({
   token: z.string().min(1),
   name: z.string().max(100).optional(), // 좀비 케이스엔 무시 (기존 user.name 유지)
   nickname: z.string().trim().min(2).max(20)
-    .regex(/^[가-힣a-zA-Z0-9_-]+$/, '닉네임은 한글·영문·숫자·_·-만 가능합니다')
+    .regex(/^[가-힣a-zA-Z0-9_\- ]+$/, '닉네임은 한글·영문·숫자·공백·_·-만 가능합니다')
     .optional(), // 신규 가입 시 필수, 좀비 케이스엔 무시
   password: z.string().min(1), // 신규=새 비번(8자+), 좀비=기존 비번 검증
   phone: z.string().max(40).optional().nullable(),

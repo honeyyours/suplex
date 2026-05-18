@@ -38,7 +38,7 @@ async function loadPermissionMap(membershipId) {
 }
 
 const nicknameField = z.string().trim().min(2).max(20)
-  .regex(/^[가-힣a-zA-Z0-9_-]+$/, '닉네임은 한글·영문·숫자·_·-만 가능합니다');
+  .regex(/^[가-힣a-zA-Z0-9_\- ]+$/, '닉네임은 한글·영문·숫자·공백·_·-만 가능합니다');
 
 const signupSchema = z.object({
   // 개인 정보 (단계 1)

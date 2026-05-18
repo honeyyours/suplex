@@ -12,7 +12,7 @@ export default function InviteAccept() {
 
   const [info, setInfo] = useState(null);
   const [loadErr, setLoadErr] = useState('');
-  const [form, setForm] = useState({ name: '', nickname: '', password: '', phone: '' });
+  const [form, setForm] = useState({ name: '', nickname: '', password: '', passwordConfirm: '', phone: '' });
   const [busy, setBusy] = useState(false);
   const [submitErr, setSubmitErr] = useState('');
 
@@ -102,8 +102,12 @@ export default function InviteAccept() {
         setSubmitErr('닉네임을 입력해주세요');
         return;
       }
-      if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(form.nickname.trim())) {
-        setSubmitErr('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+      if (!/^[가-힣a-zA-Z0-9_\- ]{2,20}$/.test(form.nickname.trim())) {
+        setSubmitErr('닉네임은 2~20자의 한글·영문·숫자·공백·_·-만 가능합니다');
+        return;
+      }
+      if (form.password !== form.passwordConfirm) {
+        setSubmitErr('비밀번호 확인이 일치하지 않습니다');
         return;
       }
     }
@@ -184,6 +188,30 @@ export default function InviteAccept() {
             required
           />
         </Field>
+        {!isRecover && (
+          <Field label="비밀번호 확인 *">
+            <input
+              type="password"
+              value={form.passwordConfirm}
+              onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
+              className={`w-full border rounded-md px-3 py-2 focus:ring-2 outline-none ${
+                form.passwordConfirm && form.password !== form.passwordConfirm
+                  ? 'border-rose-400 focus:ring-rose-400'
+                  : form.passwordConfirm && form.password === form.passwordConfirm
+                  ? 'border-emerald-400 focus:ring-emerald-400'
+                  : 'focus:ring-navy-500'
+              }`}
+              minLength={8}
+              required
+            />
+            {form.passwordConfirm && form.password !== form.passwordConfirm && (
+              <p className="mt-1 text-xs text-rose-600">비밀번호가 일치하지 않습니다</p>
+            )}
+            {form.passwordConfirm && form.password === form.passwordConfirm && (
+              <p className="mt-1 text-xs text-emerald-600">비밀번호가 일치합니다</p>
+            )}
+          </Field>
+        )}
         {!isRecover && (
           <Field label="연락처 (선택)">
             <input

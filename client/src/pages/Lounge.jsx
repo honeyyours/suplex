@@ -319,8 +319,8 @@ function NicknameSetupModal({ onSaved }) {
     e.preventDefault();
     setError('');
     const v = nickname.trim();
-    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(v)) {
-      setError('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+    if (!/^[가-힣a-zA-Z0-9_\- ]{2,20}$/.test(v)) {
+      setError('닉네임은 2~20자의 한글·영문·숫자·공백·_·-만 가능합니다');
       return;
     }
     setBusy(true);
@@ -347,7 +347,7 @@ function NicknameSetupModal({ onSaved }) {
           type="text"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          placeholder="닉네임 (2~20자, 한글·영문·숫자·_·-)"
+          placeholder="닉네임 (2~20자, 한글·영문·숫자·공백·_·-)"
           maxLength={20}
           autoFocus
           className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
@@ -376,8 +376,8 @@ function MeEditModal({ me, currentNickname, onClose, onSaved }) {
     e.preventDefault();
     setError('');
     const v = nickname.trim();
-    if (!/^[가-힣a-zA-Z0-9_-]{2,20}$/.test(v)) {
-      setError('닉네임은 2~20자의 한글·영문·숫자·_·-만 가능합니다');
+    if (!/^[가-힣a-zA-Z0-9_\- ]{2,20}$/.test(v)) {
+      setError('닉네임은 2~20자의 한글·영문·숫자·공백·_·-만 가능합니다');
       return;
     }
     setBusy(true);
@@ -407,7 +407,7 @@ function MeEditModal({ me, currentNickname, onClose, onSaved }) {
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            placeholder="2~20자, 한글·영문·숫자·_·-"
+            placeholder="2~20자, 한글·영문·숫자·공백·_·-"
             maxLength={20}
             className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
           />
