@@ -10,6 +10,7 @@ const prisma = require('../config/prisma');
 const env = require('../config/env');
 const { authRequired } = require('../middlewares/auth');
 const { sendToUser, isConfigured } = require('../services/push');
+const { notify, TYPES } = require('../services/notify');
 
 const router = express.Router();
 
@@ -77,15 +78,15 @@ router.post('/unsubscribe', authRequired, async (req, res, next) => {
   }
 });
 
-// 본인에게 테스트 알림 — 권한 동의 후 실제 알림 오는지 확인용
+// 본인에게 테스트 알림 — 권한 동의 후 실제 알림 오는지 확인용.
+// 통합 헬퍼 notify() 사용 — 푸시 + 인앱 알림 동시 발송 → 알림 센터에도 기록.
 router.post('/test', authRequired, async (req, res, next) => {
   try {
-    if (!isConfigured()) return res.status(503).json({ error: 'Push 알림이 비활성화되어 있습니다' });
-    const result = await sendToUser(req.user.id, {
+    const result = await notify(req.user.id, {
+      type: TYPES.SYSTEM,
       title: '수플렉스 테스트 알림',
       body: '알림이 정상적으로 도착했습니다.',
-      url: '/',
-      tag: 'test',
+      url: '/notifications',
     });
     res.json(result);
   } catch (e) { next(e); }

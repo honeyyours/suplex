@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { F, canAccess } from '../utils/features';
 import { announcementsApi } from '../api/announcements';
 import PlanBadge from './PlanBadge';
+import NotificationBell from './NotificationBell';
 
 const NAV = [
   { to: '/', label: '홈', mobileLabel: '홈', exact: true, icon: 'home' },
@@ -146,6 +147,7 @@ export default function Layout() {
                 <span>새 프로젝트</span>
               </Link>
             )}
+            {auth && !isAdmin && <NotificationBell />}
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
               title={`현재: ${theme === 'system' ? '시스템' : theme === 'dark' ? '다크' : '라이트'} (클릭 토글)`}

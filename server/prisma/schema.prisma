@@ -162,7 +162,32 @@ model User {
   // Web Push (PWA) 구독 — 사용자가 폰/PC 여러 기기에서 구독 가능 → 1:N
   pushSubscriptions PushSubscription[]
 
+  // 인앱 알림 센터 — 30일 보존, 헤더 벨 아이콘 + /notifications 페이지에서 조회
+  // (기존 Notification 모델은 솔라피 SMS/알림톡 발송 큐로 별도 사용 중 — 충돌 회피로 InAppNotification 별명)
+  inAppNotifications InAppNotification[]
+
   @@map("users")
+}
+
+// 인앱 알림 — 푸시 발송과 동시에 DB에 저장. 30일 자동 필터링(조회 쿼리에서 createdAt > now-30d).
+// type 으로 종류 구분 (예: CHECKLIST_DDAY, SCHEDULE_CHANGE, MEMO_MENTION).
+// url 로 클릭 시 이동 경로 지정 (예: /projects/cmoi.../checklist).
+// 기존 Notification(솔라피 외부 발송 큐)과 별도 — 사용자 인앱 알림 센터 전용.
+model InAppNotification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // 알림 종류 식별자 (services/notify.js TYPES 참고)
+  title     String
+  body      String    @db.Text
+  url       String? // 클릭 시 이동 경로 (앱 내부). null 이면 이동 X
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@map("in_app_notifications")
 }
 
 // Web Push 구독 — PushManager.subscribe() 가 발급한 endpoint + p256dh + auth 저장.

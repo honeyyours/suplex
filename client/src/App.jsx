@@ -13,6 +13,7 @@ import CrewInviteAccept from './pages/CrewInviteAccept';
 import InviteAccept from './pages/InviteAccept';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Notifications from './pages/Notifications';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
@@ -92,6 +93,9 @@ export default function App() {
           </ProtectedRoute>
         }
       >
+        {/* 알림 센터 — 베타 진입 통제 우회 (회사 미승인·시공팀 모두 접근 가능) */}
+        <Route path="/notifications" element={<Notifications />} />
+
         {/* 라운지 — 베타 진입 통제 우회. 미승인 회사도 자유롭게 접근/활동 */}
         <Route path="/lounge" element={<Lounge />} />
         <Route path="/lounge/new" element={<LoungePostEditor />} />
