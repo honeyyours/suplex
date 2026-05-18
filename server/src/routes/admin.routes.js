@@ -91,7 +91,7 @@ router.get('/companies', async (req, res, next) => {
         prisma.dailyScheduleEntry.count({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }], updatedAt: { gte: weekAgo } } }),
         prisma.simpleQuote.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
         prisma.material.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
-        prisma.purchaseOrder.count({ where: { companyId: c.id, createdAt: { gte: weekAgo } } }),
+        prisma.purchaseOrder.count({ where: { ...projectScope, createdAt: { gte: weekAgo } } }),
         prisma.projectMemo.count({ where: { ...projectScope, updatedAt: { gte: weekAgo } } }),
         prisma.loungePost.count({ where: { author: { memberships: { some: { companyId: c.id } } }, createdAt: { gte: weekAgo } } }),
         prisma.user.count({ where: { memberships: { some: { companyId: c.id } }, lastSeenAt: { gte: weekAgo } } }),
@@ -99,7 +99,7 @@ router.get('/companies', async (req, res, next) => {
         prisma.dailyScheduleEntry.count({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }] } }),
         prisma.simpleQuote.count({ where: projectScope }),
         prisma.material.count({ where: projectScope }),
-        prisma.purchaseOrder.count({ where: { companyId: c.id } }),
+        prisma.purchaseOrder.count({ where: projectScope }),
         prisma.dailyReport.count({ where: projectScope }),
         // 최근 활동 시각
         prisma.scheduleChange.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
@@ -108,7 +108,7 @@ router.get('/companies', async (req, res, next) => {
         prisma.dailyScheduleEntry.findFirst({ where: { OR: [{ projectId: { not: null }, project: { companyId: c.id } }, { companyId: c.id }] }, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
         prisma.simpleQuote.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
         prisma.material.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
-        prisma.purchaseOrder.findFirst({ where: { companyId: c.id }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+        prisma.purchaseOrder.findFirst({ where: projectScope, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
         prisma.projectMemo.findFirst({ where: projectScope, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
       ]);
 
@@ -457,7 +457,7 @@ router.get('/companies/:id/activity', async (req, res, next) => {
     const [companyQuotes30d, companyMaterials30d, companyOrders30d, companyMemos30d] = await Promise.all([
       prisma.simpleQuote.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
       prisma.material.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
-      prisma.purchaseOrder.count({ where: { companyId: id, createdAt: { gte: monthAgo } } }),
+      prisma.purchaseOrder.count({ where: { ...projectScope, createdAt: { gte: monthAgo } } }),
       prisma.projectMemo.count({ where: { ...projectScope, updatedAt: { gte: monthAgo } } }),
     ]);
 
