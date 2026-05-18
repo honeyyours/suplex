@@ -1,12 +1,17 @@
-// 일정 PDF 출력 — 새 창에 인쇄용 HTML을 그려 window.print() 호출.
-// 모든 일정 화면 공용. A4 세로 · 월별 페이지 · 캘린더 그리드 + 상세 리스트.
-// 회사명만 헤더에 표시(현장 정보·전화번호 등 X). 가시성·예쁨 동시 강조.
+// 일정 PDF 인쇄 — A4 가로, 월별 한 페이지.
+// 디자이너 시안 이식(2026-05-18, schedule_print_a4.html):
+// - 헤더 3분할(SUPLEX / 큰 월 제목 / 회사명·출력일)
+// - 캘린더 6주 그리드, 셀 23.5mm
+// - 인라인 ✓ 확정 표시, 미확정은 텍스트 회색·얇음
+// - 공정 chip 컬러 매핑(철거·목공·전기·설비·타일·도배·도장·필름·마루·준공)
+// - 하단 인덱스 바: 현장 색상 + 프로젝트명 + ✓ 범례
+// - 푸터: suplex.kr + 격리 안내(현장 정보·금액 비공개)
 //
 // 사용:
 //   openSchedulePrint({
-//     entries,            // [{ id, date, content, project?, vendor?, confirmed?, category? }]
-//     start, end,         // 'YYYY-MM-DD' (옵션, 없으면 entries 범위에서 자동 산출)
-//     title,              // 헤더 좌측 제목 (예: "전체 일정", "○○현장 일정")
+//     entries,            // [{ id, date, content, project?, confirmed?, category? }]
+//     start, end,         // 'YYYY-MM-DD' (옵션, 없으면 entries 또는 이번 달)
+//     title,              // 헤더 우측 보조 텍스트 (예: "전체 일정")
 //     companyName,        // 헤더 우측 회사명
 //   });
 
@@ -18,7 +23,6 @@ function toDateKey(d) {
 }
 
 function parseDateKey(key) {
-  // 'YYYY-MM-DD' → Date (로컬). 'YYYY-MM-DDTHH:mm:ss.sssZ' 도 첫 10자만 사용해 동일 처리.
   const [y, m, d] = key.slice(0, 10).split('-').map(Number);
   return new Date(y, m - 1, d);
 }
@@ -28,14 +32,13 @@ function monthEnd(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function addMonths(d, n) { const r = new Date(d); r.setMonth(r.getMonth() + n); return r; }
 
-// 한 달 7×6 캘린더 그리드 (앞뒤 달 일부 포함). 일요일 시작.
 function monthGrid(year, month) {
   const first = new Date(year, month, 1);
   const start = addDays(first, -first.getDay());
+  // 6주(42칸) 채움
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
-// 한국 주요 공휴일 — 인쇄용 간단 표. 정밀한 음력 처리는 utils/holidays.js에 있지만 의존 줄이려고 일부만.
 const FIXED_HOLIDAYS = {
   '01-01': '신정',
   '03-01': '삼일절',
@@ -52,7 +55,6 @@ function getHolidayLabel(d) {
   return FIXED_HOLIDAYS[`${mm}-${dd}`] || null;
 }
 
-// HTML escape
 function esc(s) {
   if (s == null) return '';
   return String(s)
@@ -63,32 +65,64 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
-// 프로젝트 id → 색상 (8가지 팔레트 hash)
+// 프로젝트 색상 (시안 6종 팔레트, id hash)
 const PROJECT_PALETTE = [
-  { bg: '#fef3c7', bd: '#f59e0b', tx: '#78350f' }, // amber
-  { bg: '#dbeafe', bd: '#3b82f6', tx: '#1e3a8a' }, // blue
-  { bg: '#dcfce7', bd: '#22c55e', tx: '#14532d' }, // green
-  { bg: '#fce7f3', bd: '#ec4899', tx: '#831843' }, // pink
-  { bg: '#ede9fe', bd: '#8b5cf6', tx: '#4c1d95' }, // violet
-  { bg: '#cffafe', bd: '#06b6d4', tx: '#164e63' }, // cyan
-  { bg: '#fee2e2', bd: '#ef4444', tx: '#7f1d1d' }, // red
-  { bg: '#fef9c3', bd: '#eab308', tx: '#713f12' }, // yellow
+  { cls: 'pj-blue',   bg: '#dbeafe', bd: '#2563eb' },
+  { cls: 'pj-green',  bg: '#dcfce7', bd: '#16a34a' },
+  { cls: 'pj-amber',  bg: '#fef3c7', bd: '#d97706' },
+  { cls: 'pj-pink',   bg: '#fce7f3', bd: '#db2777' },
+  { cls: 'pj-violet', bg: '#ede9fe', bd: '#7c3aed' },
+  { cls: 'pj-cyan',   bg: '#cffafe', bd: '#0891b2' },
 ];
 function projectColor(id) {
-  if (!id) return { bg: '#f1f5f9', bd: '#94a3b8', tx: '#1e293b' };
+  if (!id) return { cls: 'pj-gray', bg: '#f1f5f9', bd: '#94a3b8' };
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return PROJECT_PALETTE[h % PROJECT_PALETTE.length];
 }
 
-// entries의 표시 라벨: [현장명] 내용
-function entryLabel(e) {
-  const proj = e.project?.name ? `[${e.project.name}] ` : '';
-  return `${proj}${e.content || ''}`.trim();
+// 공정명 → chip class (시안 매핑)
+const PHASE_CHIP = {
+  '철거': 'chip-demo',
+  '목공': 'chip-wood',
+  '전기': 'chip-elec',
+  '설비': 'chip-plumb',
+  '타일': 'chip-tile',
+  '도배': 'chip-wall',
+  '도장': 'chip-paint',
+  '필름': 'chip-film',
+  '마루': 'chip-floor',
+  '준공': 'chip-done',
+};
+function phaseChipClass(name) {
+  if (!name) return null;
+  // 정확 매칭 우선, 그 외엔 부분 포함(예: "도배·풀칠" → 도배)
+  if (PHASE_CHIP[name]) return PHASE_CHIP[name];
+  for (const key of Object.keys(PHASE_CHIP)) {
+    if (name.includes(key)) return PHASE_CHIP[key];
+  }
+  return 'chip-generic';
 }
 
-export function openSchedulePrint({ entries = [], start, end, title = '일정', companyName = '' }) {
-  // 기간 산출: 명시값 우선, 없으면 entries 범위. 비어있으면 이번 달.
+// entry에서 공정 chip · 잔여 텍스트 분리.
+// 1) entry.category가 있으면 그걸로
+// 2) 없으면 content 앞쪽에 표준 공정 단어가 있는지 추출
+function splitEntry(e) {
+  const cat = e.category || (e.phase || null);
+  const content = (e.content || '').trim();
+  if (cat) return { chip: cat, text: content };
+  // content 시작이 표준 공정 키워드면 분리 (예: "도배 벽지 도착")
+  for (const key of Object.keys(PHASE_CHIP)) {
+    const re = new RegExp(`^${key}[ ·:\\-]+`);
+    if (re.test(content)) {
+      return { chip: key, text: content.replace(re, '').trim() };
+    }
+  }
+  return { chip: null, text: content };
+}
+
+export function openSchedulePrint({ entries = [], start, end, title = '전체 일정', companyName = '' }) {
+  // 기간 산출
   let startDate, endDate;
   if (start) startDate = parseDateKey(start);
   if (end) endDate = parseDateKey(end);
@@ -104,16 +138,16 @@ export function openSchedulePrint({ entries = [], start, end, title = '일정', 
     }
   }
 
-  // 월 단위 페이지로 분할
-  const pages = [];
+  // 월별 페이지 분할
+  const months = [];
   let cursor = monthStart(startDate);
   const endMonthStart = monthStart(endDate);
   while (cursor <= endMonthStart) {
-    pages.push(new Date(cursor));
+    months.push(new Date(cursor));
     cursor = addMonths(cursor, 1);
   }
 
-  // date(YYYY-MM-DD) → entries 그룹
+  // 날짜별 entries
   const byDate = {};
   for (const e of entries) {
     const k = (e.date || '').slice(0, 10);
@@ -121,160 +155,15 @@ export function openSchedulePrint({ entries = [], start, end, title = '일정', 
     (byDate[k] = byDate[k] || []).push(e);
   }
 
-  // 페이지별 HTML
-  const pagesHtml = pages.map((monthDate) => renderMonthPage(monthDate, byDate, { title, companyName, startDate, endDate })).join('');
+  // 출력일
+  const today = new Date();
+  const printedDate = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+  const todayKey = toDateKey(today);
 
-  const html = `<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<title>${esc(title)} — 일정 출력</title>
-<style>
-  @page { size: A4 portrait; margin: 12mm 10mm; }
-  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-    color: #0f172a;
-    background: #fff;
-    font-size: 10pt;
-    line-height: 1.45;
-  }
-  .toolbar {
-    position: fixed; top: 12px; right: 12px;
-    display: flex; gap: 6px;
-    background: #fff; padding: 8px; border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    z-index: 999;
-  }
-  .toolbar button {
-    font: inherit; font-size: 12pt;
-    padding: 6px 14px; border: 1px solid #cbd5e1;
-    background: #fff; border-radius: 4px; cursor: pointer;
-  }
-  .toolbar button.primary { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
-  .toolbar .hint { font-size: 11px; color: #64748b; align-self: center; margin-right: 6px; }
-  @media print { .toolbar { display: none !important; } }
+  // 페이지 HTML
+  const pagesHtml = months.map((m) => renderMonthPage(m, byDate, { title, companyName, printedDate, todayKey })).join('');
 
-  .page { padding: 0; }
-  .page + .page { page-break-before: always; }
-
-  .header {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    border-bottom: 2px solid #1e293b;
-    padding-bottom: 4mm; margin-bottom: 5mm;
-  }
-  .header .left .title {
-    font-size: 22pt; font-weight: 800; color: #0f172a;
-    letter-spacing: -0.02em;
-  }
-  .header .left .subtitle {
-    font-size: 10.5pt; color: #475569; margin-top: 1.5mm; letter-spacing: 0.02em;
-  }
-  .header .right {
-    text-align: right;
-    font-size: 13pt; font-weight: 700; color: #1e3a5f;
-  }
-  .header .right .label {
-    font-size: 8.5pt; font-weight: 500; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: 0.15em;
-    display: block; margin-bottom: 1mm;
-  }
-
-  /* 캘린더 */
-  .cal {
-    width: 100%; border-collapse: collapse;
-    table-layout: fixed;
-    border: 1.5px solid #334155;
-  }
-  .cal th {
-    background: #1e293b; color: #fff;
-    padding: 2mm 0; font-size: 10pt; font-weight: 600;
-    border-right: 1px solid #475569;
-  }
-  .cal th:last-child { border-right: none; }
-  .cal th.sun { background: #b91c1c; }
-  .cal th.sat { background: #1d4ed8; }
-  .cal td {
-    border-right: 1px solid #cbd5e1;
-    border-bottom: 1px solid #cbd5e1;
-    vertical-align: top;
-    padding: 1.5mm;
-    height: 32mm;
-    overflow: hidden;
-  }
-  .cal td:last-child { border-right: none; }
-  .cal .day-num {
-    font-weight: 700; font-size: 10pt;
-    margin-bottom: 1mm;
-    display: flex; align-items: baseline; gap: 1mm;
-  }
-  .cal .day-num .holiday { font-size: 7.5pt; font-weight: 500; color: #b91c1c; }
-  .cal .sun { color: #b91c1c; }
-  .cal .sat { color: #1d4ed8; }
-  .cal .out { background: #f8fafc; color: #94a3b8; }
-  .cal .out .day-num { color: #cbd5e1; }
-  .entry {
-    font-size: 8pt; line-height: 1.3;
-    padding: 0.6mm 1.2mm; margin-bottom: 0.6mm;
-    border-radius: 1.5px;
-    border-left: 2.5px solid;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .entry.confirmed::before { content: '✓ '; font-weight: 700; }
-  .more {
-    font-size: 7.5pt; color: #64748b; font-weight: 600; margin-top: 0.5mm;
-  }
-
-  /* 상세 리스트 */
-  .list-section { margin-top: 7mm; }
-  .list-section h2 {
-    font-size: 12pt; font-weight: 700; color: #0f172a;
-    border-bottom: 1px solid #cbd5e1;
-    padding-bottom: 1.5mm; margin: 0 0 3mm 0;
-  }
-  .list-day {
-    display: flex; gap: 4mm;
-    padding: 1.5mm 0; border-bottom: 1px dashed #e2e8f0;
-    page-break-inside: avoid;
-  }
-  .list-day:last-child { border-bottom: none; }
-  .list-day .date {
-    flex: 0 0 22mm; font-size: 9.5pt; font-weight: 700;
-    color: #0f172a;
-  }
-  .list-day .date .dow { font-weight: 500; color: #64748b; margin-left: 1mm; }
-  .list-day .date.sun { color: #b91c1c; }
-  .list-day .date.sat { color: #1d4ed8; }
-  .list-day .items { flex: 1; font-size: 10pt; line-height: 1.5; }
-  .list-day .item {
-    display: flex; gap: 2mm; align-items: baseline;
-    padding: 0.5mm 0;
-  }
-  .list-day .tag {
-    display: inline-block; padding: 0.2mm 1.5mm; font-size: 8pt; font-weight: 600;
-    border-radius: 2px; border: 1px solid; flex-shrink: 0;
-  }
-  .list-day .content { flex: 1; color: #1e293b; }
-  .list-day .content.confirmed::before { content: '✓ '; color: #15803d; font-weight: 700; }
-  .empty-day { color: #94a3b8; font-style: italic; }
-
-  .footer-note {
-    margin-top: 6mm;
-    font-size: 8.5pt; color: #94a3b8; text-align: right;
-    border-top: 1px solid #e2e8f0; padding-top: 2mm;
-  }
-</style>
-</head>
-<body>
-  <div class="toolbar">
-    <span class="hint">Ctrl/⌘+P 또는 ‘인쇄’ → ‘PDF로 저장’</span>
-    <button onclick="window.print()" class="primary">🖨 인쇄 / PDF</button>
-    <button onclick="window.close()">닫기</button>
-  </div>
-  ${pagesHtml}
-</body>
-</html>`;
+  const html = buildShell(pagesHtml, title);
 
   const w = window.open('', '_blank');
   if (!w) {
@@ -284,102 +173,405 @@ export function openSchedulePrint({ entries = [], start, end, title = '일정', 
   w.document.open();
   w.document.write(html);
   w.document.close();
-  // 약간의 지연 후 자동 인쇄창 띄움 (옵션)
   setTimeout(() => { try { w.focus(); } catch { /* ignore */ } }, 200);
 }
 
-function renderMonthPage(monthDate, byDate, { title, companyName, startDate, endDate }) {
+function buildShell(pagesHtml, title) {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>${esc(title)} — 일정 출력</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  @page { size: A4 landscape; margin: 10mm 10mm 8mm 10mm; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', system-ui, sans-serif;
+    color: #0f172a;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  @media screen {
+    body { background: #e9ecf1; padding: 24px; }
+    .page {
+      width: 277mm;
+      min-height: 190mm;
+      background: #fff;
+      margin: 0 auto 16px;
+      padding: 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+  }
+  @media print {
+    .page { width: 100%; min-height: auto; }
+    .page + .page { page-break-before: always; }
+    .toolbar { display: none !important; }
+  }
+
+  .toolbar {
+    position: fixed; top: 12px; right: 12px;
+    display: flex; gap: 6px; align-items: center;
+    background: #fff; padding: 8px 10px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    z-index: 999;
+  }
+  .toolbar .hint { font-size: 11px; color: #64748b; }
+  .toolbar button {
+    font-family: inherit; font-size: 12pt;
+    padding: 6px 14px; border: 1px solid #cbd5e1;
+    background: #fff; border-radius: 4px; cursor: pointer;
+  }
+  .toolbar button.primary {
+    background: #15294a; color: #fff; border-color: #15294a;
+  }
+
+  .print-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6mm;
+    border-bottom: 1.5pt solid #15294a;
+    padding-bottom: 2.5mm;
+    margin-bottom: 3mm;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 15pt;
+    color: #15294a;
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .brand-mark {
+    display: inline-block;
+    width: 5mm; height: 1mm;
+    background: #15294a;
+    vertical-align: 3px;
+    margin-right: 2mm;
+  }
+  .month-title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #15294a;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    margin: 0;
+  }
+  .month-title .year {
+    font-size: 11pt;
+    font-weight: 500;
+    color: #64748b;
+    margin-right: 3mm;
+    letter-spacing: 0;
+  }
+  .print-meta {
+    font-size: 7.5pt;
+    color: #94a3b8;
+    text-align: right;
+    flex: 1;
+    line-height: 1.45;
+  }
+
+  .cal {
+    border: 0.5pt solid #94a3b8;
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+  }
+  .cal th, .cal td {
+    border: 0.5pt solid #cbd5e1;
+    padding: 0;
+    vertical-align: top;
+  }
+  .cal thead th {
+    background: #f1f5f9;
+    font-weight: 600;
+    font-size: 9pt;
+    color: #334155;
+    padding: 2mm 0;
+    text-align: center;
+    letter-spacing: 0.5px;
+    border-bottom-width: 0.7pt;
+    border-bottom-color: #64748b;
+  }
+  .cal thead th.sun { color: #ef4444; }
+  .cal thead th.sat { color: #2563eb; }
+
+  .cal tbody td {
+    height: 23.5mm;
+    padding: 1.2mm;
+    position: relative;
+  }
+  .day-num {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #1e3a66;
+    line-height: 1;
+    margin-bottom: 1.2mm;
+    display: flex;
+    align-items: center;
+    gap: 1.5mm;
+  }
+  .day-num.sun { color: #dc2626; }
+  .day-num.sat { color: #2563eb; }
+  .day-num.out { color: #cbd5e1; font-weight: 500; }
+  .day-num .today {
+    background: #15294a;
+    color: #fff;
+    border-radius: 9999px;
+    padding: 0.6mm 2.2mm;
+    font-size: 8pt;
+    line-height: 1;
+    display: inline-block;
+  }
+  .holiday {
+    font-size: 6.5pt;
+    color: #dc2626;
+    font-weight: 400;
+    margin-left: 0.5mm;
+  }
+  td.out { background: #fafbfc; }
+
+  .entry {
+    font-size: 7.5pt;
+    line-height: 1.25;
+    padding: 0.4mm 1.2mm 0.4mm 0;
+    margin-bottom: 0.6mm;
+    border-left: 1mm solid;
+    border-radius: 0 0.5mm 0.5mm 0;
+    display: flex;
+    align-items: center;
+    gap: 1mm;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+  .entry .txt {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    color: #0f172a;
+    font-weight: 500;
+    padding-left: 1.2mm;
+  }
+  .entry.unconfirmed .txt {
+    color: #64748b;
+    font-weight: 400;
+  }
+  .entry .ph-chip {
+    flex-shrink: 0;
+    font-size: 6.5pt;
+    padding: 0.2mm 1.2mm;
+    border-radius: 0.5mm;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-left: 1.2mm;
+  }
+  .entry.confirmed .txt::after {
+    content: " ✓";
+    color: #047857;
+    font-weight: 700;
+    margin-left: 1mm;
+  }
+  .entry.confirmed .txt { color: #0f172a; font-weight: 600; }
+
+  .pj-blue   { background: #dbeafe; border-left-color: #2563eb; }
+  .pj-green  { background: #dcfce7; border-left-color: #16a34a; }
+  .pj-amber  { background: #fef3c7; border-left-color: #d97706; }
+  .pj-pink   { background: #fce7f3; border-left-color: #db2777; }
+  .pj-violet { background: #ede9fe; border-left-color: #7c3aed; }
+  .pj-cyan   { background: #cffafe; border-left-color: #0891b2; }
+  .pj-gray   { background: #f1f5f9; border-left-color: #94a3b8; }
+
+  .chip-demo    { background: #ffe4e6; color: #9f1239; }
+  .chip-wood    { background: #fef3c7; color: #92400e; }
+  .chip-elec    { background: #e0f2fe; color: #075985; }
+  .chip-plumb   { background: #ccfbf1; color: #115e59; }
+  .chip-tile    { background: #fce7f3; color: #9d174d; }
+  .chip-wall    { background: #ede9fe; color: #5b21b6; }
+  .chip-paint   { background: #ffedd5; color: #9a3412; }
+  .chip-film    { background: #fae8ff; color: #86198f; }
+  .chip-floor   { background: #fef9c3; color: #854d0e; }
+  .chip-done    { background: #d1fae5; color: #065f46; }
+  .chip-generic { background: #e2e8f0; color: #334155; }
+
+  .index-bar {
+    margin-top: 2.5mm;
+    padding-top: 2mm;
+    border-top: 0.5pt solid #cbd5e1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5mm 4mm;
+    font-size: 8pt;
+  }
+  .index-label {
+    font-size: 7pt;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .index-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+    color: #334155;
+    white-space: nowrap;
+  }
+  .index-swatch {
+    display: inline-block;
+    width: 3mm; height: 3mm;
+    border-radius: 0.3mm;
+    flex-shrink: 0;
+  }
+  .confirm-legend {
+    font-size: 7pt;
+    color: #64748b;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .confirm-legend strong { color: #047857; margin-right: 0.5mm; }
+
+  .print-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5mm;
+    padding-top: 1.5mm;
+    font-size: 6.5pt;
+    color: #94a3b8;
+    border-top: 0.3pt solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <span class="hint">Ctrl/⌘+P 또는 ‘인쇄/PDF’ → ‘PDF로 저장’</span>
+    <button onclick="window.print()" class="primary">🖨 인쇄 / PDF</button>
+    <button onclick="window.close()">닫기</button>
+  </div>
+  ${pagesHtml}
+</body>
+</html>`;
+}
+
+function renderMonthPage(monthDate, byDate, { title, companyName, printedDate, todayKey }) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const grid = monthGrid(year, month);
-  const startKey = toDateKey(startDate);
-  const endKey = toDateKey(endDate);
 
-  // 그리드 셀 1개
-  const cells = grid.map((d) => {
-    const key = toDateKey(d);
-    const inMonth = d.getMonth() === month;
-    const inRange = key >= startKey && key <= endKey;
-    const dow = d.getDay();
-    const holiday = getHolidayLabel(d);
-    const isRed = dow === 0 || !!holiday;
-    const isBlue = dow === 6;
-    const items = (byDate[key] || []).slice();
-    const visible = items.slice(0, 4);
-    const hidden = items.length - visible.length;
+  // 그리드 → 주(7) 별로 chunk
+  const weeks = [];
+  for (let i = 0; i < grid.length; i += 7) weeks.push(grid.slice(i, i + 7));
 
-    const dayCls = !inMonth ? 'out' : isRed ? 'sun' : isBlue ? 'sat' : '';
-    const entriesHtml = visible.map((e) => {
-      const c = projectColor(e.project?.id);
-      const confirmedCls = e.confirmed ? ' confirmed' : '';
-      return `<div class="entry${confirmedCls}" style="background:${c.bg};border-left-color:${c.bd};color:${c.tx}" title="${esc(entryLabel(e))}">${esc(entryLabel(e))}</div>`;
-    }).join('');
-    const moreHtml = hidden > 0 ? `<div class="more">+${hidden}개 더</div>` : '';
+  // 본 페이지에 등장하는 프로젝트 인덱스 수집
+  const projectIndex = new Map();
 
-    return `<td class="${dayCls}${!inRange && inMonth ? ' out' : ''}">
-      <div class="day-num ${dayCls}">${d.getDate()}${holiday ? ` <span class="holiday">${esc(holiday)}</span>` : ''}</div>
-      ${entriesHtml}${moreHtml}
-    </td>`;
-  });
-
-  // 7개씩 chunk로 행 구성
-  const rows = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    rows.push(`<tr>${cells.slice(i, i + 7).join('')}</tr>`);
-  }
-
-  // 상세 리스트 (해당 월에 일정 있는 날만)
-  const monthDates = [];
-  for (let d = new Date(year, month, 1); d.getMonth() === month; d.setDate(d.getDate() + 1)) {
-    monthDates.push(new Date(d));
-  }
-  const listHtml = monthDates
-    .map((d) => {
+  const rowsHtml = weeks.map((week) => {
+    const cells = week.map((d) => {
       const key = toDateKey(d);
-      const items = byDate[key] || [];
-      if (items.length === 0) return null;
-      const dow = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-      const dayCls = d.getDay() === 0 ? 'sun' : d.getDay() === 6 ? 'sat' : '';
-      const itemsHtml = items.map((e) => {
+      const inMonth = d.getMonth() === month;
+      const dow = d.getDay();
+      const isToday = key === todayKey;
+      const holiday = getHolidayLabel(d);
+      const items = (byDate[key] || []);
+
+      // 인덱스에 프로젝트 누적
+      for (const e of items) {
+        if (e.project?.id && !projectIndex.has(e.project.id)) {
+          projectIndex.set(e.project.id, {
+            id: e.project.id,
+            name: e.project.name || '(이름 없음)',
+            color: projectColor(e.project.id),
+          });
+        }
+      }
+
+      const dayNumCls = !inMonth
+        ? 'out'
+        : dow === 0 || holiday ? 'sun'
+        : dow === 6 ? 'sat'
+        : '';
+      const showMonthPrefix = inMonth && d.getDate() === 1;
+
+      const dayNumHtml = isToday
+        ? `<span class="today">${d.getDate()}</span>`
+        : showMonthPrefix
+        ? `${d.getMonth() + 1}/${d.getDate()}`
+        : `${d.getDate()}`;
+      const holidayHtml = holiday ? ` <span class="holiday">${esc(holiday)}</span>` : '';
+
+      const entriesHtml = items.map((e) => {
         const c = projectColor(e.project?.id);
-        const tag = e.project?.name
-          ? `<span class="tag" style="background:${c.bg};border-color:${c.bd};color:${c.tx}">${esc(e.project.name)}</span>`
+        const { chip, text } = splitEntry(e);
+        const chipCls = chip ? phaseChipClass(chip) : null;
+        const chipHtml = chip && chipCls
+          ? `<span class="ph-chip ${chipCls}">${esc(chip)}</span>`
           : '';
-        const content = esc(e.content || '');
-        const confirmedCls = e.confirmed ? ' confirmed' : '';
-        return `<div class="item">${tag}<span class="content${confirmedCls}">${content}</span></div>`;
+        const confirmedCls = e.confirmed ? ' confirmed' : ' unconfirmed';
+        return `<div class="entry ${c.cls}${confirmedCls}">${chipHtml}<span class="txt">${esc(text || e.content || '')}</span></div>`;
       }).join('');
-      return `<div class="list-day">
-        <div class="date ${dayCls}">${d.getMonth() + 1}/${d.getDate()}<span class="dow">(${dow})</span></div>
-        <div class="items">${itemsHtml}</div>
-      </div>`;
-    })
-    .filter(Boolean)
-    .join('');
+
+      const tdCls = inMonth ? '' : 'out';
+      return `<td class="${tdCls}">
+        <div class="day-num ${dayNumCls}">${dayNumHtml}${holidayHtml}</div>
+        ${entriesHtml}
+      </td>`;
+    });
+    return `<tr>${cells.join('')}</tr>`;
+  }).join('');
+
+  const indexItems = [...projectIndex.values()]
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    .map((p) => `<span class="index-item">
+      <span class="index-swatch ${p.color.cls}" style="border-left: 1mm solid ${p.color.bd}"></span>
+      ${esc(p.name)}
+    </span>`).join('');
 
   return `<section class="page">
-    <div class="header">
-      <div class="left">
-        <div class="title">${esc(title)}</div>
-        <div class="subtitle">${year}년 ${month + 1}월 · ${startKey} ~ ${endKey}</div>
+    <header class="print-header">
+      <div class="brand"><span class="brand-mark"></span>SUPLEX</div>
+      <h1 class="month-title">
+        <span class="year">${year}</span>${month + 1}월
+      </h1>
+      <div class="print-meta">
+        ${esc(title)}${companyName ? ` · ${esc(companyName)}` : ''}<br>
+        출력일: ${printedDate}
       </div>
-      ${companyName ? `<div class="right"><span class="label">Company</span>${esc(companyName)}</div>` : ''}
-    </div>
+    </header>
 
     <table class="cal">
       <thead>
         <tr>
-          <th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th>
+          <th class="sun">일</th>
+          <th>월</th>
+          <th>화</th>
+          <th>수</th>
+          <th>목</th>
+          <th>금</th>
+          <th class="sat">토</th>
         </tr>
       </thead>
-      <tbody>${rows.join('')}</tbody>
+      <tbody>${rowsHtml}</tbody>
     </table>
 
-    ${listHtml ? `<div class="list-section">
-      <h2>${year}년 ${month + 1}월 상세 일정</h2>
-      ${listHtml}
-    </div>` : ''}
+    <div class="index-bar">
+      ${indexItems ? `<span class="index-label">현장</span>${indexItems}` : ''}
+      <span class="confirm-legend"><strong>✓</strong> 확정 일정</span>
+    </div>
 
-    <div class="footer-note">출력일 ${new Date().toLocaleDateString('ko-KR')} · Suplex</div>
+    <footer class="print-footer">
+      <span>SUPLEX · suplex.kr</span>
+      <span>현장 정보·금액 비공개 · 인쇄 시 자동 격리됨</span>
+    </footer>
   </section>`;
 }
