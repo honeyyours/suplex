@@ -5,6 +5,7 @@ import { useOutletContext, useParams } from 'react-router-dom';
 import ExtractModal from '../components/ExtractModal';
 import LaborSettlementModal from '../components/LaborSettlementModal';
 import MaterialCalcModal from '../components/MaterialCalcModal';
+import BetaLabel from '../components/BetaLabel';
 
 export default function ProjectUtilities() {
   const { id } = useParams();
@@ -34,6 +35,7 @@ export default function ProjectUtilities() {
       desc: '자재 4종(타일·도배·마루·페인트) 평수 → 발주 권장량 즉시 계산. 한국 4대 제조사·시공자 검증값 적용. 카톡 복사 + 메모 자동 기록.',
       action: () => setShowMaterialCalc(true),
       ready: true,
+      beta: true, // 2026-05-18 기능 노출 점검 B 분류
     },
     {
       icon: '📢',
@@ -77,6 +79,7 @@ export default function ProjectUtilities() {
                       준비 중
                     </span>
                   )}
+                  {tool.beta && <BetaLabel feature={tool.title} size="xs" />}
                 </div>
                 <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{tool.desc}</p>
               </div>

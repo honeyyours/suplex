@@ -6,6 +6,7 @@ import { projectsApi } from '../api/projects';
 import { formatWon } from '../api/simpleQuotes';
 import WorkContextDrawer from '../components/WorkContextDrawer';
 import { usePhaseLabels } from '../contexts/PhaseLabelsContext';
+import ComingSoon from '../components/ComingSoon';
 
 function fmtDate(iso) {
   if (!iso) return null;
@@ -80,6 +81,12 @@ export default function ProjectProcessOverview() {
 
   return (
     <div className="space-y-4">
+      <ComingSoon
+        compact
+        variant="betaCheck"
+        title="공정 현황은 베타 검증 중입니다."
+        description="25공정 통합 뷰 완성도를 끌어올리는 중. 이상한 점·아이디어 환영합니다."
+      />
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-bold text-navy-800">공정 현황</h2>

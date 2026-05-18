@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>PlanGuide / ComingSoon — 리디자인 시안 출발점</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <style>
+    body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: #f8fafc; }
+    .annot { background: #fef3c7; border-left: 3px solid #f59e0b; padding: 8px 12px; font-size: 12px; color: #78350f; line-height: 1.5; }
+    .swatch { width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e5e7eb; display: inline-block; vertical-align: middle; }
+    .text-navy-700 { color: #1e3a5f; }
+    .text-navy-800 { color: #16314f; }
+    .text-navy-200 { color: #b8c7d8; }
+    .bg-navy-50 { background-color: #f0f4f9; }
+    .bg-navy-100 { background-color: #d8e1ec; }
+    .bg-navy-700 { background-color: #1e3a5f; }
+    .border-navy-200 { border-color: #b8c7d8; }
+    .border-navy-800 { border-color: #16314f; }
+    .text-amber-900 { color: #78350f; }
+    .text-amber-800 { color: #92400e; }
+    .bg-amber-50 { background-color: #fffbeb; }
+    .bg-amber-100 { background-color: #fef3c7; }
+    .border-amber-200 { border-color: #fde68a; }
+  </style>
+</head>
+<body class="px-8 py-10">
+
+<header class="max-w-6xl mx-auto mb-8">
+  <h1 class="text-2xl font-bold text-gray-900">PlanGuide / ComingSoon — 리디자인 출발점</h1>
+  <p class="text-sm text-gray-500 mt-1">
+    Suplex "기능 노출 점검" 4단계 분류 중 <b>C (티저)</b> 표준 컴포넌트.
+    완성도 50~70% 또는 상위 등급 기능에 부착하는 안내 카드.
+    3가지 variant(comingSoon / planGate / betaCheck) + 2가지 크기(default / compact).
+  </p>
+  <p class="text-xs text-gray-400 mt-1">
+    출처: <code>client/src/components/ComingSoon.jsx</code> · 적용: <code>client/src/pages/ProjectProcessOverview.jsx</code>
+  </p>
+</header>
+
+<!-- 3가지 variant 페이지 형태 -->
+<section class="max-w-6xl mx-auto mb-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Variant 1 — 페이지 전체 placeholder (default 크기)</h2>
+  <div class="grid grid-cols-3 gap-4">
+
+    <!-- comingSoon -->
+    <div>
+      <div class="annot mb-3"><b>comingSoon</b> — gray 톤, 점선 보더. 아직 안 만들어진 미래 기능.</div>
+      <div class="text-center py-12 px-6 rounded-xl border bg-gray-50 border-gray-200 border-dashed">
+        <div class="mb-3">
+          <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">준비 중</span>
+        </div>
+        <div class="text-4xl mb-3">📢</div>
+        <h2 class="text-lg font-semibold mb-1.5 text-navy-800">입주민 안내문</h2>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mb-4 leading-relaxed">
+          아파트 엘베 부착용 안내문 자동 생성. 회사 디자인 템플릿에 현장명·공사기간·작업시간 자동 채움.
+        </p>
+        <div class="max-w-md mx-auto text-left bg-white/70 rounded-lg border border-gray-200 p-3 mb-4">
+          <div class="text-[11px] font-semibold text-gray-500 mb-1.5">예정 기능</div>
+          <ul class="space-y-1 text-sm text-gray-700">
+            <li class="flex gap-2"><span class="text-gray-400">·</span><span>현장명·공사기간·작업시간 자동 채움</span></li>
+            <li class="flex gap-2"><span class="text-gray-400">·</span><span>회사 디자인 템플릿 적용</span></li>
+          </ul>
+        </div>
+        <div class="text-[11px] text-gray-400 mt-2">곧 구현 예정</div>
+      </div>
+    </div>
+
+    <!-- planGate -->
+    <div>
+      <div class="annot mb-3"><b>planGate</b> — navy 톤. 상위 등급(PRO/ENTERPRISE) 기능에 부착. CTA 버튼 노출.</div>
+      <div class="text-center py-12 px-6 rounded-xl border bg-navy-50 border-navy-200">
+        <div class="mb-3">
+          <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-navy-100 text-navy-800">PRO 기능</span>
+        </div>
+        <div class="text-4xl mb-3">💰</div>
+        <h2 class="text-lg font-semibold mb-1.5 text-navy-800">지출관리 · 정산</h2>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mb-4 leading-relaxed">
+          공정별 견적 vs 실지출 자동 비교 + 다음 견적 가이드 자동 누적 사이클.
+        </p>
+        <div class="max-w-md mx-auto text-left bg-white/70 rounded-lg border border-gray-200 p-3 mb-4">
+          <div class="text-[11px] font-semibold text-gray-500 mb-1.5">잠긴 기능</div>
+          <ul class="space-y-1 text-sm text-gray-700">
+            <li class="flex gap-2"><span class="text-gray-400">·</span><span>거래 인라인 편집</span></li>
+            <li class="flex gap-2"><span class="text-gray-400">·</span><span>통장 1-클릭 라벨링</span></li>
+            <li class="flex gap-2"><span class="text-gray-400">·</span><span>공정별 견적 가이드 자동 누적</span></li>
+          </ul>
+        </div>
+        <button class="text-xs px-3 py-1.5 rounded bg-navy-700 text-white mb-2">PRO로 업그레이드</button>
+        <div class="text-[11px] text-gray-400 mt-2">베타 동안 무료, 정식 출시 시 상위 등급 활성</div>
+      </div>
+    </div>
+
+    <!-- betaCheck -->
+    <div>
+      <div class="annot mb-3"><b>betaCheck</b> — amber 톤. 베타 검증 중인 큰 영역. 페이지 전체 또는 큰 카드 단위.</div>
+      <div class="text-center py-12 px-6 rounded-xl border bg-amber-50 border-amber-200">
+        <div class="mb-3">
+          <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">베타 검증 중</span>
+        </div>
+        <div class="text-4xl mb-3">🏗️</div>
+        <h2 class="text-lg font-semibold mb-1.5 text-amber-900">공정 현황</h2>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mb-4 leading-relaxed">
+          25개 표준 공정 척추 기준으로 견적·마감재·일정·발주 4축 통합 뷰.
+        </p>
+        <div class="text-[11px] text-gray-400 mt-2">완성도를 끌어올리는 중입니다</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- compact variant 페이지 상단 띠 -->
+<section class="max-w-6xl mx-auto mb-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Variant 2 — Compact 페이지 상단 안내 띠</h2>
+  <div class="annot mb-3">실제 페이지(공정 현황)는 그대로 보여주되, 상단에 한 줄 안내 띠로 "베타 검증 중" 신호를 부드럽게 전달. 페이지 전체를 placeholder로 막지 않음 — C 분류 "노출하되 안내" 원칙 정합.</div>
+
+  <div class="space-y-2 max-w-3xl mx-auto">
+    <!-- 페이지 상단 compact 띠 -->
+    <div class="flex items-start gap-3 px-3 py-2.5 rounded-lg border bg-amber-50 border-amber-200">
+      <span class="flex-shrink-0 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">베타 검증 중</span>
+      <div class="flex-1 min-w-0 text-xs leading-relaxed">
+        <span class="font-medium text-amber-900">공정 현황은 베타 검증 중입니다.</span>
+        <span class="text-gray-500 ml-1.5">25공정 통합 뷰 완성도를 끌어올리는 중. 이상한 점·아이디어 환영합니다.</span>
+      </div>
+    </div>
+
+    <!-- 그 아래 실제 페이지 -->
+    <div class="bg-white rounded-xl border p-5">
+      <div class="flex items-end justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-navy-800">공정 현황</h2>
+          <div class="text-xs text-gray-500 mt-1">25개 표준 공정 척추 기준으로 견적·마감재·일정·발주 4축을 한눈에.</div>
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs">
+          <tr>
+            <th class="px-3 py-2 text-left">공정</th>
+            <th class="px-3 py-2 text-left">견적</th>
+            <th class="px-3 py-2 text-left">마감재</th>
+            <th class="px-3 py-2 text-left">일정</th>
+            <th class="px-3 py-2 text-left">발주</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          <tr class="border-t"><td class="px-3 py-2">철거</td><td class="px-3 py-2 text-gray-500">3건 · 1,200,000원</td><td class="px-3 py-2">—</td><td class="px-3 py-2">4/15~4/17</td><td class="px-3 py-2">—</td></tr>
+          <tr class="border-t"><td class="px-3 py-2">목공</td><td class="px-3 py-2 text-gray-500">12건 · 8,400,000원</td><td class="px-3 py-2">확정 5건</td><td class="px-3 py-2">4/20~5/2</td><td class="px-3 py-2 text-amber-600">대기 2</td></tr>
+          <tr class="border-t"><td class="px-3 py-2 text-gray-400">타일</td><td class="px-3 py-2 text-gray-300">—</td><td class="px-3 py-2 text-gray-300">—</td><td class="px-3 py-2 text-gray-300">—</td><td class="px-3 py-2 text-gray-300">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 영역 캡션 -->
+<section class="max-w-6xl mx-auto mb-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">영역 설명</h2>
+  <div class="space-y-2">
+    <div class="annot"><b>variant 배지</b> — variant별 색상(gray / navy / amber). 컴포넌트 상단에 작은 pill 형태. 라벨 텍스트: "준비 중" / "PRO 기능" / "베타 검증 중".</div>
+    <div class="annot"><b>아이콘</b> — 4xl 이모지. comingSoon·planGate·betaCheck 다 큰 시각적 신호 역할.</div>
+    <div class="annot"><b>제목·설명</b> — 제목은 18px 굵게. 설명은 14px 회색, max-w-md(약 420px)로 가운데 정렬.</div>
+    <div class="annot"><b>예정/잠긴 기능 리스트</b> — comingSoon=예정 / planGate=잠긴. 흰 배경 + 회색 보더 카드 안에 ul로.</div>
+    <div class="annot"><b>CTA 버튼</b> — planGate에서만 노출. navy-700 브랜드 컬러. "PRO로 업그레이드" 같은 행동 유도.</div>
+    <div class="annot"><b>푸터 문구</b> — variant별 다른 한 줄 안내. "곧 구현 예정" / "베타 동안 무료, 정식 출시 시 활성" / "완성도를 끌어올리는 중".</div>
+    <div class="annot"><b>compact 변형</b> — 한 줄 띠 형태. 페이지 헤더 위 또는 메뉴 옆에 부드럽게 부착. C 분류의 "노출하되 안내" 원칙 구현.</div>
+  </div>
+</section>
+
+<!-- 토큰 팔레트 -->
+<section class="max-w-6xl mx-auto mb-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">디자인 토큰</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+    <div><div class="swatch" style="background:#f9fafb"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#f9fafb</div><div class="text-gray-500">gray-50 (comingSoon 배경)</div></div></div>
+    <div><div class="swatch" style="background:#f0f4f9"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#f0f4f9</div><div class="text-gray-500">navy-50 (planGate 배경)</div></div></div>
+    <div><div class="swatch" style="background:#fffbeb"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#fffbeb</div><div class="text-gray-500">amber-50 (betaCheck 배경)</div></div></div>
+    <div><div class="swatch" style="background:#1e3a5f"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#1e3a5f</div><div class="text-gray-500">navy-700 (CTA)</div></div></div>
+    <div><div class="swatch" style="background:#16314f"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#16314f</div><div class="text-gray-500">navy-800 (제목)</div></div></div>
+    <div><div class="swatch" style="background:#78350f"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#78350f</div><div class="text-gray-500">amber-900 (betaCheck 제목)</div></div></div>
+    <div><div class="swatch" style="background:#fde68a"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#fde68a</div><div class="text-gray-500">amber-200 (보더)</div></div></div>
+    <div><div class="swatch" style="background:#b8c7d8"></div><div class="ml-2 inline-block align-middle"><div class="font-mono">#b8c7d8</div><div class="text-gray-500">navy-200 (보더)</div></div></div>
+  </div>
+</section>
+
+<!-- 인터랙션 노트 -->
+<section class="max-w-6xl mx-auto mb-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">인터랙션</h2>
+  <ul class="text-sm text-gray-700 space-y-1.5 list-disc list-inside">
+    <li>변종 없음(static) — 진입 시 표시 그대로. 토글·애니메이션 없음.</li>
+    <li>CTA 버튼 클릭(`onCtaClick` prop): 추후 UpgradeModal(가격정책 v8 4-quater) 호출 예정. 현재 시안은 비어있음.</li>
+    <li>compact 변형: 페이지 헤더 위·라벨 옆에 부드럽게 부착. 진입 시 별도 애니메이션 X.</li>
+    <li>다크모드 대응: variant별 다크 톤(`dark:bg-slate-900/40`, `dark:bg-navy-950/30`, `dark:bg-amber-950/20`) 적용됨.</li>
+  </ul>
+</section>
+
+<!-- 푸터 -->
+<footer class="max-w-6xl mx-auto pt-8 border-t border-gray-200 text-xs text-gray-500">
+  <div><b>출처 코드</b>: <code>client/src/components/ComingSoon.jsx</code></div>
+  <div><b>1차 적용</b>: <code>client/src/pages/ProjectProcessOverview.jsx</code> (compact betaCheck 상단 띠)</div>
+  <div><b>적용 예정</b>: C 분류 3곳 (글로벌 지출관리·프로젝트 공정현황·편의 입주민안내문) + 가격정책 v8 4-bis PlanGuide 시스템 전반</div>
+  <div><b>관련 정책</b>: <code>docs/가격정책.md</code> v8 4-bis (PlanGuide) · 4-quater (UpgradeModal과 통합 예정) · <code>수플렉스_운영_기능노출점검.md</code></div>
+  <div class="mt-2 text-gray-400">2026-05-18 1차 시안. 봉기님 리디자인 출발점.</div>
+</footer>
+
+</body>
+</html>
