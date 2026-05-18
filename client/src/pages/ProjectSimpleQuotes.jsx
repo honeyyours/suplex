@@ -1041,6 +1041,7 @@ function QuoteEditor({ projectId, quoteId, previousQuoteId, onChange, onDelete }
           projectId={projectId}
           quoteId={quoteId}
           currentQuoteId={quoteId}
+          currentLineCount={lines.length}
           onClose={() => setShowImport(false)}
           onImported={async () => {
             setShowImport(false);
@@ -1453,7 +1454,7 @@ function injectCompareSummary(footer, summary) {
 // ============================================
 // 다른 견적에서 라인 가져오기 모달
 // ============================================
-function ImportLinesModal({ projectId, quoteId, currentQuoteId, onClose, onImported }) {
+function ImportLinesModal({ projectId, quoteId, currentQuoteId, currentLineCount = 0, onClose, onImported }) {
   const [q, setQ] = useState('');
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1483,7 +1484,12 @@ function ImportLinesModal({ projectId, quoteId, currentQuoteId, onClose, onImpor
 
   async function handleImport() {
     if (!selected) return;
-    if (mode === 'replace' && !confirm('현재 견적의 모든 라인을 삭제하고 가져온 라인으로 교체합니다. 계속할까요?')) return;
+    if (mode === 'replace') {
+      const countMsg = currentLineCount > 0
+        ? `현재 견적의 ${currentLineCount}개 라인을 모두 삭제하고 가져온 라인으로 교체합니다.`
+        : '현재 견적이 비어있습니다. 가져온 라인으로 채웁니다.';
+      if (!confirm(`${countMsg}\n\n되돌릴 수 없습니다. 계속할까요?`)) return;
+    }
     setBusy(true);
     try {
       const { importedCount } = await simpleQuotesApi.importLines(projectId, quoteId, selected.id, mode);

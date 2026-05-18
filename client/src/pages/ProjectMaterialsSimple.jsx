@@ -577,7 +577,11 @@ export default function ProjectMaterialsSimple() {
   }
 
   async function removeGroup(name) {
-    if (!confirm(`"${name}" 그룹과 그 안의 모든 항목을 삭제할까요? (되돌릴 수 없음)`)) return;
+    const itemsInGroup = items.filter((it) => it.spaceGroup === name);
+    const countMsg = itemsInGroup.length > 0
+      ? `\n안에 ${itemsInGroup.length}개 항목이 함께 삭제됩니다.`
+      : '\n(빈 그룹입니다)';
+    if (!confirm(`"${name}" 그룹을 삭제할까요?${countMsg}\n\n되돌릴 수 없습니다.`)) return;
     try {
       await materialsApi.removeGroup(projectId, name);
       setItems((prev) => prev.filter((it) => it.spaceGroup !== name));
